@@ -109,7 +109,9 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
         dimensions=[],
     )
 
-    issues = evaluate(graph, rules, standards)
+    result = evaluate(graph, rules, standards)
+    issues = result.issues
+    assert result.skipped == [], "no project_meta means nothing should be skipped"
     rule_ids = sorted(i.rule_card_id for i in issues)
     assert rule_ids == sorted(["RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA"])
 
@@ -119,6 +121,34 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
     assert by_rule["RC-DOOR-WIDTH"].evidence.measured_value == pytest.approx(0.85)
     assert by_rule["RC-BEDROOM-AREA"].entity_ids == ["room-bed"]
     assert by_rule["RC-BEDROOM-AREA"].evidence.measured_value == pytest.approx(4.0)
+
+
+def test_evaluate_skips_all_rules_for_industrial_project() -> None:
+    """End-to-end Phase 9 check: an industrial project_meta should turn every
+    residential-tagged rule into a SkippedRule, with zero issues fired."""
+    from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.schemas import ProjectMeta
+
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    meta = ProjectMeta(project_id="P-IND", building_type="industrial", height_class="多层")
+    # Empty graph is fine — we only care that *no rule fires* and *all rules are skipped*.
+    graph = EntityGraph(
+        source_pdf="x.pdf",
+        points_per_meter=50.0,
+        page_index=0,
+        page_width_pt=500,
+        page_height_pt=400,
+        rooms=[],
+        doors=[],
+        corridors=[],
+        dimensions=[],
+    )
+    result = evaluate(graph, rules, standards, project_meta=meta)
+    assert result.issues == []
+    assert {s.rule_id for s in result.skipped} == {r.id for r in rules}
+    for s in result.skipped:
+        assert "industrial" in s.reason
 
 
 def test_rule_test_cases_match_engine_decision() -> None:

@@ -1,0 +1,17 @@
+# Sample ProjectMeta for the synthetic demo floor plan.
+# Drives rule applicability filtering: rules whose source clauses don't apply
+# to building_type=residential and height_class=多层 will be skipped and
+# listed in the report's "因项目上下文跳过的规则" section.
+
+project_id: DEMO-001
+project_name: 演示住宅 (sample_clean.pdf)
+building_type: residential
+height_class: 多层
+fire_class: 二级
+climate_zone: 寒冷
+use_type: 住宅
+height_m: 18.0
+floors: 6
+notes: |
+  Synthetic 10×8m floor plan with 4 rooms (BEDROOM/LIVING/BATHROOM/KITCHEN),
+  6 door gaps, corridor 1.05m. Used for archkg demo + viewer flows.

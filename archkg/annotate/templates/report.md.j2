@@ -4,6 +4,23 @@
 - 实体图谱：`{{ entity_graph_path }}`
 - 标注 PDF：`{{ annotated_pdf }}`
 - 问题数：**{{ issues|length }}**
+{% if project_meta %}
+
+## 项目上下文
+
+| 字段 | 值 |
+|---|---|
+| project_id | `{{ project_meta.project_id }}` |
+{% if project_meta.project_name %}| project_name | {{ project_meta.project_name }} |
+{% endif %}| building_type | {{ project_meta.building_type }} |
+| height_class | {{ project_meta.height_class }} |
+{% if project_meta.fire_class %}| fire_class | {{ project_meta.fire_class }} |
+{% endif %}{% if project_meta.climate_zone %}| climate_zone | {{ project_meta.climate_zone }} |
+{% endif %}{% if project_meta.use_type %}| use_type | {{ project_meta.use_type }} |
+{% endif %}{% if project_meta.height_m is not none %}| height_m | {{ project_meta.height_m }} |
+{% endif %}{% if project_meta.floors is not none %}| floors | {{ project_meta.floors }} |
+{% endif %}
+{% endif %}
 
 ## 问题清单
 
@@ -24,6 +41,17 @@
 
 阈值：{{ clause.threshold_op }} {{ clause.threshold_value }} {{ clause.unit }}
 {% endfor %}
+
+{% if skipped %}
+## 因项目上下文跳过的规则
+
+| rule_card_id | 跳过原因 |
+|---|---|
+{% for s in skipped %}| `{{ s.rule_id }}` | {{ s.reason }} |
+{% endfor %}
+
+> 这些规则的源条文不适用于本项目（building_type / height_class 不匹配），故未参与本次审图。
+{% endif %}
 
 ---
 

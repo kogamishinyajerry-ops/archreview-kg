@@ -52,9 +52,15 @@ def review(
     pdf: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
     out: Path = typer.Option(Path("out"), "-o", "--out"),
     points_per_meter: float = typer.Option(50.0, "--ppm"),
+    project_meta: Path | None = typer.Option(
+        None, "--project-meta", exists=True, dir_okay=False, readable=True,
+        help="Optional ProjectMeta YAML (building_type/height_class etc.) to filter inapplicable rules.",
+    ),
 ) -> None:
     """One-shot: ingest -> build-graph -> evaluate rules -> annotate -> report."""
     import json as _json
+
+    import yaml as _yaml
 
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
@@ -64,8 +70,13 @@ def review(
     from archkg.ingest.primitive_extractor import write_json as write_prims
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.rules.engine import evaluate
+    from archkg.schemas import ProjectMeta
 
     out.mkdir(parents=True, exist_ok=True)
+
+    meta: ProjectMeta | None = None
+    if project_meta is not None:
+        meta = ProjectMeta.model_validate(_yaml.safe_load(project_meta.read_text("utf-8")))
 
     primitives = extract(pdf, points_per_meter=points_per_meter)
     primitives_path = write_prims(primitives, out / "primitives.json")
@@ -76,20 +87,22 @@ def review(
 
     standards = load_standards()
     rules = load_rules(standards=standards)
-    issues = evaluate(graph, rules, standards)
+    result = evaluate(graph, rules, standards, project_meta=meta)
     (out / "issues.json").write_text(
-        _json.dumps([i.model_dump() for i in issues], ensure_ascii=False, indent=2),
+        _json.dumps([i.model_dump() for i in result.issues], ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
-    annotated = annotate_pdf(pdf, issues, out / "annotated.pdf")
+    annotated = annotate_pdf(pdf, result.issues, out / "annotated.pdf")
     report_path = render_report(
         source_pdf=pdf,
         entity_graph_path=graph_path,
         annotated_pdf=annotated,
-        issues=issues,
+        issues=result.issues,
         clauses=standards,
         out_md=out / "report.md",
+        project_meta=meta,
+        skipped=result.skipped,
     )
     _print_review_summary(
         out_dir=out,
@@ -98,7 +111,9 @@ def review(
         annotated_path=annotated,
         report_path=report_path,
         graph=graph,
-        issues=issues,
+        issues=result.issues,
+        skipped=result.skipped,
+        project_meta=meta,
     )
 
 
@@ -111,12 +126,34 @@ def _print_review_summary(
     report_path: Path,
     graph: Any,
     issues: list[Any],
+    skipped: list[Any] | None = None,
+    project_meta: Any = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
     from rich.table import Table
 
     console = Console()
+
+    # Project context
+    if project_meta is not None:
+        ctx = Table(title="项目上下文", show_header=False, header_style="bold magenta")
+        ctx.add_column("k", style="magenta")
+        ctx.add_column("v")
+        ctx.add_row("project_id", project_meta.project_id)
+        if project_meta.project_name:
+            ctx.add_row("project_name", project_meta.project_name)
+        ctx.add_row("building_type", project_meta.building_type)
+        ctx.add_row("height_class", project_meta.height_class)
+        if project_meta.fire_class:
+            ctx.add_row("fire_class", project_meta.fire_class)
+        if project_meta.climate_zone:
+            ctx.add_row("climate_zone", project_meta.climate_zone)
+        if project_meta.height_m is not None:
+            ctx.add_row("height_m", f"{project_meta.height_m:.1f}")
+        if project_meta.floors is not None:
+            ctx.add_row("floors", str(project_meta.floors))
+        console.print(ctx)
 
     # Detection summary
     g = graph  # EntityGraph
@@ -128,6 +165,15 @@ def _print_review_summary(
     detect.add_row("corridors", str(len(g.corridors)))
     detect.add_row("dimensions", str(len(g.dimensions)))
     console.print(detect)
+
+    # Skipped rules due to project context
+    if skipped:
+        sk = Table(title=f"因项目上下文跳过的规则（{len(skipped)}）", header_style="bold yellow")
+        sk.add_column("rule_card_id", style="yellow")
+        sk.add_column("跳过原因")
+        for s in skipped:
+            sk.add_row(s.rule_id, s.reason)
+        console.print(sk)
 
     # Issues table
     if issues:
@@ -206,6 +252,10 @@ def build_graph_cmd(
 @app.command()
 def demo(
     out: Path = typer.Option(Path("out"), "-o", "--out"),
+    with_project_meta: bool = typer.Option(
+        True, "--meta/--no-meta",
+        help="Use samples/project_meta_demo.yaml for context-aware filtering. Disable for pre-Phase-9 behaviour.",
+    ),
 ) -> None:
     """One-key demo: regenerate sample PDF, run review, print where artifacts landed."""
     from rich.console import Console
@@ -216,7 +266,8 @@ def demo(
     sample_dir = Path(__file__).parent.parent.parent / "samples"
     pdf = build_sample(sample_dir / "sample_clean.pdf")
     console.print(f"[cyan]生成测试图纸:[/cyan] {pdf}")
-    review(pdf=pdf, out=out, points_per_meter=50.0)
+    meta_path = (sample_dir / "project_meta_demo.yaml") if with_project_meta else None
+    review(pdf=pdf, out=out, points_per_meter=50.0, project_meta=meta_path)
 
 
 @app.command()

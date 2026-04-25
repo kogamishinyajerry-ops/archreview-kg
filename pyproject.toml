@@ -46,6 +46,7 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 "archkg/cli/*.py" = ["B008", "RUF001"]                    # Typer call-in-default + intentional CJK punctuation
 "archkg/knowledge/search.py" = ["RUF002", "RUF003"]       # docstring deliberately includes full-width punctuation as examples
+"archkg/rules/applicability.py" = ["RUF001"]              # user-facing zh-CN messages use full-width parens by convention
 "tests/*.py" = ["B008", "RUF001", "RUF002", "RUF003"]     # CJK punctuation + full-width unicode test fixtures
 
 [tool.mypy]

@@ -7,7 +7,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from archkg.schemas import Issue, StandardClause
+from archkg.rules.engine import SkippedRule
+from archkg.schemas import Issue, ProjectMeta, StandardClause
 
 
 def _env() -> Environment:
@@ -28,6 +29,8 @@ def render(
     issues: list[Issue],
     clauses: list[StandardClause],
     out_md: Path,
+    project_meta: ProjectMeta | None = None,
+    skipped: list[SkippedRule] | None = None,
 ) -> Path:
     used_ids = {i.standard_clause_id for i in issues}
     clauses_used = [c for c in clauses if c.id in used_ids]
@@ -38,6 +41,8 @@ def render(
         annotated_pdf=str(annotated_pdf),
         issues=[i.model_dump() for i in issues],
         clauses_used=[c.model_dump() for c in clauses_used],
+        project_meta=project_meta.model_dump() if project_meta is not None else None,
+        skipped=[{"rule_id": s.rule_id, "reason": s.reason} for s in (skipped or [])],
     )
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_md.write_text(rendered, encoding="utf-8")

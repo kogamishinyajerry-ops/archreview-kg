@@ -14,18 +14,36 @@ from __future__ import annotations
 
 import ast
 import uuid
+from dataclasses import dataclass, field
 from typing import Any
 
 from archkg.graph.builder import EntityGraph
+from archkg.rules.applicability import is_rule_applicable, skip_reason
 from archkg.schemas import (
     Corridor,
     Door,
     Issue,
     IssueEvidence,
+    ProjectMeta,
     Room,
     RuleCard,
     StandardClause,
 )
+
+
+@dataclass(frozen=True)
+class SkippedRule:
+    rule_id: str
+    reason: str
+
+
+@dataclass
+class EvalResult:
+    """Output of `evaluate()`: violating issues plus the rules that were
+    skipped because the project context made them inapplicable."""
+
+    issues: list[Issue] = field(default_factory=list)
+    skipped: list[SkippedRule] = field(default_factory=list)
 
 
 class RuleCompileError(ValueError):
@@ -131,12 +149,26 @@ def evaluate(
     graph: EntityGraph,
     rules: list[RuleCard],
     standards: list[StandardClause],
-) -> list[Issue]:
-    """Run all rules over the graph; emit one Issue per violating entity."""
+    project_meta: ProjectMeta | None = None,
+) -> EvalResult:
+    """Run all *applicable* rules over the graph.
+
+    With `project_meta=None` (legacy mode) every rule fires — preserves
+    pre-Phase-9 behaviour. With a project meta, rules whose source clauses
+    don't apply to the project context are recorded in `result.skipped`
+    rather than evaluated.
+    """
     standards_by_id = {s.id: s for s in standards}
-    issues: list[Issue] = []
+    result = EvalResult()
 
     for rule in rules:
+        if not is_rule_applicable(rule, project_meta, standards_by_id):
+            assert project_meta is not None  # is_rule_applicable returns True for None meta
+            result.skipped.append(
+                SkippedRule(rule_id=rule.id, reason=skip_reason(rule, project_meta, standards_by_id))
+            )
+            continue
+
         try:
             tree = compile_expression(rule.logic_expression, rule.inputs)
         except RuleCompileError as exc:
@@ -159,7 +191,7 @@ def evaluate(
                 threshold_value=clause.threshold_value if clause else None,
                 unit=clause.unit if clause else None,
             )
-            issues.append(
+            result.issues.append(
                 Issue(
                     issue_id=_new_issue_id(),
                     rule_card_id=rule.id,
@@ -172,7 +204,7 @@ def evaluate(
                     evidence=evidence,
                 )
             )
-    return issues
+    return result
 
 
 def _pick_measured(env: dict[str, Any], inputs: list[str]) -> float | None:

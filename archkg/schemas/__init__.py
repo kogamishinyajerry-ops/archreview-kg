@@ -16,6 +16,7 @@ from archkg.schemas.primitives import (
     TextPrimitive,
     TextSource,
 )
+from archkg.schemas.project import ClimateZone, FireClass, ProjectMeta
 from archkg.schemas.rule_card import EntityType, RuleCard, RuleCardTestCase
 from archkg.schemas.standard import (
     BuildingType,
@@ -29,17 +30,20 @@ __all__ = [
     "BBox",
     "BuildingType",
     "ClauseCategory",
+    "ClimateZone",
     "Corridor",
     "Dimension",
     "Door",
     "Entity",
     "EntityType",
+    "FireClass",
     "HeightClass",
     "Issue",
     "IssueEvidence",
     "LinePrimitive",
     "PagePrimitives",
     "Primitives",
+    "ProjectMeta",
     "Room",
     "RuleCard",
     "RuleCardTestCase",
