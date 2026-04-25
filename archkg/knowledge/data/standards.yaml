@@ -1,15 +1,66 @@
-# Source: GB 50096-2011《住宅设计规范》+ GB 50016-2014《建筑设计防火规范》— excerpts for ArchReview-KG.
-# Each entry maps 1:1 to archkg.schemas.StandardClause.
-# Phase 8 metadata: category / applies_to_* / version / supersedes / paraphrase.
-# clause_text marked `paraphrase: false` is verbatim; `true` means we rewrote for clarity.
+# ArchReview-KG residential-focused clause library — Phase 8 (2026-04-26).
+# Sources: GB 50096-2011 / GB 50352-2019 / GB 50016-2014 (2018 Ed.) / GB 50763-2012.
+# `clause_text` is verbatim from public PDF sources unless `paraphrase: true`.
+# `applies_to_building_type` defaults to ("residential",) for residential-first focus;
+# clauses that originate in fire/unified codes but apply to residential are listed
+# explicitly here too. See standards_raw/SOURCES.md for PDF provenance.
+
+# =====================================================================
+# GB 50096-2011 《住宅设计规范》
+# =====================================================================
+- id: GB50096-5.3.1
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  clause_text: 双人卧室使用面积不应小于 9 m²；单人卧室使用面积不应小于 5 m²。
+  unit: m^2
+  threshold_value: 5.0
+  threshold_op: ">="
+  paraphrase: false
+
 - id: GB50096-5.5.2
   source: GB 50096-2011
   version: "2011"
   category: geometric
   applies_to_building_type: [residential]
-  clause_text: 套内入户门洞口净宽不应小于 0.90 m。
+  clause_text: 卧室、起居室（厅）的室内净高不应低于 2.40 m，局部净高不应低于 2.10 m，且其面积不应大于室内使用面积的 1/3。
   unit: m
-  threshold_value: 0.90
+  threshold_value: 2.40
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50096-5.5.3
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  clause_text: 利用坡屋顶内空间作卧室、起居室（厅）时，其 1/2 面积的室内净高不应低于 2.10 m。
+  unit: m
+  threshold_value: 2.10
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50096-5.6.2
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  clause_text: 阳台栏杆设计应采用防止儿童攀登的构造，栏杆的垂直杆件间净距不应大于 0.11 m，放置花盆处必须采取防坠落措施。
+  unit: m
+  threshold_value: 0.11
+  threshold_op: "<="
+  paraphrase: false
+
+- id: GB50096-5.6.3
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  applies_to_height_class: [低层, 多层]
+  clause_text: 住宅的阳台栏板或栏杆净高，六层及六层以下的不应低于 1.05 m；七层及七层以上的不应低于 1.10 m。
+  unit: m
+  threshold_value: 1.05
   threshold_op: ">="
   paraphrase: false
 
@@ -24,14 +75,58 @@
   threshold_op: ">="
   paraphrase: false
 
-- id: GB50096-5.3.1
+- id: GB50096-5.8.1
   source: GB 50096-2011
   version: "2011"
   category: geometric
   applies_to_building_type: [residential]
-  clause_text: 双人卧室使用面积不应小于 9 m²；单人卧室使用面积不应小于 5 m²。
-  unit: m^2
+  clause_text: 外窗窗台距楼面、地面的净高低于 0.90 m 时，应有防护设施。
+  unit: m
+  threshold_value: 0.90
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50096-6.1.2
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  clause_text: 住宅的公共出入口台阶高度超过 0.70 m 并侧面临空时，应设防护设施，防护设施净高不应低于 1.05 m。
+  unit: m
+  threshold_value: 1.05
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50096-6.2.4
+  source: GB 50096-2011
+  version: "2011"
+  category: fire
+  applies_to_building_type: [residential]
+  clause_text: 安全出口应分散布置，两个安全出口的距离不应小于 5 m。
+  unit: m
   threshold_value: 5.0
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50096-6.3.1
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  clause_text: 楼梯梯段净宽不应小于 1.10 m，不超过六层的住宅，一边设有栏杆的梯段净宽不应小于 1.00 m。
+  unit: m
+  threshold_value: 1.10
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50096-6.3.2
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  clause_text: 楼梯踏步宽度不应小于 0.26 m，踏步高度不应大于 0.175 m。扶手高度不应小于 0.90 m。楼梯水平段栏杆长度大于 0.50 m 时，其扶手高度不应小于 1.05 m。楼梯栏杆垂直杆件间净空不应大于 0.11 m。
+  unit: m
+  threshold_value: 0.26
   threshold_op: ">="
   paraphrase: false
 
@@ -46,13 +141,200 @@
   threshold_op: ">="
   paraphrase: false
 
+- id: GB50096-6.3.5
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  clause_text: 楼梯井净宽大于 0.11 m 时，必须采取防止儿童攀滑的措施。
+  unit: m
+  threshold_value: 0.11
+  threshold_op: "<="
+  paraphrase: false
+
+- id: GB50096-6.4.1
+  source: GB 50096-2011
+  version: "2011"
+  category: topological
+  applies_to_building_type: [residential]
+  applies_to_height_class: [多层, 中高层, 高层, 超高层]
+  clause_text: 七层及七层以上住宅或住户入口层楼面距室外设计地面的高度超过 16 m 的住宅必须设置电梯。
+  unit: m
+  threshold_value: 16.0
+  threshold_op: ">"
+  paraphrase: false
+
+- id: GB50096-6.4.7
+  source: GB 50096-2011
+  version: "2011"
+  category: topological
+  applies_to_building_type: [residential]
+  clause_text: 电梯不应紧邻卧室布置。
+  unit: bool
+  threshold_value: null
+  threshold_op: null
+  paraphrase: false
+
+- id: GB50096-6.6.3
+  source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
+  clause_text: 七层及七层以上住宅建筑入口平台宽度不应小于 2.00 m，七层以下住宅建筑入口平台宽度不应小于 1.50 m。
+  unit: m
+  threshold_value: 1.50
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50096-6.6.4
+  source: GB 50096-2011
+  version: "2011"
+  category: accessibility
+  applies_to_building_type: [residential]
+  clause_text: 供轮椅通行的走道和通道净宽不应小于 1.20 m。
+  unit: m
+  threshold_value: 1.20
+  threshold_op: ">="
+  paraphrase: false
+
+# =====================================================================
+# GB 50352-2019 《民用建筑设计统一标准》
+# =====================================================================
+- id: GB50352-6.3.3
+  source: GB 50352-2019
+  version: "2019"
+  category: geometric
+  applies_to_building_type: [residential, public]
+  clause_text: 建筑用房的室内净高应符合国家现行相关建筑设计标准的规定，地下室、局部夹层、走道等有人员正常活动的最低处净高不应小于 2.0 m。
+  unit: m
+  threshold_value: 2.0
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50352-6.4.7
+  source: GB 50352-2019
+  version: "2019"
+  category: topological
+  applies_to_building_type: [residential, public]
+  clause_text: 地下室不应布置居室；当居室布置在半地下室时，必须采取满足采光、通风、日照、防潮、防霉及安全防护等要求的相关措施。
+  unit: bool
+  threshold_value: null
+  threshold_op: null
+  paraphrase: false
+
+- id: GB50352-6.7.3
+  source: GB 50352-2019
+  version: "2019"
+  category: geometric
+  applies_to_building_type: [residential, public]
+  clause_text: 阳台、外廊、室内回廊、内天井、上人屋面及室外楼梯等临空处应设置防护栏杆。当临空高度在 24.0 m 以下时，栏杆高度不应低于 1.05 m。
+  unit: m
+  threshold_value: 1.05
+  threshold_op: ">="
+  paraphrase: true
+
+- id: GB50352-6.7.4
+  source: GB 50352-2019
+  version: "2019"
+  category: geometric
+  applies_to_building_type: [residential, public]
+  clause_text: 住宅、托儿所、幼儿园、中小学及其他少年儿童专用活动场所的栏杆必须采取防止攀爬的构造。当采用垂直杆件做栏杆时，其杆件净间距不应大于 0.11 m。
+  unit: m
+  threshold_value: 0.11
+  threshold_op: "<="
+  paraphrase: false
+
+- id: GB50352-6.8.4
+  source: GB 50352-2019
+  version: "2019"
+  category: geometric
+  applies_to_building_type: [residential, public]
+  clause_text: 当梯段改变方向时，扶手转向端处的平台最小宽度不应小于梯段净宽，并不得小于 1.2 m。直跑楼梯的中间平台宽度不应小于 0.9 m。
+  unit: m
+  threshold_value: 1.2
+  threshold_op: ">="
+  paraphrase: false
+
+# =====================================================================
+# GB 50016-2014 (2018 Ed.) 《建筑设计防火规范》
+# =====================================================================
+- id: GB50016-5.5.27
+  source: GB 50016-2014
+  version: "2014 (2018 修)"
+  category: fire
+  applies_to_building_type: [residential]
+  clause_text: 住宅建筑的疏散楼梯设置应符合下列规定：1 建筑高度不大于 21 m 的住宅建筑可采用敞开楼梯间；2 建筑高度大于 21 m、不大于 33 m 的住宅建筑应采用封闭楼梯间；3 建筑高度大于 33 m 的住宅建筑应采用防烟楼梯间。
+  unit: m
+  threshold_value: 33.0
+  threshold_op: "<="
+  paraphrase: true
+
+- id: GB50016-5.5.29
+  source: GB 50016-2014
+  version: "2014 (2018 修)"
+  category: fire
+  applies_to_building_type: [residential]
+  clause_text: 住宅建筑直通疏散走道的户门至最近安全出口的直线距离应符合 GB 50016 表 5.5.29 的规定（一、二级耐火等级、单多层、位于两个安全出口之间的户门：不应大于 40 m）。
+  unit: m
+  threshold_value: 40.0
+  threshold_op: "<="
+  paraphrase: true
+
 - id: GB50016-5.5.30
   source: GB 50016-2014
-  version: "2014"
+  version: "2014 (2018 修)"
   category: fire
   applies_to_building_type: [residential, public]
-  clause_text: 住宅建筑户门、住宅单元入口门的净宽度不应小于 0.90 m。
+  clause_text: 住宅建筑的户门、安全出口、疏散走道和疏散楼梯的各自总净宽度应经计算确定，且户门和安全出口的净宽度不应小于 0.90 m，疏散走道、疏散楼梯和首层疏散外门的净宽度不应小于 1.10 m。
   unit: m
   threshold_value: 0.90
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50016-5.5.31
+  source: GB 50016-2014
+  version: "2014 (2018 修)"
+  category: fire
+  applies_to_building_type: [residential]
+  applies_to_height_class: [超高层]
+  clause_text: 建筑高度大于 100 m 的住宅建筑应设置避难层。
+  unit: m
+  threshold_value: 100.0
+  threshold_op: ">"
+  paraphrase: true
+
+# =====================================================================
+# GB 50763-2012 《无障碍设计规范》
+# =====================================================================
+- id: GB50763-3.5.1
+  source: GB 50763-2012
+  version: "2012"
+  category: accessibility
+  applies_to_building_type: [residential, public]
+  clause_text: 无障碍通道的宽度应符合下列规定：1 室内走道不应小于 1.20 m，人流较多或较集中的大型公共建筑的室内走道宽度不宜小于 1.80 m；2 室外通道不宜小于 1.50 m。
+  unit: m
+  threshold_value: 1.20
+  threshold_op: ">="
+  paraphrase: false
+
+- id: GB50763-3.5.3
+  source: GB 50763-2012
+  version: "2012"
+  category: accessibility
+  applies_to_building_type: [residential, public]
+  clause_text: 门的无障碍设计应符合下列规定：自动门开启后通行净宽度不应小于 1.00 m；平开门、推拉门、折叠门开启后的通行净宽度不应小于 800 mm。
+  unit: m
+  threshold_value: 0.80
+  threshold_op: ">="
+  paraphrase: true
+
+- id: GB50763-7.4.3
+  source: GB 50763-2012
+  version: "2012"
+  category: accessibility
+  applies_to_building_type: [residential]
+  clause_text: 居住建筑应按每 100 套住房设置不少于 2 套无障碍住房。
+  unit: ratio
+  threshold_value: 0.02
   threshold_op: ">="
   paraphrase: false

@@ -18,6 +18,27 @@ def test_packaged_standards_load_and_have_min_5() -> None:
     assert "GB50096-5.3.1" in ids
 
 
+def test_phase8_standards_library_size_and_coverage() -> None:
+    clauses = load_standards()
+    assert len(clauses) >= 25, "Phase 8 expanded knowledge base should ship ≥25 clauses"
+    sources = {c.source for c in clauses}
+    assert {"GB 50096-2011", "GB 50352-2019", "GB 50016-2014", "GB 50763-2012"} <= sources
+    categories = {c.category for c in clauses}
+    assert {"geometric", "fire", "accessibility", "topological"} <= categories
+
+
+def test_phase8_clauses_carry_metadata() -> None:
+    clauses = load_standards()
+    by_id = {c.id: c for c in clauses}
+    elevator = by_id["GB50096-6.4.1"]
+    assert elevator.category == "topological"
+    assert elevator.applies_to_height_class is not None
+    assert "高层" in elevator.applies_to_height_class
+    accessibility_door = by_id["GB50763-3.5.3"]
+    assert accessibility_door.category == "accessibility"
+    assert accessibility_door.paraphrase is True
+
+
 def test_packaged_rules_load_and_have_3() -> None:
     rules = load_rules()
     ids = {r.id for r in rules}

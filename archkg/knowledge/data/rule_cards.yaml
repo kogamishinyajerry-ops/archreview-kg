@@ -23,7 +23,6 @@
 
 - id: RC-DOOR-WIDTH
   source_clause_ids:
-    - GB50096-5.5.2
     - GB50016-5.5.30
   applies_to: Door
   inputs:

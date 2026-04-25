@@ -13,3 +13,7 @@ htmlcov/
 out/
 .DS_Store
 .env
+
+# Source PDFs of national standards — public-domain references, not redistributed.
+# See standards_raw/SOURCES.md for provenance.
+standards_raw/*.pdf
