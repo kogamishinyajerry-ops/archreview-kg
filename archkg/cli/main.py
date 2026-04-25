@@ -45,5 +45,33 @@ def ingest(
     typer.echo(f"wrote {written}  pages={len(primitives.pages)} lines={n_lines} texts={n_texts}")
 
 
+@app.command("build-graph")
+def build_graph_cmd(
+    primitives: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
+    out: Path = typer.Option(Path("entity_graph.json"), "-o", "--out"),
+    overlay_pdf: Path | None = typer.Option(
+        None, "--overlay-pdf", help="If set, also render an overlay PNG against this PDF."
+    ),
+    overlay_out: Path = typer.Option(Path("entity_overlay.png"), "--overlay-out"),
+) -> None:
+    """Build entity_graph.json from primitives.json (and optionally a debug overlay PNG)."""
+    import json as _json
+
+    from archkg.graph.builder import build_graph, render_overlay, write_json
+    from archkg.schemas import Primitives
+
+    raw = _json.loads(primitives.read_text(encoding="utf-8"))
+    p = Primitives.model_validate(raw)
+    graph = build_graph(p)
+    written = write_json(graph, out)
+    typer.echo(
+        f"wrote {written}  rooms={len(graph.rooms)} doors={len(graph.doors)} "
+        f"corridors={len(graph.corridors)} dims={len(graph.dimensions)}"
+    )
+    if overlay_pdf is not None:
+        png = render_overlay(graph, overlay_pdf, overlay_out)
+        typer.echo(f"wrote overlay {png}")
+
+
 if __name__ == "__main__":
     app()
