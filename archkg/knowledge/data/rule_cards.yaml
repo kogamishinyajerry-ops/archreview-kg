@@ -37,6 +37,72 @@
       entity: { width_m: 0.80 }
       expect_pass: false
 
+# =====================================================================
+# Phase 11-B project-level rules — fire & vertical-circulation reminders
+# evaluated against ProjectMeta. They emit info-level findings rather than
+# error-level violations: the rule engine cannot prove the design has no
+# elevator / refuge layer / 防烟楼梯间 from the current entity graph, so
+# these surface as "applicable code requirement, manually verify" notes.
+# =====================================================================
+- id: RC-ELEVATOR-REQUIRED
+  source_clause_ids:
+    - GB50096-6.4.1
+  applies_to: Project
+  inputs:
+    - floors
+    - height_m
+  # Pass when neither trigger fires (or both are unset).
+  logic_expression: "(floors is None or floors < 7) and (height_m is None or height_m <= 16.0)"
+  output_template: "项目 {floors} 层 / 入口距地 {height_m} m，按 GB 50096-6.4.1 必须设置电梯，请确认电梯方案。"
+  test_cases:
+    - name: low_rise_no_elevator_needed
+      entity: { floors: 6, height_m: 14.0 }
+      expect_pass: true
+    - name: seven_floors_triggers
+      entity: { floors: 7, height_m: 18.0 }
+      expect_pass: false
+    - name: tall_low_floor_count_still_triggers
+      entity: { floors: 6, height_m: 17.5 }
+      expect_pass: false
+    - name: floors_unset_height_below_threshold
+      entity: { floors: null, height_m: 12.0 }
+      expect_pass: true
+
+- id: RC-EVAC-STAIR-TYPE-33M
+  source_clause_ids:
+    - GB50016-5.5.27
+  applies_to: Project
+  inputs:
+    - height_m
+  logic_expression: "height_m is None or height_m <= 33.0"
+  output_template: "项目高度 {height_m} m > 33 m，按 GB 50016-5.5.27 疏散楼梯应采用防烟楼梯间，请确认楼梯间形式。"
+  test_cases:
+    - name: low_rise_open_stair_ok
+      entity: { height_m: 18.0 }
+      expect_pass: true
+    - name: just_above_threshold_triggers
+      entity: { height_m: 35.0 }
+      expect_pass: false
+    - name: height_unset_passes
+      entity: { height_m: null }
+      expect_pass: true
+
+- id: RC-REFUGE-LAYER-100M
+  source_clause_ids:
+    - GB50016-5.5.31
+  applies_to: Project
+  inputs:
+    - height_m
+  logic_expression: "height_m is None or height_m <= 100.0"
+  output_template: "项目高度 {height_m} m > 100 m，按 GB 50016-5.5.31 必须设置避难层，请确认避难层方案。"
+  test_cases:
+    - name: under_100m_no_refuge_layer_needed
+      entity: { height_m: 80.0 }
+      expect_pass: true
+    - name: super_high_rise_triggers
+      entity: { height_m: 120.0 }
+      expect_pass: false
+
 - id: RC-BEDROOM-AREA
   source_clause_ids:
     - GB50096-5.3.1

@@ -27,7 +27,10 @@ class Issue(BaseModel):
     rule_card_id: str
     standard_clause_id: str
     entity_ids: list[str] = Field(..., min_length=1)
-    bbox: BBox
+    bbox: BBox | None = Field(
+        None,
+        description="Spatial bbox; None for project-level findings (no spatial location).",
+    )
     page_index: int = Field(..., ge=0)
     severity: Severity = "error"
     message: str

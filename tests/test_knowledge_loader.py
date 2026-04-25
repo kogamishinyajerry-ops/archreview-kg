@@ -39,10 +39,12 @@ def test_phase8_clauses_carry_metadata() -> None:
     assert accessibility_door.paraphrase is True
 
 
-def test_packaged_rules_load_and_have_3() -> None:
+def test_packaged_rules_load() -> None:
     rules = load_rules()
     ids = {r.id for r in rules}
-    assert ids == {"RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA"}
+    # Phase 8 entity-level + Phase 11-B project-level rules
+    assert {"RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA"} <= ids
+    assert {"RC-ELEVATOR-REQUIRED", "RC-EVAC-STAIR-TYPE-33M", "RC-REFUGE-LAYER-100M"} <= ids
 
 
 def test_rules_resolve_against_standards() -> None:

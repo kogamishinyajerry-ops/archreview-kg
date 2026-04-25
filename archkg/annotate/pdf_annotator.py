@@ -19,6 +19,9 @@ def annotate(
     doc = fitz.open(str(source_pdf))
     try:
         for idx, issue in enumerate(issues, start=1):
+            if issue.bbox is None:
+                # Project-level findings have no spatial location; skip the bbox/label draw.
+                continue
             page = doc[issue.page_index]
             x0, y0, x1, y1 = issue.bbox
             rect = fitz.Rect(x0 - pad_pt, y0 - pad_pt, x1 + pad_pt, y1 + pad_pt)

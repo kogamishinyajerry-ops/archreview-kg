@@ -5,6 +5,10 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 EntityType = Literal["Room", "Door", "Wall", "Corridor", "Dimension", "Stair"]
+RuleScope = Literal[
+    "Room", "Door", "Wall", "Corridor", "Dimension", "Stair",
+    "Project",
+]
 
 
 class RuleCardTestCase(BaseModel):
@@ -23,7 +27,7 @@ class RuleCard(BaseModel):
 
     id: str = Field(..., description="Stable rule id, e.g. 'RC-CORRIDOR-WIDTH'")
     source_clause_ids: list[str] = Field(..., min_length=1)
-    applies_to: EntityType
+    applies_to: RuleScope
     inputs: list[str] = Field(
         ...,
         min_length=1,

@@ -77,6 +77,10 @@ _ALLOWED_OPS: tuple[type[ast.AST], ...] = (
     ast.Mod,
     ast.USub,
     ast.UAdd,
+    # Phase 11-B: project-level rules need `is None` / `is not None` checks
+    # so they can no-op gracefully when an optional ProjectMeta field is unset.
+    ast.Is,
+    ast.IsNot,
 )
 
 
@@ -141,6 +145,17 @@ def _entity_iterable(graph: EntityGraph, applies_to: str) -> list[Room | Door | 
     return []
 
 
+def _project_env(meta: ProjectMeta, inputs: list[str]) -> dict[str, Any]:
+    """Build the eval env for Project-level rules from a ProjectMeta dump.
+
+    inputs lists which meta fields the rule reads (e.g. floors, height_m).
+    Missing fields surface as None — rules use `is None` / `is not None`
+    checks to no-op gracefully when an optional field is unset.
+    """
+    payload = meta.model_dump()
+    return {key: payload.get(key) for key in inputs}
+
+
 def _new_issue_id() -> str:
     return f"ISS-{uuid.uuid4().hex[:8]}"
 
@@ -169,6 +184,13 @@ def evaluate(
             )
             continue
 
+        # Project-level rules need a ProjectMeta to evaluate; without one we skip.
+        if rule.applies_to == "Project" and project_meta is None:
+            result.skipped.append(
+                SkippedRule(rule_id=rule.id, reason="needs --project-meta to evaluate")
+            )
+            continue
+
         try:
             tree = compile_expression(rule.logic_expression, rule.inputs)
         except RuleCompileError as exc:
@@ -176,6 +198,35 @@ def evaluate(
 
         clause = standards_by_id.get(rule.source_clause_ids[0])
         clause_id = clause.id if clause else rule.source_clause_ids[0]
+
+        if rule.applies_to == "Project":
+            assert project_meta is not None
+            env = _project_env(project_meta, rule.inputs)
+            passed = evaluate_expression(tree, env)
+            if passed:
+                continue
+            measured = _pick_measured(env, rule.inputs)
+            evidence = IssueEvidence(
+                snippet=_format_message(rule.output_template, env),
+                page_index=0,
+                measured_value=measured,
+                threshold_value=clause.threshold_value if clause else None,
+                unit=clause.unit if clause else None,
+            )
+            result.issues.append(
+                Issue(
+                    issue_id=_new_issue_id(),
+                    rule_card_id=rule.id,
+                    standard_clause_id=clause_id,
+                    entity_ids=[f"project:{project_meta.project_id}"],
+                    bbox=None,
+                    page_index=0,
+                    severity="info",
+                    message=_format_message(rule.output_template, env),
+                    evidence=evidence,
+                )
+            )
+            continue
 
         for entity in _entity_iterable(graph, rule.applies_to):
             env = _entity_env(entity, rule.inputs)

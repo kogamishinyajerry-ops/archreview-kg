@@ -82,13 +82,25 @@ def test_all_rules_skipped_for_industrial_project() -> None:
     assert {r.id for r in skipped} == {r.id for r in rules}
 
 
-def test_residential_project_applies_all_existing_rules() -> None:
+def test_residential_project_applies_entity_rules_and_floor_specific_rules() -> None:
+    """A 多层 residential project applies all entity-level rules. Project-level
+    rules apply only when their source clauses match the height_class — e.g.
+    RC-REFUGE-LAYER-100M references GB50016-5.5.31 (超高层 only) and is *not*
+    applicable for 多层."""
     standards = load_standards()
     rules = load_rules(standards=standards)
     by_id = {c.id: c for c in standards}
     meta = _residential_meta()
-    for r in rules:
-        assert is_rule_applicable(r, meta, by_id) is True
+    rule_app = {r.id: is_rule_applicable(r, meta, by_id) for r in rules}
+    # Entity-level rules all apply (their clauses don't restrict height_class)
+    for rid in ("RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA"):
+        assert rule_app[rid] is True, f"{rid} should apply for 多层 residential"
+    # GB50096-6.4.1 applies to 多层 (not 低层); rule is applicable
+    assert rule_app["RC-ELEVATOR-REQUIRED"] is True
+    # GB50016-5.5.27 has no height_class restriction — applicable
+    assert rule_app["RC-EVAC-STAIR-TYPE-33M"] is True
+    # GB50016-5.5.31 is 超高层-only — NOT applicable for 多层
+    assert rule_app["RC-REFUGE-LAYER-100M"] is False
 
 
 def test_skip_reason_uses_zh_cn_labels() -> None:
