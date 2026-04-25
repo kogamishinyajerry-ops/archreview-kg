@@ -61,6 +61,7 @@ def review(
     import json as _json
 
     import yaml as _yaml
+    from pydantic import ValidationError as _ValidationError
 
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
@@ -76,7 +77,20 @@ def review(
 
     meta: ProjectMeta | None = None
     if project_meta is not None:
-        meta = ProjectMeta.model_validate(_yaml.safe_load(project_meta.read_text("utf-8")))
+        try:
+            raw = _yaml.safe_load(project_meta.read_text("utf-8"))
+        except _yaml.YAMLError as exc:
+            raise typer.BadParameter(
+                f"--project-meta '{project_meta}' is not valid YAML: {exc}",
+                param_hint="--project-meta",
+            ) from exc
+        try:
+            meta = ProjectMeta.model_validate(raw)
+        except _ValidationError as exc:
+            raise typer.BadParameter(
+                f"--project-meta '{project_meta}' failed schema validation:\n{exc}",
+                param_hint="--project-meta",
+            ) from exc
 
     primitives = extract(pdf, points_per_meter=points_per_meter)
     primitives_path = write_prims(primitives, out / "primitives.json")
@@ -137,13 +151,15 @@ def _print_review_summary(
 
     # Project context
     if project_meta is not None:
+        from archkg.labels import label_building_type
+
         ctx = Table(title="项目上下文", show_header=False, header_style="bold magenta")
         ctx.add_column("k", style="magenta")
         ctx.add_column("v")
         ctx.add_row("project_id", project_meta.project_id)
         if project_meta.project_name:
             ctx.add_row("project_name", project_meta.project_name)
-        ctx.add_row("building_type", project_meta.building_type)
+        ctx.add_row("building_type", label_building_type(project_meta.building_type))
         ctx.add_row("height_class", project_meta.height_class)
         if project_meta.fire_class:
             ctx.add_row("fire_class", project_meta.fire_class)

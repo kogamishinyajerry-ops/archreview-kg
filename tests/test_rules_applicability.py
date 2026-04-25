@@ -91,12 +91,16 @@ def test_residential_project_applies_all_existing_rules() -> None:
         assert is_rule_applicable(r, meta, by_id) is True
 
 
-def test_skip_reason_mentions_building_type_and_clause_id() -> None:
+def test_skip_reason_uses_zh_cn_labels() -> None:
+    """Codex P9 nit: skip_reason should render zh-CN labels, not raw enum tokens."""
     standards = load_standards()
     rules = load_rules(standards=standards)
     by_id = {c.id: c for c in standards}
     rule = next(r for r in rules if r.id == "RC-CORRIDOR-WIDTH")
     reason = skip_reason(rule, _industrial_meta(), by_id)
     assert "GB50096-5.7.2" in reason
-    assert "residential" in reason
-    assert "industrial" in reason
+    assert "居住建筑" in reason, f"expected zh-CN label, got: {reason}"
+    assert "工业建筑" in reason, f"expected zh-CN label, got: {reason}"
+    # Schema literals should NOT leak through to the reviewer-facing string
+    assert "residential" not in reason
+    assert "industrial" not in reason

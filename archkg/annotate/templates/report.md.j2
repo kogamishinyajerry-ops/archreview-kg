@@ -12,7 +12,7 @@
 |---|---|
 | project_id | `{{ project_meta.project_id }}` |
 {% if project_meta.project_name %}| project_name | {{ project_meta.project_name }} |
-{% endif %}| building_type | {{ project_meta.building_type }} |
+{% endif %}| building_type | {{ project_meta.building_type_label }} |
 | height_class | {{ project_meta.height_class }} |
 {% if project_meta.fire_class %}| fire_class | {{ project_meta.fire_class }} |
 {% endif %}{% if project_meta.climate_zone %}| climate_zone | {{ project_meta.climate_zone }} |

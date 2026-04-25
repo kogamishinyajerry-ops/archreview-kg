@@ -15,6 +15,7 @@ no-context behaviour.
 
 from __future__ import annotations
 
+from archkg.labels import label_building_type, label_building_types
 from archkg.schemas import ProjectMeta, RuleCard, StandardClause
 
 
@@ -57,8 +58,9 @@ def skip_reason(
             parts.append(f"{cid}: 标准库未找到")
             continue
         if meta.building_type not in clause.applies_to_building_type:
-            wanted = "/".join(clause.applies_to_building_type)
-            parts.append(f"{cid}: 仅适用 {wanted}（项目为 {meta.building_type}）")
+            wanted = label_building_types(clause.applies_to_building_type)
+            actual = label_building_type(meta.building_type)
+            parts.append(f"{cid}: 仅适用 {wanted}（项目为 {actual}）")
             continue
         if clause.applies_to_height_class is not None and meta.height_class not in clause.applies_to_height_class:
             wanted = "/".join(clause.applies_to_height_class)

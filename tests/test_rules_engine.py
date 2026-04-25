@@ -148,7 +148,7 @@ def test_evaluate_skips_all_rules_for_industrial_project() -> None:
     assert result.issues == []
     assert {s.rule_id for s in result.skipped} == {r.id for r in rules}
     for s in result.skipped:
-        assert "industrial" in s.reason
+        assert "工业建筑" in s.reason
 
 
 def test_rule_test_cases_match_engine_decision() -> None:
