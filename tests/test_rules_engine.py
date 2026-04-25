@@ -1,0 +1,123 @@
+from __future__ import annotations
+
+import pytest
+
+from archkg.graph.builder import EntityGraph
+from archkg.knowledge.loader import load_rules, load_standards
+from archkg.rules.engine import (
+    RuleCompileError,
+    compile_expression,
+    evaluate,
+    evaluate_expression,
+)
+from archkg.schemas import Corridor, Door, Room
+
+
+def test_compile_rejects_function_call() -> None:
+    with pytest.raises(RuleCompileError):
+        compile_expression("len(min_width_m) > 1", ["min_width_m"])
+
+
+def test_compile_rejects_unknown_name() -> None:
+    with pytest.raises(RuleCompileError):
+        compile_expression("rogue >= 1", ["min_width_m"])
+
+
+def test_compile_rejects_attribute_access() -> None:
+    with pytest.raises(RuleCompileError):
+        compile_expression("foo.bar >= 1", ["foo"])
+
+
+def test_evaluate_simple_pass_and_fail() -> None:
+    tree = compile_expression("min_width_m >= 1.20", ["min_width_m"])
+    assert evaluate_expression(tree, {"min_width_m": 1.5}) is True
+    assert evaluate_expression(tree, {"min_width_m": 1.05}) is False
+
+
+def test_evaluate_none_short_circuits_to_false() -> None:
+    tree = compile_expression("min_width_m >= 1.20", ["min_width_m"])
+    assert evaluate_expression(tree, {"min_width_m": None}) is False
+
+
+def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+
+    rooms = [
+        Room(
+            id="room-bed",
+            page_index=0,
+            bbox=(0, 0, 200, 200),
+            polygon=[(0, 0), (200, 0), (200, 200), (0, 200)],
+            label="bedroom",
+            area_m2=4.0,  # FAIL: < 5
+        ),
+        Room(
+            id="room-living",
+            page_index=0,
+            bbox=(200, 0, 500, 200),
+            polygon=[(200, 0), (500, 0), (500, 200), (200, 200)],
+            label="living",
+            area_m2=15.0,  # not a bedroom -> rule should not fire
+        ),
+    ]
+    doors = [
+        Door(
+            id="door-narrow",
+            page_index=0,
+            bbox=(95, 195, 145, 205),
+            width_m=0.85,  # FAIL: < 0.90
+        ),
+        Door(
+            id="door-ok",
+            page_index=0,
+            bbox=(395, 195, 445, 205),
+            width_m=0.95,  # pass
+        ),
+    ]
+    corridors = [
+        Corridor(
+            id="corridor-1",
+            page_index=0,
+            bbox=(0, 200, 500, 252),
+            polygon=[(0, 200), (500, 200), (500, 252), (0, 252)],
+            min_width_m=1.05,  # FAIL: < 1.20
+        )
+    ]
+
+    graph = EntityGraph(
+        source_pdf="x.pdf",
+        points_per_meter=50.0,
+        page_index=0,
+        page_width_pt=500,
+        page_height_pt=400,
+        rooms=rooms,
+        doors=doors,
+        corridors=corridors,
+        dimensions=[],
+    )
+
+    issues = evaluate(graph, rules, standards)
+    rule_ids = sorted(i.rule_card_id for i in issues)
+    assert rule_ids == sorted(["RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA"])
+
+    by_rule = {i.rule_card_id: i for i in issues}
+    assert by_rule["RC-CORRIDOR-WIDTH"].evidence.measured_value == pytest.approx(1.05)
+    assert by_rule["RC-CORRIDOR-WIDTH"].evidence.threshold_value == pytest.approx(1.20)
+    assert by_rule["RC-DOOR-WIDTH"].evidence.measured_value == pytest.approx(0.85)
+    assert by_rule["RC-BEDROOM-AREA"].entity_ids == ["room-bed"]
+    assert by_rule["RC-BEDROOM-AREA"].evidence.measured_value == pytest.approx(4.0)
+
+
+def test_rule_test_cases_match_engine_decision() -> None:
+    """Each rule's declared test_cases must agree with the live engine evaluation."""
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    for rule in rules:
+        tree = compile_expression(rule.logic_expression, rule.inputs)
+        for tc in rule.test_cases:
+            env = {k: tc.entity.get(k) for k in rule.inputs}
+            actual = evaluate_expression(tree, env)
+            assert actual is tc.expect_pass, (
+                f"rule {rule.id} test '{tc.name}': expected {tc.expect_pass}, got {actual}"
+            )

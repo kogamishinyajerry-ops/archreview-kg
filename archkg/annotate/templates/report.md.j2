@@ -1,0 +1,33 @@
+# 审查报告 — ArchReview-KG
+
+- 源文件：`{{ source_pdf }}`
+- 实体图谱：`{{ entity_graph_path }}`
+- 标注 PDF：`{{ annotated_pdf }}`
+- 问题数：**{{ issues|length }}**
+
+## 问题清单
+
+{% if not issues %}
+未发现违反所配置规则卡的问题。
+{% else %}
+| # | rule_card_id | 条文 | 实体 | 测量值 | 阈值 | 单位 | 信息 | reviewer | status | note |
+|---|---|---|---|---|---|---|---|---|---|---|
+{% for i in issues %}| {{ loop.index }} | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} |  | open |  |
+{% endfor %}
+{% endif %}
+
+## 条文原文
+
+{% for clause in clauses_used %}
+### {{ clause.id }}（{{ clause.source }}）
+> {{ clause.clause_text }}
+
+阈值：{{ clause.threshold_op }} {{ clause.threshold_value }} {{ clause.unit }}
+{% endfor %}
+
+---
+
+复核字段说明：
+- `reviewer`: 复核人姓名
+- `status`: `open` / `confirmed` / `rejected`
+- `note`: 复核意见。`/archkg feedback <run_id>` 会读取本表格回写到 feedback YAML。

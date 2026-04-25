@@ -45,6 +45,58 @@ def ingest(
     typer.echo(f"wrote {written}  pages={len(primitives.pages)} lines={n_lines} texts={n_texts}")
 
 
+@app.command()
+def review(
+    pdf: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
+    out: Path = typer.Option(Path("out"), "-o", "--out"),
+    points_per_meter: float = typer.Option(50.0, "--ppm"),
+) -> None:
+    """One-shot: ingest -> build-graph -> evaluate rules -> annotate -> report."""
+    import json as _json
+
+    from archkg.annotate.pdf_annotator import annotate as annotate_pdf
+    from archkg.annotate.report import render as render_report
+    from archkg.graph.builder import build_graph, render_overlay
+    from archkg.graph.builder import write_json as write_graph
+    from archkg.ingest.primitive_extractor import extract
+    from archkg.ingest.primitive_extractor import write_json as write_prims
+    from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.rules.engine import evaluate
+
+    out.mkdir(parents=True, exist_ok=True)
+
+    primitives = extract(pdf, points_per_meter=points_per_meter)
+    primitives_path = write_prims(primitives, out / "primitives.json")
+
+    graph = build_graph(primitives)
+    graph_path = write_graph(graph, out / "entity_graph.json")
+    render_overlay(graph, pdf, out / "entity_overlay.png")
+
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    issues = evaluate(graph, rules, standards)
+    (out / "issues.json").write_text(
+        _json.dumps([i.model_dump() for i in issues], ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    annotated = annotate_pdf(pdf, issues, out / "annotated.pdf")
+    report_path = render_report(
+        source_pdf=pdf,
+        entity_graph_path=graph_path,
+        annotated_pdf=annotated,
+        issues=issues,
+        clauses=standards,
+        out_md=out / "report.md",
+    )
+    typer.echo(
+        f"primitives -> {primitives_path}\n"
+        f"graph -> {graph_path}\n"
+        f"issues={len(issues)}  annotated -> {annotated}\n"
+        f"report -> {report_path}"
+    )
+
+
 @app.command("build-graph")
 def build_graph_cmd(
     primitives: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),

@@ -45,7 +45,7 @@
   inputs:
     - area_m2
     - label
-  logic_expression: "label == 'bedroom' and area_m2 >= 5.0"
+  logic_expression: "label != 'bedroom' or area_m2 >= 5.0"
   output_template: "卧室面积 {area_m2:.2f} m²，小于规范要求的 5.0 m²。"
   test_cases:
     - name: ok_single_bedroom

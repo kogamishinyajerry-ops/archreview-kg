@@ -1,0 +1,183 @@
+"""Rule engine — pure entity_graph consumer (NEVER reads PDF or images).
+
+The engine compiles each rule card's `logic_expression` to a restricted AST
+evaluator that can only:
+  - read names from the rule's declared `inputs` list
+  - apply arithmetic + comparison + boolean operators
+  - reference numeric / string / bool literals
+
+No attribute access, no function calls, no subscripting, no comprehensions.
+This keeps rule cards declarative and prevents arbitrary code execution.
+"""
+
+from __future__ import annotations
+
+import ast
+import uuid
+from typing import Any
+
+from archkg.graph.builder import EntityGraph
+from archkg.schemas import (
+    Corridor,
+    Door,
+    Issue,
+    IssueEvidence,
+    Room,
+    RuleCard,
+    StandardClause,
+)
+
+
+class RuleCompileError(ValueError):
+    pass
+
+
+_ALLOWED_NODES: tuple[type[ast.AST], ...] = (
+    ast.Expression,
+    ast.BoolOp,
+    ast.BinOp,
+    ast.UnaryOp,
+    ast.Compare,
+    ast.Name,
+    ast.Constant,
+    ast.Load,
+)
+_ALLOWED_OPS: tuple[type[ast.AST], ...] = (
+    ast.And,
+    ast.Or,
+    ast.Not,
+    ast.Eq,
+    ast.NotEq,
+    ast.Lt,
+    ast.LtE,
+    ast.Gt,
+    ast.GtE,
+    ast.Add,
+    ast.Sub,
+    ast.Mult,
+    ast.Div,
+    ast.Mod,
+    ast.USub,
+    ast.UAdd,
+)
+
+
+def _validate_ast(tree: ast.AST, allowed_names: set[str]) -> None:
+    for node in ast.walk(tree):
+        if isinstance(node, _ALLOWED_NODES):
+            if isinstance(node, ast.Name) and node.id not in allowed_names:
+                raise RuleCompileError(
+                    f"name '{node.id}' is not in declared inputs {sorted(allowed_names)}"
+                )
+            continue
+        if isinstance(node, _ALLOWED_OPS):
+            continue
+        raise RuleCompileError(f"AST node '{type(node).__name__}' is not allowed")
+
+
+def compile_expression(expression: str, inputs: list[str]) -> ast.Expression:
+    try:
+        tree = ast.parse(expression, mode="eval")
+    except SyntaxError as exc:
+        raise RuleCompileError(f"syntax error: {exc}") from exc
+    _validate_ast(tree, set(inputs))
+    return tree
+
+
+def evaluate_expression(tree: ast.Expression, env: dict[str, Any]) -> bool:
+    """Eval the whitelisted AST against env. If a None operand triggers a
+    TypeError (e.g. None >= 5.0), we conservatively flag the rule as failed —
+    "rather flag than silently miss"."""
+    code = compile(tree, filename="<rule>", mode="eval")
+    try:
+        return bool(eval(code, {"__builtins__": {}}, env))
+    except TypeError:
+        return False
+
+
+def _entity_env(entity: Room | Door | Corridor, inputs: list[str]) -> dict[str, Any]:
+    env: dict[str, Any] = {}
+    for key in inputs:
+        if hasattr(entity, key):
+            env[key] = getattr(entity, key)
+        else:
+            env[key] = entity.properties.get(key)
+    return env
+
+
+def _format_message(template: str, env: dict[str, Any]) -> str:
+    safe_env = {k: ("?" if v is None else v) for k, v in env.items()}
+    try:
+        return template.format(**safe_env)
+    except (KeyError, ValueError):
+        return template
+
+
+def _entity_iterable(graph: EntityGraph, applies_to: str) -> list[Room | Door | Corridor]:
+    if applies_to == "Room":
+        return list(graph.rooms)
+    if applies_to == "Door":
+        return list(graph.doors)
+    if applies_to == "Corridor":
+        return list(graph.corridors)
+    return []
+
+
+def _new_issue_id() -> str:
+    return f"ISS-{uuid.uuid4().hex[:8]}"
+
+
+def evaluate(
+    graph: EntityGraph,
+    rules: list[RuleCard],
+    standards: list[StandardClause],
+) -> list[Issue]:
+    """Run all rules over the graph; emit one Issue per violating entity."""
+    standards_by_id = {s.id: s for s in standards}
+    issues: list[Issue] = []
+
+    for rule in rules:
+        try:
+            tree = compile_expression(rule.logic_expression, rule.inputs)
+        except RuleCompileError as exc:
+            raise RuleCompileError(f"rule {rule.id}: {exc}") from exc
+
+        clause = standards_by_id.get(rule.source_clause_ids[0])
+        clause_id = clause.id if clause else rule.source_clause_ids[0]
+
+        for entity in _entity_iterable(graph, rule.applies_to):
+            env = _entity_env(entity, rule.inputs)
+            passed = evaluate_expression(tree, env)
+            if passed:
+                continue
+
+            measured = _pick_measured(env, rule.inputs)
+            evidence = IssueEvidence(
+                snippet=_format_message(rule.output_template, env),
+                page_index=entity.page_index,
+                measured_value=measured,
+                threshold_value=clause.threshold_value if clause else None,
+                unit=clause.unit if clause else None,
+            )
+            issues.append(
+                Issue(
+                    issue_id=_new_issue_id(),
+                    rule_card_id=rule.id,
+                    standard_clause_id=clause_id,
+                    entity_ids=[entity.id],
+                    bbox=entity.bbox,
+                    page_index=entity.page_index,
+                    severity="error",
+                    message=_format_message(rule.output_template, env),
+                    evidence=evidence,
+                )
+            )
+    return issues
+
+
+def _pick_measured(env: dict[str, Any], inputs: list[str]) -> float | None:
+    for key in inputs:
+        v = env.get(key)
+        if isinstance(v, (int, float)):
+            return float(v)
+    return None
