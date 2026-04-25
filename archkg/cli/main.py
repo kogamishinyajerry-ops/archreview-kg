@@ -219,6 +219,26 @@ def demo(
 
 
 @app.command()
+def viewer(
+    out: Path = typer.Option(Path("out"), "-o", "--out"),
+    source_pdf: Path = typer.Option(
+        Path("samples/sample_clean.pdf"),
+        "--source", "-s",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Source PDF used for previews and download link.",
+    ),
+    port: int = typer.Option(8765, "-p", "--port"),
+    no_browser: bool = typer.Option(False, "--no-browser"),
+) -> None:
+    """Start a static, read-only demo viewer (http.server) over the run directory."""
+    from archkg.viewer.server import serve
+
+    serve(out, source_pdf, port=port, open_browser=not no_browser)
+
+
+@app.command()
 def feedback(
     run_dir: Path = typer.Argument(..., exists=True, file_okay=False),
     apply_to_rules: bool = typer.Option(
