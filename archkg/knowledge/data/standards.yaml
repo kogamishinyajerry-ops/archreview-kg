@@ -1,37 +1,58 @@
-# Source: GB 50096-2011《住宅设计规范》— excerpts for ArchReview-KG MVP.
+# Source: GB 50096-2011《住宅设计规范》+ GB 50016-2014《建筑设计防火规范》— excerpts for ArchReview-KG.
 # Each entry maps 1:1 to archkg.schemas.StandardClause.
-# clause_text is verbatim Chinese; threshold_value/op are extracted for engine consumption.
+# Phase 8 metadata: category / applies_to_* / version / supersedes / paraphrase.
+# clause_text marked `paraphrase: false` is verbatim; `true` means we rewrote for clarity.
 - id: GB50096-5.5.2
   source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
   clause_text: 套内入户门洞口净宽不应小于 0.90 m。
   unit: m
   threshold_value: 0.90
   threshold_op: ">="
+  paraphrase: false
 
 - id: GB50096-5.7.2
   source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
   clause_text: 套内通廊（走廊）净宽不应小于 1.20 m。
   unit: m
   threshold_value: 1.20
   threshold_op: ">="
+  paraphrase: false
 
 - id: GB50096-5.3.1
   source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
   clause_text: 双人卧室使用面积不应小于 9 m²；单人卧室使用面积不应小于 5 m²。
   unit: m^2
   threshold_value: 5.0
   threshold_op: ">="
+  paraphrase: false
 
 - id: GB50096-6.3.3
   source: GB 50096-2011
+  version: "2011"
+  category: geometric
+  applies_to_building_type: [residential]
   clause_text: 住宅套内楼梯的踏步宽度不应小于 0.26 m，踏步高度不应大于 0.175 m。
   unit: m
   threshold_value: 0.26
   threshold_op: ">="
+  paraphrase: false
 
 - id: GB50016-5.5.30
   source: GB 50016-2014
+  version: "2014"
+  category: fire
+  applies_to_building_type: [residential, public]
   clause_text: 住宅建筑户门、住宅单元入口门的净宽度不应小于 0.90 m。
   unit: m
   threshold_value: 0.90
   threshold_op: ">="
+  paraphrase: false

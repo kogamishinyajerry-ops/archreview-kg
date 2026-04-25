@@ -17,15 +17,24 @@ from archkg.schemas.primitives import (
     TextSource,
 )
 from archkg.schemas.rule_card import EntityType, RuleCard, RuleCardTestCase
-from archkg.schemas.standard import StandardClause, ThresholdOp
+from archkg.schemas.standard import (
+    BuildingType,
+    ClauseCategory,
+    HeightClass,
+    StandardClause,
+    ThresholdOp,
+)
 
 __all__ = [
     "BBox",
+    "BuildingType",
+    "ClauseCategory",
     "Corridor",
     "Dimension",
     "Door",
     "Entity",
     "EntityType",
+    "HeightClass",
     "Issue",
     "IssueEvidence",
     "LinePrimitive",
