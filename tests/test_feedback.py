@@ -7,7 +7,7 @@ import yaml
 from typer.testing import CliRunner
 
 from archkg.cli.main import app
-from archkg.feedback.recorder import FeedbackError, record
+from archkg.feedback.recorder import FeedbackError, _build_test_case, record
 
 
 def _seed_run(sample_pdf: Path, run_dir: Path) -> None:
@@ -93,3 +93,38 @@ def test_cli_feedback_smoke(sample_pdf: Path, tmp_path: Path) -> None:
     result = runner.invoke(app, ["feedback", str(run_dir)])
     assert result.exit_code == 0, result.output
     assert (run_dir / "feedback.yaml").exists()
+
+
+def test_build_test_case_for_project_issue_without_meta_returns_none() -> None:
+    """Codex P11-B P1: project-level confirmed issues must NOT promote with
+    all-None inputs when the run has no project_meta.yaml."""
+    issue = {
+        "issue_id": "ISS-test",
+        "rule_card_id": "RC-ELEVATOR-REQUIRED",
+        "entity_ids": ["project:DEMO-001"],
+    }
+    tc = _build_test_case(issue, graph={}, meta=None)
+    assert tc is None, "no project_meta means we silently drop the promotion"
+
+
+def test_build_test_case_for_project_issue_with_meta_uses_meta_values() -> None:
+    """When project_meta.yaml is present, promotion env comes from it
+    (not entity_graph.json which contains no 'project:' entries)."""
+    issue = {
+        "issue_id": "ISS-test",
+        "rule_card_id": "RC-ELEVATOR-REQUIRED",
+        "entity_ids": ["project:DEMO-001"],
+    }
+    meta = {
+        "project_id": "DEMO-001",
+        "building_type": "residential",
+        "height_class": "多层",
+        "floors": 8,
+        "height_m": 22.0,
+    }
+    tc = _build_test_case(issue, graph={}, meta=meta)
+    assert tc is not None
+    # rule.inputs for RC-ELEVATOR-REQUIRED is [floors, height_m]
+    assert tc["entity"] == {"floors": 8, "height_m": 22.0}
+    assert tc["expect_pass"] is False
+    assert tc["name"] == "confirmed-ISS-test"

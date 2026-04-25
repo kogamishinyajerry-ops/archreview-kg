@@ -92,6 +92,20 @@ def _load_graph(run_dir: Path) -> dict[str, dict[str, Any]]:
     return out
 
 
+def _load_project_meta(run_dir: Path) -> dict[str, Any] | None:
+    """Read the project_meta dump that `archkg review --project-meta` saved.
+
+    Returns None when the run was made without a project meta — in that case
+    project-scope confirmed cases cannot be promoted (they lack context) and
+    we silently skip them.
+    """
+    meta_path = run_dir / "project_meta.yaml"
+    if not meta_path.exists():
+        return None
+    raw = yaml.safe_load(meta_path.read_text(encoding="utf-8"))
+    return raw if isinstance(raw, dict) else None
+
+
 def record(
     run_dir: Path,
     *,
@@ -112,6 +126,7 @@ def record(
 
     issues = _load_issues(run_dir)
     graph = _load_graph(run_dir)
+    meta = _load_project_meta(run_dir)
 
     items: list[dict[str, Any]] = []
     confirmed_for_rules: dict[str, list[dict[str, Any]]] = {}
@@ -138,7 +153,7 @@ def record(
             }
         )
         if status == "confirmed":
-            tc = _build_test_case(issue, graph)
+            tc = _build_test_case(issue, graph, meta)
             if tc is not None:
                 confirmed_for_rules.setdefault(issue["rule_card_id"], []).append(tc)
 
@@ -160,18 +175,35 @@ def record(
 
 
 def _build_test_case(
-    issue: dict[str, Any], graph: dict[str, dict[str, Any]]
+    issue: dict[str, Any],
+    graph: dict[str, dict[str, Any]],
+    meta: dict[str, Any] | None,
 ) -> dict[str, Any] | None:
+    """Build a regression test case from a confirmed issue.
+
+    For entity-level rules the env comes from `entity_graph.json`. For
+    project-level rules (entity_ids like 'project:<id>') the env is
+    reconstructed from the persisted ProjectMeta dump; without that
+    dump the case is dropped silently rather than poisoning the rule
+    card with an all-None entity.
+    """
     eid = (issue.get("entity_ids") or [None])[0]
     if eid is None:
         return None
-    entity = graph.get(eid, {})
     standards = load_standards()
     rules = load_rules(standards=standards)
     rule = next((r for r in rules if r.id == issue["rule_card_id"]), None)
     if rule is None:
         return None
-    inputs = {k: entity.get(k) for k in rule.inputs}
+
+    if isinstance(eid, str) and eid.startswith("project:"):
+        if meta is None:
+            return None  # missing context → don't promote bogus all-None inputs
+        inputs = {k: meta.get(k) for k in rule.inputs}
+    else:
+        entity = graph.get(eid, {})
+        inputs = {k: entity.get(k) for k in rule.inputs}
+
     return {
         "name": f"confirmed-{issue['issue_id']}",
         "entity": inputs,

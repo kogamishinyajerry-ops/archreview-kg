@@ -18,15 +18,18 @@ def annotate(
 ) -> Path:
     doc = fitz.open(str(source_pdf))
     try:
-        for idx, issue in enumerate(issues, start=1):
+        drawn = 0  # separate counter so labels are contiguous (#1, #2 …) even
+                   # when project-level findings without bbox are interleaved.
+        for issue in issues:
             if issue.bbox is None:
                 # Project-level findings have no spatial location; skip the bbox/label draw.
                 continue
+            drawn += 1
             page = doc[issue.page_index]
             x0, y0, x1, y1 = issue.bbox
             rect = fitz.Rect(x0 - pad_pt, y0 - pad_pt, x1 + pad_pt, y1 + pad_pt)
             page.draw_rect(rect, color=(1, 0, 0), width=1.5)
-            label = f"#{idx} {issue.rule_card_id}"
+            label = f"#{drawn} {issue.rule_card_id}"
             page.insert_text(
                 (rect.x0, max(rect.y0 - 4, 8)),
                 label,

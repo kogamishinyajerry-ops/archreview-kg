@@ -107,6 +107,23 @@ def test_super_high_rise_triggers_refuge_layer_rule() -> None:
     assert "GB 50016-5.5.31" in refuge_issues[0].message
 
 
+def test_layered_skip_refuge_layer_for_non_super_high_rise() -> None:
+    """Codex P11-B nit: regression for the Phase-9-applicability + Phase-11-B
+    interaction. RC-REFUGE-LAYER-100M's source clause GB50016-5.5.31 is
+    超高层-only. For a 多层 residential project, the rule must land in
+    result.skipped, NOT fire as an issue, even though the project-rule
+    eval path would otherwise emit one for height_m > 100."""
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    meta = _residential_meta(floors=12, height_m=120.0, height_class="多层")
+    result = evaluate(_empty_graph(), rules, standards, project_meta=meta)
+    refuge_in_issues = [i for i in result.issues if i.rule_card_id == "RC-REFUGE-LAYER-100M"]
+    refuge_in_skipped = [s for s in result.skipped if s.rule_id == "RC-REFUGE-LAYER-100M"]
+    assert refuge_in_issues == [], "Phase 9 applicability should pre-empt Phase 11-B eval"
+    assert len(refuge_in_skipped) == 1
+    assert "超高层" in refuge_in_skipped[0].reason
+
+
 def test_unset_optional_meta_fields_no_op_gracefully() -> None:
     """Rules use `is None` checks so unset floors/height_m don't false-positive."""
     standards = load_standards()

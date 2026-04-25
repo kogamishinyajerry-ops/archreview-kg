@@ -91,6 +91,12 @@ def review(
                 f"--project-meta '{project_meta}' failed schema validation:\n{exc}",
                 param_hint="--project-meta",
             ) from exc
+        # Persist meta into the run directory so `archkg feedback --apply` can
+        # promote project-scope confirmed cases without losing project context.
+        (out / "project_meta.yaml").write_text(
+            _yaml.safe_dump(meta.model_dump(), allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
 
     primitives = extract(pdf, points_per_meter=points_per_meter)
     primitives_path = write_prims(primitives, out / "primitives.json")
