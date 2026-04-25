@@ -238,6 +238,94 @@ def viewer(
     serve(out, source_pdf, port=port, open_browser=not no_browser)
 
 
+clause_app = typer.Typer(help="Knowledge-base introspection: search and coverage.")
+app.add_typer(clause_app, name="clause")
+
+
+@clause_app.command("search")
+def clause_search(
+    query: str = typer.Argument(..., help="Query string, e.g. '走廊净宽'."),
+    top_k: int = typer.Option(5, "-k", "--top-k"),
+    building_type: str | None = typer.Option(
+        None, "--building-type", help="Filter: residential / public / industrial."
+    ),
+    category: str | None = typer.Option(
+        None, "--category", help="Filter: geometric / fire / accessibility / topological / energy / acoustic / general."
+    ),
+) -> None:
+    """BM25 search over the packaged standards library, with metadata filters."""
+    from rich.console import Console
+    from rich.table import Table
+
+    from archkg.knowledge.loader import load_standards
+    from archkg.knowledge.search import ClauseIndex
+    from archkg.schemas import StandardClause
+
+    clauses = load_standards()
+    idx = ClauseIndex(clauses)
+
+    def filter_fn(c: StandardClause) -> bool:
+        if building_type is not None and building_type not in c.applies_to_building_type:
+            return False
+        if category is not None and c.category != category:
+            return False
+        return True
+
+    hits = idx.search(query, top_k=top_k, filter_fn=filter_fn)
+    console = Console()
+    if not hits:
+        console.print("[yellow]no matching clauses[/yellow]")
+        return
+
+    t = Table(title=f"clause search · '{query}'", header_style="bold cyan")
+    t.add_column("#", style="dim", width=3, justify="right")
+    t.add_column("score", justify="right")
+    t.add_column("clause_id", style="cyan")
+    t.add_column("category", style="yellow")
+    t.add_column("source")
+    t.add_column("clause_text")
+    for i, (score, c) in enumerate(hits, 1):
+        excerpt = c.clause_text if len(c.clause_text) <= 70 else c.clause_text[:67] + "…"
+        t.add_row(str(i), f"{score:.2f}", c.id, c.category, c.source, excerpt)
+    console.print(t)
+
+
+@clause_app.command("coverage")
+def clause_coverage() -> None:
+    """Report which standards clauses are covered by at least one rule card."""
+    from rich.console import Console
+    from rich.table import Table
+
+    from archkg.knowledge.loader import load_rules, load_standards
+
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    referenced = {cid for r in rules for cid in r.source_clause_ids}
+
+    console = Console()
+    summary = Table(title="知识库覆盖率", show_header=False)
+    summary.add_column("k", style="cyan")
+    summary.add_column("v", justify="right")
+    summary.add_row("standards clauses", str(len(standards)))
+    summary.add_row("rule cards", str(len(rules)))
+    covered = sum(1 for c in standards if c.id in referenced)
+    pct = covered * 100 // max(len(standards), 1)
+    summary.add_row("clauses with ≥1 rule", f"{covered} / {len(standards)} ({pct}%)")
+    console.print(summary)
+
+    uncovered = [c for c in standards if c.id not in referenced]
+    if uncovered:
+        t = Table(title=f"未覆盖条文（{len(uncovered)}）", header_style="bold red")
+        t.add_column("clause_id", style="cyan")
+        t.add_column("category", style="yellow")
+        t.add_column("source")
+        t.add_column("clause")
+        for c in uncovered:
+            excerpt = c.clause_text if len(c.clause_text) <= 80 else c.clause_text[:77] + "…"
+            t.add_row(c.id, c.category, c.source, excerpt)
+        console.print(t)
+
+
 @app.command()
 def feedback(
     run_dir: Path = typer.Argument(..., exists=True, file_okay=False),
