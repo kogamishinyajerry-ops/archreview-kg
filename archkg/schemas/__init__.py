@@ -9,6 +9,13 @@ from archkg.schemas.entity import (
     Wall,
 )
 from archkg.schemas.issue import Issue, IssueEvidence, Severity
+from archkg.schemas.primitives import (
+    LinePrimitive,
+    PagePrimitives,
+    Primitives,
+    TextPrimitive,
+    TextSource,
+)
 from archkg.schemas.rule_card import EntityType, RuleCard, RuleCardTestCase
 from archkg.schemas.standard import StandardClause, ThresholdOp
 
@@ -21,12 +28,17 @@ __all__ = [
     "EntityType",
     "Issue",
     "IssueEvidence",
+    "LinePrimitive",
+    "PagePrimitives",
+    "Primitives",
     "Room",
     "RuleCard",
     "RuleCardTestCase",
     "Severity",
     "Stair",
     "StandardClause",
+    "TextPrimitive",
+    "TextSource",
     "ThresholdOp",
     "Wall",
 ]
