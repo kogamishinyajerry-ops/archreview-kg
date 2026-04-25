@@ -125,5 +125,24 @@ def build_graph_cmd(
         typer.echo(f"wrote overlay {png}")
 
 
+@app.command()
+def feedback(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False),
+    apply_to_rules: bool = typer.Option(
+        False,
+        "--apply/--no-apply",
+        help="Append confirmed cases to rule_cards.yaml as regression test_cases.",
+    ),
+    rules_path: Path | None = typer.Option(
+        None, "--rules-path", help="Override rule_cards.yaml location for --apply."
+    ),
+) -> None:
+    """Read run_dir/report.md, persist feedback.yaml, optionally promote confirmed cases."""
+    from archkg.feedback.recorder import record
+
+    out = record(run_dir, rules_path=rules_path, apply_to_rules=apply_to_rules)
+    typer.echo(f"wrote {out}")
+
+
 if __name__ == "__main__":
     app()

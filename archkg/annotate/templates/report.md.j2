@@ -10,9 +10,9 @@
 {% if not issues %}
 未发现违反所配置规则卡的问题。
 {% else %}
-| # | rule_card_id | 条文 | 实体 | 测量值 | 阈值 | 单位 | 信息 | reviewer | status | note |
+| issue_id | rule_card_id | 条文 | 实体 | 测量值 | 阈值 | 单位 | 信息 | reviewer | status | note |
 |---|---|---|---|---|---|---|---|---|---|---|
-{% for i in issues %}| {{ loop.index }} | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} |  | open |  |
+{% for i in issues %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} |  | open |  |
 {% endfor %}
 {% endif %}
 
