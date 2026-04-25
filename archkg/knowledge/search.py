@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 from collections import Counter
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -26,7 +27,12 @@ def tokenize(text: str) -> list[str]:
 
     Clause-id-like substrings (e.g. 'GB50096-5.5.2') are also emitted
     verbatim so exact-id queries score uniquely against their target.
+
+    Input is NFKC-normalised so Chinese-IME full-width inputs like
+    'GB50096－5．5．2' (full-width hyphen / period) match the same tokens as
+    their ASCII counterparts.
     """
+    text = unicodedata.normalize("NFKC", text)
     out: list[str] = []
     for m in _CLAUSE_ID.finditer(text):
         out.append(m.group(0).lower())
@@ -93,6 +99,8 @@ class ClauseIndex:
         top_k: int = 5,
         filter_fn: Callable[[StandardClause], bool] | None = None,
     ) -> list[tuple[float, StandardClause]]:
+        if top_k <= 0:
+            return []
         q_tokens = tokenize(query)
         if not q_tokens:
             return []

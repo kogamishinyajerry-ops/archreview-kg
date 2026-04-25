@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -238,19 +239,40 @@ def viewer(
     serve(out, source_pdf, port=port, open_browser=not no_browser)
 
 
-clause_app = typer.Typer(help="Knowledge-base introspection: search and coverage.")
+clause_app = typer.Typer(
+    help="Knowledge-base introspection: search and coverage.",
+    no_args_is_help=True,
+)
 app.add_typer(clause_app, name="clause")
+
+
+class BuildingTypeFilter(StrEnum):
+    residential = "residential"
+    public = "public"
+    industrial = "industrial"
+
+
+class CategoryFilter(StrEnum):
+    geometric = "geometric"
+    fire = "fire"
+    accessibility = "accessibility"
+    topological = "topological"
+    energy = "energy"
+    acoustic = "acoustic"
+    general = "general"
 
 
 @clause_app.command("search")
 def clause_search(
     query: str = typer.Argument(..., help="Query string, e.g. '走廊净宽'."),
-    top_k: int = typer.Option(5, "-k", "--top-k"),
-    building_type: str | None = typer.Option(
-        None, "--building-type", help="Filter: residential / public / industrial."
+    top_k: int = typer.Option(5, "-k", "--top-k", min=1, help="Max hits to return."),
+    building_type: BuildingTypeFilter | None = typer.Option(
+        None, "--building-type", help="Restrict to clauses tagged for this building type.",
+        case_sensitive=False,
     ),
-    category: str | None = typer.Option(
-        None, "--category", help="Filter: geometric / fire / accessibility / topological / energy / acoustic / general."
+    category: CategoryFilter | None = typer.Option(
+        None, "--category", help="Restrict to clauses of this category.",
+        case_sensitive=False,
     ),
 ) -> None:
     """BM25 search over the packaged standards library, with metadata filters."""
@@ -265,9 +287,9 @@ def clause_search(
     idx = ClauseIndex(clauses)
 
     def filter_fn(c: StandardClause) -> bool:
-        if building_type is not None and building_type not in c.applies_to_building_type:
+        if building_type is not None and building_type.value not in c.applies_to_building_type:
             return False
-        if category is not None and c.category != category:
+        if category is not None and c.category != category.value:
             return False
         return True
 

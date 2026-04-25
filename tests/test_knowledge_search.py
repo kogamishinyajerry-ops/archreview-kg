@@ -82,6 +82,31 @@ def test_filter_by_building_type(index: ClauseIndex) -> None:
         assert "public" in c.applies_to_building_type
 
 
+def test_search_rejects_non_positive_top_k(index: ClauseIndex) -> None:
+    """Codex P8 nit: -k <= 0 should not produce surprising slice semantics."""
+    assert index.search("卧室净高", top_k=0) == []
+    assert index.search("卧室净高", top_k=-1) == []
+    assert index.search("卧室净高", top_k=-99) == []
+
+
+def test_tokenizer_nfkc_normalises_fullwidth_punctuation() -> None:
+    """Codex P8 nit: full-width hyphen / period from Chinese IME should match ASCII id."""
+    ascii_tokens = set(tokenize("GB50096-5.5.2 卧室净高"))
+    fullwidth_tokens = set(tokenize("ＧＢ５００９６－５．５．２ 卧室净高"))
+    assert "gb50096-5.5.2" in ascii_tokens
+    assert "gb50096-5.5.2" in fullwidth_tokens, (
+        f"NFKC failed; got {fullwidth_tokens - ascii_tokens}"
+    )
+
+
+def test_search_fullwidth_id_lookup_finds_target(index: ClauseIndex) -> None:
+    """Full-width id query must hit the same top-1 as the ASCII form."""
+    hits_ascii = index.search("GB50096-5.5.2", top_k=1)
+    hits_fullwidth = index.search("ＧＢ５００９６－５．５．２", top_k=1)
+    assert hits_ascii and hits_fullwidth
+    assert hits_ascii[0][1].id == hits_fullwidth[0][1].id == "GB50096-5.5.2"
+
+
 def test_recall_at_3_above_threshold(index: ClauseIndex) -> None:
     """Aggregate gate: ≥80% of golden queries must surface the expected clause in top-3."""
     hits_count = 0
