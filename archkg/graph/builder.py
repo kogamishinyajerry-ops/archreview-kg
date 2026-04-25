@@ -27,6 +27,7 @@ from __future__ import annotations
 import re
 import uuid
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 from shapely.geometry import Point as SPoint
@@ -363,7 +364,7 @@ def render_overlay(
 ) -> Path:
     """Render the source PDF with colored entity overlays for human spot-checks."""
     import fitz
-    from PIL import Image, ImageDraw
+    from PIL import Image, ImageDraw, ImageFont
 
     doc = fitz.open(str(pdf_path))
     try:
@@ -376,26 +377,50 @@ def render_overlay(
 
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
+    font: Any
+    try:
+        font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 13)
+    except OSError:
+        font = ImageFont.load_default()
 
     def _scale(b: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
         return (b[0] * zoom, b[1] * zoom, b[2] * zoom, b[3] * zoom)
 
+    def _badge(xy: tuple[float, float], text: str, fg: tuple[int, int, int, int]) -> None:
+        x, y = xy
+        bbox = draw.textbbox((x, y), text, font=font)
+        pad = 2
+        draw.rectangle(
+            (bbox[0] - pad, bbox[1] - pad, bbox[2] + pad, bbox[3] + pad),
+            fill=(255, 255, 255, 230),
+            outline=fg,
+            width=1,
+        )
+        draw.text((x, y), text, fill=fg, font=font)
+
     for r in graph.rooms:
-        draw.rectangle(_scale(r.bbox), outline=(0, 128, 255, 220), width=2)
-        draw.text((r.bbox[0] * zoom + 4, r.bbox[1] * zoom + 4),
-                  f"Room {r.label or '?'} {r.area_m2:.1f}m²" if r.area_m2 else "Room",
-                  fill=(0, 128, 255, 255))
+        rect = _scale(r.bbox)
+        draw.rectangle(rect, outline=(0, 128, 255, 220), width=2)
+        label_text = (
+            f"Room  {r.label or '?'}  {r.area_m2:.1f} m²"
+            if r.area_m2 is not None
+            else f"Room  {r.label or '?'}"
+        )
+        _badge((rect[0] + 6, rect[1] + 6), label_text, (0, 128, 255, 255))
     for c in graph.corridors:
-        draw.rectangle(_scale(c.bbox), outline=(255, 128, 0, 220), width=2)
+        rect = _scale(c.bbox)
+        draw.rectangle(rect, outline=(255, 128, 0, 220), width=2)
         if c.min_width_m is not None:
-            draw.text((c.bbox[0] * zoom + 4, c.bbox[1] * zoom + 4),
-                      f"Corridor w={c.min_width_m:.2f}m",
-                      fill=(255, 128, 0, 255))
+            _badge((rect[0] + 6, rect[1] + 6),
+                   f"Corridor  w = {c.min_width_m:.2f} m",
+                   (200, 90, 0, 255))
     for d in graph.doors:
-        draw.rectangle(_scale(d.bbox), outline=(255, 0, 0, 240), width=3)
+        rect = _scale(d.bbox)
+        draw.rectangle(rect, outline=(220, 30, 30, 240), width=3)
         if d.width_m is not None:
-            draw.text((d.bbox[0] * zoom + 2, d.bbox[1] * zoom - 12),
-                      f"Door {d.width_m:.2f}m", fill=(255, 0, 0, 255))
+            _badge((rect[0], max(rect[1] - 18, 2)),
+                   f"Door {d.width_m:.2f} m",
+                   (200, 0, 0, 255))
 
     composed = Image.alpha_composite(img, overlay).convert("RGB")
     out_png.parent.mkdir(parents=True, exist_ok=True)

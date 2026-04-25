@@ -44,7 +44,7 @@ select = ["E", "F", "I", "B", "UP", "N", "RUF"]
 ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
-"archkg/cli/*.py" = ["B008"]   # Typer relies on call-in-default for Argument/Option
+"archkg/cli/*.py" = ["B008", "RUF001"]   # Typer call-in-default + intentional CJK punctuation
 "tests/*.py" = ["B008"]
 
 [tool.mypy]

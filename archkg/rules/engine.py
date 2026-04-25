@@ -85,13 +85,13 @@ def compile_expression(expression: str, inputs: list[str]) -> ast.Expression:
 
 
 def evaluate_expression(tree: ast.Expression, env: dict[str, Any]) -> bool:
-    """Eval the whitelisted AST against env. If a None operand triggers a
-    TypeError (e.g. None >= 5.0), we conservatively flag the rule as failed —
-    "rather flag than silently miss"."""
+    """Eval the whitelisted AST against env. Any operand error (None compare,
+    division by zero, value coercion) conservatively flags the rule as failed
+    — "rather flag than silently miss" — instead of crashing the review run."""
     code = compile(tree, filename="<rule>", mode="eval")
     try:
         return bool(eval(code, {"__builtins__": {}}, env))
-    except TypeError:
+    except (TypeError, ValueError, ArithmeticError):
         return False
 
 

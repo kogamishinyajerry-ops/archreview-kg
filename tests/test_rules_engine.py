@@ -39,6 +39,18 @@ def test_evaluate_none_short_circuits_to_false() -> None:
     assert evaluate_expression(tree, {"min_width_m": None}) is False
 
 
+def test_evaluate_division_by_zero_does_not_crash_demo() -> None:
+    """Codex-derived regression: a rule that divides by zero must NOT take down review."""
+    tree = compile_expression("a / b > 0.5", ["a", "b"])
+    assert evaluate_expression(tree, {"a": 5.0, "b": 0.0}) is False
+
+
+def test_evaluate_value_error_is_caught() -> None:
+    tree = compile_expression("a + b", ["a", "b"])
+    # mixing str + int raises TypeError, but covers the broadened except
+    assert evaluate_expression(tree, {"a": "x", "b": 1}) is False
+
+
 def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
     standards = load_standards()
     rules = load_rules(standards=standards)

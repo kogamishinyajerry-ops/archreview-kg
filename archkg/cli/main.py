@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import typer
 
@@ -89,11 +90,87 @@ def review(
         clauses=standards,
         out_md=out / "report.md",
     )
-    typer.echo(
-        f"primitives -> {primitives_path}\n"
-        f"graph -> {graph_path}\n"
-        f"issues={len(issues)}  annotated -> {annotated}\n"
-        f"report -> {report_path}"
+    _print_review_summary(
+        out_dir=out,
+        primitives_path=primitives_path,
+        graph_path=graph_path,
+        annotated_path=annotated,
+        report_path=report_path,
+        graph=graph,
+        issues=issues,
+    )
+
+
+def _print_review_summary(
+    *,
+    out_dir: Path,
+    primitives_path: Path,
+    graph_path: Path,
+    annotated_path: Path,
+    report_path: Path,
+    graph: Any,
+    issues: list[Any],
+) -> None:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+
+    console = Console()
+
+    # Detection summary
+    g = graph  # EntityGraph
+    detect = Table(title="实体识别", show_header=False, header_style="bold cyan")
+    detect.add_column("kind", style="cyan")
+    detect.add_column("count", justify="right")
+    detect.add_row("rooms", str(len(g.rooms)))
+    detect.add_row("doors", str(len(g.doors)))
+    detect.add_row("corridors", str(len(g.corridors)))
+    detect.add_row("dimensions", str(len(g.dimensions)))
+    console.print(detect)
+
+    # Issues table
+    if issues:
+        t = Table(title=f"问题清单（共 {len(issues)} 条）", header_style="bold red")
+        t.add_column("#", style="dim", width=3, justify="right")
+        t.add_column("rule_card", style="yellow")
+        t.add_column("条文", style="cyan")
+        t.add_column("测量", justify="right")
+        t.add_column("阈值", justify="right")
+        t.add_column("说明")
+        for idx, i in enumerate(issues, 1):  # i is Issue
+            ev = i.evidence
+            t.add_row(
+                str(idx),
+                i.rule_card_id,
+                i.standard_clause_id,
+                f"{ev.measured_value:.2f}" if ev.measured_value is not None else "—",
+                f"{ev.threshold_value:.2f}" if ev.threshold_value is not None else "—",
+                i.message,
+            )
+        console.print(t)
+    else:
+        console.print("[green]✓ 未发现违反规则的实体。[/green]")
+
+    # Artifacts
+    art = Table(title="产出文件", show_header=False)
+    art.add_column("kind", style="cyan")
+    art.add_column("path", style="white")
+    art.add_row("primitives", str(primitives_path))
+    art.add_row("entity graph", str(graph_path))
+    art.add_row("entity overlay PNG", str(out_dir / "entity_overlay.png"))
+    art.add_row("issues JSON", str(out_dir / "issues.json"))
+    art.add_row("annotated PDF", str(annotated_path))
+    art.add_row("report MD", str(report_path))
+    console.print(art)
+    console.print(
+        Panel(
+            f"下一步：\n"
+            f"  • 打开 [bold]{annotated_path}[/bold] 看红框标注\n"
+            f"  • 打开 [bold]{report_path}[/bold] 看可复核的问题清单\n"
+            f"  • 编辑 status=confirmed 后跑 [bold]archkg feedback {out_dir} --apply[/bold]",
+            title="✅ 审图完成",
+            border_style="green",
+        )
     )
 
 
@@ -123,6 +200,22 @@ def build_graph_cmd(
     if overlay_pdf is not None:
         png = render_overlay(graph, overlay_pdf, overlay_out)
         typer.echo(f"wrote overlay {png}")
+
+
+@app.command()
+def demo(
+    out: Path = typer.Option(Path("out"), "-o", "--out"),
+) -> None:
+    """One-key demo: regenerate sample PDF, run review, print where artifacts landed."""
+    from rich.console import Console
+
+    from samples.make_sample import build as build_sample
+
+    console = Console()
+    sample_dir = Path(__file__).parent.parent.parent / "samples"
+    pdf = build_sample(sample_dir / "sample_clean.pdf")
+    console.print(f"[cyan]生成测试图纸:[/cyan] {pdf}")
+    review(pdf=pdf, out=out, points_per_meter=50.0)
 
 
 @app.command()
