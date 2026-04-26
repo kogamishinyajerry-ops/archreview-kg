@@ -35,6 +35,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     graph_path = out_dir / "entity_graph.json"
     primitives_path = out_dir / "primitives.json"
     report_path = out_dir / "report.md"
+    run_meta_path = out_dir / "run_meta.json"
 
     issues = json.loads(issues_path.read_text("utf-8")) if issues_path.exists() else []
     graph = json.loads(graph_path.read_text("utf-8")) if graph_path.exists() else {}
@@ -42,6 +43,17 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         json.loads(primitives_path.read_text("utf-8")) if primitives_path.exists() else {}
     )
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
+
+    # Codex P19-C R2 P0: honour inspect_only mode on re-render. Without
+    # this, archkg viewer re-renders an inspect_only run as a misleading
+    # "0 violations = clean review" page.
+    if run_meta_path.exists():
+        run_meta = json.loads(run_meta_path.read_text("utf-8"))
+        mode = run_meta.get("mode", "full")
+        quality_flags = list(run_meta.get("quality_flags", []))
+    else:
+        mode = "full"
+        quality_flags = []
 
     n_lines = sum(len(p.get("lines", [])) for p in primitives.get("pages", []))
     n_texts = sum(len(p.get("texts", [])) for p in primitives.get("pages", []))
@@ -62,6 +74,8 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         issues=issues,
         stats=stats,
         report_md=report_md,
+        mode=mode,
+        quality_flags=quality_flags,
     )
     index_path = out_dir / "index.html"
     index_path.write_text(html, encoding="utf-8")

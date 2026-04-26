@@ -1,6 +1,6 @@
 [project]
 name = "archkg"
-version = "1.2.0"
+version = "1.2.1"
 description = "ArchReview-KG: civil-architecture drawing review via entity graph + rule cards"
 requires-python = ">=3.11"
 authors = [{ name = "Kogami Shinya" }]

@@ -58,6 +58,15 @@ from werkzeug.utils import secure_filename
 # ---------------------------------------------------------------------------
 
 
+# Phase 19-C: thresholds for the entity-sanity-check quality flags.
+# A real Chinese residential plan rarely has more than ~50 distinct rooms
+# or doors per page. Above that, the builder is over-segmenting and the
+# rule report is dominated by spurious gap detections (Medfield case
+# study: 169 rooms / 204 doors / 89 spurious door-width violations).
+ROOM_COUNT_NOISE_THRESHOLD = 50
+DOOR_COUNT_NOISE_THRESHOLD = 50
+
+
 @dataclass
 class PipelineResult:
     out_dir: Path
@@ -65,6 +74,55 @@ class PipelineResult:
     error_count: int
     info_count: int
     skipped_count: int
+    room_count: int = 0
+    door_count: int = 0
+    corridor_count: int = 0
+    quality_flags: tuple[str, ...] = ()
+
+
+def _compute_quality_flags(graph: Any) -> tuple[str, ...]:
+    """Phase 19-C: surface obvious noise patterns BEFORE the user reads
+    the rule report. Real residential floor plans rarely cross these
+    thresholds; when they do, the builder is over-segmenting and any
+    rule firing on those entities is suspect.
+
+    Codex P19-C R1 P2: accepts the typed ``EntityGraph`` directly so a
+    serialisation shape change can't silently bypass the safeguards.
+    A mapping (already-loaded JSON dict) is also accepted as a fallback
+    for tests that fabricate synthetic graphs.
+    """
+
+    def _len(field: str) -> int:
+        if hasattr(graph, field):
+            return len(getattr(graph, field))
+        if isinstance(graph, dict):
+            return len(graph.get(field, []))
+        return 0
+
+    n_rooms = _len("rooms")
+    n_doors = _len("doors")
+    n_corridors = _len("corridors")
+
+    flags: list[str] = []
+    if n_rooms > ROOM_COUNT_NOISE_THRESHOLD:
+        flags.append(
+            f"⚠ rooms={n_rooms} > {ROOM_COUNT_NOISE_THRESHOLD}: 可能是 builder "
+            "在 over-segmenting (把 window frames / fixture outlines / "
+            "dimension boxes 当成 rooms), 也可能是单页密度异常高的真实图纸。"
+            "请先人工核对实体数量再信任规则违规清单。"
+        )
+    if n_doors > DOOR_COUNT_NOISE_THRESHOLD:
+        flags.append(
+            f"⚠ doors={n_doors} > {DOOR_COUNT_NOISE_THRESHOLD}: gap 检测可能在"
+            "非门洞的墙体断口 (windows / cabinet edges) 上 fire。"
+            "RC-DOOR-WIDTH 违规在这些 entity 上不可信。"
+        )
+    if n_corridors == 0 and n_rooms > 0:
+        flags.append(
+            "ⓘ 未检出 corridor — RC-CORRIDOR-WIDTH 与 "
+            "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20 不会触发。"
+        )
+    return tuple(flags)
 
 
 def run_pipeline(
@@ -75,6 +133,7 @@ def run_pipeline(
     room_schedule_path: Path | None = None,
     stair_schedule_path: Path | None = None,
     points_per_meter: float = 50.0,
+    inspect_only: bool = False,
 ) -> PipelineResult:
     """End-to-end review on a single PDF.
 
@@ -82,6 +141,15 @@ def run_pipeline(
     handler can call it directly. Writes primitives.json, entity_graph.json,
     issues.json, annotated.pdf, report.md, and entity_overlay.png into
     out_dir.
+
+    Phase 19-C:
+    - ``points_per_meter`` exposed so the studio can take it from the
+      user (US arch sheets, mm-scaled CAD exports, etc. all need
+      different values).
+    - ``inspect_only=True`` runs ingest + build_graph + overlay only;
+      skips rule evaluation. Lets users sanity-check what the builder
+      detected on an unfamiliar PDF before reading a (potentially
+      noisy) rule report.
     """
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
@@ -145,6 +213,72 @@ def run_pipeline(
     graph_path = write_graph(graph, out_dir / "entity_graph.json")
     render_overlay(graph, pdf_path, out_dir / "entity_overlay.png")
 
+    # Count entities from the in-memory typed graph directly so a future
+    # serialisation shape change can't silently neuter the quality flags.
+    quality_flags = _compute_quality_flags(graph)
+    n_rooms = len(graph.rooms)
+    n_doors = len(graph.doors)
+    n_corridors = len(graph.corridors)
+
+    # Codex P19-C R2 P0: persist mode + quality_flags so any downstream
+    # renderer (archkg viewer, scripts that re-render index.html, future
+    # web previews) honours the inspect_only semantics. Without this the
+    # standalone `archkg viewer <run-dir>` would happily re-render an
+    # inspect_only run as a green "0 violations" page.
+    _write_run_meta(
+        out_dir,
+        mode="inspect_only" if inspect_only else "full",
+        quality_flags=quality_flags,
+    )
+
+    # Mirror what the existing viewer.serve() needs: a copy of the source
+    # PDF + a 200-DPI preview PNG of the source. Always do this so even
+    # inspect_only runs render correctly.
+    if not (out_dir / "source.pdf").exists():
+        shutil.copy(pdf_path, out_dir / "source.pdf")
+    _render_preview(pdf_path, out_dir / "source_preview.png")
+
+    if inspect_only:
+        # Skip rule evaluation; write empty issues + a minimal report so
+        # the viewer template still renders. The annotated PDF is just a
+        # copy of the source with no markup.
+        (out_dir / "issues.json").write_text("[]", encoding="utf-8")
+        shutil.copy(pdf_path, out_dir / "annotated.pdf")
+        _render_preview(out_dir / "annotated.pdf", out_dir / "annotated_preview.png")
+        report_lines = [
+            "# 仅识图模式 — ArchReview-KG",
+            "",
+            f"- 源文件：`{pdf_path.name}`",
+            "- 模式：**inspect_only**（只跑 ingest + build_graph，不评估规则）",
+            f"- 检出实体：rooms={n_rooms} / doors={n_doors} / corridors={n_corridors}",
+            "",
+            "## 质量提示" if quality_flags else "## 质量提示\n\n(无)",
+        ]
+        for flag in quality_flags:
+            report_lines.append(f"- {flag}")
+        report_lines.append("")
+        report_lines.append(
+            "如果上面 entity 数量看起来合理，可以重新上传选 **完整审图模式** "
+            "让规则引擎评估违规。"
+        )
+        (out_dir / "report.md").write_text("\n".join(report_lines), encoding="utf-8")
+        _render_viewer_index(
+            out_dir, pdf_path,
+            quality_flags=quality_flags,
+            mode="inspect_only",
+        )
+        return PipelineResult(
+            out_dir=out_dir,
+            issues_count=0,
+            error_count=0,
+            info_count=0,
+            skipped_count=0,
+            room_count=n_rooms,
+            door_count=n_doors,
+            corridor_count=n_corridors,
+            quality_flags=quality_flags,
+        )
+
     standards = load_standards()
     rules = load_rules(standards=standards)
     result = evaluate(graph, rules, standards, project_meta=meta)
@@ -165,17 +299,16 @@ def run_pipeline(
         skipped=result.skipped,
     )
 
-    # Mirror what the existing viewer.serve() needs: a copy of the source
-    # PDF + a 200-DPI preview PNG of the source and the annotated copy.
-    if not (out_dir / "source.pdf").exists():
-        shutil.copy(pdf_path, out_dir / "source.pdf")
-    _render_preview(pdf_path, out_dir / "source_preview.png")
     if annotated.exists():
         _render_preview(annotated, out_dir / "annotated_preview.png")
 
     # Pre-render the existing viewer index so the redirect lands on a
     # ready-to-display page.
-    _render_viewer_index(out_dir, pdf_path)
+    _render_viewer_index(
+        out_dir, pdf_path,
+        quality_flags=quality_flags,
+        mode="full",
+    )
 
     error_count = sum(1 for i in result.issues if i.severity == "error")
     info_count = sum(1 for i in result.issues if i.severity == "info")
@@ -185,7 +318,38 @@ def run_pipeline(
         error_count=error_count,
         info_count=info_count,
         skipped_count=len(result.skipped),
+        room_count=n_rooms,
+        door_count=n_doors,
+        corridor_count=n_corridors,
+        quality_flags=quality_flags,
     )
+
+
+def _write_run_meta(
+    out_dir: Path,
+    *,
+    mode: str,
+    quality_flags: tuple[str, ...] = (),
+) -> Path:
+    """Persist the inspect-only / full mode + quality flags to a JSON file
+    in the run directory. Read by archkg.viewer.server._render_index so
+    any re-render of the run's index.html honours the inspect-only mode.
+
+    Codex P19-C R2 P0: without this marker, `archkg viewer <run-dir>`
+    re-renders inspect_only runs as full-success pages because it can't
+    distinguish "0 issues because rules ran and found nothing" from "0
+    issues because rules were skipped".
+    """
+    meta_path = out_dir / "run_meta.json"
+    meta_path.write_text(
+        json.dumps(
+            {"mode": mode, "quality_flags": list(quality_flags)},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return meta_path
 
 
 def _render_preview(pdf: Path, out_png: Path, dpi: int = 200) -> None:
@@ -201,8 +365,18 @@ def _render_preview(pdf: Path, out_png: Path, dpi: int = 200) -> None:
         doc.close()
 
 
-def _render_viewer_index(out_dir: Path, source_pdf: Path) -> None:
-    """Reuse the existing read-only viewer template."""
+def _render_viewer_index(
+    out_dir: Path,
+    source_pdf: Path,
+    *,
+    quality_flags: tuple[str, ...] = (),
+    mode: str = "full",
+) -> None:
+    """Reuse the existing read-only viewer template.
+
+    Phase 19-C: passes ``quality_flags`` and ``mode`` so the rendered
+    page can warn the reader before they trust the rule output. The
+    template treats both as optional (older fixtures still render)."""
     template_dir = str(files("archkg.viewer.templates"))
     env = Environment(
         loader=FileSystemLoader(template_dir),
@@ -245,6 +419,8 @@ def _render_viewer_index(out_dir: Path, source_pdf: Path) -> None:
         issues=issues,
         stats=stats,
         report_md=report_md,
+        quality_flags=list(quality_flags),
+        mode=mode,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 
@@ -409,6 +585,27 @@ STUDIO_HTML = r"""
 </div>
 </details>
 
+<details>
+<summary>⚙️ 高级参数（PDF 比例尺 / 模式选择）</summary>
+<div>
+  <p><strong>points_per_meter (ppm)</strong>: PDF 中每米对应多少 PostScript 点。
+  Archicad / Revit 默认导出值约为 50；AutoCAD 用英制单位时按 1 inch = 72 pt 推算（如 1:50 平面 ≈ 0.5 m = 36 pt → ppm ≈ 72）。
+  不确定就先用 50，看实体数量是否合理；不合理再调。</p>
+  <label>points_per_meter</label>
+  <input type="number" name="points_per_meter" step="0.1" min="0.1" value="50.0"
+         style="width: 100px; padding: 4px 8px; background: var(--bg);
+                border: 1px solid var(--border); border-radius: 4px; color: var(--text);" />
+
+  <p style="margin-top: 16px;"><strong>模式</strong>: 仅识图模式只跑实体提取 + 图谱构建，跳过规则评估。
+  适合在不熟悉的 PDF 上先看 builder 检出多少 rooms / doors / corridors 是否合理，
+  再决定要不要让规则引擎评估违规（避免被噪声违规淹没）。</p>
+  <label>
+    <input type="checkbox" name="inspect_only" value="1" />
+    🔍 仅识图模式（跳过规则评估，只看 builder 检出实体）
+  </label>
+</div>
+</details>
+
 <div class="actions">
   <button type="submit" class="btn btn-primary" id="submitBtn">▶ 跑审图</button>
   <a href="{{ url_for('demo') }}" class="btn btn-ghost">没图纸？跑内置 demo</a>
@@ -469,7 +666,7 @@ def _save_upload(field_name: str, run_dir: Path) -> Path | None:
     return dest
 
 
-def create_app(state_dir: Path, *, archkg_version: str = "1.2.0") -> Flask:
+def create_app(state_dir: Path, *, archkg_version: str = "1.2.1") -> Flask:
     """Build the Flask app. state_dir holds the per-run output directories."""
     runs_dir = state_dir / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
@@ -503,6 +700,18 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.2.0") -> Flask:
         room_path = _save_upload("room_schedule", run_dir)
         stair_path = _save_upload("stair_schedule", run_dir)
 
+        # Phase 19-C: scale + mode form fields. Default to 50.0 / full
+        # so existing tests and bookmarked URLs keep working.
+        try:
+            ppm = float(request.form.get("points_per_meter", "50.0"))
+        except ValueError:
+            flash("points_per_meter 必须是数字（默认 50.0）。")
+            return redirect(url_for("index"))
+        if ppm <= 0:
+            flash("points_per_meter 必须 > 0。")
+            return redirect(url_for("index"))
+        inspect_only = request.form.get("inspect_only") == "1"
+
         try:
             run_pipeline(
                 pdf_path,
@@ -510,6 +719,8 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.2.0") -> Flask:
                 project_meta_path=meta_path,
                 room_schedule_path=room_path,
                 stair_schedule_path=stair_path,
+                points_per_meter=ppm,
+                inspect_only=inspect_only,
             )
         except Exception as exc:
             tb = traceback.format_exc()
@@ -591,7 +802,7 @@ def serve(
     port: int = 8765,
     state_dir: Path | None = None,
     open_browser: bool = True,
-    archkg_version: str = "1.2.0",
+    archkg_version: str = "1.2.1",
 ) -> None:
     if state_dir is None:
         state_dir = Path("tmp") / "studio"

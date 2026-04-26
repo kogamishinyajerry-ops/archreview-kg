@@ -75,7 +75,35 @@ RC-NO-LIVING-IN-BASEMENT                 bedroom 位于 basement
 - **违规清单** severity=error：baseline 6 项；叠加 `--room-schedule` 后变 10 项（多出 4 张 PARTIAL_AUTODETECT 规则触发）
 - **人工核对提醒** severity=info：17 项
 
-## v1.1 新增 — 对抗训练 lane
+## v1.2 新增 — Studio 上传界面 + 真实 PDF 案例研究
+
+### Studio (v1.2.0)
+
+```bash
+archkg studio
+```
+
+启动 Flask 上传界面 (默认 8765)。第一次接触工具的用户拖 PDF 即可完整跑通流程，
+也可点 "跑内置 demo" 用 `samples/sample_clean.pdf` 看完整效果。
+
+### 真实 PDF 案例 — Medfield 公寓 (v1.2.1)
+
+实地测试: 美国 [Medfield 16-unit apartment plans](https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF)
+(政府公开 CAD 导出 PDF, 9 页, 单页 8.5k 矢量路径)。
+
+**结果**: 4.2 秒处理完, 不崩溃, 但输出**主要是噪声**:
+- 检出 169 房间 (实际 ~80) — over-segmentation
+- 检出 204 户门 (大多是窗框/家具/橱柜的间隙)
+- 89 个 RC-DOOR-WIDTH 违规 — 大多假阳性 (门宽 0.80-0.83m 集中分布是 builder 把 fixture 间隙当成 door)
+
+**v1.2.1 应对**: studio 上传表单加了
+- **points_per_meter** 字段: PDF 比例尺 (默认 50 适配 metric CAD 导出, US 制图需调整)
+- **仅识图模式** 复选框: 只跑 ingest + build_graph + entity overlay, 跳过规则评估。
+  适合不熟悉的 PDF 先看 builder 检出实体数量是否合理, 再决定要不要让规则跑
+- **质量标记**: rooms > 50 / doors > 50 / 无 corridor 时, 结果页顶部红色横幅提示
+  "builder 可能 over-segmenting, 规则违规需谨慎解读"
+
+### 对抗训练 lane (v1.0.4-v1.0.9)
 
 Phase 18-D 起加了 examiner ↔ candidate ↔ adjudicator 对抗 lane (`archkg adversarial`)。
 21 张规则被 deterministically 触发, 100-case battery 全 pass at F1=1.00:

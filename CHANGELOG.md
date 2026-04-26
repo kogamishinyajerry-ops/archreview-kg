@@ -4,6 +4,76 @@ All notable changes to ArchReview-KG. Version tags follow `v<major>.<minor>.<pat
 patch releases (`v1.0.x`) are individual ship phases reviewed by Codex GPT-5.4,
 minor releases (`v1.1.0` / `v1.2.0`) are stable milestones rolling up multiple patches.
 
+## v1.2.1 — 2026-04-26 — Real-PDF readiness: scale + entity sanity check
+
+A real CAD PDF (Medfield 16-unit apartment plan, 8.5k vector paths)
+ran through v1.2.0's studio without crashing but produced 169 rooms
+and 204 doors — clear over-segmentation — and 89 spurious door-width
+violations clustered at 0.80–0.83 m. A non-technical user reading
+that report would be misled. v1.2.1 surfaces the noise BEFORE the
+user trusts the rule output.
+
+### Added
+
+- **`points_per_meter` form field** on the studio upload form
+  (default 50.0). Real-world CAD exports use varied scales — Archicad
+  / Revit metric exports cluster around 50 ppm, AutoCAD imperial
+  exports closer to 72 pt/inch. Without this knob the only path to a
+  correct scale was the CLI.
+- **"🔍 仅识图模式" checkbox** runs `extract` + `build_graph` +
+  overlay only, skips rule evaluation. The result page renders with a
+  banner indicating inspect-only mode and a minimal report listing
+  entity counts. Lets users sanity-check what the builder detected
+  before trusting any rule fire on those entities.
+- **Quality flags on the result page**: when `rooms > 50` or
+  `doors > 50` (typical residential plan rarely exceeds either), or
+  when `corridors == 0 and rooms > 0`, an orange banner at the top of
+  the viewer warns about builder over-segmentation. Same flags surface
+  in `PipelineResult.quality_flags`.
+- 5 new tests in `tests/test_viewer_studio.py` for the inspect_only
+  redirect path, the bad-ppm flash path, direct exercise of
+  `_compute_quality_flags` against synthetic graphs and a typed
+  `EntityGraph` (Codex R1 P2), and a regression test that the
+  standalone `archkg viewer` re-render path also honours
+  `inspect_only` (Codex R2 P0).
+- Documented case study in `READINESS.md` showing the Medfield
+  numbers and what the new knobs do.
+- **`run_meta.json` marker** persisted next to the artifacts so any
+  re-render path (studio's own pre-render + standalone `archkg
+  viewer`) honours `inspect_only` mode. Without this, `archkg viewer
+  <run-dir>` re-rendered an inspect-only run as a misleading green
+  "0 violations = clean review" page (Codex R2 P0). Schema:
+  `{"mode": "inspect_only" | "full", "quality_flags": [...]}`.
+  `archkg/viewer/server.py:_render_index` reads it; missing file
+  falls back to `mode="full"` so historical run dirs still open.
+
+### Changed
+
+- `run_pipeline` signature: new `inspect_only: bool = False` keyword,
+  plus result fields `room_count` / `door_count` / `corridor_count` /
+  `quality_flags`. Backward-compatible default behaviour.
+- `_compute_quality_flags` accepts the typed in-memory `EntityGraph`
+  directly so a future serialisation shape change can't silently
+  bypass the safeguard. A `dict` fallback is preserved for tests
+  with synthetic graphs (Codex R1 P2).
+- Viewer template (`index.html.j2`) renders inspect-only mode as
+  unmissable: orange banner, header badge, pipeline steps 3-5 marked
+  `⊘ skipped`, stats tile shows `N/A` instead of a green "0 issues",
+  section ④ explicitly says "规则评估未执行", section ⑤ relabelled
+  "源图副本（无标注，规则未跑）". Full review mode unchanged.
+- `archkg/viewer/server.py:_render_index` now reads `run_meta.json`
+  and forwards `mode` + `quality_flags` to the template.
+- pyproject version 1.2.0 → 1.2.1.
+
+### Not yet done (v1.2.x candidates)
+
+- Builder-side noise rejection (min-room-area filter, door context
+  validation): would meaningfully reduce the false-positive count on
+  the same Medfield PDF, but harder to ship safely without breaking
+  the synthetic test cases.
+- Region awareness (skip GB rules entirely for non-Chinese plans).
+- Auto scale detection from dimension annotations on the page.
+
 ## v1.2.0 — 2026-04-26 — Studio upload UI for first-time users
 
 The first end-to-end browser experience. Phase 19-B.

@@ -5,7 +5,7 @@
 [![pytest](https://img.shields.io/badge/pytest-241%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
-[![version](https://img.shields.io/badge/version-1.2.0-blue)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
 
 ArchReview-KG 把上传的 PDF 平面图自动转成实体图谱（房间 / 户门 / 走廊 / 尺寸标注），
 对照 30 条国标规则（GB 50096 / 50352 / 50016 / 50763）逐条评估，输出标注 PDF
@@ -55,6 +55,10 @@ archkg studio
 
 完成后页面跳转到结果视图: 左侧标注 PDF 预览 / 右侧问题清单 + 复核报告。
 点 "没图纸？跑内置 demo" 用 `samples/sample_clean.pdf` 看完整流程。
+
+> ⚠️ **真实 CAD 图纸提示** (v1.2.1 起): 第一次跑陌生 PDF 时, 展开 "⚙️ 高级参数" 选 **"🔍 仅识图模式"** —
+> 只跑实体提取, 跳过规则评估。如果 builder 检出 rooms / doors 数字看起来合理 (一户型 ~5-10 rooms), 再用完整模式让规则跑;
+> 如果数字异常 (例如 169 rooms), 顶部红色质量标记会提示 builder 在 over-segmenting, 这时规则报告里的违规多数是假阳性。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 

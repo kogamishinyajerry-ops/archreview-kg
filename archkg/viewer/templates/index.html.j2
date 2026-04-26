@@ -84,33 +84,73 @@
 
 <header>
   <h1>🏛️ ArchReview-KG · Demo Viewer</h1>
+  {% if mode is defined and mode == "inspect_only" %}
+  <span class="badge" style="background: var(--orange); color: #000;">仅识图模式 · 规则评估未执行</span>
+  {% else %}
   <span class="badge">{{ issues|length }} issues flagged</span>
+  {% endif %}
   <span class="meta">{{ source_pdf }} · {{ created_at }}</span>
 </header>
 
+{% if mode is defined and mode == "inspect_only" %}
+<div style="margin: 16px; padding: 14px 18px; border-radius: 10px;
+            background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.6);
+            color: var(--text); font-size: 13px; line-height: 1.7;">
+<strong style="color: var(--orange);">⚠ 仅识图模式</strong> — 本次跑只完成了 PDF Ingest 与 Entity
+Graph 构建，<strong>没有评估规则、没有生成违规清单、没有标注 PDF</strong>。下方"问题清单"
+为空不表示合规，"流水线"步骤 3-5 显示为 skipped。先确认 builder 检出的实体数量是否合理，
+再用完整审图模式跑规则。
+</div>
+{% endif %}
+
+{% if quality_flags is defined and quality_flags %}
+<div style="margin: 16px; padding: 14px 18px; border-radius: 10px;
+            background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4);
+            color: var(--text); font-size: 13px; line-height: 1.7;">
+<strong style="color: var(--orange);">质量提示</strong> — 以下信号意味着 builder 检出的实体可能含有大量噪声，
+规则报告中的违规需谨慎解读：
+<ul style="margin: 8px 0 0 0; padding-left: 22px;">
+{% for flag in quality_flags %}
+  <li>{{ flag }}</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+
 <main>
 
+{% set inspect = mode is defined and mode == "inspect_only" %}
 <section class="panel full">
   <h2>① 流水线</h2>
   <div class="pipeline">
     <div class="step"><div class="num">1</div><div class="name">PDF Ingest</div><div class="out">primitives.json · {{ stats.lines }} lines · {{ stats.texts }} texts</div></div>
     <div class="step"><div class="num">2</div><div class="name">Entity Graph</div><div class="out">{{ stats.rooms }} rooms · {{ stats.doors }} doors · {{ stats.corridors }} corridor</div></div>
+    {% if inspect %}
+    <div class="step" style="opacity: .5;"><div class="num">3</div><div class="name">Rule Engine</div><div class="out" style="color: var(--orange);">⊘ skipped (inspect-only)</div></div>
+    <div class="step" style="opacity: .5;"><div class="num">4</div><div class="name">Annotate + Report</div><div class="out" style="color: var(--orange);">⊘ skipped</div></div>
+    <div class="step" style="opacity: .5;"><div class="num">5</div><div class="name">Feedback</div><div class="out" style="color: var(--orange);">⊘ skipped</div></div>
+    {% else %}
     <div class="step"><div class="num">3</div><div class="name">Rule Engine</div><div class="out">3 rule cards × {{ stats.applicable_entities }} entities</div></div>
     <div class="step"><div class="num">4</div><div class="name">Annotate + Report</div><div class="out">annotated.pdf · report.md</div></div>
     <div class="step"><div class="num">5</div><div class="name">Feedback</div><div class="out">report.md → feedback.yaml</div></div>
+    {% endif %}
   </div>
   <div class="stats">
     <div class="stat"><div class="v ok">{{ stats.rooms }}</div><div class="k">Rooms</div></div>
     <div class="stat"><div class="v">{{ stats.doors }}</div><div class="k">Doors</div></div>
     <div class="stat"><div class="v">{{ stats.corridors }}</div><div class="k">Corridors</div></div>
+    {% if inspect %}
+    <div class="stat"><div class="v warn">N/A</div><div class="k">Issues (规则未跑)</div></div>
+    {% else %}
     <div class="stat"><div class="v {% if issues %}bad{% else %}ok{% endif %}">{{ issues|length }}</div><div class="k">Issues</div></div>
+    {% endif %}
   </div>
   <div class="links" style="margin-top: 12px;">
     <a href="entity_graph.json" target="_blank">📦 entity_graph.json</a>
-    <a href="issues.json" target="_blank">📋 issues.json</a>
+    {% if not inspect %}<a href="issues.json" target="_blank">📋 issues.json</a>{% endif %}
     <a href="primitives.json" target="_blank">🧱 primitives.json</a>
     <a href="report.md" target="_blank">📝 report.md</a>
-    <a href="feedback.yaml" target="_blank">✉️ feedback.yaml</a>
+    {% if not inspect %}<a href="feedback.yaml" target="_blank">✉️ feedback.yaml</a>{% endif %}
   </div>
 </section>
 
@@ -126,8 +166,10 @@
 </section>
 
 <section class="panel full">
-  <h2>④ 问题清单（{{ issues|length }} 条）</h2>
-  {% if issues %}
+  <h2>④ 问题清单（{% if inspect %}规则未跑{% else %}{{ issues|length }} 条{% endif %}）</h2>
+  {% if inspect %}
+  <p style="color: var(--orange);">⊘ 仅识图模式下规则评估未执行，本节为空不代表合规。</p>
+  {% elif issues %}
   <table>
     <thead>
       <tr>
@@ -156,9 +198,9 @@
 </section>
 
 <section class="panel full">
-  <h2>⑤ 标注 PDF</h2>
-  <img src="annotated_preview.png" alt="annotated pdf" />
-  <details><summary>下载 annotated.pdf</summary><a href="annotated.pdf" target="_blank">annotated.pdf</a></details>
+  <h2>⑤ {% if inspect %}源图副本（无标注，规则未跑）{% else %}标注 PDF{% endif %}</h2>
+  <img src="annotated_preview.png" alt="{% if inspect %}source pdf copy{% else %}annotated pdf{% endif %}" />
+  <details><summary>下载{% if inspect %}源图副本{% else %} annotated.pdf{% endif %}</summary><a href="annotated.pdf" target="_blank">annotated.pdf</a></details>
 </section>
 
 <section class="panel full">
