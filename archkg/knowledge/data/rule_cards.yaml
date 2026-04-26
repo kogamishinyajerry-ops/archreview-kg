@@ -596,6 +596,158 @@
       entity: { building_type: industrial }
       expect_pass: true
 
+# =====================================================================
+# Phase 15: Stair entity-level rules. The Stair entity has lived in the
+# schema since the MVP but the engine only iterated Room/Door/Corridor —
+# Phase 15 wires Stair iteration through engine._entity_iterable so these
+# four rules can fire on any Stair entity an upstream pipeline emits.
+# Coverage delta: 24/30 → 28/30 (≈93%). Future PDF passes that detect
+# stairs will surface issues automatically with no further wiring.
+# =====================================================================
+
+- id: RC-STAIR-FLIGHT-WIDTH-1.10
+  source_clause_ids:
+    - GB50096-6.3.1
+  applies_to: Stair
+  inputs:
+    - flight_width_m
+  # flight_width_m comes from Stair.properties (engine fallback). 6.3.1 also
+  # carries a 1.00 m exception for ≤6F + one-side-railed flights — captured
+  # in the clause text but not in the rule logic; engine has no `floors` or
+  # `single_side_handrail` inputs at the Stair scope. Codex Phase 15 P2:
+  # demote to severity=info reminder until those predicates exist, so a
+  # compliant 1.05 m flight in the exception branch isn't reported as a
+  # hard violation. Threshold_value lock-in at 1.10 m for evidence payload.
+  logic_expression: "flight_width_m is None or flight_width_m >= 1.10"
+  threshold_value: 1.10
+  severity: info
+  output_template: "楼梯梯段净宽 {flight_width_m} m < GB 50096-6.3.1 规定的 1.10 m；如不超过 6 层 + 一边栏杆梯段，可放宽至 1.00 m。请核对楼层数与栏杆配置。"
+  test_cases:
+    - name: ok_wide_flight
+      entity: { flight_width_m: 1.20 }
+      expect_pass: true
+    - name: fail_too_narrow
+      entity: { flight_width_m: 1.05 }
+      expect_pass: false
+    - name: edge_exactly_1_10
+      entity: { flight_width_m: 1.10 }
+      expect_pass: true
+    - name: width_unknown_skipped
+      entity: { flight_width_m: null }
+      expect_pass: true
+
+# Codex Phase 15 P1: split tread/riser into single-metric rules so engine
+# evidence payload (_pick_measured = first numeric input, threshold_value
+# = first source clause threshold) is unambiguous per fired issue. Both
+# share GB50096-6.3.2 (公共楼梯) + 6.3.3 (套内楼梯) which carry the same
+# threshold, so multi-source on each rule keeps fidelity coverage.
+
+- id: RC-STAIR-TREAD-WIDTH-0.26
+  source_clause_ids:
+    - GB50096-6.3.2
+    - GB50096-6.3.3
+  applies_to: Stair
+  inputs:
+    - tread_width_m
+  logic_expression: "tread_width_m is None or tread_width_m >= 0.26"
+  threshold_value: 0.26
+  output_template: "楼梯踏步宽 {tread_width_m} m，小于 GB 50096-6.3.2 / GB 50096-6.3.3 规定的 0.26 m。"
+  test_cases:
+    - name: ok_typical
+      entity: { tread_width_m: 0.28 }
+      expect_pass: true
+    - name: fail_too_narrow
+      entity: { tread_width_m: 0.20 }
+      expect_pass: false
+    - name: edge_exactly_0_26
+      entity: { tread_width_m: 0.26 }
+      expect_pass: true
+    - name: tread_unknown_skipped
+      entity: { tread_width_m: null }
+      expect_pass: true
+
+- id: RC-STAIR-RISER-HEIGHT-0.175
+  source_clause_ids:
+    - GB50096-6.3.2
+    - GB50096-6.3.3
+  applies_to: Stair
+  inputs:
+    - riser_height_m
+  logic_expression: "riser_height_m is None or riser_height_m <= 0.175"
+  threshold_value: 0.175
+  output_template: "楼梯踢面高 {riser_height_m} m，大于 GB 50096-6.3.2 / GB 50096-6.3.3 规定的 0.175 m。"
+  test_cases:
+    - name: ok_typical
+      entity: { riser_height_m: 0.165 }
+      expect_pass: true
+    - name: fail_too_tall
+      entity: { riser_height_m: 0.20 }
+      expect_pass: false
+    - name: edge_exactly_0_175
+      entity: { riser_height_m: 0.175 }
+      expect_pass: true
+    - name: riser_unknown_skipped
+      entity: { riser_height_m: null }
+      expect_pass: true
+
+- id: RC-STAIR-HANDRAIL-0.90
+  source_clause_ids:
+    - GB50096-6.3.2
+  applies_to: Stair
+  inputs:
+    - handrail_height_m
+  # handrail_height_m via Stair.properties. The clause also carries a 1.05 m
+  # branch for 楼梯水平段栏杆 long enough to need elevated rails — different
+  # geometric configuration; reviewer flags it manually until a future card
+  # models that branch. Codex Phase 15 P1: threshold_value=0.90 explicit so
+  # the report doesn't read "threshold 0.26 m" copied from clause's primary
+  # threshold (which is for tread width).
+  logic_expression: "handrail_height_m is None or handrail_height_m >= 0.90"
+  threshold_value: 0.90
+  output_template: "楼梯扶手高度 {handrail_height_m} m，小于 GB 50096-6.3.2 规定的 0.90 m（楼梯水平段栏杆 >0.50 m 时其扶手另需 ≥ 1.05 m，请单独核对）。"
+  test_cases:
+    - name: ok_typical
+      entity: { handrail_height_m: 0.95 }
+      expect_pass: true
+    - name: fail_too_low
+      entity: { handrail_height_m: 0.85 }
+      expect_pass: false
+    - name: edge_exactly_0_90
+      entity: { handrail_height_m: 0.90 }
+      expect_pass: true
+    - name: handrail_unknown_skipped
+      entity: { handrail_height_m: null }
+      expect_pass: true
+
+- id: RC-STAIR-WELL-WIDTH-0.11
+  source_clause_ids:
+    - GB50096-6.3.5
+  applies_to: Stair
+  inputs:
+    - well_width_m
+  # well_width_m via Stair.properties. Clause is conditional ("when >0.11m
+  # then 必须 child-safety measures"). Engine cannot verify whether measures
+  # were taken — Codex Phase 15 P2: severity=info so a compliant well WITH
+  # mitigations isn't reported as an error. The reminder anchors to the
+  # specific stair entity for reviewer convenience.
+  logic_expression: "well_width_m is None or well_width_m <= 0.11"
+  threshold_value: 0.11
+  severity: info
+  output_template: "楼梯井净宽 {well_width_m} m > 0.11 m，按 GB 50096-6.3.5 必须采取防止儿童攀滑的措施，请核对。"
+  test_cases:
+    - name: ok_narrow_well
+      entity: { well_width_m: 0.08 }
+      expect_pass: true
+    - name: fail_well_triggers_child_safety
+      entity: { well_width_m: 0.15 }
+      expect_pass: false
+    - name: edge_exactly_0_11
+      entity: { well_width_m: 0.11 }
+      expect_pass: true
+    - name: well_unknown_skipped
+      entity: { well_width_m: null }
+      expect_pass: true
+
 - id: RC-STAIR-LANDING-WIDTH-1.2
   source_clause_ids:
     - GB50352-6.8.4

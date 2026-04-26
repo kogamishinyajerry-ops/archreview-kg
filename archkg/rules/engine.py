@@ -27,6 +27,7 @@ from archkg.schemas import (
     ProjectMeta,
     Room,
     RuleCard,
+    Stair,
     StandardClause,
 )
 
@@ -117,7 +118,7 @@ def evaluate_expression(tree: ast.Expression, env: dict[str, Any]) -> bool:
         return False
 
 
-def _entity_env(entity: Room | Door | Corridor, inputs: list[str]) -> dict[str, Any]:
+def _entity_env(entity: Room | Door | Corridor | Stair, inputs: list[str]) -> dict[str, Any]:
     env: dict[str, Any] = {}
     for key in inputs:
         if hasattr(entity, key):
@@ -135,13 +136,15 @@ def _format_message(template: str, env: dict[str, Any]) -> str:
         return template
 
 
-def _entity_iterable(graph: EntityGraph, applies_to: str) -> list[Room | Door | Corridor]:
+def _entity_iterable(graph: EntityGraph, applies_to: str) -> list[Room | Door | Corridor | Stair]:
     if applies_to == "Room":
         return list(graph.rooms)
     if applies_to == "Door":
         return list(graph.doors)
     if applies_to == "Corridor":
         return list(graph.corridors)
+    if applies_to == "Stair":
+        return list(graph.stairs)
     return []
 
 
@@ -198,6 +201,14 @@ def evaluate(
 
         clause = standards_by_id.get(rule.source_clause_ids[0])
         clause_id = clause.id if clause else rule.source_clause_ids[0]
+        # Phase 15 Codex P1: rule-level threshold_value override beats clause's
+        # primary threshold when the rule's metric differs from the source
+        # clause's first-listed threshold (e.g. RC-STAIR-HANDRAIL-0.90 sourcing
+        # GB50096-6.3.2 whose primary threshold is 0.26 m for tread width).
+        threshold_for_evidence = (
+            rule.threshold_value if rule.threshold_value is not None
+            else (clause.threshold_value if clause else None)
+        )
 
         if rule.applies_to == "Project":
             assert project_meta is not None
@@ -210,7 +221,7 @@ def evaluate(
                 snippet=_format_message(rule.output_template, env),
                 page_index=0,
                 measured_value=measured,
-                threshold_value=clause.threshold_value if clause else None,
+                threshold_value=threshold_for_evidence,
                 unit=clause.unit if clause else None,
             )
             result.issues.append(
@@ -221,7 +232,7 @@ def evaluate(
                     entity_ids=[f"project:{project_meta.project_id}"],
                     bbox=None,
                     page_index=0,
-                    severity="info",
+                    severity=rule.severity or "info",
                     message=_format_message(rule.output_template, env),
                     evidence=evidence,
                 )
@@ -239,7 +250,7 @@ def evaluate(
                 snippet=_format_message(rule.output_template, env),
                 page_index=entity.page_index,
                 measured_value=measured,
-                threshold_value=clause.threshold_value if clause else None,
+                threshold_value=threshold_for_evidence,
                 unit=clause.unit if clause else None,
             )
             result.issues.append(
@@ -250,7 +261,7 @@ def evaluate(
                     entity_ids=[entity.id],
                     bbox=entity.bbox,
                     page_index=entity.page_index,
-                    severity="error",
+                    severity=rule.severity or "error",
                     message=_format_message(rule.output_template, env),
                     evidence=evidence,
                 )

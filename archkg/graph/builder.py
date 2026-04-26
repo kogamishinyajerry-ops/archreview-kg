@@ -45,6 +45,7 @@ from archkg.schemas import (
     PagePrimitives,
     Primitives,
     Room,
+    Stair,
     TextPrimitive,
 )
 
@@ -96,6 +97,11 @@ class EntityGraph(BaseModel):
     doors: list[Door]
     corridors: list[Corridor]
     dimensions: list[Dimension]
+    # Phase 15: Stair iteration support. Default empty so older
+    # entity_graph.json files (which never carried this key) keep loading.
+    # The PDF builder pipeline does not yet detect stairs — entity-level
+    # stair rules will fire when an upstream pass populates this list.
+    stairs: list[Stair] = []
 
 
 # ---------- helpers ----------

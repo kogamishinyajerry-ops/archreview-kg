@@ -20,6 +20,9 @@ class RuleCardTestCase(BaseModel):
     note: str | None = None
 
 
+RuleSeverity = Literal["error", "warning", "info"]
+
+
 class RuleCard(BaseModel):
     """A geometry-decidable rule, resolved to a single clause family."""
 
@@ -40,6 +43,20 @@ class RuleCard(BaseModel):
     output_template: str = Field(
         ...,
         description="Jinja-style template producing the human-readable issue message.",
+    )
+    # Phase 15 Codex P1: rule-level evidence overrides. With multi-source rules
+    # (e.g. RC-STAIR-HANDRAIL-0.90 sourcing GB50096-6.3.2 whose primary
+    # threshold is 0.26 m for tread width, not 0.90 m for handrail), copying
+    # evidence from `source_clause_ids[0]` produced wrong report payloads.
+    # When set, the engine uses these instead of falling back to the source
+    # clause's threshold_value / a one-size severity policy.
+    threshold_value: float | None = Field(
+        None,
+        description="Override evidence.threshold_value when the rule's threshold differs from source clause's primary threshold (e.g. multi-source rules).",
+    )
+    severity: RuleSeverity | None = Field(
+        None,
+        description="Override issue severity. Default: 'error' for entity-level rules, 'info' for Project-level rules. Use 'info' for entity-anchored reminders the engine cannot fully verify (e.g. 6.3.5 stair-well child safety: engine knows the well is wide but cannot tell if mitigations were taken).",
     )
     test_cases: list[RuleCardTestCase] = Field(default_factory=list)
 

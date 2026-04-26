@@ -80,13 +80,15 @@ def _load_issues(run_dir: Path) -> dict[str, dict[str, Any]]:
 
 
 def _load_graph(run_dir: Path) -> dict[str, dict[str, Any]]:
-    """Return a flat {entity_id: entity_dict} for all rooms/doors/corridors."""
+    """Return a flat {entity_id: entity_dict} for all rooms/doors/corridors/stairs."""
     g_path = run_dir / "entity_graph.json"
     if not g_path.exists():
         raise FeedbackError(f"missing {g_path}")
     g = json.loads(g_path.read_text(encoding="utf-8"))
     out: dict[str, dict[str, Any]] = {}
-    for kind in ("rooms", "doors", "corridors"):
+    # Phase 15 Codex P1: include stairs so feedback promotion can round-trip
+    # confirmed stair-rule findings without losing the entity.
+    for kind in ("rooms", "doors", "corridors", "stairs"):
         for ent in g.get(kind, []):
             out[ent["id"]] = ent
     return out
@@ -202,7 +204,16 @@ def _build_test_case(
         inputs = {k: meta.get(k) for k in rule.inputs}
     else:
         entity = graph.get(eid, {})
-        inputs = {k: entity.get(k) for k in rule.inputs}
+        # Phase 15 Codex P1: mirror engine._entity_env's properties fallback so
+        # stair rules whose inputs come from properties (flight_width_m,
+        # well_width_m, handrail_height_m) round-trip into rule_cards.yaml as
+        # real values rather than all-None test cases that would silently
+        # break test_rule_test_cases_match_engine_decision.
+        props = entity.get("properties") or {}
+        inputs = {
+            k: entity[k] if k in entity else props.get(k)
+            for k in rule.inputs
+        }
 
     return {
         "name": f"confirmed-{issue['issue_id']}",

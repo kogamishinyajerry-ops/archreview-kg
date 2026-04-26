@@ -128,3 +128,33 @@ def test_build_test_case_for_project_issue_with_meta_uses_meta_values() -> None:
     assert tc["entity"] == {"floors": 8, "height_m": 22.0}
     assert tc["expect_pass"] is False
     assert tc["name"] == "confirmed-ISS-test"
+
+
+def test_build_test_case_falls_back_to_properties_for_stair_rule() -> None:
+    """Codex Phase 15 P1: stair rules read inputs (flight_width_m,
+    well_width_m, handrail_height_m) from Stair.properties via the engine's
+    fallback. Feedback promotion must mirror that fallback or it would write
+    all-None test_cases that then break test_rule_test_cases_match_engine_decision.
+    """
+    issue = {
+        "issue_id": "ISS-stair",
+        "rule_card_id": "RC-STAIR-WELL-WIDTH-0.11",
+        "entity_ids": ["stair-1"],
+    }
+    graph = {
+        "stair-1": {
+            "id": "stair-1",
+            "type": "Stair",
+            "tread_width_m": 0.28,
+            "riser_height_m": 0.16,
+            # well_width_m lives in properties (not a schema field).
+            "properties": {"well_width_m": 0.15},
+        },
+    }
+    tc = _build_test_case(issue, graph=graph, meta=None)
+    assert tc is not None
+    # rule.inputs for RC-STAIR-WELL-WIDTH-0.11 is [well_width_m]
+    assert tc["entity"] == {"well_width_m": 0.15}, (
+        "promotion must read from properties when input is not a top-level field"
+    )
+    assert tc["expect_pass"] is False

@@ -10,7 +10,7 @@ from archkg.rules.engine import (
     evaluate,
     evaluate_expression,
 )
-from archkg.schemas import Corridor, Door, Room
+from archkg.schemas import Corridor, Door, Room, Stair
 
 
 def test_compile_rejects_function_call() -> None:
@@ -96,6 +96,24 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
             min_width_m=1.05,  # FAIL: < 1.20
         )
     ]
+    # Phase 15: a Stair entity that fails ALL four new RC-STAIR-* rules so
+    # the engine's new Stair iteration path actually emits issues we can
+    # assert on. Schema fields cover tread/riser; flight_width / well_width /
+    # handrail come from properties (engine fallback).
+    stairs = [
+        Stair(
+            id="stair-1",
+            page_index=0,
+            bbox=(0, 260, 200, 360),
+            tread_width_m=0.20,        # FAIL: < 0.26
+            riser_height_m=0.20,       # FAIL: > 0.175
+            properties={
+                "flight_width_m": 1.05,    # FAIL: < 1.10
+                "well_width_m": 0.15,      # FAIL: > 0.11
+                "handrail_height_m": 0.85,  # FAIL: < 0.90
+            },
+        ),
+    ]
 
     graph = EntityGraph(
         source_pdf="x.pdf",
@@ -107,6 +125,7 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
         doors=doors,
         corridors=corridors,
         dimensions=[],
+        stairs=stairs,
     )
 
     result = evaluate(graph, rules, standards)
@@ -136,6 +155,11 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
     assert rule_ids == sorted([
         "RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA",
         "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+        # Phase 15: Stair entity-level rules fired by the failing stair-1.
+        # Codex P1 split tread/riser into single-metric rules.
+        "RC-STAIR-FLIGHT-WIDTH-1.10",
+        "RC-STAIR-TREAD-WIDTH-0.26", "RC-STAIR-RISER-HEIGHT-0.175",
+        "RC-STAIR-HANDRAIL-0.90", "RC-STAIR-WELL-WIDTH-0.11",
     ])
 
     by_rule = {i.rule_card_id: i for i in issues}
@@ -186,3 +210,59 @@ def test_rule_test_cases_match_engine_decision() -> None:
             assert actual is tc.expect_pass, (
                 f"rule {rule.id} test '{tc.name}': expected {tc.expect_pass}, got {actual}"
             )
+
+
+def test_rule_threshold_value_override_used_in_evidence() -> None:
+    """Codex Phase 15 P1: RC-STAIR-HANDRAIL-0.90 sources GB50096-6.3.2 whose
+    primary threshold_value is 0.26 m (tread width). Without rule-level
+    override the evidence would misreport 0.26 m as the handrail threshold.
+    With override, evidence reports the correct 0.90 m."""
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    handrail_rule = next(r for r in rules if r.id == "RC-STAIR-HANDRAIL-0.90")
+    assert handrail_rule.threshold_value == pytest.approx(0.90)
+
+    stairs = [
+        Stair(
+            id="stair-handrail-fail",
+            page_index=0,
+            bbox=(0, 0, 100, 100),
+            properties={"handrail_height_m": 0.85},
+        ),
+    ]
+    graph = EntityGraph(
+        source_pdf="x.pdf", points_per_meter=50.0,
+        page_index=0, page_width_pt=500, page_height_pt=400,
+        rooms=[], doors=[], corridors=[], dimensions=[], stairs=stairs,
+    )
+    result = evaluate(graph, rules, standards)
+    handrail = next(i for i in result.issues if i.rule_card_id == "RC-STAIR-HANDRAIL-0.90")
+    assert handrail.evidence.threshold_value == pytest.approx(0.90)
+    assert handrail.evidence.measured_value == pytest.approx(0.85)
+
+
+def test_rule_severity_override_for_reminder() -> None:
+    """Codex Phase 15 P2: RC-STAIR-WELL-WIDTH-0.11 is a reminder (engine
+    cannot verify whether child-safety mitigations were taken). severity=info
+    keeps it out of the violation count when the well exceeds 0.11 m."""
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    well_rule = next(r for r in rules if r.id == "RC-STAIR-WELL-WIDTH-0.11")
+    assert well_rule.severity == "info"
+
+    stairs = [
+        Stair(
+            id="stair-well-trigger",
+            page_index=0,
+            bbox=(0, 0, 100, 100),
+            properties={"well_width_m": 0.15},
+        ),
+    ]
+    graph = EntityGraph(
+        source_pdf="x.pdf", points_per_meter=50.0,
+        page_index=0, page_width_pt=500, page_height_pt=400,
+        rooms=[], doors=[], corridors=[], dimensions=[], stairs=stairs,
+    )
+    result = evaluate(graph, rules, standards)
+    well = next(i for i in result.issues if i.rule_card_id == "RC-STAIR-WELL-WIDTH-0.11")
+    assert well.severity == "info"
