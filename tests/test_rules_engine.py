@@ -114,7 +114,13 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
     # No project_meta means entity-level rules all run; project-level rules skip
     # for lack of context (Phase 11-B addition).
     skipped_ids = {s.rule_id for s in result.skipped}
-    assert skipped_ids == {"RC-ELEVATOR-REQUIRED", "RC-EVAC-STAIR-TYPE-33M", "RC-REFUGE-LAYER-100M"}
+    # All project-scope rules skip without --project-meta context.
+    project_rule_ids = {
+        "RC-ELEVATOR-REQUIRED", "RC-EVAC-STAIR-TYPE-33M", "RC-REFUGE-LAYER-100M",
+        "RC-CLOSED-STAIRWELL-21M", "RC-ACCESSIBLE-RESIDENTIAL-7F",
+        "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+    }
+    assert skipped_ids == project_rule_ids
     rule_ids = sorted(i.rule_card_id for i in issues)
     assert rule_ids == sorted(["RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA"])
 

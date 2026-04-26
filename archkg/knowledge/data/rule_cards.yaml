@@ -87,6 +87,73 @@
       entity: { height_m: null }
       expect_pass: true
 
+- id: RC-CLOSED-STAIRWELL-21M
+  source_clause_ids:
+    - GB50016-5.5.27
+  applies_to: Project
+  inputs:
+    - height_m
+  # Pass when height_m unset, or height ≤21 (敞开 ok), or >33 (caught separately by RC-EVAC-STAIR-TYPE-33M).
+  logic_expression: "height_m is None or height_m <= 21.0 or height_m > 33.0"
+  output_template: "项目高度 {height_m} m 在 21–33 m 区间，按 GB 50016-5.5.27 疏散楼梯应采用封闭楼梯间，请确认楼梯间形式。"
+  test_cases:
+    - name: low_rise_open_stair_ok
+      entity: { height_m: 18.0 }
+      expect_pass: true
+    - name: mid_rise_triggers_closed_stair
+      entity: { height_m: 25.0 }
+      expect_pass: false
+    - name: just_above_21_triggers
+      entity: { height_m: 22.0 }
+      expect_pass: false
+    - name: high_rise_handed_off_to_smokeproof_rule
+      entity: { height_m: 50.0 }
+      expect_pass: true
+    - name: height_unset_passes
+      entity: { height_m: null }
+      expect_pass: true
+
+- id: RC-ACCESSIBLE-RESIDENTIAL-7F
+  source_clause_ids:
+    - GB50096-6.6.1
+  applies_to: Project
+  inputs:
+    - floors
+    - height_m
+  # Pass when neither 7+ floors nor >16m entry height — i.e. low-rise that doesn't need accessibility design.
+  logic_expression: "(floors is None or floors < 7) and (height_m is None or height_m <= 16.0)"
+  output_template: "项目 {floors} 层 / 入口距地 {height_m} m，按 GB 50096-6.6.1 应对建筑入口、入口平台、候梯厅、公共走道做无障碍设计，请确认。"
+  test_cases:
+    - name: low_rise_ok
+      entity: { floors: 6, height_m: 14.0 }
+      expect_pass: true
+    - name: seven_floors_triggers
+      entity: { floors: 7, height_m: 18.0 }
+      expect_pass: false
+    - name: tall_with_few_floors_triggers
+      entity: { floors: 5, height_m: 17.5 }
+      expect_pass: false
+
+- id: RC-ENTRANCE-PLATFORM-WIDTH-7F
+  source_clause_ids:
+    - GB50096-6.6.3
+  applies_to: Project
+  inputs:
+    - floors
+  # Pass when floors unset OR floors < 7 (低层 / 多层 use 1.50m minimum which is checked at entity level when we have entry-platform entities).
+  logic_expression: "floors is None or floors < 7"
+  output_template: "项目 {floors} 层（≥7 层），按 GB 50096-6.6.3 入口平台宽度不应小于 2.00 m，请确认入口平台尺寸。"
+  test_cases:
+    - name: low_rise_no_reminder
+      entity: { floors: 6 }
+      expect_pass: true
+    - name: seven_floors_triggers
+      entity: { floors: 7 }
+      expect_pass: false
+    - name: floors_unset_passes
+      entity: { floors: null }
+      expect_pass: true
+
 - id: RC-REFUGE-LAYER-100M
   source_clause_ids:
     - GB50016-5.5.31

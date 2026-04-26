@@ -175,6 +175,18 @@
   threshold_op: null
   paraphrase: false
 
+- id: GB50096-6.6.1
+  source: GB 50096-2011
+  version: "2011"
+  category: accessibility
+  applies_to_building_type: [residential]
+  applies_to_height_class: [多层, 中高层, 高层, 超高层]
+  clause_text: 七层及七层以上的住宅，应对下列部位进行无障碍设计：1．建筑入口；2．入口平台；3．候梯厅；4．公共走道。
+  unit: bool
+  threshold_value: null
+  threshold_op: null
+  paraphrase: false
+
 - id: GB50096-6.6.3
   source: GB 50096-2011
   version: "2011"
