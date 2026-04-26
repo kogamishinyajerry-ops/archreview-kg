@@ -371,6 +371,292 @@ def test_standalone_viewer_rerender_honours_inspect_only(tmp_path: Path) -> None
     assert "Issues (规则未跑)" in body
 
 
+def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
+    """Phase 20-A: a 200-DPI raster render of the demo PDF should
+    produce roughly the same entity counts (4 rooms / 1 corridor /
+    6 doors) when fed through the CV ingest path. This is the
+    first-class regression that 'PNG support actually works'.
+
+    Differences from the vector path:
+    - No OCR, so labels are absent (rules needing labels won't fire).
+    - The points_per_meter must be in PIXELS per metre, not points.
+      For a PDF at ppm=50 rendered to PNG at 200 DPI, that's
+      50 * 200 / 72 ≈ 138.89.
+    """
+    import fitz
+
+    png_path = tmp_path / "rendered.png"
+    doc = fitz.open(SAMPLE_PDF)
+    try:
+        zoom = 200.0 / 72.0
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+        pix.save(str(png_path))
+    finally:
+        doc.close()
+
+    out = tmp_path / "out"
+    result = run_pipeline(
+        png_path,
+        out,
+        points_per_meter=50.0 * 200.0 / 72.0,
+        min_room_area_m2=0.0,
+    )
+    # The CV pipeline isn't pixel-perfect; allow some slack but the
+    # major topology must be right. The clean demo render produces
+    # exactly 4/1/6 today; loosen if Hough params drift in future.
+    assert result.room_count == 4, (
+        f"expected 4 rooms from PNG render of demo PDF, got "
+        f"{result.room_count}"
+    )
+    assert result.corridor_count == 1, (
+        f"expected 1 corridor, got {result.corridor_count}"
+    )
+    assert result.door_count == 6, (
+        f"expected 6 doors, got {result.door_count}"
+    )
+
+    # The wrapped PDF + standard artifacts must exist for the viewer.
+    for fname in (
+        "annotated.pdf",
+        "entity_graph.json",
+        "entity_overlay.png",
+        "issues.json",
+        "primitives.json",
+        "report.md",
+        "source.pdf",
+        "source_preview.png",
+    ):
+        assert (out / fname).exists(), f"missing artifact for raster run: {fname}"
+
+
+def test_run_pipeline_stable_topology_across_dpis(tmp_path: Path) -> None:
+    """Codex P20-A R1 P0: same plan rendered at 100 / 150 / 200 / 300
+    / 600 DPI must give the same topology (4 rooms, 1 corridor,
+    6 doors). Pre-R1 the pixel-fixed CV heuristics produced
+    different results at each DPI; the scale-normalized version
+    derives every length-like constant from ``points_per_meter``.
+    """
+    import fitz
+
+    counts: list[tuple[int, int, int, int]] = []
+    for dpi in (100, 150, 200, 300, 600):
+        png = tmp_path / f"r{dpi}.png"
+        doc = fitz.open(SAMPLE_PDF)
+        try:
+            zoom = dpi / 72.0
+            pix = doc[0].get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+            pix.save(str(png))
+        finally:
+            doc.close()
+        ppm = 50.0 * dpi / 72.0
+        out = tmp_path / f"out{dpi}"
+        result = run_pipeline(png, out, points_per_meter=ppm, min_room_area_m2=0.0)
+        counts.append((dpi, result.room_count, result.corridor_count, result.door_count))
+
+    expected = (4, 1, 6)
+    failures = [c for c in counts if c[1:] != expected]
+    assert not failures, (
+        f"topology should be stable across DPIs but {failures} differ from "
+        f"{expected}; full sweep: {counts}"
+    )
+
+
+def test_post_review_image_dpi_compounds_with_ppm(studio_client) -> None:
+    """Codex P20-A R1 P0: studio form must let users specify the
+    image's render DPI separately from the source CAD's
+    ``points_per_meter``. Posting a 300-DPI render with
+    ``image_dpi=300`` should produce the same topology as the same
+    plan at any other DPI.
+    """
+    import fitz
+
+    client, state_dir = studio_client
+    doc = fitz.open(SAMPLE_PDF)
+    try:
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(300 / 72, 300 / 72), alpha=False)
+        png_bytes = pix.tobytes(output="png")
+    finally:
+        doc.close()
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(png_bytes), "plan.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "300",
+            "min_room_area_m2": "0",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    graph = json.loads((run_dir / "entity_graph.json").read_text("utf-8"))
+    assert len(graph["rooms"]) == 4, (
+        f"PNG@300 DPI with image_dpi=300 should yield 4 rooms; got {len(graph['rooms'])}"
+    )
+
+    # Codex P20-A R1 P1 / R2 P1: the result page must warn that
+    # raster inputs lack OCR AND must NOT recommend room_schedule.yaml
+    # (which can't match label-less raster rooms by id/label).
+    follow = client.get(f"/runs/{run_id}/")
+    body = follow.data.decode("utf-8")
+    assert "栅格图无 OCR" in body, (
+        "raster runs must surface the no-OCR warning so users don't "
+        "mistake an incomplete review for a complete one"
+    )
+    assert "room_schedule.yaml" not in body, (
+        "warning must NOT recommend room_schedule.yaml — it selects by "
+        "existing room_id/label which raster rooms don't have, and the "
+        "advice would be a dead end (Codex P20-A R2 P1)"
+    )
+
+    # Codex P20-A R3 P1: the banner must name the *actual* 5 label-input
+    # Room rules from rule_cards.yaml, not approximated/non-existent IDs,
+    # and must not pretend a 13-18 rule range when it's exactly 5.
+    expected_rule_ids = (
+        "RC-BEDROOM-AREA",
+        "RC-LIVING-BEDROOM-NETHEIGHT-2.4",
+        "RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1",
+        "RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0",
+        "RC-NO-LIVING-IN-BASEMENT",
+    )
+    for rid in expected_rule_ids:
+        assert rid in body, f"banner must list real rule id {rid}"
+    bogus_ids = (
+        "RC-LIVING-BEDROOM-AREA-5",
+        "RC-LIVING-BEDROOM-PITCHED-2.10",
+        "RC-BASEMENT-LIVING-NOT-ALLOWED",
+    )
+    for rid in bogus_ids:
+        assert rid not in body, (
+            f"banner must not reference non-existent rule id {rid} "
+            "(Codex P20-A R3 P1)"
+        )
+    assert "13-18" not in body, (
+        "banner must not approximate rule count when the precise number "
+        "is 5 (Codex P20-A R3 P1)"
+    )
+
+
+def test_get_index_drop_hint_no_false_room_schedule_remediation(studio_client) -> None:
+    """Codex P20-A R3 P1 + R4 P1: the upload-page must not tell raster
+    users that room_schedule.yaml can unlock anything for them. The
+    schedule selector keys on existing room_id/label, which raster
+    rooms lack, so any such suggestion is a dead end. R4 widened this
+    to cover the capability bullet and the accordion summary, both of
+    which previously promised raster users a fix path that does not
+    exist."""
+    client, _ = studio_client
+    resp = client.get("/")
+    assert resp.status_code == 200
+    body = resp.data.decode("utf-8")
+    assert "需要标签触发的规则需 room_schedule.yaml 补充" not in body, (
+        "drop-hint must not recommend room_schedule.yaml for raster — "
+        "the schedule cannot match label-less raster rooms (R3 P1)"
+    )
+    # R4 P1: capability bullet must qualify schedule as vector-only.
+    assert "填房间排表 YAML 解锁 4 张净高 / 楼层 / 坡屋顶规则（仅矢量 PDF" in body, (
+        "capability bullet must qualify room_schedule.yaml as vector-only "
+        "so raster users don't expect it to unlock those 4 rules (R4 P1)"
+    )
+    # R4 P1: accordion summary must qualify itself as vector-only.
+    assert "解锁 4 张净高 / 楼层 / 坡屋顶规则；仅矢量 PDF" in body, (
+        "room_schedule accordion summary must mark itself vector-only (R4 P1)"
+    )
+
+
+def test_post_review_invalid_image_dpi_flashes(studio_client) -> None:
+    """Codex P20-A R1 P0: bad image_dpi flashes an error rather than
+    silently using a wrong default."""
+    client, _ = studio_client
+    pdf_bytes = SAMPLE_PDF.read_bytes()
+    # Note: PDF upload should ignore image_dpi. Test only raster path.
+    import fitz
+
+    doc = fitz.open(SAMPLE_PDF)
+    try:
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+        png_bytes = pix.tobytes(output="png")
+    finally:
+        doc.close()
+
+    for bad in ("xyz", "-50"):
+        resp = client.post(
+            "/review",
+            data={
+                "pdf": (BytesIO(png_bytes), "plan.png"),
+                "image_dpi": bad,
+            },
+            content_type="multipart/form-data",
+            follow_redirects=True,
+        )
+        assert resp.status_code == 200
+        assert "image_dpi" in resp.data.decode("utf-8")
+    # PDF upload should NOT bother validating image_dpi (it's ignored).
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(pdf_bytes), "plan.pdf"),
+            "image_dpi": "xyz",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, "PDF upload must ignore image_dpi"
+
+
+def test_post_review_accepts_png_upload(studio_client) -> None:
+    """Phase 20-A: studio /review accepts a PNG upload, runs the CV
+    pipeline, and produces the same set of viewer artifacts as a PDF.
+    """
+    import fitz
+
+    client, state_dir = studio_client
+    # Render the sample PDF to PNG bytes.
+    doc = fitz.open(SAMPLE_PDF)
+    try:
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(200 / 72, 200 / 72), alpha=False)
+        png_bytes = pix.tobytes(output="png")
+    finally:
+        doc.close()
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(png_bytes), "plan.png"),
+            "points_per_meter": str(50.0 * 200.0 / 72.0),
+            "min_room_area_m2": "0",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    graph = json.loads((run_dir / "entity_graph.json").read_text("utf-8"))
+    assert len(graph["rooms"]) > 0, "PNG upload produced 0 rooms"
+
+    follow = client.get(f"/runs/{run_id}/")
+    assert follow.status_code == 200
+
+
+def test_post_review_rejects_unsupported_extension(studio_client) -> None:
+    """Phase 20-A: a .gif (or any unrecognised extension) flashes an
+    explicit error rather than silently treating the upload as PDF."""
+    client, _ = studio_client
+    resp = client.post(
+        "/review",
+        data={"pdf": (BytesIO(b"not a real gif"), "plan.gif")},
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    body = resp.data.decode("utf-8")
+    assert "不支持的文件类型" in body
+    assert ".gif" in body
+
+
 def test_run_pipeline_smoke(tmp_path: Path) -> None:
     """Direct entry-point check — used by both /review and /demo. Catches
     the case where the studio HTML works but the pipeline itself broke."""

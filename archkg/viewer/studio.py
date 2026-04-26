@@ -164,8 +164,10 @@ def run_pipeline(
     from archkg.annotate.report import render as render_report
     from archkg.graph.builder import build_graph, render_overlay
     from archkg.graph.builder import write_json as write_graph
-    from archkg.ingest.primitive_extractor import extract
+    from archkg.ingest.primitive_extractor import extract as extract_pdf
     from archkg.ingest.primitive_extractor import write_json as write_prims
+    from archkg.ingest.raster_extractor import extract as extract_raster
+    from archkg.ingest.raster_extractor import wrap_image_as_pdf
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
@@ -181,7 +183,25 @@ def run_pipeline(
             encoding="utf-8",
         )
 
-    primitives = extract(pdf_path, points_per_meter=points_per_meter)
+    # Phase 20-A: dispatch on file extension. PDFs go through the
+    # vector path (PyMuPDF); PNG/JPEG/TIFF go through the CV pipeline
+    # (raster_extractor) which has no OCR yet, so labels are absent
+    # and rules needing them won't fire.
+    suffix = pdf_path.suffix.lower()
+    is_raster_input = suffix in (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp")
+    if is_raster_input:
+        primitives = extract_raster(pdf_path, points_per_meter=points_per_meter)
+        # Wrap the image as a 1:1 px:pt PDF so the rest of the
+        # pipeline (preview, annotation, overlay) treats it like any
+        # other PDF and the pixel-space polygon coords align with
+        # fitz's page rect.
+        wrapped_pdf = pdf_path.with_suffix(".raster.pdf")
+        wrap_image_as_pdf(pdf_path, wrapped_pdf)
+        # Re-bind pdf_path to the wrapped file for downstream steps;
+        # the original raster file stays in the run dir as a record.
+        pdf_path = wrapped_pdf
+    else:
+        primitives = extract_pdf(pdf_path, points_per_meter=points_per_meter)
     write_prims(primitives, out_dir / "primitives.json")
     graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
 
@@ -228,6 +248,24 @@ def run_pipeline(
     n_rooms = len(graph.rooms)
     n_doors = len(graph.doors)
     n_corridors = len(graph.corridors)
+
+    # Codex P20-A R1 P1 / R2 P1: raster ingest produces no OCR text,
+    # so every room ends up label-less and label-dependent rules
+    # silently don't fire. The R2 fix corrects an earlier false
+    # remediation path: ``room_schedule.yaml`` selects rooms by
+    # existing ``room_id`` (a fresh UUID per run) or ``label``
+    # (also missing from raster rooms), so it can't actually patch
+    # raster runs. Honest options are listed in the warning instead.
+    if is_raster_input:
+        raster_flag = (
+            "ⓘ 栅格图无 OCR：检出的房间均无 label，依赖 label 的 5 张 Room 规则不会触发"
+            " (RC-BEDROOM-AREA / RC-LIVING-BEDROOM-NETHEIGHT-2.4 /"
+            " RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1 /"
+            " RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0 / RC-NO-LIVING-IN-BASEMENT)。"
+            " 本次违规清单是 partial 审图 (几何规则可触发, 上述 5 张 label-依赖规则不触发)。"
+            " 完整审图请改上传与之对应的矢量 PDF；OCR 自动补 label 在 v1.4 中规划。"
+        )
+        quality_flags = (raster_flag, *quality_flags)
 
     # Codex P19-C R2 P0: persist mode + quality_flags so any downstream
     # renderer (archkg viewer, scripts that re-render index.html, future
@@ -558,7 +596,7 @@ STUDIO_HTML = r"""
 <ul>
   <li>4 张规则可在任意 PDF 上直接判违规（户门净宽 / 走廊净宽 / 卧室面积 / 无障碍走廊）</li>
   <li>填 ProjectMeta YAML 解锁 5 张项目级规则（无障碍住房比例 + 4 张高层规则）</li>
-  <li>填房间排表 YAML 解锁 4 张净高 / 楼层 / 坡屋顶规则</li>
+  <li>填房间排表 YAML 解锁 4 张净高 / 楼层 / 坡屋顶规则（仅矢量 PDF；栅格图无 label/room_id 故 schedule selector 不匹配）</li>
   <li>填楼梯排表 YAML 解锁 5 张楼梯踏步 / 踢面 / 扶手规则</li>
   <li>另有 18 张人工核对清单 (severity=info) 自动生成</li>
 </ul>
@@ -568,10 +606,12 @@ STUDIO_HTML = r"""
 <form method="post" action="{{ url_for('review') }}" enctype="multipart/form-data" id="reviewForm">
 
 <label class="drop" id="drop">
-  <input type="file" name="pdf" id="pdfInput" accept="application/pdf" required />
+  <input type="file" name="pdf" id="pdfInput"
+         accept="application/pdf,image/png,image/jpeg,image/tiff,image/bmp" required />
   <div class="drop-icon">📄</div>
-  <div><strong>把 PDF 平面图拖到这里</strong>，或点击选择</div>
-  <div class="drop-hint">单页 / 多页都支持。当前以工程 PDF 为主，扫描版未做鲁棒性测试。</div>
+  <div><strong>把 PDF 平面图（或 PNG/JPEG 图片）拖到这里</strong>，或点击选择</div>
+  <div class="drop-hint">PDF: 矢量路径自动提取墙线 + 文字标签。PNG/JPEG (v1.3+): CV 检测墙线，无 OCR 故无房间标签
+    （label-依赖规则在栅格输入下不触发，完整审图请上传矢量 PDF）。栅格图须正交墙体, 双线墙建议先合并单线再上传。</div>
   <div id="fileChosen"></div>
 </label>
 
@@ -586,11 +626,13 @@ STUDIO_HTML = r"""
 </details>
 
 <details>
-<summary>🏠 房间排表 YAML（可选 · 解锁 4 张净高 / 楼层 / 坡屋顶规则）</summary>
+<summary>🏠 房间排表 YAML（可选 · 解锁 4 张净高 / 楼层 / 坡屋顶规则；仅矢量 PDF）</summary>
 <div>
   <p>每个房间的剖面信息：净高 / 所在楼层（地下室 / 地面层 / 上层 / 夹层）/ 是否坡屋顶 / 主截面净高。
   模板见 <a href="https://github.com/kogamishinyajerry-ops/archreview-kg/blob/main/samples/room_schedule_demo.yaml" target="_blank">samples/room_schedule_demo.yaml</a>。
   <em>需要同时填 ProjectMeta YAML，schedule 的 project_id 必须与 meta 一致。</em></p>
+  <p><em>⚠️ 栅格图（PNG/JPEG）上传时不生效：schedule entries 通过 room_id 或 label 匹配，
+  栅格 rooms 都是 fresh UUID 且 label=None，所以匹配不到任何 room。栅格图请改上传矢量 PDF。</em></p>
   <label>room_schedule.yaml</label>
   <input type="file" name="room_schedule" accept=".yaml,.yml" />
 </div>
@@ -615,6 +657,15 @@ STUDIO_HTML = r"""
   不确定就先用 50，看实体数量是否合理；不合理再调。</p>
   <label>points_per_meter</label>
   <input type="number" name="points_per_meter" step="0.1" min="0.1" value="50.0"
+         style="width: 100px; padding: 4px 8px; background: var(--bg);
+                border: 1px solid var(--border); border-radius: 4px; color: var(--text);" />
+
+  <p style="margin-top: 16px;"><strong>image_dpi</strong> (仅栅格图: PNG / JPEG / TIFF / BMP):
+  PNG 渲染时的 DPI。我们用 <code>image_dpi × points_per_meter / 72</code> 计算像素/米。
+  常见取值: PDF 渲染出来的 PNG 一般是 200 (默认) 或 300 DPI；扫描件 96 / 150 / 200。
+  PNG metadata 里的 DPI 通常不可靠 (fitz 等工具会写错), 故以本字段为准。PDF 上传忽略此字段。</p>
+  <label>image_dpi</label>
+  <input type="number" name="image_dpi" step="1" min="36" value="200"
          style="width: 100px; padding: 4px 8px; background: var(--bg);
                 border: 1px solid var(--border); border-radius: 4px; color: var(--text);" />
 
@@ -697,7 +748,7 @@ def _save_upload(field_name: str, run_dir: Path) -> Path | None:
     return dest
 
 
-def create_app(state_dir: Path, *, archkg_version: str = "1.2.2") -> Flask:
+def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
     """Build the Flask app. state_dir holds the per-run output directories."""
     runs_dir = state_dir / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
@@ -718,12 +769,22 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.2.2") -> Flask:
 
         pdf = request.files.get("pdf")
         if pdf is None or not pdf.filename:
-            flash("请上传 PDF 平面图。")
+            flash("请上传 PDF 或 PNG/JPEG 图片。")
             return redirect(url_for("index"))
 
+        # Phase 20-A: accept PDF or raster (.png/.jpg/.jpeg/.tif/.tiff/.bmp).
+        # secure_filename normally preserves the extension; if missing
+        # we treat the upload as PDF for backward-compat.
+        supported_raster_exts = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp")
         safe_pdf_name = secure_filename(pdf.filename) or "input.pdf"
-        if not safe_pdf_name.lower().endswith(".pdf"):
+        ext = Path(safe_pdf_name).suffix.lower()
+        if ext == "":
             safe_pdf_name += ".pdf"
+        elif ext != ".pdf" and ext not in supported_raster_exts:
+            flash(
+                f"不支持的文件类型 '{ext}'。请上传 PDF 或 PNG / JPEG / TIFF / BMP 图片。"
+            )
+            return redirect(url_for("index"))
         pdf_path = run_dir / safe_pdf_name
         pdf.save(pdf_path)
 
@@ -752,6 +813,24 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.2.2") -> Flask:
         if min_room_area < 0:
             flash("min_room_area_m2 不能为负（设 0 即关闭过滤）。")
             return redirect(url_for("index"))
+
+        # Phase 20-A R1 P0: raster uploads need PIXELS-per-meter, not
+        # PDF points-per-meter. Compute from the form's `image_dpi`
+        # (default 200) compounded with `points_per_meter` (the
+        # source CAD's metric scale): ppm_pixel = ppm_pdf * dpi / 72.
+        # PIL-detected DPI metadata is unreliable on PNGs (fitz
+        # exports often carry a bogus 96 DPI), so we trust the user's
+        # form value.
+        if ext in supported_raster_exts:
+            try:
+                form_dpi = float(request.form.get("image_dpi", "200"))
+            except ValueError:
+                flash("image_dpi 必须是数字（默认 200）。")
+                return redirect(url_for("index"))
+            if form_dpi <= 0:
+                flash("image_dpi 必须 > 0。")
+                return redirect(url_for("index"))
+            ppm = ppm * form_dpi / 72.0
 
         try:
             run_pipeline(
@@ -844,7 +923,7 @@ def serve(
     port: int = 8765,
     state_dir: Path | None = None,
     open_browser: bool = True,
-    archkg_version: str = "1.2.2",
+    archkg_version: str = "1.3.0",
 ) -> None:
     if state_dir is None:
         state_dir = Path("tmp") / "studio"

@@ -27,7 +27,7 @@ def version() -> None:
     try:
         typer.echo(_v("archkg"))
     except PackageNotFoundError:
-        typer.echo("1.2.2")
+        typer.echo("1.3.0")
 
 
 @app.command()
@@ -476,7 +476,7 @@ def studio(
     output may differ from `archkg review <pdf>` on noisy real PDFs)."""
     from archkg.viewer.studio import serve as serve_studio
 
-    archkg_version = "1.2.2"
+    archkg_version = "1.3.0"
     try:
         from importlib.metadata import version as _v
 

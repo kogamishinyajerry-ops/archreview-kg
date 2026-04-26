@@ -4,6 +4,106 @@ All notable changes to ArchReview-KG. Version tags follow `v<major>.<minor>.<pat
 patch releases (`v1.0.x`) are individual ship phases reviewed by Codex GPT-5.4,
 minor releases (`v1.1.0` / `v1.2.0`) are stable milestones rolling up multiple patches.
 
+## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
+
+The studio now accepts PNG, JPEG, TIFF, and BMP raster floor plans
+in addition to PDFs. Walls are detected via OpenCV probabilistic
+Hough Lines after thresholding and morphological thinning;
+endpoints snap to perpendicular walls so that polygonize can close
+rooms. The rest of the pipeline (graph builder, rule engine,
+annotator, viewer) is unchanged — raster inputs are wrapped into a
+1:1 px-to-pt PDF immediately after CV extraction so downstream
+fitz-based code paths just work.
+
+### Added
+
+- `archkg/ingest/raster_extractor.py`:
+  - `extract(image_path, *, points_per_meter)` runs the full CV
+    pipeline (threshold → erode → HoughLinesP → orthogonal-only
+    dedupe with interval preservation → endpoint snap to
+    perpendicular walls) and returns a `Primitives` payload in the
+    same shape as the PDF extractor.
+  - `wrap_image_as_pdf(image_path, out_pdf)` produces a PDF whose
+    page is exactly `width_px × height_px` points so the pixel-space
+    line coordinates align with fitz's page rect (the default
+    `fitz.open(image)` would scale 4/3 smaller and break overlay
+    alignment).
+- Studio form accepts `image/png, image/jpeg, image/tiff, image/bmp`
+  in addition to PDF; the upload handler dispatches based on file
+  extension.
+- 3 new tests in `tests/test_viewer_studio.py`:
+  - `test_run_pipeline_extracts_walls_from_png`: end-to-end on a
+    200-DPI render of the demo PDF, asserts the same 4-room /
+    1-corridor / 6-door topology emerges from CV.
+  - `test_post_review_accepts_png_upload`: studio /review accepts
+    PNG bytes and produces all standard viewer artifacts.
+  - `test_post_review_rejects_unsupported_extension`: a `.gif`
+    upload flashes a clear error rather than being silently treated
+    as PDF.
+- New runtime dependency: `opencv-python-headless>=4.10` (~44 MB).
+
+### Codex P20-A R1 fixes (R1 → R2)
+
+- **Scale-normalized CV heuristics** (R1 P0): every length-like
+  parameter (Hough min-line / max-gap / vote threshold, dedupe
+  perpendicular bin, interval merge gap, endpoint snap tolerance)
+  is now expressed in METERS and converted to pixels at runtime
+  using `points_per_meter`. Erosion is conditionally skipped at
+  ppm < 150 to avoid destroying 1-pixel walls in low-DPI renders.
+  Verified topology stable across 100 / 150 / 200 / 300 / 600 DPI:
+  4 rooms / 1 corridor / 6 doors at every step.
+- **Studio `image_dpi` form field** (R1 P0): raster uploads use
+  `ppm_pixel = points_per_meter × image_dpi / 72` (default
+  `image_dpi=200`). Form value is authoritative because PIL DPI
+  metadata is unreliable on PNGs (fitz exports often carry a
+  bogus 96 DPI). PDFs ignore the field.
+- **No-OCR transparency banner** (R1 P1 + R2 P1 + R3 P1): raster
+  ingest prepends a quality flag warning that the 5 label-dependent
+  Room rules (`RC-BEDROOM-AREA`, `RC-LIVING-BEDROOM-NETHEIGHT-2.4`,
+  `RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1`,
+  `RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0`,
+  `RC-NO-LIVING-IN-BASEMENT`) won't fire because no OCR runs. R2
+  dropped an earlier false remediation ("upload
+  room_schedule.yaml") since the schedule selects rooms by existing
+  `room_id`/`label` and raster rooms have neither, so it can't
+  actually unlock anything. R3 cleaned up the same false suggestion
+  from the upload-page drop-hint and the raster-extractor module
+  docstring, and replaced the previously approximated rule-id /
+  count list with the precise 5-rule list above. The corrected
+  banner names the honest options: re-upload the matching vector
+  PDF, or wait for v1.4 OCR support.
+
+### Limitations (raster path only)
+
+- **Orthogonal walls only.** Diagonal walls are dropped. Most
+  Chinese residential plans are orthogonal but Western plans with
+  bay windows etc. lose those walls.
+- **No OCR.** Labels are absent for every detected room, so the 5
+  Room rules that read `label` (bedroom area, living/bedroom net
+  height, pitched-roof majority height, basement/mezzanine net
+  height, no-living-in-basement) won't fire on raster inputs.
+  `room_schedule.yaml` cannot patch this — its selector keys on
+  existing `room_id`/`label`, neither of which raster rooms have.
+  For a complete review, re-upload the matching vector PDF. v1.4
+  will add OCR.
+- **Hand-drawn or noisy scans → poor detection.** The pipeline is
+  tuned for clean CAD-rendered raster output (200 DPI from a
+  vector PDF, etc.).
+- **`points_per_meter` is interpreted as PIXELS per meter** for
+  raster inputs, not PostScript points. For a metric CAD PDF
+  (ppm=50 pt/m) rendered to PNG at 200 DPI, set 138.89.
+- **Thick-wall (double-line) CAD limitation from v1.2.2 still
+  applies** to both vector and raster paths.
+
+### Real-PDF impact
+
+A 200-DPI render of `samples/sample_clean.pdf` fed through the CV
+pipeline reproduces the same 4 rooms / 1 corridor / 6 doors / 10
+issues as the original PDF — proves the topology survives the
+vector-to-raster-to-vector roundtrip on clean CAD output. Real
+real-world PNGs (CAD screenshots, scanned plans) are not
+guaranteed to work yet.
+
 ## v1.2.2 — 2026-04-26 — Real-PDF readiness: builder min-area + orphan-door noise filter
 
 v1.2.1 surfaced builder noise via warnings; v1.2.2 cuts the noise at
