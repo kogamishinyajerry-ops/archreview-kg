@@ -466,6 +466,78 @@ clause_app = typer.Typer(
 app.add_typer(clause_app, name="clause")
 
 
+adversarial_app = typer.Typer(
+    help="Adversarial training lane: examiner ↔ candidate ↔ adjudicator (Phase 18-D).",
+    no_args_is_help=True,
+)
+app.add_typer(adversarial_app, name="adversarial")
+
+
+@adversarial_app.command("run")
+def adversarial_run(
+    battery_size: int = typer.Option(
+        10, "-n", "--battery-size", min=1,
+        help="Number of cases to generate and score.",
+    ),
+    seed_start: int = typer.Option(
+        42, "--seed",
+        help="Starting seed; case k uses seed=seed_start+k.",
+    ),
+    out: Path = typer.Option(
+        Path("out/battery"), "-o", "--out",
+        help="Battery output directory; one subdir per case + scoreboard.",
+    ),
+) -> None:
+    """Generate a battery, run candidate over each case, score per-rule."""
+    from rich.console import Console
+    from rich.table import Table
+
+    from archkg.adversarial.battery import run_battery
+
+    console = Console()
+    summary = run_battery(n=battery_size, seed_start=seed_start, out_dir=out)
+    overall = summary.score.overall()
+
+    table = Table(title=f"Battery summary ({summary.score.total_cases} cases)", show_header=False, header_style="bold cyan")
+    table.add_column("k", style="cyan")
+    table.add_column("v")
+    table.add_row("总 cases", str(summary.score.total_cases))
+    table.add_row("TP / FN / FP", f"{overall.tp} / {overall.fn} / {overall.fp}")
+    table.add_row(
+        "precision / recall / F1",
+        f"{_fmt(overall.precision)} / {_fmt(overall.recall)} / {_fmt(overall.f1)}",
+    )
+    table.add_row("scoreboard", str(out / "scoreboard.md"))
+    console.print(table)
+
+    # Print per-rule recall, sorted ascending so the worst offenders surface.
+    rules_table = Table(title="Per-rule signals (sorted by recall asc)", header_style="bold cyan")
+    rules_table.add_column("rule_id", style="yellow")
+    rules_table.add_column("TP", justify="right")
+    rules_table.add_column("FN", justify="right")
+    rules_table.add_column("FP", justify="right")
+    rules_table.add_column("recall", justify="right")
+    rules_table.add_column("F1", justify="right")
+    rule_scores = sorted(
+        summary.score.rule_scores.values(),
+        key=lambda r: (r.recall if r.recall is not None else 1.0, r.rule_id),
+    )
+    for r in rule_scores:
+        rules_table.add_row(
+            r.rule_id,
+            str(r.tp),
+            str(r.fn),
+            str(r.fp),
+            _fmt(r.recall),
+            _fmt(r.f1),
+        )
+    console.print(rules_table)
+
+
+def _fmt(v: float | None) -> str:
+    return "—" if v is None else f"{v:.2f}"
+
+
 class BuildingTypeFilter(StrEnum):
     residential = "residential"
     public = "public"
