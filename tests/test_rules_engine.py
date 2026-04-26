@@ -119,6 +119,9 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
         "RC-ELEVATOR-REQUIRED", "RC-EVAC-STAIR-TYPE-33M", "RC-REFUGE-LAYER-100M",
         "RC-CLOSED-STAIRWELL-21M", "RC-ACCESSIBLE-RESIDENTIAL-7F",
         "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+        # Phase 11-C Path B: Codex-drafted, human-validated.
+        "RC-ELEVATOR-BEDROOM-ADJACENCY", "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+        "RC-DOOR-TO-EXIT-40M",
     }
     assert skipped_ids == project_rule_ids
     rule_ids = sorted(i.rule_card_id for i in issues)
