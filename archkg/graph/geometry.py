@@ -99,10 +99,21 @@ def bridge_door_gaps(
 
 
 def polygonize_segments(segments: list[Segment], *, min_area_pt2: float = 100.0) -> list[Polygon]:
-    """Run shapely polygonize over the noded line network."""
+    """Run shapely polygonize over the noded line network.
+
+    Normalizes (snaps to SNAP_TOL_PT grid + lex-orders endpoints) every
+    input segment before noding. Without this, generators producing
+    endpoints that are off the snap grid (e.g. 78.75pt) leave the
+    bridge-inserted segments not quite touching the original wall
+    fragments — bridges end up snapped while originals don't, opening
+    a sub-pt gap that breaks polygon closure. Phase 18-D adversarial
+    examiner surfaced this on shrunken-bedroom layouts: bedroom and
+    living merged into one polygon because the mid-wall break was
+    slightly off the bridge snap grid.
+    """
     if not segments:
         return []
-    lines = [LineString(seg) for seg in segments]
+    lines = [LineString(normalize(seg)) for seg in segments]
     noded = unary_union(MultiLineString(lines))
     polys = [p for p in polygonize(noded) if p.area >= min_area_pt2]
     polys.sort(key=lambda p: -p.area)

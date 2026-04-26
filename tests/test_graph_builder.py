@@ -23,6 +23,58 @@ def test_geometry_polygonize_closes_a_simple_box() -> None:
     assert abs(polys[0].area - 100.0) < 1e-6
 
 
+def test_polygonize_segments_closes_off_grid_endpoints() -> None:
+    """Phase 18-D regression: bridge_door_gaps stores its bridge with
+    snapped endpoints (multiples of SNAP_TOL_PT) but appends the original
+    raw wall fragments unchanged. When the wall fragments end OFF the
+    snap grid (e.g. 78.75pt) and the bridge endpoints are ON the grid
+    (79pt / 121pt), the bridge ends a fractional pt away from the
+    fragment endpoint and shapely never closes the polygon. The
+    adversarial battery surfaced this on shrunken-bedroom layouts:
+    bedroom and living merged into a single 36 m² polygon instead of
+    being split by the mid-wall.
+
+    This test exercises the *actual* failing topology: TWO separate
+    wall fragments ending at off-grid coords, plus a SEPARATE bridge
+    spanning the gap with on-grid endpoints. Pre-fix shapely would
+    not close the box around x=[0,100]; post-fix `polygonize_segments`
+    normalizes all inputs first so fragment and bridge endpoints
+    coincide and the mid-wall splits the box.
+    """
+    from archkg.graph.geometry import SNAP_TOL_PT
+
+    # Compose off-grid endpoints from SNAP_TOL_PT so this test stays
+    # meaningful if the snap step ever changes (Codex P18-E R1 P2).
+    off = SNAP_TOL_PT / 2
+    bridge_lo, bridge_hi = 79.0, 121.0  # multiples of SNAP_TOL_PT
+    frag_top_end = bridge_lo - off       # 78.75 — off-grid wall end
+    frag_bot_start = bridge_hi + off     # 121.25 — off-grid wall start
+
+    segs = [
+        # Outer rectangle.
+        ((0.0, 0.0), (200.0, 0.0)),
+        ((200.0, 0.0), (200.0, 200.0)),
+        ((200.0, 200.0), (0.0, 200.0)),
+        ((0.0, 200.0), (0.0, 0.0)),
+        # Mid-wall, top fragment: off-grid end.
+        ((100.0, 0.0), (100.0, frag_top_end)),
+        # Bridge inserted by bridge_door_gaps with snapped endpoints.
+        # Note: this is a SEPARATE segment, not connected to the
+        # fragments above unless polygonize_segments snaps inputs.
+        ((100.0, bridge_lo), (100.0, bridge_hi)),
+        # Mid-wall, bottom fragment: off-grid start.
+        ((100.0, frag_bot_start), (100.0, 200.0)),
+    ]
+    polys = polygonize_segments(segs, min_area_pt2=100.0)
+    assert len(polys) == 2, (
+        f"mid-wall must split the box into two polygons; got {len(polys)}"
+    )
+    areas = sorted(round(p.area) for p in polys)
+    assert areas == [20000, 20000], (
+        f"expected two equal halves of 20000 pt², got {areas}"
+    )
+
+
 def test_geometry_bridges_door_gap_in_horizontal_wall() -> None:
     segs = [
         ((0.0, 0.0), (40.0, 0.0)),

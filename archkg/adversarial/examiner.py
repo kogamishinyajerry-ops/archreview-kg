@@ -312,10 +312,14 @@ def _write_pdf(pdf_path: Path, p: CaseParameters) -> None:
     # Codex P18-D R1: previously scaled the gap with bedroom height (bh*0.2)
     # which produced 0.4-0.8 m gaps for small bedrooms — outside the
     # builder's 0.70 < gap < 1.00 bridge contract, breaking topology.
-    # Anchor the gap at a fixed compliant 0.85 m centered in the room so
-    # both geometries (north strip + south strip) always have a bridgeable
-    # opening regardless of bh.
-    mid_gap = 0.85
+    # Anchor the gap at a fixed compliant 0.95 m centered in the room so
+    # (a) the builder always bridges (it falls inside 0.70-1.00) and
+    # (b) it doesn't fire RC-DOOR-WIDTH (>= 0.90 → compliant). 0.85 m
+    # was the original choice but it tripped RC-DOOR-WIDTH on every
+    # case because the predictor only tracks the 4 corridor-side doors,
+    # not the 2 mid-wall doors the builder also creates as Door entities
+    # — every case had 2 unexpected FP. Surfaced by a 50-case battery.
+    mid_gap = 0.95
     n_top = max(0.1, (bh - mid_gap) / 2)
     _line(page, bw, 0, bw, n_top)
     _line(page, bw, n_top + mid_gap, bw, corridor_top_y)
