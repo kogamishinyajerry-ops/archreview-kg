@@ -1,0 +1,50 @@
+# Sample room schedule for the synthetic demo plan (sample_clean.pdf).
+#
+# Phase 18-B (v1.0.2): the PDF graph builder cannot extract净高 / 楼层 /
+# 坡屋顶 from a plan view alone — those facts live on section views, in
+# floor schedules, or on title blocks. This file is the manual-data lane:
+# the user (or a future PDF-extraction pass) populates the same fields.
+#
+# This particular fixture is *adversarial by design* — every entry was
+# chosen to trip exactly one of the 4 PARTIAL_AUTODETECT rules so the
+# demo shows all four firing at once:
+#
+#   RC-LIVING-BEDROOM-NETHEIGHT-2.4   ← bedroom net_height_m 2.30 < 2.40
+#   RC-NO-LIVING-IN-BASEMENT          ← bedroom level=basement
+#   RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1  ← living + pitched roof + 2.00 < 2.10
+#   RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0     ← bathroom level=basement + 1.80 < 2.0
+
+project_id: DEMO-001
+
+entries:
+  - label: bedroom
+    level: basement
+    net_height_m: 2.30
+    note: |
+      adversarial: bedroom located in basement (forbidden by GB 50352-6.4.7)
+      and net height 2.30 m below GB 50096-5.5.2 (≥2.40 m).
+
+  - label: living
+    level: upper
+    pitched_roof: true
+    net_height_m: 2.50
+    majority_net_height_m: 2.00
+    note: |
+      adversarial: pitched-roof living room with majority-area净高 2.00 m
+      below GB 50096-5.5.3 (≥2.10 m). Mean净高 2.50 still meets 5.5.2.
+
+  - label: bathroom
+    level: basement
+    net_height_m: 1.80
+    note: |
+      adversarial: basement bathroom with净高 1.80 m below GB 50352-6.3.3
+      (≥2.0 m). bedroom/living gate doesn't apply, so RC-NO-LIVING is silent.
+
+  - label: kitchen
+    level: ground
+    net_height_m: 2.40
+    note: 合规对照组 — kitchen on ground, 净高 just at threshold.
+
+notes: |
+  Demo schedule for archkg demo --room-schedule. Real projects would carry
+  one entry per room id (room_id: room-3) rather than label-based mass-apply.

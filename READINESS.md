@@ -23,11 +23,16 @@ archkg clause readiness
 |---|---|---|---|
 | **AUTODETECTABLE** | 4 | 上传图纸即可自动判违规 | 户门净宽 < 0.90 m / 走廊净宽 < 1.20 m / 卧室面积 < 5.0 m² |
 | **PROJECT_META_DRIVEN** | 1 | 用户填 ProjectMeta（住房套数、无障碍套数）即可自动判 | 无障碍住房比例 < 2/100 |
-| **PARTIAL_AUTODETECT** | 4 | 规则正确但需 builder 抽 entity properties | 卧室净高 < 2.40 m（净高来自剖面图，目前不抽） |
+| **PARTIAL_AUTODETECT** | 4 | 规则正确但需 entity properties — v1.0.2 新增 `--room-schedule` 手动数据路径 | 卧室净高 < 2.40 m（净高来自剖面图，builder 不抽，但 schedule.yaml 可填） |
 | **STAIR_PENDING** | 5 | 规则+引擎已就位，等 graph builder 加 PDF 楼梯检测 | 楼梯踏步 < 0.26 m / 踢面 > 0.175 m / 扶手 < 0.90 m |
 | **REMINDER_BY_DESIGN** | 18 | severity=info，提供"人工核对清单"而非自动结论 | "项目为住宅，请核对外窗窗台 < 0.90 m 时是否设防护设施" |
 
-**总计**: 4 + 1 + 4 + 5 + 18 = 32 张规则。**自动判定上限 = 4 + 1 = 5 张**（前提：ProjectMeta 填完整 + 户型/走廊/门尺寸标注准确）。
+**总计**: 4 + 1 + 4 + 5 + 18 = 32 张规则。
+
+- **从图纸单独自动判定上限** = 4 张（默认 builder 能力）
+- **+ ProjectMeta** = 5 张（户均套数等项目级数据）
+- **+ Room Schedule** = 9 张（v1.0.2 新增；用户填 `--room-schedule schedule.yaml` 提供净高 / 楼层 / 坡屋顶，解锁 4 张 PARTIAL_AUTODETECT）
+- 剩余 5 张楼梯规则等 Phase 19+ 楼梯检测；18 张 reminder 是设计上的人工清单
 
 ## 当前 demo 实际跑出来什么
 
@@ -51,9 +56,24 @@ stdout 打印一组 Rich 表格：项目上下文 / 实体识别 / 跳过的规�
   - 17 个 info 级（out/report.md § 人工核对提醒）
 ```
 
+叠加 `--room-schedule`：
+
+```bash
+archkg demo --meta --room-schedule
+```
+
+加载 `samples/room_schedule_demo.yaml`（adversarial: bedroom in basement / pitched-roof living / basement bathroom / kitchen 对照组）。问题清单从 23 → **27**，新增 4 个 error 级触发自 4 张 PARTIAL_AUTODETECT 规则:
+
+```
+RC-LIVING-BEDROOM-NETHEIGHT-2.4    bedroom 净高 2.30 < 2.40
+RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1   living 坡屋顶 majority 2.00 < 2.10
+RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0      bathroom 地下室 1.80 < 2.0
+RC-NO-LIVING-IN-BASEMENT                 bedroom 位于 basement
+```
+
 `out/report.md` 自动分两区：
-- **违规清单**（6 项 / severity=error）：reviewer 必须逐条复核
-- **人工核对提醒**（17 项 / severity=info）：reviewer 对照图纸自检
+- **违规清单** severity=error：baseline 6 项；叠加 `--room-schedule` 后变 10 项（多出 4 张 PARTIAL_AUTODETECT 规则触发）
+- **人工核对提醒** severity=info：17 项
 
 ## "100% coverage" 真正含义
 
@@ -70,8 +90,9 @@ stdout 打印一组 Rich 表格：项目上下文 / 实体识别 / 跳过的规�
 
 ### 高 ROI（解锁现有规则）
 
-1. **graph builder 加 Room.properties 抽取**
-   - 解锁 4 张 PARTIAL_AUTODETECT 规则
+1. **graph builder 加 Room.properties 自动抽取** ← v1.0.2 已开手动数据路径 `--room-schedule`
+   - 当前：`samples/room_schedule_demo.yaml` 等 YAML 让用户填净高 / 楼层 / 坡屋顶 → 4 张 PARTIAL_AUTODETECT 规则可触发
+   - 下一步：从剖面图 / 图签 / 楼层结构自动产出同一份数据，让 schedule 退化为 override
    - 难点：净高来自剖面图（不在平面图）；level / pitched_roof 来自图签或楼层标识
    - 依赖：CAD/PDF 多页面理解 + OCR / 文字定位
 
@@ -108,10 +129,10 @@ stdout 打印一组 Rich 表格：项目上下文 / 实体识别 / 跳过的规�
 ## 给现在想用的人的指引
 
 如果想**今天就用**：
-- 用例：审住宅平面图，重点看户门尺寸 / 走廊宽度 / 卧室面积
-- 步骤：填 ProjectMeta YAML → `archkg review --project-meta meta.yaml plan.pdf`
-- 期望：6 个左右 error 级违规自动发现 + 17 项人工核对清单
-- **不要期望**：楼梯类、净高类、坡屋顶、地下室等条款自动判（这些等 Phase 18+）
+- 用例：审住宅平面图，重点看户门尺寸 / 走廊宽度 / 卧室面积 / 净高 / 地下室用途
+- 步骤：填 ProjectMeta + Room Schedule YAML → `archkg review --project-meta meta.yaml --room-schedule schedule.yaml plan.pdf`
+- 期望：6 + 4（如果 schedule 命中违规）个左右 error 级违规自动发现 + 17 项人工核对清单
+- 不要期望：楼梯类（Phase 19+）、户门 subtype、PDF 自动抽净高/楼层（Phase 20+）
 
 如果想**等 production-ready**：
 - 关注 Phase 18+ 路线（见上文「走到真自动审批还需要什么」）

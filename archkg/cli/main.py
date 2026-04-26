@@ -56,6 +56,10 @@ def review(
         None, "--project-meta", exists=True, dir_okay=False, readable=True,
         help="Optional ProjectMeta YAML (building_type/height_class etc.) to filter inapplicable rules.",
     ),
+    room_schedule: Path | None = typer.Option(
+        None, "--room-schedule", exists=True, dir_okay=False, readable=True,
+        help="Optional room schedule YAML supplying Room.properties (净高/楼层/坡屋顶) the PDF builder doesn't extract. Unlocks 4 PARTIAL_AUTODETECT rules.",
+    ),
 ) -> None:
     """One-shot: ingest -> build-graph -> evaluate rules -> annotate -> report."""
     import json as _json
@@ -102,6 +106,40 @@ def review(
     primitives_path = write_prims(primitives, out / "primitives.json")
 
     graph = build_graph(primitives)
+
+    schedule_apply = None
+    if room_schedule is not None:
+        # Codex P18-B R1 P0: --room-schedule requires --project-meta. The
+        # schedule is project-scoped data (it carries a project_id field by
+        # design); applying it without a meta means there's no anchor to
+        # cross-check against and a stray schedule for project A could
+        # silently land on project B's review run.
+        if meta is None:
+            raise typer.BadParameter(
+                "--room-schedule requires --project-meta so the schedule's project_id can be cross-checked.",
+                param_hint="--room-schedule",
+            )
+        from archkg.graph.schedule import apply_room_schedule
+        from archkg.knowledge.room_schedule import (
+            RoomScheduleError,
+            load_room_schedule,
+        )
+
+        try:
+            schedule = load_room_schedule(room_schedule)
+        except RoomScheduleError as exc:
+            raise typer.BadParameter(
+                str(exc), param_hint="--room-schedule"
+            ) from exc
+        if schedule.project_id != meta.project_id:
+            raise typer.BadParameter(
+                f"--room-schedule project_id '{schedule.project_id}' does not match "
+                f"--project-meta project_id '{meta.project_id}'",
+                param_hint="--room-schedule",
+            )
+        schedule_apply = apply_room_schedule(graph, schedule)
+        graph = schedule_apply.graph
+
     graph_path = write_graph(graph, out / "entity_graph.json")
     render_overlay(graph, pdf, out / "entity_overlay.png")
 
@@ -134,6 +172,7 @@ def review(
         issues=result.issues,
         skipped=result.skipped,
         project_meta=meta,
+        schedule_apply=schedule_apply,
     )
 
 
@@ -148,6 +187,7 @@ def _print_review_summary(
     issues: list[Any],
     skipped: list[Any] | None = None,
     project_meta: Any = None,
+    schedule_apply: Any = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
@@ -187,6 +227,26 @@ def _print_review_summary(
     detect.add_row("corridors", str(len(g.corridors)))
     detect.add_row("dimensions", str(len(g.dimensions)))
     console.print(detect)
+
+    # Room schedule application audit (Phase 18-B)
+    if schedule_apply is not None:
+        n_matched_rooms = sum(len(v) for v in schedule_apply.matched.values())
+        sched = Table(title="房间明细表", show_header=False, header_style="bold green")
+        sched.add_column("k", style="green")
+        sched.add_column("v")
+        sched.add_row("命中房间数", str(n_matched_rooms))
+        sched.add_row("命中条目数", f"{len(schedule_apply.matched)} / {len(schedule_apply.matched) + len(schedule_apply.unmatched) + len(schedule_apply.empty_property_entries)}")
+        if schedule_apply.unmatched:
+            sched.add_row(
+                "[yellow]未匹配条目[/yellow]",
+                f"{len(schedule_apply.unmatched)} 条（selector 未命中任何房间，请核对房号/标签）",
+            )
+        if schedule_apply.empty_property_entries:
+            sched.add_row(
+                "[yellow]空属性条目[/yellow]",
+                f"{len(schedule_apply.empty_property_entries)} 条（仅有 selector，没填任何 net_height_m / level / pitched_roof）",
+            )
+        console.print(sched)
 
     # Skipped rules due to project context
     if skipped:
@@ -278,6 +338,10 @@ def demo(
         True, "--meta/--no-meta",
         help="Use samples/project_meta_demo.yaml for context-aware filtering. Disable for pre-Phase-9 behaviour.",
     ),
+    with_room_schedule: bool = typer.Option(
+        False, "--room-schedule/--no-room-schedule",
+        help="Layer samples/room_schedule_demo.yaml on top to populate Room.properties (净高/楼层/坡屋顶) and demonstrate the 4 PARTIAL_AUTODETECT rules firing.",
+    ),
 ) -> None:
     """One-key demo: regenerate sample PDF, run review, print where artifacts landed."""
     from rich.console import Console
@@ -289,7 +353,16 @@ def demo(
     pdf = build_sample(sample_dir / "sample_clean.pdf")
     console.print(f"[cyan]生成测试图纸:[/cyan] {pdf}")
     meta_path = (sample_dir / "project_meta_demo.yaml") if with_project_meta else None
-    review(pdf=pdf, out=out, points_per_meter=50.0, project_meta=meta_path)
+    schedule_path = (
+        (sample_dir / "room_schedule_demo.yaml") if with_room_schedule else None
+    )
+    review(
+        pdf=pdf,
+        out=out,
+        points_per_meter=50.0,
+        project_meta=meta_path,
+        room_schedule=schedule_path,
+    )
 
 
 @app.command()

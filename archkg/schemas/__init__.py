@@ -17,6 +17,7 @@ from archkg.schemas.primitives import (
     TextSource,
 )
 from archkg.schemas.project import ClimateZone, FireClass, ProjectMeta
+from archkg.schemas.room_schedule import RoomLevel, RoomSchedule, RoomScheduleEntry
 from archkg.schemas.rule_card import EntityType, RuleCard, RuleCardTestCase, RuleScope
 from archkg.schemas.standard import (
     BuildingType,
@@ -45,6 +46,9 @@ __all__ = [
     "Primitives",
     "ProjectMeta",
     "Room",
+    "RoomLevel",
+    "RoomSchedule",
+    "RoomScheduleEntry",
     "RuleCard",
     "RuleCardTestCase",
     "RuleScope",
