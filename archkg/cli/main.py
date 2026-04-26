@@ -437,6 +437,94 @@ def clause_fidelity() -> None:
         raise typer.Exit(code=1)
 
 
+@clause_app.command("readiness")
+def clause_readiness() -> None:
+    """Report each rule's production-readiness tier.
+
+    Phase 18-A lane: shows the gap between "rule defined" (achieved at v1.0)
+    and "rule fires on a real PDF" (depends on graph builder + ProjectMeta).
+    """
+    from rich.console import Console
+    from rich.table import Table
+
+    from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.knowledge.readiness import classify_all, summarise
+
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    findings = classify_all(rules)
+    counts = summarise(findings)
+
+    console = Console()
+    summary = Table(title="规则就绪度总览", show_header=False)
+    summary.add_column("tier")
+    summary.add_column("count", justify="right")
+    summary.add_row("总规则数", str(len(findings)))
+    summary.add_row("[green]自动判定 (AUTODETECTABLE)[/green]", str(counts["AUTODETECTABLE"]))
+    summary.add_row(
+        "[cyan]ProjectMeta 驱动 (PROJECT_META_DRIVEN)[/cyan]",
+        str(counts["PROJECT_META_DRIVEN"]),
+    )
+    summary.add_row(
+        "[yellow]部分自动 (PARTIAL_AUTODETECT — 需 builder 扩展)[/yellow]",
+        str(counts["PARTIAL_AUTODETECT"]),
+    )
+    summary.add_row(
+        "[yellow]楼梯待接入 (STAIR_PENDING — 需 builder 加 Stair)[/yellow]",
+        str(counts["STAIR_PENDING"]),
+    )
+    summary.add_row(
+        "[blue]人工核对提醒 (REMINDER_BY_DESIGN)[/blue]",
+        str(counts["REMINDER_BY_DESIGN"]),
+    )
+    console.print(summary)
+
+    color = {
+        "AUTODETECTABLE": "green",
+        "PROJECT_META_DRIVEN": "cyan",
+        "PARTIAL_AUTODETECT": "yellow",
+        "STAIR_PENDING": "yellow",
+        "REMINDER_BY_DESIGN": "blue",
+    }
+    tier_order = [
+        "AUTODETECTABLE",
+        "PROJECT_META_DRIVEN",
+        "PARTIAL_AUTODETECT",
+        "STAIR_PENDING",
+        "REMINDER_BY_DESIGN",
+    ]
+
+    t = Table(title="逐条就绪度", header_style="bold cyan")
+    t.add_column("tier")
+    t.add_column("rule_id", style="cyan")
+    t.add_column("scope")
+    t.add_column("severity")
+    t.add_column("blocker / note")
+    findings_sorted = sorted(
+        findings,
+        key=lambda f: (tier_order.index(f.tier), f.rule_id),
+    )
+    for f in findings_sorted:
+        c = color.get(f.tier, "white")
+        blocker = ""
+        if f.tier == "PARTIAL_AUTODETECT":
+            blocker = f"needs entity.properties[{', '.join(f.needs_properties)}]"
+        elif f.tier == "STAIR_PENDING":
+            blocker = "graph builder doesn't produce Stair entities"
+        elif f.tier == "PROJECT_META_DRIVEN":
+            blocker = "needs --project-meta with relevant fields"
+        elif f.tier == "REMINDER_BY_DESIGN":
+            blocker = "manual-check reminder, not auto-judgement"
+        t.add_row(
+            f"[{c}]{f.tier}[/{c}]",
+            f.rule_id,
+            f.applies_to,
+            f.severity,
+            blocker,
+        )
+    console.print(t)
+
+
 @clause_app.command("verbatim")
 def clause_verbatim() -> None:
     """Audit paraphrase=true clauses for PDF-vs-yaml number-coverage drift.

@@ -15,7 +15,6 @@ from pathlib import Path
 
 import fitz  # PyMuPDF
 
-
 CLAUSE_HEADER = re.compile(r"^(\d{1,2}\.\d{1,2}\.\d{1,2})\b")
 
 
