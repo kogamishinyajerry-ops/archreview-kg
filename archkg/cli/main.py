@@ -27,7 +27,7 @@ def version() -> None:
     try:
         typer.echo(_v("archkg"))
     except PackageNotFoundError:
-        typer.echo("0.0.1")
+        typer.echo("1.1.0")
 
 
 @app.command()

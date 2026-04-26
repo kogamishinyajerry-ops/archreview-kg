@@ -1,4 +1,4 @@
-# ArchReview-KG 生产就绪度 (v1.0.0 / Phase 17)
+# ArchReview-KG 生产就绪度 (v1.1.0 / Phase 18)
 
 > 直接回答 "现在能不能给用户上传图纸做自动审批"。
 
@@ -74,6 +74,24 @@ RC-NO-LIVING-IN-BASEMENT                 bedroom 位于 basement
 `out/report.md` 自动分两区：
 - **违规清单** severity=error：baseline 6 项；叠加 `--room-schedule` 后变 10 项（多出 4 张 PARTIAL_AUTODETECT 规则触发）
 - **人工核对提醒** severity=info：17 项
+
+## v1.1 新增 — 对抗训练 lane
+
+Phase 18-D 起加了 examiner ↔ candidate ↔ adjudicator 对抗 lane (`archkg adversarial`)。
+21 张规则被 deterministically 触发, 100-case battery 全 pass at F1=1.00:
+
+```bash
+archkg adversarial run -n 100 --seed 5000        # 跑对抗 battery
+archkg adversarial sample-stats -n 1000 --seed 5000   # 审计 per-rule 触发率
+```
+
+这 lane 在 v1.0.4-v1.0.9 6 ships 里:
+- v1.0.5: 暴露并修了 builder polygonize snap bug (recall 0.88 → 1.00)
+- v1.0.6: 暴露并修了 examiner 自身 height_class 分类 bug (5 个 spurious FN → 0)
+- v1.0.7-9: 加 8 张新规则到 targeted set + sample-stratification 自我审计
+
+意义: 不再只是 metric tooling, 而是 systematic blind-spot finder。
+每加新规则 / 每改 rule_cards 都自动暴露 mismatch.
 
 ## "100% coverage" 真正含义
 
