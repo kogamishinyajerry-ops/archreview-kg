@@ -4,6 +4,144 @@ All notable changes to ArchReview-KG. Version tags follow `v<major>.<minor>.<pat
 patch releases (`v1.0.x`) are individual ship phases reviewed by Codex GPT-5.4,
 minor releases (`v1.1.0` / `v1.2.0`) are stable milestones rolling up multiple patches.
 
+## v1.2.2 — 2026-04-26 — Real-PDF readiness: builder min-area + orphan-door noise filter
+
+v1.2.1 surfaced builder noise via warnings; v1.2.2 cuts the noise at
+its source. A `min_room_area_m2` floor in `build_graph` drops
+sub-threshold polygons before they enter the room list, and a
+companion filter prunes "doors" detected on wall breaks between
+filtered noise polygons (the dominant Medfield false-positive path —
+89 spurious `RC-DOOR-WIDTH` violations in v1.2.0).
+
+### Added
+
+- `archkg.graph.builder.build_graph(primitives, *, min_room_area_m2=0.0)`
+  optional kwarg. Builder default 0.0 keeps `archkg review` and the
+  existing synthetic-test path bit-for-bit identical; the studio passes
+  a non-zero default so first-time real-PDF uploads aren't drowned in
+  fixture noise.
+- **Door anchoring covers rooms AND corridors** (Codex P19-D R2 P0):
+  `_door_from_bridge` now searches the corridor list when assigning
+  `Door.connects`, not just the room list. The pre-R2 implementation
+  silently labelled real corridor-side doors as `(room, None)`, which
+  the orphan filter would then mistakenly classify as half-orphan
+  (and conversely, "surviving room + filtered noise polygon"
+  half-orphans looked the same as real entrance doors). Doors now
+  carry corridor ids on the corridor side, so `(None, None)`
+  uniquely identifies wall breaks between filtered noise polygons.
+- **Corridor-branch noise filter** (Codex P19-D R2 P2): the same
+  `min_room_area_m2` floor is applied to the corridor classification
+  branch. Long-thin noise scraps (3 m x 0.6 m cabinet gaps) that
+  pass the aspect/short-side test would otherwise survive as
+  "corridors" and trigger spurious RC-CORRIDOR-WIDTH violations.
+  Real corridors are >=3 m² so the floor never drops a plausible
+  one.
+- **Three-way door-side classification** (Codex P19-D R3 P0): each
+  door bridge's two sides are classified as `surviving` (room or
+  corridor that passed the area floor), `filtered` (polygon rejected
+  by the floor), or `exterior` (nothing covers the sample point). A
+  door is kept iff no side is `filtered` and at least one is
+  `surviving`. The pre-R3 implementation mapped filtered and exterior
+  to the same `None`, so the orphan filter couldn't tell a noise
+  door (surviving room ↔ filtered noise polygon) apart from a real
+  entrance door (surviving room ↔ exterior).
+- **Bridge-coverage adjacency + local-step side resolution**
+  (Codex P19-D R7 P1, both findings): the door-side classifier asks
+  two questions per polygon. (1) Adjacency: does the bridge length
+  lie substantially within the polygon-boundary buffer (≥50%, with
+  0.5 pt fuzz)? Min-distance alone admitted polygons that only
+  touch the bridge endpoint or a parallel sliver. (2) Side: does
+  the polygon cover a tiny step off the bridge midpoint along the
+  signed normal? Centroid-based side resolution was unsound for
+  concave (L/U/C-shaped) rooms whose centroids fall outside the
+  shape. The combined predicate handles every regression case
+  Codex constructed during R3-R7. Real-CAD plans with thick wall
+  structures (bridge centerline buried inside wall material)
+  remain out of scope for v1.2.2; called out in README and
+  READINESS with the symptom (door count near zero) so users can
+  recognise it.
+- Studio "advanced parameters" form field `min_room_area_m2` (default
+  1.0 m², min 0). Value 0 disables both room and door filtering. Bad
+  input flashes an error and redirects home, matching the
+  `points_per_meter` validation pattern.
+- **`run_meta.json` now records `points_per_meter` and
+  `min_room_area_m2`** (Codex P19-D R1 P2). Materially-output-changing
+  knobs are persisted so a user reporting unexpected entity counts can
+  be debugged from the run dir alone.
+- `tests/test_graph_builder.py::test_min_room_area_filter_drops_sub_threshold_polygons`
+  parameterises the floor at 0.0 / 10.0 / 16.0 / 100.0 m² against the
+  4-room sample and asserts the expected drop pattern.
+- `tests/test_graph_builder.py::test_door_connects_anchor_to_rooms_or_corridors`
+  asserts `Door.connects` carries corridor ids when the door is
+  corridor-side (Codex P19-D R2 P0 regression guard).
+- `tests/test_graph_builder.py::test_min_room_area_filter_also_prunes_orphan_doors`
+  proves the companion filter at three thresholds: 0.0 / 1.0 (no
+  drop on clean sample) / 16.0 (drops the two small rooms + the
+  corridor; door count strictly less than off; surviving doors all
+  anchored to a surviving room). Codex P19-D R1/R2 P0 anchor.
+- `tests/test_graph_builder.py::test_filter_drops_doors_anchored_to_filtered_noise`
+  is a Codex-supplied synthetic regression: 48 m² big room + 1.7 m²
+  side polygon + 0.9 m door gap. With `min_room_area_m2=3.0` the
+  small polygon is filtered and the door must be dropped (not kept
+  as a half-orphan). Codex P19-D R3 P0 anchor.
+- `tests/test_graph_builder.py::test_filter_drops_doors_anchored_to_thin_filtered_strip`
+  exercises a 0.2 m x 4.0 m noise strip (0.8 m², filtered at 1.0 m²)
+  — narrower than the legacy 0.3 m probe distance. The 0.05 m probe
+  lands cleanly inside the strip and drops the door. Codex P19-D R4
+  P0 anchor.
+- `tests/test_graph_builder.py::test_filter_keeps_real_exterior_door_with_detached_noise`
+  is the symmetric case: a 0.9 m exterior door + a detached 0.2 m
+  x 4.0 m noise strip starting 0.15 m past the wall. The
+  boundary-adjacency classifier correctly returns "exterior" for
+  the outer door side (the strip's boundary doesn't touch the
+  bridge); the door survives. Codex P19-D R5 P1 anchor.
+- `tests/test_graph_builder.py::test_filter_drops_doors_anchored_to_sub_probe_filtered_strip`
+  exercises a 0.04 m x 8.0 m strip (0.32 m², passes polygonize's
+  0.25 m² floor but is filtered at 1.0 m²). Strip is thinner than
+  any single-point probe distance. Boundary-adjacency detects it
+  via shared bridge boundary. Codex P19-D R6 P1 anchor.
+- `tests/test_graph_builder.py::test_filter_keeps_real_door_when_filtered_polygon_only_touches_endpoint`
+  asserts a noise polygon touching only a bridge endpoint does NOT
+  count as bridge-adjacent. Codex P19-D R7 P1 (finding 1) anchor.
+- `tests/test_graph_builder.py::test_classify_bridge_side_handles_concave_polygons`
+  exercises Codex's exact L-shape reproduction (centroid outside
+  the polygon, on the wrong side of the bridge); the local-step
+  side resolution returns the correct side regardless. Codex
+  P19-D R7 P1 (finding 2) anchor.
+- `tests/test_viewer_studio.py::test_post_review_min_room_area_filter_passes_through`
+  asserts the form field threads end-to-end.
+- `tests/test_viewer_studio.py::test_post_review_invalid_min_room_area_flashes`
+  guards against bad form input.
+- `tests/test_viewer_studio.py::test_run_meta_persists_tunable_knobs`
+  asserts ppm + min_room_area_m2 land in run_meta.json.
+
+### Changed
+
+- `archkg.viewer.studio.run_pipeline` signature: new
+  `min_room_area_m2: float = 1.0` keyword threaded into `build_graph`.
+- `archkg.viewer.studio._write_run_meta` signature: new
+  `points_per_meter` / `min_room_area_m2` optional kwargs.
+- `archkg studio` CLI docstring updated to be honest that studio's
+  default room-area floor differs from `archkg review` (Codex P19-D
+  R1 wording feedback).
+- pyproject version 1.2.1 → 1.2.2.
+
+### Why 1.0 m² as the default
+
+Demo's smallest room is 14.75 m² so the floor doesn't touch synthetic
+fixtures. CAD-export noise polygons (window frames, dim boxes, toilet
+enclosures) are typically 0.3–0.8 m². Real Chinese residential rooms
+are ≥4 m² (smallest valid bedroom under GB 50096 is ~5 m²). 1.0 m² is
+a conservative floor: aggressive enough to cut obvious noise, safe
+enough to never drop a real room. A user with an unusually noisy plan
+can bump it to 4.0 via the studio form; a user wanting to inspect
+every detected polygon sets 0.
+
+The Medfield-PDF re-test is left as a runtime check the user can
+perform on their own real PDF — bench numbers in this file would be
+out of date the next time the polygonize floor or door-gap logic
+changes.
+
 ## v1.2.1 — 2026-04-26 — Real-PDF readiness: scale + entity sanity check
 
 A real CAD PDF (Medfield 16-unit apartment plan, 8.5k vector paths)

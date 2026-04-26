@@ -12,6 +12,7 @@ Tests run the Flask app via its test client; no real socket is opened.
 
 from __future__ import annotations
 
+import json
 from io import BytesIO
 from pathlib import Path
 
@@ -176,6 +177,94 @@ def test_post_review_with_inspect_only_skips_rules(studio_client) -> None:
     assert "skipped" in body  # pipeline steps 3-5 marked skipped
     assert "源图副本" in body  # annotated PDF section relabelled
     assert "Issues (规则未跑)" in body  # stat tile clearly marked N/A
+
+
+def test_run_meta_persists_tunable_knobs(studio_client) -> None:
+    """Codex P19-D R1 P2: ppm and min_room_area_m2 materially change
+    outputs, so a user reporting unexpected entity counts must be able
+    to debug from the run dir alone. Persist both in run_meta.json."""
+    client, state_dir = studio_client
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(SAMPLE_PDF.read_bytes()), "plan.pdf"),
+            "points_per_meter": "50.0",
+            "min_room_area_m2": "2.5",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    meta = json.loads((run_dir / "run_meta.json").read_text("utf-8"))
+    assert meta["mode"] == "full"
+    assert meta["points_per_meter"] == 50.0
+    assert meta["min_room_area_m2"] == 2.5
+
+
+def test_post_review_min_room_area_filter_passes_through(studio_client) -> None:
+    """Phase 19-D: ``min_room_area_m2`` form field threads from the
+    studio form into the builder's room-area noise filter. With a 100
+    m² floor every demo room drops (largest is 20 m²), so the resulting
+    issues list must be empty (no rules can fire if there are no rooms)
+    and the run_meta entity counts must reflect the filter.
+    """
+    client, state_dir = studio_client
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(SAMPLE_PDF.read_bytes()), "plan.pdf"),
+            "min_room_area_m2": "100.0",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    issues = (run_dir / "issues.json").read_text("utf-8")
+    # All 4 demo rooms are <= 20 m² so a 100 m² floor wipes them out.
+    # Without rooms the room-targeted rules (RC-LIVING-BEDROOM-* etc.)
+    # cannot fire — the report should not contain them.
+    assert "RC-LIVING-BEDROOM-NETHEIGHT-2.4" not in issues, (
+        "min_room_area filter must drop rooms before rules fire on them"
+    )
+
+    graph = json.loads((run_dir / "entity_graph.json").read_text("utf-8"))
+    assert graph["rooms"] == [], (
+        f"100 m² floor should drop all rooms but got {len(graph['rooms'])}"
+    )
+
+
+def test_post_review_invalid_min_room_area_flashes(studio_client) -> None:
+    """Phase 19-D: form field guards against bad input (matches the
+    ppm validation pattern from R1)."""
+    client, _ = studio_client
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(SAMPLE_PDF.read_bytes()), "plan.pdf"),
+            "min_room_area_m2": "abc",
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert "min_room_area_m2" in resp.data.decode("utf-8")
+
+    # Negative is also invalid.
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(SAMPLE_PDF.read_bytes()), "plan.pdf"),
+            "min_room_area_m2": "-1.0",
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert "min_room_area_m2" in resp.data.decode("utf-8")
 
 
 def test_post_review_invalid_ppm_flashes(studio_client) -> None:

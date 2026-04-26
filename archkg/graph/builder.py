@@ -30,11 +30,10 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
+from shapely.geometry import LineString, Polygon
 from shapely.geometry import Point as SPoint
-from shapely.geometry import Polygon
 
 from archkg.graph.geometry import (
-    GapBridge,
     bridge_door_gaps,
     polygonize_segments,
 )
@@ -81,6 +80,21 @@ DOOR_MAX_M = 1.00
 CORRIDOR_ASPECT_MIN = 3.0
 CORRIDOR_SHORT_MIN_M = 0.5
 CORRIDOR_SHORT_MAX_M = 2.0
+
+# Codex P19-D R7 P1 (both findings): the right adjacency check is "does the
+# polygon boundary CONTAIN the bridge segment?", not "is the polygon
+# boundary close enough at any point" (a polygon touching only one
+# bridge endpoint, or a parallel sliver within tol, would qualify
+# under the loose check and falsely tag a real exterior door as
+# anchored to noise). We require the bridge length to be substantially
+# covered by the polygon's boundary buffer, then resolve which side
+# the polygon's interior is on by stepping a tiny epsilon off the
+# bridge midpoint along the signed normal — concave (L/U/C-shaped)
+# polygons can have centroids outside the shape, so centroid-based
+# side resolution is unsound.
+BRIDGE_ADJACENCY_TOL_PT: float = 0.5
+BRIDGE_COVERAGE_FRACTION: float = 0.5  # ≥ 50% of bridge must lie within boundary buffer
+BRIDGE_LOCAL_STEP_PT: float = 0.5      # step off the bridge to test which side covers it
 
 
 class EntityGraph(BaseModel):
@@ -159,44 +173,124 @@ def _new_id(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:8]}"
 
 
-def _door_from_bridge(
-    bridge: GapBridge,
-    page_index: int,
-    ppm: float,
+def _classify_door_side(
+    point: tuple[float, float],
     rooms: list[Room],
-) -> Door:
-    width_m = bridge.width_pt / ppm
-    (x0, y0), (x1, y1) = bridge.segment
-    bbox = (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
-    # Find rooms on either side of the door by sampling perpendicular points.
-    mx, my = (x0 + x1) / 2, (y0 + y1) / 2
-    if bridge.axis == "h":
-        offset = (0.0, ppm * 0.3)
-    else:
-        offset = (ppm * 0.3, 0.0)
-    side_a = (mx - offset[0], my - offset[1])
-    side_b = (mx + offset[0], my + offset[1])
-    a_id = _which_room(side_a, rooms)
-    b_id = _which_room(side_b, rooms)
-    confidence = 0.85 if (a_id and b_id) else 0.5
-    return Door(
-        id=_new_id("door"),
-        page_index=page_index,
-        bbox=bbox,
-        width_m=width_m,
-        connects=(a_id, b_id),
-        confidence=confidence,
-        uncertain=confidence < 0.6,
-    )
+    corridors: list[Corridor],
+    filtered_polygons: list[Polygon],
+) -> tuple[str, str | None]:
+    """Classify which kind of polygon (if any) covers the door-side
+    sample point.
 
+    Returns ``(kind, id_or_None)`` where ``kind`` is one of:
 
-def _which_room(point: tuple[float, float], rooms: list[Room]) -> str | None:
+    - ``"surviving"``: a kept room or corridor — return its id.
+    - ``"filtered"``: a polygon rejected by ``min_room_area_m2`` — no
+      id (filtered polygons aren't entities). Door touching this side
+      is a wall break adjacent to noise and should be dropped.
+    - ``"exterior"``: nothing covers the sample point. This is a true
+      building-exterior side or an opening into a non-classified
+      indoor region.
+
+    Codex P19-D R3 P0: this three-way distinction is what lets the
+    orphan-door filter tell a real entrance door (one side
+    surviving, one side exterior) apart from a noise wall-break door
+    (one side surviving, one side filtered). The pre-R3 code mapped
+    both filtered and exterior to ``None`` and so couldn't
+    distinguish them.
+    """
     sp = SPoint(point)
     for r in rooms:
-        poly = Polygon(r.polygon)
-        if poly.covers(sp):
-            return r.id
-    return None
+        if Polygon(r.polygon).covers(sp):
+            return ("surviving", r.id)
+    for c in corridors:
+        if Polygon(c.polygon).covers(sp):
+            return ("surviving", c.id)
+    for fp in filtered_polygons:
+        if fp.covers(sp):
+            return ("filtered", None)
+    return ("exterior", None)
+
+
+def _classify_bridge_side(
+    bridge_seg: tuple[tuple[float, float], tuple[float, float]],
+    direction: int,
+    rooms: list[Room],
+    corridors: list[Corridor],
+    filtered_polygons: list[Polygon],
+) -> tuple[str, str | None]:
+    """Identify which polygon (if any) the bridge segment is shared
+    with on the given side.
+
+    Adjacency: the bridge segment is substantially covered by the
+    polygon's boundary (allowing :data:`BRIDGE_ADJACENCY_TOL_PT`
+    fuzz). A polygon that only touches an endpoint, or sits within
+    tol on a parallel sliver, fails this check.
+
+    Side resolution: a small step off the bridge midpoint along the
+    signed normal must land inside the polygon. This handles concave
+    rooms whose centroids fall outside the polygon's enclosed area.
+
+    Codex P19-D R7 P1 (both findings): pre-R7 used "boundary distance < tol" +
+    centroid sign, which over-accepted endpoint-only adjacencies and
+    misclassified sides for L/U/C-shaped polygons.
+    """
+    bridge_line = LineString(bridge_seg)
+    bridge_length = bridge_line.length
+    if bridge_length == 0:
+        return ("exterior", None)
+    (x0, y0), (x1, y1) = bridge_seg
+    midpoint_x = (x0 + x1) / 2
+    midpoint_y = (y0 + y1) / 2
+    dx, dy = x1 - x0, y1 - y0
+    nx = -dy / bridge_length * direction
+    ny = dx / bridge_length * direction
+    side_test_point = SPoint(
+        midpoint_x + nx * BRIDGE_LOCAL_STEP_PT,
+        midpoint_y + ny * BRIDGE_LOCAL_STEP_PT,
+    )
+
+    def _adjacent_to_this_side(polygon: Polygon) -> bool:
+        # Coverage: at least BRIDGE_COVERAGE_FRACTION of the bridge
+        # length must lie within the polygon-boundary buffer. This
+        # rejects single-endpoint touches and parallel-sliver fuzz.
+        boundary_buffer = polygon.boundary.buffer(BRIDGE_ADJACENCY_TOL_PT)
+        shared = boundary_buffer.intersection(bridge_line)
+        if shared.is_empty:
+            return False
+        shared_length = getattr(shared, "length", 0.0)
+        if shared_length < bridge_length * BRIDGE_COVERAGE_FRACTION:
+            return False
+        # Side: the polygon's interior must contain (or touch) the
+        # tiny offset point in the +normal direction. Concave polygons
+        # are handled correctly because we check actual containment,
+        # not centroid position.
+        return bool(polygon.covers(side_test_point))
+
+    for r in rooms:
+        if _adjacent_to_this_side(Polygon(r.polygon)):
+            return ("surviving", r.id)
+    for c in corridors:
+        if _adjacent_to_this_side(Polygon(c.polygon)):
+            return ("surviving", c.id)
+    for fp in filtered_polygons:
+        if _adjacent_to_this_side(fp):
+            return ("filtered", None)
+    return ("exterior", None)
+
+
+def _which_anchor(
+    point: tuple[float, float],
+    rooms: list[Room],
+    corridors: list[Corridor],
+) -> str | None:
+    """Return the id of any room or corridor whose polygon covers the
+    point, or None. Retained for backward compatibility with any
+    downstream caller; the build_graph hot path uses
+    :func:`_classify_door_side` instead.
+    """
+    kind, anchor_id = _classify_door_side(point, rooms, corridors, [])
+    return anchor_id if kind == "surviving" else None
 
 
 def _bind_dimensions_to_entities(
@@ -273,8 +367,21 @@ def _bind_dimensions_to_entities(
 # ---------- main entry ----------
 
 
-def build_graph(primitives: Primitives) -> EntityGraph:
-    """MVP single-page graph builder."""
+def build_graph(
+    primitives: Primitives,
+    *,
+    min_room_area_m2: float = 0.0,
+) -> EntityGraph:
+    """MVP single-page graph builder.
+
+    Phase 19-D: ``min_room_area_m2`` is an optional noise filter for
+    real CAD PDFs. Polygons that pass the polygonize floor (~0.25 m²)
+    but are still smaller than the threshold are dropped from the room
+    list. Default 0.0 (no filtering) preserves backward-compat with the
+    synthetic samples and existing CLI behaviour; the studio passes a
+    non-zero default so first-time real-PDF uploads aren't drowned in
+    sub-1 m² fixture / dim-box / window-frame outlines.
+    """
     if not primitives.pages:
         raise ValueError("primitives has no pages")
     page: PagePrimitives = primitives.pages[0]
@@ -291,16 +398,33 @@ def build_graph(primitives: Primitives) -> EntityGraph:
 
     rooms: list[Room] = []
     corridors: list[Corridor] = []
+    # Codex P19-D R3 P0: track polygons rejected by the area floor
+    # so the door classifier can tell "wall break adjacent to filtered
+    # noise" apart from "wall break to true exterior". Without this,
+    # the orphan-door filter would either keep noise doors (current
+    # bug) or kill real entrance doors (the alternative naive fix).
+    filtered_polygons: list[Polygon] = []
 
     for poly in polygons:
         bbox, polygon_pts, area_m2 = _polygon_to_bbox_polygon_m(poly, ppm)
         short_m = _short_side_m(poly, ppm)
         aspect = _aspect_ratio(poly)
-
-        if (
+        is_corridor_shaped = (
             aspect >= CORRIDOR_ASPECT_MIN
             and CORRIDOR_SHORT_MIN_M <= short_m <= CORRIDOR_SHORT_MAX_M
-        ):
+        )
+
+        # Phase 19-D noise filter: drop sub-threshold polygons before
+        # they become rooms or corridors. Real Chinese residential
+        # rooms are >=4 m²; window frames / dim boxes / fixture
+        # outlines are typically 0.3-0.8 m². 1.0 m² is conservative.
+        # Long-thin scraps that satisfy the corridor aspect test get
+        # the same floor (Codex R2 P2): real corridors are >=3 m².
+        if min_room_area_m2 > 0.0 and area_m2 < min_room_area_m2:
+            filtered_polygons.append(poly)
+            continue
+
+        if is_corridor_shaped:
             corridors.append(
                 Corridor(
                     id=_new_id("corridor"),
@@ -328,10 +452,51 @@ def build_graph(primitives: Primitives) -> EntityGraph:
                 )
             )
 
-    doors = [
-        _door_from_bridge(b, page_index, ppm, rooms)
-        for b in bridges
-    ]
+    # Door creation with three-way side classification (Codex R3 P0,
+    # robustified per R6 P1). Each bridge's two sides are classified
+    # as one of:
+    #   - "surviving": polygon adjacent to the bridge boundary,
+    #                  classified as a kept room/corridor.
+    #   - "filtered":  polygon adjacent to the bridge boundary, but
+    #                  rejected by ``min_room_area_m2``.
+    #   - "exterior":  no polygon adjacent on this side.
+    # A door is kept iff no side is "filtered" and at least one side
+    # is "surviving" (real exterior doors satisfy "surviving + exterior";
+    # noise doors fail because at least one side is "filtered"; both-
+    # exterior bridges are degenerate and dropped to be safe).
+    # When the filter is off (min_room_area_m2 == 0.0), filtered_polygons
+    # is empty so the "filtered" verdict is unreachable → all doors are
+    # kept, preserving the pre-19-D backward-compat path.
+    doors: list[Door] = []
+    for bridge in bridges:
+        width_m = bridge.width_pt / ppm
+        (x0, y0), (x1, y1) = bridge.segment
+        bbox = (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+        a_kind, a_id = _classify_bridge_side(
+            bridge.segment, -1, rooms, corridors, filtered_polygons
+        )
+        b_kind, b_id = _classify_bridge_side(
+            bridge.segment, +1, rooms, corridors, filtered_polygons
+        )
+
+        if min_room_area_m2 > 0.0:
+            if a_kind == "filtered" or b_kind == "filtered":
+                continue
+            if a_kind != "surviving" and b_kind != "surviving":
+                continue
+
+        confidence = 0.85 if (a_id and b_id) else 0.5
+        doors.append(
+            Door(
+                id=_new_id("door"),
+                page_index=page_index,
+                bbox=bbox,
+                width_m=width_m,
+                connects=(a_id, b_id),
+                confidence=confidence,
+                uncertain=confidence < 0.6,
+            )
+        )
 
     dimensions, doors, corridors = _bind_dimensions_to_entities(
         page.texts, page_index, rooms, doors, corridors, ppm

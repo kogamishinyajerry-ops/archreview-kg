@@ -27,7 +27,7 @@ def version() -> None:
     try:
         typer.echo(_v("archkg"))
     except PackageNotFoundError:
-        typer.echo("1.2.1")
+        typer.echo("1.2.2")
 
 
 @app.command()
@@ -471,10 +471,12 @@ def studio(
 ) -> None:
     """Upload-and-review studio (Phase 19-B): drag-drop PDF → browser shows
     annotated PDF + report. First-time-user friendly entry point that calls
-    the same in-process pipeline as `archkg review`."""
+    the same in-process pipeline as `archkg review` (Phase 19-D: defaults
+    to a 1.0 m² room-area noise floor; the bare CLI does not, so studio
+    output may differ from `archkg review <pdf>` on noisy real PDFs)."""
     from archkg.viewer.studio import serve as serve_studio
 
-    archkg_version = "1.2.1"
+    archkg_version = "1.2.2"
     try:
         from importlib.metadata import version as _v
 

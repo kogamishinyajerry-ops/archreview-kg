@@ -103,6 +103,17 @@ archkg studio
 - **质量标记**: rooms > 50 / doors > 50 / 无 corridor 时, 结果页顶部红色横幅提示
   "builder 可能 over-segmenting, 规则违规需谨慎解读"
 
+**v1.2.2 应对** (builder-side noise filter):
+- **`min_room_area_m2`** 表单字段 (默认 1.0 m²): 在 builder 内部丢弃低于阈值的多边形,
+  让 window frames / 标注框 / fixture 轮廓在变成 "rooms" 之前被过滤
+- 同样的 floor 也作用于 corridor 分类分支, 长条窄缝 (橱柜间隙等) 不会假装成 corridor
+- 配套**邻接式门过滤**: 与被过滤多边形相邻的 wall break 不再变成 Door, 避免 noise
+  rule fire (RC-DOOR-WIDTH 等)
+- **已知限制**: 邻接判定假设墙是零厚度线段。Synthetic 样例 + 部分 metric CAD 导出符合,
+  但**没有在足够多真实图纸上验证**。**双线墙 CAD** (内/外两条平行线 + 中间墙体) 的 door bridge
+  落在墙体 centerline 内, 可能让所有 door 邻接判定都失败 → 全被丢弃。
+  **症状**: 结果里 door 数量为 0 或明显偏少。**应对**: CAD 里把双线墙合并为单线再导出, 或等 v1.3+ 处理
+
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
 Phase 18-D 起加了 examiner ↔ candidate ↔ adjudicator 对抗 lane (`archkg adversarial`)。

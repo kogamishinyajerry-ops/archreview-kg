@@ -134,6 +134,7 @@ def run_pipeline(
     stair_schedule_path: Path | None = None,
     points_per_meter: float = 50.0,
     inspect_only: bool = False,
+    min_room_area_m2: float = 1.0,
 ) -> PipelineResult:
     """End-to-end review on a single PDF.
 
@@ -150,6 +151,14 @@ def run_pipeline(
       skips rule evaluation. Lets users sanity-check what the builder
       detected on an unfamiliar PDF before reading a (potentially
       noisy) rule report.
+
+    Phase 19-D:
+    - ``min_room_area_m2`` (default 1.0 m²) drops sub-threshold
+      polygons before they become rooms. Suppresses the bulk of
+      CAD-export noise (window frames, dim boxes, fixture outlines)
+      that would otherwise light up the rule report with spurious
+      door-width violations on non-door wall breaks adjacent to those
+      noise rooms. Set to 0.0 to disable.
     """
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
@@ -174,7 +183,7 @@ def run_pipeline(
 
     primitives = extract(pdf_path, points_per_meter=points_per_meter)
     write_prims(primitives, out_dir / "primitives.json")
-    graph = build_graph(primitives)
+    graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
 
     if room_schedule_path is not None:
         if meta is None:
@@ -229,6 +238,8 @@ def run_pipeline(
         out_dir,
         mode="inspect_only" if inspect_only else "full",
         quality_flags=quality_flags,
+        points_per_meter=points_per_meter,
+        min_room_area_m2=min_room_area_m2,
     )
 
     # Mirror what the existing viewer.serve() needs: a copy of the source
@@ -330,23 +341,34 @@ def _write_run_meta(
     *,
     mode: str,
     quality_flags: tuple[str, ...] = (),
+    points_per_meter: float | None = None,
+    min_room_area_m2: float | None = None,
 ) -> Path:
-    """Persist the inspect-only / full mode + quality flags to a JSON file
-    in the run directory. Read by archkg.viewer.server._render_index so
-    any re-render of the run's index.html honours the inspect-only mode.
+    """Persist the inspect-only / full mode + quality flags + tunable
+    knobs to a JSON file in the run directory. Read by
+    ``archkg.viewer.server._render_index`` so any re-render of the
+    run's ``index.html`` honours the inspect-only mode.
 
-    Codex P19-C R2 P0: without this marker, `archkg viewer <run-dir>`
+    Codex P19-C R2 P0: without this marker, ``archkg viewer <run-dir>``
     re-renders inspect_only runs as full-success pages because it can't
     distinguish "0 issues because rules ran and found nothing" from "0
     issues because rules were skipped".
+
+    Codex P19-D R1 P2: also persist the tunable knobs that materially
+    change outputs (ppm + min_room_area_m2) so a user reporting
+    unexpected entity counts can be debugged from the run dir alone.
     """
+    payload: dict[str, Any] = {
+        "mode": mode,
+        "quality_flags": list(quality_flags),
+    }
+    if points_per_meter is not None:
+        payload["points_per_meter"] = points_per_meter
+    if min_room_area_m2 is not None:
+        payload["min_room_area_m2"] = min_room_area_m2
     meta_path = out_dir / "run_meta.json"
     meta_path.write_text(
-        json.dumps(
-            {"mode": mode, "quality_flags": list(quality_flags)},
-            ensure_ascii=False,
-            indent=2,
-        ),
+        json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
     return meta_path
@@ -596,6 +618,15 @@ STUDIO_HTML = r"""
          style="width: 100px; padding: 4px 8px; background: var(--bg);
                 border: 1px solid var(--border); border-radius: 4px; color: var(--text);" />
 
+  <p style="margin-top: 16px;"><strong>min_room_area_m2 (噪声地板)</strong>:
+  低于此面积的多边形不计入房间。真实住宅房间普遍 ≥4 m²；窗户框 / 标注框 / 卫浴洁具轮廓
+  通常 0.3–0.8 m²。默认 1.0 m² 可滤掉绝大多数 CAD 噪声又不伤真实小房间。
+  噪声特别多 (e.g. 169 rooms 这种) 可调到 4.0 m²；想保留所有候选房间设 0。</p>
+  <label>min_room_area_m2</label>
+  <input type="number" name="min_room_area_m2" step="0.1" min="0" value="1.0"
+         style="width: 100px; padding: 4px 8px; background: var(--bg);
+                border: 1px solid var(--border); border-radius: 4px; color: var(--text);" />
+
   <p style="margin-top: 16px;"><strong>模式</strong>: 仅识图模式只跑实体提取 + 图谱构建，跳过规则评估。
   适合在不熟悉的 PDF 上先看 builder 检出多少 rooms / doors / corridors 是否合理，
   再决定要不要让规则引擎评估违规（避免被噪声违规淹没）。</p>
@@ -666,7 +697,7 @@ def _save_upload(field_name: str, run_dir: Path) -> Path | None:
     return dest
 
 
-def create_app(state_dir: Path, *, archkg_version: str = "1.2.1") -> Flask:
+def create_app(state_dir: Path, *, archkg_version: str = "1.2.2") -> Flask:
     """Build the Flask app. state_dir holds the per-run output directories."""
     runs_dir = state_dir / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
@@ -712,6 +743,16 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.2.1") -> Flask:
             return redirect(url_for("index"))
         inspect_only = request.form.get("inspect_only") == "1"
 
+        # Phase 19-D: min_room_area_m2 noise floor.
+        try:
+            min_room_area = float(request.form.get("min_room_area_m2", "1.0"))
+        except ValueError:
+            flash("min_room_area_m2 必须是数字（默认 1.0）。")
+            return redirect(url_for("index"))
+        if min_room_area < 0:
+            flash("min_room_area_m2 不能为负（设 0 即关闭过滤）。")
+            return redirect(url_for("index"))
+
         try:
             run_pipeline(
                 pdf_path,
@@ -721,6 +762,7 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.2.1") -> Flask:
                 stair_schedule_path=stair_path,
                 points_per_meter=ppm,
                 inspect_only=inspect_only,
+                min_room_area_m2=min_room_area,
             )
         except Exception as exc:
             tb = traceback.format_exc()
@@ -802,7 +844,7 @@ def serve(
     port: int = 8765,
     state_dir: Path | None = None,
     open_browser: bool = True,
-    archkg_version: str = "1.2.1",
+    archkg_version: str = "1.2.2",
 ) -> None:
     if state_dir is None:
         state_dir = Path("tmp") / "studio"
