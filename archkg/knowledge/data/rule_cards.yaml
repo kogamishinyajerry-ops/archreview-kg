@@ -187,6 +187,10 @@
 - id: RC-ELEVATOR-BEDROOM-ADJACENCY
   source_clause_ids:
     - GB50096-6.4.7
+    # 6.4.1 supplies the floors/height_m proxy gate (rule fires only when an
+    # elevator is in play). Keep both refs so fidelity check can verify
+    # the gate numbers come from a real source clause.
+    - GB50096-6.4.1
   applies_to: Project
   inputs:
     - floors
@@ -211,6 +215,9 @@
 - id: RC-WHEELCHAIR-PASSAGE-WIDTH-7F
   source_clause_ids:
     - GB50096-6.6.4
+    # 6.6.1 supplies the 七层 trigger; without it the fidelity check would
+    # rightly flag the rule as drifting from 6.6.4's pure-width content.
+    - GB50096-6.6.1
   applies_to: Project
   inputs:
     - floors

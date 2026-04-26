@@ -385,6 +385,58 @@ def clause_search(
     console.print(t)
 
 
+@clause_app.command("fidelity")
+def clause_fidelity() -> None:
+    """Check rule cards' numeric thresholds against their source clause texts.
+
+    Surfaces numeric-drift findings (a rule uses a threshold the clause text
+    doesn't carry — the bug class that survived self-consistency tests in
+    Phase 11-C). Exits non-zero when any error-severity finding is present
+    so this can gate CI before scaling to LLM-authored rules in Phase 13.
+    """
+    from rich.console import Console
+    from rich.table import Table
+
+    from archkg.knowledge.fidelity import check_all
+    from archkg.knowledge.loader import load_rules, load_standards
+
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    findings = check_all(rules, standards)
+
+    console = Console()
+    if not findings:
+        console.print("[green]✓ all rule cards pass numeric-fidelity check[/green]")
+        return
+
+    by_severity = {"error": 0, "warning": 0, "info": 0}
+    for f in findings:
+        by_severity[f.severity] = by_severity.get(f.severity, 0) + 1
+
+    summary = Table(title="规则保真度检查", show_header=False)
+    summary.add_column("k")
+    summary.add_column("v", justify="right")
+    summary.add_row("rules checked", str(len(rules)))
+    summary.add_row("findings", str(len(findings)))
+    for sev in ("error", "warning", "info"):
+        if by_severity.get(sev):
+            summary.add_row(f"  {sev}", str(by_severity[sev]))
+    console.print(summary)
+
+    t = Table(title="Findings", header_style="bold yellow")
+    t.add_column("severity", style="yellow")
+    t.add_column("rule_id", style="cyan")
+    t.add_column("clauses")
+    t.add_column("kind")
+    t.add_column("message")
+    for f in findings:
+        t.add_row(f.severity, f.rule_id, f.clause_id, f.kind, f.message)
+    console.print(t)
+
+    if by_severity.get("error"):
+        raise typer.Exit(code=1)
+
+
 @clause_app.command("coverage")
 def clause_coverage() -> None:
     """Report which standards clauses are covered by at least one rule card."""
