@@ -47,6 +47,14 @@ _FLOOR_PHRASE = re.compile(r"([一二三四五六七八九十])层")
 # that "GB 50096-6.4.1" doesn't pollute the number set with {50096, 6.4, 1}.
 _CITATION = re.compile(r"GB\s*\d{4,5}(?:[\s\-－–]\d+)?(?:\.\d+){0,3}")
 _TABLE_REF = re.compile(r"表\s*\d+(?:\.\d+){0,3}")
+# List-enumerator markers like "1．" / "2．" / "1)" — these number clauses
+# internally, not regulatory thresholds. Match digit + marker followed by
+# whitespace OR a CJK char (to catch "1．建筑入口" with no space). Codex
+# P13-pilot P2 #1 fix.
+_LIST_MARKER = re.compile(r"(?<![\d.])\d+[．）)](?=[\s一-鿿])")
+# Fractions like "1/3" — treat as a single value (the float quotient) so
+# the numerator/denominator don't pollute the number set independently.
+_FRACTION = re.compile(r"(\d+)\s*/\s*(\d+)")
 
 
 @dataclass(frozen=True)
@@ -80,9 +88,26 @@ def _numbers_from_template(template: str) -> set[float]:
 
 def _numbers_from_clause_text(text: str) -> set[float]:
     """Numbers a regulatory reader would see: Arabic decimals + Chinese
-    numerals when used as a floor-count phrase (`七层`)."""
+    numerals when used as a floor-count phrase (`七层`).
+
+    Cleans the same provenance noise the template extractor cleans
+    (citations, 表 X.Y refs, list markers like "1．"). Fractions are
+    materialised as the float quotient before stripping their digits so
+    "1/3" enters the set as 0.333… not as {1, 3}. Codex P13-pilot P2 #1.
+    """
     out: set[float] = set()
-    for m in _NUMBER_TOKEN.finditer(text):
+    cleaned = text
+    # Materialise fractions first so "1/3" becomes ~0.333; then drop the
+    # original tokens so they don't double-count as 1 and 3.
+    for m in _FRACTION.finditer(cleaned):
+        num, den = float(m.group(1)), float(m.group(2))
+        if den != 0.0:
+            out.add(num / den)
+    cleaned = _FRACTION.sub(" ", cleaned)
+    cleaned = _CITATION.sub(" ", cleaned)
+    cleaned = _TABLE_REF.sub(" ", cleaned)
+    cleaned = _LIST_MARKER.sub(" ", cleaned)
+    for m in _NUMBER_TOKEN.finditer(cleaned):
         out.add(float(m.group(0)))
     for m in _FLOOR_PHRASE.finditer(text):
         out.add(float(_CN_FLOOR_NUMERAL[m.group(1)]))
@@ -94,9 +119,13 @@ def _close(a: float, others: Iterable[float], tol: float = 1e-6) -> bool:
 
 
 def _is_structural_constant(value: float) -> bool:
-    """Numbers we expect to appear in expressions for structural reasons,
-    not as regulatory thresholds. Skipping these reduces noise."""
-    return value in {0.0, 1.0}
+    """Numbers we expect to appear in expressions for structural reasons
+    (boolean coercion, identity comparisons), not as regulatory thresholds.
+
+    Codex P13-pilot P2 #2: only skip 0.0 universally. 1.0 is too commonly
+    a real regulatory threshold (clearance ≥1.0 m, ratios) to suppress.
+    """
+    return value == 0.0
 
 
 def check_rule_fidelity(

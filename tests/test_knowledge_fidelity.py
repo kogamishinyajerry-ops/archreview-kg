@@ -114,13 +114,54 @@ def test_check_rule_fidelity_multiclause_union() -> None:
     assert error_findings == [], f"expected union to cover both 7 and 16; got {error_findings}"
 
 
-def test_check_rule_fidelity_skips_structural_constants() -> None:
-    """Numbers like 0 / 1 used for structural reasons (e.g. boolean coercion)
-    don't trigger drift findings."""
+def test_check_rule_fidelity_skips_structural_zero_only() -> None:
+    """Codex P13-pilot P2 #2: only 0.0 is auto-suppressed; 1.0 stays checked."""
     clause = _clause("X-1", "建筑用房的室内净高不应小于 2.0 m。")
     rule = _rule("RC-S", ["X-1"], "ceiling_m >= 2.0 and ceiling_m > 0")
     findings = check_rule_fidelity(rule, {clause.id: clause})
     assert findings == []
+
+
+def test_check_rule_fidelity_does_not_hide_one_as_real_threshold() -> None:
+    """Codex P13-pilot P2 #2 regression: a rule with `x >= 1.0` against a
+    clause that doesn't mention 1.0 must surface as drift, not silently pass."""
+    clause = _clause("X-2", "走廊净宽不应小于 0.90 m。")  # no '1' in text
+    rule = _rule("RC-DRIFT-1", ["X-2"], "width_m >= 1.0")
+    findings = check_rule_fidelity(rule, {clause.id: clause})
+    error_findings = [f for f in findings if f.severity == "error"]
+    assert any("1.0" in f.message for f in error_findings)
+
+
+def test_check_rule_fidelity_strips_clause_list_markers() -> None:
+    """Codex P13-pilot P2 #1: list enumerator markers like "1．" / "2．" inside
+    a clause shouldn't pollute the threshold set, otherwise a future rule
+    drifting to `4.0` would silently pass against a 4-item enumerated clause."""
+    clause = _clause(
+        "X-3",
+        "应做无障碍设计：1．建筑入口；2．入口平台；3．候梯厅；4．公共走道。",
+    )
+    nums = _numbers_from_clause_text(clause.clause_text)
+    # Enumerator markers 1/2/3/4 must NOT contaminate the threshold set
+    for marker in (1.0, 2.0, 3.0, 4.0):
+        assert marker not in nums, f"list marker {marker} leaked into clause numbers: {nums}"
+
+
+def test_check_rule_fidelity_strips_inline_table_citation() -> None:
+    """Codex P13-pilot P2 #1: '表 5.5.29' inside clause text isn't a threshold."""
+    clause = _clause("X-4", "应符合 GB 50016 表 5.5.29 的规定，不应大于 40 m。")
+    nums = _numbers_from_clause_text(clause.clause_text)
+    assert 40.0 in nums  # the real threshold
+    assert 50016.0 not in nums  # citation noise
+    assert 5.5 not in nums  # table number
+    assert 29.0 not in nums  # table number
+
+
+def test_check_rule_fidelity_fraction_is_quotient() -> None:
+    """Codex P13-pilot P2 #1: '1/3' is a single ratio, not {1, 3}."""
+    nums = _numbers_from_clause_text("其面积不应大于室内使用面积的 1/3。")
+    assert 1.0 not in nums
+    assert 3.0 not in nums
+    assert any(abs(n - 1.0 / 3.0) < 1e-9 for n in nums)
 
 
 def test_packaged_rules_pass_numeric_fidelity_check() -> None:
