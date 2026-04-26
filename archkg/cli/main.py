@@ -27,7 +27,7 @@ def version() -> None:
     try:
         typer.echo(_v("archkg"))
     except PackageNotFoundError:
-        typer.echo("1.1.0")
+        typer.echo("1.2.0")
 
 
 @app.command()
@@ -457,6 +457,37 @@ def viewer(
     from archkg.viewer.server import serve
 
     serve(out, source_pdf, port=port, open_browser=not no_browser)
+
+
+@app.command()
+def studio(
+    port: int = typer.Option(8765, "-p", "--port"),
+    state: Path = typer.Option(
+        Path("tmp/studio"),
+        "--state",
+        help="State directory holding per-run output subdirs (./tmp/studio/runs/<id>/).",
+    ),
+    no_browser: bool = typer.Option(False, "--no-browser"),
+) -> None:
+    """Upload-and-review studio (Phase 19-B): drag-drop PDF → browser shows
+    annotated PDF + report. First-time-user friendly entry point that calls
+    the same in-process pipeline as `archkg review`."""
+    from archkg.viewer.studio import serve as serve_studio
+
+    archkg_version = "1.2.0"
+    try:
+        from importlib.metadata import version as _v
+
+        archkg_version = _v("archkg")
+    except Exception:
+        pass
+
+    serve_studio(
+        port=port,
+        state_dir=state,
+        open_browser=not no_browser,
+        archkg_version=archkg_version,
+    )
 
 
 clause_app = typer.Typer(

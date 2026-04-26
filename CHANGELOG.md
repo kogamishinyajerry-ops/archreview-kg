@@ -2,7 +2,41 @@
 
 All notable changes to ArchReview-KG. Version tags follow `v<major>.<minor>.<patch>`;
 patch releases (`v1.0.x`) are individual ship phases reviewed by Codex GPT-5.4,
-minor releases (`v1.1.0`) are stable milestones rolling up multiple patches.
+minor releases (`v1.1.0` / `v1.2.0`) are stable milestones rolling up multiple patches.
+
+## v1.2.0 — 2026-04-26 — Studio upload UI for first-time users
+
+The first end-to-end browser experience. Phase 19-B.
+
+### Added
+
+- `archkg studio` CLI launches a Flask app on port 8765 with a drag-drop
+  PDF upload form, optional ProjectMeta / room / stair schedule uploads,
+  and a "跑内置 demo" button that runs `samples/sample_clean.pdf` for
+  zero-setup visitors.
+- POST `/review` runs the same in-process pipeline as `archkg review`
+  (extract → build_graph → apply schedules → evaluate → annotate →
+  report) and redirects to the existing read-only viewer rendered into
+  per-run isolated output dirs under `tmp/studio/runs/<run_id>/`.
+- Public `archkg.viewer.studio.run_pipeline()` factored out of the
+  Typer CLI so the studio's HTTP handler and the existing CLI now
+  share one review entry point.
+- `tests/test_viewer_studio.py` smoke tests cover index render, demo
+  run, full upload (with PARTIAL_AUTODETECT + STAIR_PENDING rules
+  unlocking), bare-PDF upload, and the missing-PDF flash error path.
+  6 new tests — Flask `test_client`, no real socket bound.
+
+### Changed
+
+- `Flask>=3.0` added to `[project.dependencies]`.
+- README rewritten with the studio as the primary 30-second path; CLI
+  workflow demoted to "selection 2" but kept intact.
+
+## v1.1.1 — 2026-04-26 — README
+
+- README.md added (the repo previously had READINESS.md and
+  CHANGELOG.md but no README, so anyone landing on the repo had no
+  quickstart). Documentation only.
 
 ## v1.1.0 — 2026-04-26 — Adversarial training lane stable
 

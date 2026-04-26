@@ -5,7 +5,7 @@
 [![pytest](https://img.shields.io/badge/pytest-241%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
-[![version](https://img.shields.io/badge/version-1.1.0-blue)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-1.2.0-blue)](CHANGELOG.md)
 
 ArchReview-KG 把上传的 PDF 平面图自动转成实体图谱（房间 / 户门 / 走廊 / 尺寸标注），
 对照 30 条国标规则（GB 50096 / 50352 / 50016 / 50763）逐条评估，输出标注 PDF
@@ -20,16 +20,17 @@ ArchReview-KG 把上传的 PDF 平面图自动转成实体图谱（房间 / 户�
 ## 30 秒看演示
 
 ```bash
-git clone https://github.com/<your-org>/archreview-kg.git
+git clone https://github.com/kogamishinyajerry-ops/archreview-kg.git
 cd archreview-kg
 uv pip install -e .
 
-# 一键 demo: 跑 samples/sample_clean.pdf + 完整 schedule 上下文
-archkg demo --meta --room-schedule --stair-schedule
+# 选 1: 浏览器拖拽上传 (推荐第一次用)
+archkg studio
+# → 自动打开 http://127.0.0.1:8765, 直接拖 PDF 或点 "跑内置 demo" 看效果
 
-# 浏览器查看结果
+# 选 2: CLI 一键 demo
+archkg demo --meta --room-schedule --stair-schedule
 archkg viewer -d out
-# → http://localhost:8765
 ```
 
 `out/` 下会有：
@@ -41,7 +42,25 @@ archkg viewer -d out
 
 ---
 
-## 真实图纸三步走
+## 真实图纸 — 浏览器路径（推荐）
+
+```bash
+archkg studio
+```
+
+打开后:
+1. **拖** PDF 平面图到上方框
+2. 展开 "ProjectMeta YAML" / "房间排表 YAML" / "楼梯排表 YAML" 区块, 选填本项目的 YAML（不填也能跑, 只触发 4 张直判规则）
+3. 点 "▶ 跑审图"
+
+完成后页面跳转到结果视图: 左侧标注 PDF 预览 / 右侧问题清单 + 复核报告。
+点 "没图纸？跑内置 demo" 用 `samples/sample_clean.pdf` 看完整流程。
+
+YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
+
+---
+
+## 真实图纸 — CLI 三步走
 
 ```bash
 # 1. 准备 ProjectMeta YAML（住宅类型、层数、户数、耐火等级）
