@@ -28,10 +28,18 @@ left compliant):
   STAIR_PENDING (via stair schedule):
     RC-STAIR-{TREAD,RISER,FLIGHT,HANDRAIL,WELL}
 
-Out of scope here: the 18 REMINDER_BY_DESIGN rules (severity=info project
-reminders). They fire based on project_meta context; their P/R isn't a
-useful signal because they're surface-the-clause-for-manual-check rather
-than rule-decided.
+  HIGH_RISE_PROJECT (Phase 18-F / v1.0.6):
+    RC-ELEVATOR-REQUIRED                floors ≥ 7 OR height_m > 16
+    RC-ACCESSIBLE-RESIDENTIAL-7F        floors ≥ 7
+    RC-ENTRANCE-PLATFORM-WIDTH-7F       floors ≥ 7
+    RC-WHEELCHAIR-PASSAGE-WIDTH-7F      floors ≥ 7
+    RC-REFUGE-LAYER-100M                height_m > 100
+
+Out of scope here: the remaining REMINDER_BY_DESIGN rules (severity=info
+project reminders) that always fire on residential without a finite
+logic_expression we can mirror — RC-BALCONY-*, RC-WINDOW-SILL-*,
+RC-RAILING-*, etc. They surface-the-clause-for-manual-check rather than
+rule-decided.
 """
 
 from __future__ import annotations
@@ -114,7 +122,7 @@ _DOOR_WIDTHS = [0.80, 0.85, 0.90, 0.95]  # 2 fail, 2 pass
 # threshold without producing a degenerate 2x2 box that breaks the
 # builder's polygonizer at the page corner. Codex P18-D R1.
 _BEDROOM_DIMS = [(3.0, 1.6), (3.0, 1.8), (3.0, 2.5), (4.0, 4.0)]  # area 4.8/5.4/7.5/16
-_FLOORS = [3, 5, 6, 7, 12, 18]
+_FLOORS = [3, 5, 6, 7, 12, 18, 35]
 _NET_HEIGHTS = [2.20, 2.30, 2.40, 2.50, 2.80]  # 2 fail (<2.40), 3 pass
 _LEVELS: list[Literal["basement", "ground", "upper", "mezzanine"]] = [
     "basement",
@@ -244,6 +252,52 @@ def predict_expected_violations(p: CaseParameters) -> list[ExpectedViolation]:
                     note=f"basement room net height {p.bedroom_net_height_m:.2f} < 2.0",
                 )
             )
+
+    # Project-meta-driven high-rise rules. These are info-severity
+    # reminders the engine fires whenever floor count / building height
+    # crosses a threshold. The adjudicator strips info findings from
+    # `actual` UNLESS they appear in `expected`, so coverage is invisible
+    # until we predict them. Phase 18-F / v1.0.6.
+    if p.floors >= 7:
+        expected.append(
+            ExpectedViolation(
+                rule_id="RC-ACCESSIBLE-RESIDENTIAL-7F",
+                entity_hint="project",
+                note=f"{p.floors}F ≥ 7 → GB 50096-6.6.1 accessibility design required",
+            )
+        )
+        expected.append(
+            ExpectedViolation(
+                rule_id="RC-ENTRANCE-PLATFORM-WIDTH-7F",
+                entity_hint="project",
+                note=f"{p.floors}F ≥ 7 → GB 50096-6.6.3 entrance platform ≥ 2.00 m",
+            )
+        )
+        expected.append(
+            ExpectedViolation(
+                rule_id="RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+                entity_hint="project",
+                note=f"{p.floors}F ≥ 7 → GB 50096-6.6.4 wheelchair passage width",
+            )
+        )
+    # RC-ELEVATOR-REQUIRED: passes only when (floors < 7) AND (height ≤ 16).
+    if p.floors >= 7 or p.height_m > 16.0:
+        expected.append(
+            ExpectedViolation(
+                rule_id="RC-ELEVATOR-REQUIRED",
+                entity_hint="project",
+                note=f"{p.floors}F / {p.height_m:.1f}m → GB 50096-6.4.1 elevator required",
+            )
+        )
+    # RC-REFUGE-LAYER-100M: fires when height > 100 m.
+    if p.height_m > 100.0:
+        expected.append(
+            ExpectedViolation(
+                rule_id="RC-REFUGE-LAYER-100M",
+                entity_hint="project",
+                note=f"{p.height_m:.1f} m > 100 m → GB 50016-5.5.31 refuge layer required",
+            )
+        )
 
     # Stair schedule rules: when included with adversarial values, all
     # 5 fire on stair-1.
@@ -376,7 +430,17 @@ def _write_project_meta(meta_path: Path, p: CaseParameters, project_id: str) -> 
         "project_id": project_id,
         "project_name": f"adversarial case (seed={p.seed})",
         "building_type": "residential",
-        "height_class": "高层" if p.floors >= 7 else "多层",
+        # Phase 18-F: a 35F / 105.5m residential is 超高层 (super high-rise),
+        # not 高层. GB 50016-5.5.31 (RC-REFUGE-LAYER-100M) gates on
+        # applies_to_height_class=[超高层]; mis-labeling as 高层 makes the
+        # engine skip the rule and the adversarial battery surfaces a
+        # spurious FN. Anchor on height_m so the predictor and engine
+        # see the same project class.
+        "height_class": (
+            "超高层" if p.height_m > 100.0
+            else "高层" if p.floors >= 7
+            else "多层"
+        ),
         "fire_class": "二级",
         "climate_zone": "寒冷",
         "use_type": "住宅",

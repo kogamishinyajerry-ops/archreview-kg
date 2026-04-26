@@ -224,6 +224,12 @@ def test_predict_matches_live_engine_semantics(seed: int) -> None:
         "RC-STAIR-RISER-HEIGHT-0.175",
         "RC-STAIR-HANDRAIL-0.90",
         "RC-STAIR-WELL-WIDTH-0.11",
+        # Phase 18-F: high-rise project-meta-driven reminders.
+        "RC-ELEVATOR-REQUIRED",
+        "RC-ACCESSIBLE-RESIDENTIAL-7F",
+        "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+        "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+        "RC-REFUGE-LAYER-100M",
     ]
 
     def _eval(rule_id: str, env: dict[str, object]) -> bool:
@@ -249,6 +255,8 @@ def test_predict_matches_live_engine_semantics(seed: int) -> None:
         "building_type": "residential",
         "total_units": p.total_units,
         "accessible_units": p.accessible_units,
+        "floors": p.floors,
+        "height_m": p.height_m,
     }
     corridor_env = {"min_width_m": p.corridor_width_m}
     door_envs = [{"width_m": w} for w in p.door_widths_m]
@@ -265,6 +273,15 @@ def test_predict_matches_live_engine_semantics(seed: int) -> None:
         fired.add("RC-BEDROOM-AREA")
     if _eval("RC-ACCESSIBLE-RESIDENTIAL-RATIO", dict(project_env)):
         fired.add("RC-ACCESSIBLE-RESIDENTIAL-RATIO")
+    for rid in (
+        "RC-ELEVATOR-REQUIRED",
+        "RC-ACCESSIBLE-RESIDENTIAL-7F",
+        "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+        "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+        "RC-REFUGE-LAYER-100M",
+    ):
+        if _eval(rid, dict(project_env)):
+            fired.add(rid)
     if _eval("RC-LIVING-BEDROOM-NETHEIGHT-2.4", dict(bedroom_room_env)):
         fired.add("RC-LIVING-BEDROOM-NETHEIGHT-2.4")
     if _eval("RC-NO-LIVING-IN-BASEMENT", dict(bedroom_room_env)):
@@ -339,4 +356,113 @@ def test_predict_basement_low_height_branch_against_engine() -> None:
     assert engine_fires, "engine should fire on basement bedroom with height 1.80"
     assert "RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0" in predicted, (
         "predictor must agree with engine on the basement-low-height branch"
+    )
+
+
+def test_examiner_super_high_rise_case_fires_refuge_through_full_engine(
+    tmp_path: Path,
+) -> None:
+    """Codex P18-F R1 P1: the parametrized predictor↔engine semantic test
+    only exercises ``logic_expression``; it bypasses ``is_rule_applicable``
+    and therefore would not catch the exact regression fixed in this round
+    (a 35F / 105.5m project mis-labeled ``高层`` instead of ``超高层`` makes
+    GB 50016-5.5.31 silently skip even though height_m > 100).
+
+    Drive the full review pipeline against an examiner-generated super-
+    high-rise case and assert RC-REFUGE-LAYER-100M lands in ``issues``,
+    not ``skipped``. Also asserts that flipping the meta's height_class
+    back to ``高层`` makes the engine skip the rule — guarantees the
+    regression detector actually detects.
+    """
+    import json
+
+    from archkg.adversarial.battery import _review_case
+    from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.rules.engine import evaluate
+    from archkg.schemas import ProjectMeta
+
+    # Seed 5041 produces 35F / 105.5m / height_class=超高层 in v1.0.6.
+    case = generate_case(seed=5041, out_dir=tmp_path)
+    assert case.parameters.floors == 35
+    assert case.parameters.height_m > 100.0  # safety net for the seed assumption
+    review_dir = _review_case(case)
+    issues = json.loads((review_dir / "issues.json").read_text())
+    fired = {i["rule_card_id"] for i in issues}
+    assert "RC-REFUGE-LAYER-100M" in fired, (
+        "examiner-generated super-high-rise case must fire RC-REFUGE-LAYER-100M "
+        "through the full engine (predictor → ground_truth → builder → engine "
+        "→ adjudicator). If this fails, the height_class classification has "
+        "regressed and the examiner mis-labels its own super-high-rise cases."
+    )
+
+    # Negative control: re-evaluate the same project_meta but with
+    # height_class flipped to '高层'. The clause GB 50016-5.5.31 has
+    # applies_to_height_class=[超高层]; the engine MUST skip, not fire.
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    bad_meta = ProjectMeta(
+        project_id="ADV-NEG",
+        building_type="residential",
+        height_class="高层",
+        floors=35,
+        height_m=105.5,
+    )
+    from archkg.graph.builder import EntityGraph
+    empty = EntityGraph(
+        source_pdf="x.pdf",
+        points_per_meter=50.0,
+        page_index=0,
+        page_width_pt=500,
+        page_height_pt=400,
+        rooms=[],
+        doors=[],
+        corridors=[],
+        dimensions=[],
+    )
+    result = evaluate(empty, rules, standards, project_meta=bad_meta)
+    refuge_issues = [i for i in result.issues if i.rule_card_id == "RC-REFUGE-LAYER-100M"]
+    refuge_skipped = [s for s in result.skipped if s.rule_id == "RC-REFUGE-LAYER-100M"]
+    assert refuge_issues == [], (
+        "regression detector must detect: 高层 + height>100 should skip, not fire"
+    )
+    assert len(refuge_skipped) == 1, "the rule must explicitly skip with a reason"
+    assert "超高层" in refuge_skipped[0].reason
+
+
+def test_predict_seven_floor_low_height_edge_against_engine() -> None:
+    """Codex P18-F R1 P1: sample_parameters() emits ``height_m = floors *
+    {2.8,3.0} + 0.5``, so every 7F case is 20.1m or 21.5m — never the
+    7F/15.5m boundary. RC-ELEVATOR-REQUIRED's logic is
+    ``floors >= 7 OR height_m > 16``; a 7F project at 15.5m must still
+    fire on the floor-count side. Pin the boundary explicitly so the
+    OR-branch can't silently drift to AND.
+    """
+    from archkg.knowledge.loader import load_rules
+    from archkg.rules.engine import compile_expression, evaluate_expression
+
+    p = CaseParameters(
+        seed=0,
+        corridor_width_m=1.50,
+        door_widths_m=(0.95, 0.95, 0.95, 0.95),
+        bedroom_w_m=3.0,
+        bedroom_h_m=3.0,
+        floors=7,
+        height_m=15.5,  # below the 16m height trigger
+        total_units=100,
+        accessible_units=5,
+        bedroom_net_height_m=2.50,
+        bedroom_level="upper",
+        include_stair_schedule=False,
+        stair_metrics_below_threshold=False,
+    )
+    rule = next(r for r in load_rules() if r.id == "RC-ELEVATOR-REQUIRED")
+    env = {"floors": 7, "height_m": 15.5}
+    for k in rule.inputs:
+        env.setdefault(k, None)
+    tree = compile_expression(rule.logic_expression, rule.inputs)
+    engine_fires = not evaluate_expression(tree, env)
+    predicted = {v.rule_id for v in predict_expected_violations(p)}
+    assert engine_fires, "7F at any height must fire RC-ELEVATOR-REQUIRED"
+    assert "RC-ELEVATOR-REQUIRED" in predicted, (
+        "predictor must fire on the floors-only branch, not require height>16"
     )
