@@ -253,13 +253,28 @@ def evaluate(
                 threshold_value=threshold_for_evidence,
                 unit=clause.unit if clause else None,
             )
+            # Phase 18-C Codex P0: Stair schedule materializes entities
+            # with placeholder bbox=(0,0,0,0) and uncertain=True when no
+            # geometry is known. The annotator draws every non-None bbox
+            # after padding, so without filtering here those issues stack
+            # at the page origin. Emit bbox=None for placeholder geometry
+            # — the annotator already has a project-level skip path for
+            # bbox=None. Test must be both `uncertain` and the exact
+            # placeholder tuple so legitimate thin/degenerate bboxes
+            # (e.g. doors that are essentially a line segment along a
+            # wall) keep their drawn rectangle.
+            issue_bbox: tuple[float, float, float, float] | None
+            if entity.uncertain and entity.bbox == (0.0, 0.0, 0.0, 0.0):
+                issue_bbox = None
+            else:
+                issue_bbox = entity.bbox
             result.issues.append(
                 Issue(
                     issue_id=_new_issue_id(),
                     rule_card_id=rule.id,
                     standard_clause_id=clause_id,
                     entity_ids=[entity.id],
-                    bbox=entity.bbox,
+                    bbox=issue_bbox,
                     page_index=entity.page_index,
                     severity=rule.severity or "error",
                     message=_format_message(rule.output_template, env),

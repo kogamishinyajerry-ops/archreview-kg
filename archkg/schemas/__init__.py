@@ -19,6 +19,7 @@ from archkg.schemas.primitives import (
 from archkg.schemas.project import ClimateZone, FireClass, ProjectMeta
 from archkg.schemas.room_schedule import RoomLevel, RoomSchedule, RoomScheduleEntry
 from archkg.schemas.rule_card import EntityType, RuleCard, RuleCardTestCase, RuleScope
+from archkg.schemas.stair_schedule import StairSchedule, StairScheduleEntry
 from archkg.schemas.standard import (
     BuildingType,
     ClauseCategory,
@@ -54,6 +55,8 @@ __all__ = [
     "RuleScope",
     "Severity",
     "Stair",
+    "StairSchedule",
+    "StairScheduleEntry",
     "StandardClause",
     "TextPrimitive",
     "TextSource",

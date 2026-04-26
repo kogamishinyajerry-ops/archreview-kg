@@ -60,6 +60,10 @@ def review(
         None, "--room-schedule", exists=True, dir_okay=False, readable=True,
         help="Optional room schedule YAML supplying Room.properties (净高/楼层/坡屋顶) the PDF builder doesn't extract. Unlocks 4 PARTIAL_AUTODETECT rules.",
     ),
+    stair_schedule: Path | None = typer.Option(
+        None, "--stair-schedule", exists=True, dir_okay=False, readable=True,
+        help="Optional stair schedule YAML declaring Stair entities the PDF builder doesn't detect. Unlocks 5 STAIR_PENDING rules.",
+    ),
 ) -> None:
     """One-shot: ingest -> build-graph -> evaluate rules -> annotate -> report."""
     import json as _json
@@ -140,6 +144,46 @@ def review(
         schedule_apply = apply_room_schedule(graph, schedule)
         graph = schedule_apply.graph
 
+    stair_schedule_apply = None
+    if stair_schedule is not None:
+        # Phase 18-C: same project-meta requirement as room schedule.
+        # The schedule carries project_id and we cross-check it; without
+        # a meta there's no anchor and a stray schedule could land on the
+        # wrong project.
+        if meta is None:
+            raise typer.BadParameter(
+                "--stair-schedule requires --project-meta so the schedule's project_id can be cross-checked.",
+                param_hint="--stair-schedule",
+            )
+        from archkg.graph.stair_schedule import (
+            StairScheduleApplyError,
+            apply_stair_schedule,
+        )
+        from archkg.knowledge.stair_schedule import (
+            StairScheduleError,
+            load_stair_schedule,
+        )
+
+        try:
+            stairs_sched = load_stair_schedule(stair_schedule)
+        except StairScheduleError as exc:
+            raise typer.BadParameter(
+                str(exc), param_hint="--stair-schedule"
+            ) from exc
+        if stairs_sched.project_id != meta.project_id:
+            raise typer.BadParameter(
+                f"--stair-schedule project_id '{stairs_sched.project_id}' does not match "
+                f"--project-meta project_id '{meta.project_id}'",
+                param_hint="--stair-schedule",
+            )
+        try:
+            stair_schedule_apply = apply_stair_schedule(graph, stairs_sched)
+        except StairScheduleApplyError as exc:
+            raise typer.BadParameter(
+                str(exc), param_hint="--stair-schedule"
+            ) from exc
+        graph = stair_schedule_apply.graph
+
     graph_path = write_graph(graph, out / "entity_graph.json")
     render_overlay(graph, pdf, out / "entity_overlay.png")
 
@@ -173,6 +217,7 @@ def review(
         skipped=result.skipped,
         project_meta=meta,
         schedule_apply=schedule_apply,
+        stair_schedule_apply=stair_schedule_apply,
     )
 
 
@@ -188,6 +233,7 @@ def _print_review_summary(
     skipped: list[Any] | None = None,
     project_meta: Any = None,
     schedule_apply: Any = None,
+    stair_schedule_apply: Any = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
@@ -226,6 +272,8 @@ def _print_review_summary(
     detect.add_row("doors", str(len(g.doors)))
     detect.add_row("corridors", str(len(g.corridors)))
     detect.add_row("dimensions", str(len(g.dimensions)))
+    if g.stairs:
+        detect.add_row("stairs", str(len(g.stairs)))
     console.print(detect)
 
     # Room schedule application audit (Phase 18-B)
@@ -247,6 +295,24 @@ def _print_review_summary(
                 f"{len(schedule_apply.empty_property_entries)} 条（仅有 selector，没填任何 net_height_m / level / pitched_roof）",
             )
         console.print(sched)
+
+    # Stair schedule application audit (Phase 18-C)
+    if stair_schedule_apply is not None:
+        ssched = Table(title="楼梯明细表", show_header=False, header_style="bold green")
+        ssched.add_column("k", style="green")
+        ssched.add_column("v")
+        ssched.add_row("新增楼梯数", str(len(stair_schedule_apply.materialized)))
+        if stair_schedule_apply.conflicted:
+            ssched.add_row(
+                "[yellow]ID 冲突条目[/yellow]",
+                f"{len(stair_schedule_apply.conflicted)} 条（stair_id 已在 graph 中，未覆盖）",
+            )
+        if stair_schedule_apply.empty_metric_entries:
+            ssched.add_row(
+                "[yellow]空指标条目[/yellow]",
+                f"{len(stair_schedule_apply.empty_metric_entries)} 条（创建了 Stair 但未填任何 tread/riser/...）",
+            )
+        console.print(ssched)
 
     # Skipped rules due to project context
     if skipped:
@@ -342,6 +408,10 @@ def demo(
         False, "--room-schedule/--no-room-schedule",
         help="Layer samples/room_schedule_demo.yaml on top to populate Room.properties (净高/楼层/坡屋顶) and demonstrate the 4 PARTIAL_AUTODETECT rules firing.",
     ),
+    with_stair_schedule: bool = typer.Option(
+        False, "--stair-schedule/--no-stair-schedule",
+        help="Layer samples/stair_schedule_demo.yaml on top to materialize Stair entities and demonstrate the 5 STAIR_PENDING rules firing.",
+    ),
 ) -> None:
     """One-key demo: regenerate sample PDF, run review, print where artifacts landed."""
     from rich.console import Console
@@ -356,12 +426,16 @@ def demo(
     schedule_path = (
         (sample_dir / "room_schedule_demo.yaml") if with_room_schedule else None
     )
+    stair_schedule_path = (
+        (sample_dir / "stair_schedule_demo.yaml") if with_stair_schedule else None
+    )
     review(
         pdf=pdf,
         out=out,
         points_per_meter=50.0,
         project_meta=meta_path,
         room_schedule=schedule_path,
+        stair_schedule=stair_schedule_path,
     )
 
 

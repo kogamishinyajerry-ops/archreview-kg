@@ -1,0 +1,37 @@
+# Sample stair schedule for the synthetic demo plan (sample_clean.pdf).
+#
+# Phase 18-C (v1.0.3): the PDF graph builder produces zero Stair entities —
+# stair detection from a plan view needs CV + dimensional reasoning we don't
+# have yet. This file is the manual-data lane: the user (or, eventually, a
+# PDF-extraction pass) declares stairs explicitly. Each entry materializes
+# one Stair appended to graph.stairs.
+#
+# Adversarial by design: the single stair below trips ALL 5 STAIR_PENDING
+# rule cards at once so the demo shows them firing on a single entity:
+#
+#   RC-STAIR-TREAD-WIDTH-0.26   ← tread 0.24 < 0.26   (error)
+#   RC-STAIR-RISER-HEIGHT-0.175 ← riser 0.18 > 0.175  (error)
+#   RC-STAIR-FLIGHT-WIDTH-1.10  ← flight 0.95 < 1.10  (info / reminder)
+#   RC-STAIR-HANDRAIL-0.90      ← handrail 0.85 < 0.90 (error)
+#   RC-STAIR-WELL-WIDTH-0.11    ← well 0.14 > 0.11    (info / reminder)
+
+project_id: DEMO-001
+
+entries:
+  - stair_id: stair-1
+    page_index: 0
+    tread_width_m: 0.24
+    riser_height_m: 0.18
+    flight_width_m: 0.95
+    handrail_height_m: 0.85
+    well_width_m: 0.14
+    note: |
+      adversarial: every metric below the GB 50096-6.3.x threshold so the
+      demo lights up all 5 stair rules. Real projects would carry one
+      compliant entry per stair in the building.
+
+notes: |
+  Demo schedule for archkg demo --stair-schedule. Schedule-only stairs
+  carry placeholder bbox (0,0,0,0) and confidence=0.0/uncertain=true so
+  the annotator skips them — issues surface in the report rather than as
+  red boxes on the PDF.
