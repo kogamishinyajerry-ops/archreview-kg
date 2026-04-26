@@ -75,7 +75,11 @@
   inputs:
     - height_m
   logic_expression: "height_m is None or height_m <= 33.0"
-  output_template: "项目高度 {height_m} m > 33 m，按 GB 50016-5.5.27 疏散楼梯应采用防烟楼梯间，请确认楼梯间形式。"
+  # Phase 14 audit nit: 5.5.27 §3 carries no 乙级防火门 exemption for the
+  # 防烟楼梯间 branch (unlike §1/§2). The reminder stays unconditional for
+  # >33m, but it explicitly notes the exemption only applies to the lower
+  # bands so reviewers don't try to invoke it here.
+  output_template: "项目高度 {height_m} m > 33 m，按 GB 50016-5.5.27 §3 疏散楼梯应采用防烟楼梯间（该分支无乙级防火门豁免），请确认楼梯间形式。"
   test_cases:
     - name: low_rise_open_stair_ok
       entity: { height_m: 18.0 }
@@ -95,7 +99,11 @@
     - height_m
   # Pass when height_m unset, or height ≤21 (敞开 ok), or >33 (caught separately by RC-EVAC-STAIR-TYPE-33M).
   logic_expression: "height_m is None or height_m <= 21.0 or height_m > 33.0"
-  output_template: "项目高度 {height_m} m 在 21–33 m 区间，按 GB 50016-5.5.27 疏散楼梯应采用封闭楼梯间，请确认楼梯间形式。"
+  # Codex Phase 14 P1: 5.5.27 §2 carries an exemption — 当户门采用乙级防火门时
+  # 可采用敞开楼梯间. The reminder surfaces the exemption so a compliant design
+  # using 乙级防火门 doesn't read as a false violation; the harness can't
+  # confirm 乙级防火门 from the entity graph, so the call belongs to the reviewer.
+  output_template: "项目高度 {height_m} m 在 21–33 m 区间，按 GB 50016-5.5.27 §2 疏散楼梯应采用封闭楼梯间；如户门采用乙级防火门，可采用敞开楼梯间，请核对楼梯间形式与户门防火等级。"
   test_cases:
     - name: low_rise_open_stair_ok
       entity: { height_m: 18.0 }

@@ -286,7 +286,11 @@
   version: "2014 (2018 修)"
   category: fire
   applies_to_building_type: [residential]
-  clause_text: 住宅建筑的疏散楼梯设置应符合下列规定：1 建筑高度不大于 21 m 的住宅建筑可采用敞开楼梯间；2 建筑高度大于 21 m、不大于 33 m 的住宅建筑应采用封闭楼梯间；3 建筑高度大于 33 m 的住宅建筑应采用防烟楼梯间。
+  # Phase 14 verbatim audit: previous text dropped the 乙级防火门 exemption
+  # branches (§1 电梯井相邻 + §2 户门防火门) and the trailing 户门开向前室
+  # 3 樘 cap, all of which the LLM-drafted rule cards may need to reason
+  # about. Restored from GB 50016-2014 §5.5.27 (PDF page 104).
+  clause_text: 住宅建筑的疏散楼梯设置应符合下列规定：1 建筑高度不大于 21 m 的住宅建筑可采用敞开楼梯间；与电梯井相邻布置的疏散楼梯应采用封闭楼梯间，当户门采用乙级防火门时，仍可采用敞开楼梯间。2 建筑高度大于 21 m、不大于 33 m 的住宅建筑应采用封闭楼梯间；当户门采用乙级防火门时，可采用敞开楼梯间。3 建筑高度大于 33 m 的住宅建筑应采用防烟楼梯间。户门不宜直接开向前室，确有困难时，每层开向同一前室的户门不应大于 3 樘且应采用乙级防火门。
   unit: m
   threshold_value: 33.0
   threshold_op: "<="
@@ -297,7 +301,12 @@
   version: "2014 (2018 修)"
   category: fire
   applies_to_building_type: [residential]
-  clause_text: 住宅建筑直通疏散走道的户门至最近安全出口的直线距离应符合 GB 50016 表 5.5.29 的规定（一、二级耐火等级、单多层、位于两个安全出口之间的户门：不应大于 40 m）。
+  # Phase 14 verbatim audit: previous text named only one cell of 表 5.5.29
+  # (一二级 + 单多层 + 两个安全出口之间 = 40 m). Other cells, the four 注 (敞开
+  # 外廊 +5m / 敞开楼梯间 -5m / 喷水 +25% / 跃廊 1.50 倍) and §2 (15m 离楼梯
+  # 间) were silently dropped — that's exactly how RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB
+  # ended up "narrow by accident" rather than narrow by design. Restored.
+  clause_text: 住宅建筑的安全疏散距离应符合下列规定：1 直通疏散走道的户门至最近安全出口的直线距离不应大于表 5.5.29 的规定。表 5.5.29 各分支：单/多层 + 一二级耐火 + 位于两个安全出口之间的户门 40 m；单/多层 + 三级 + 位于两个安全出口之间 35 m；单/多层 + 四级 + 位于两个安全出口之间 25 m；单/多层 + 一二级 + 袋形走道两侧或尽端 22 m；单/多层 + 三级 + 袋形走道两侧或尽端 20 m；单/多层 + 四级 + 袋形走道两侧或尽端 15 m；高层 + 一二级 + 位于两个安全出口之间 40 m；高层 + 一二级 + 袋形走道两侧或尽端 20 m。注 1：开向敞开式外廊的户门至最近安全出口最大直线距离可按本表增加 5 m；注 2：直通疏散走道户门至最近敞开楼梯间，户门位于两个楼梯间之间时按本表减少 5 m，袋形走道两侧或尽端按本表减少 2 m；注 3：住宅建筑内全部设置自动喷水灭火系统时安全疏散距离可按本表增加 25%；注 4：跃廊式住宅户门至最近安全出口距离应从户门算起，小楼梯的一段距离可按其水平投影长度的 1.50 倍计算。2 楼梯间应在首层直通室外，或在首层采用扩大的封闭楼梯间或防烟楼梯间前室；层数不超过 4 层时可将直通室外的门设置在离楼梯间不大于 15 m 处。3 户内任一点至直通疏散走道的户门的直线距离不应大于表 5.5.29 规定的袋形走道两侧或尽端的疏散门至最近安全出口的最大距离。
   unit: m
   threshold_value: 40.0
   threshold_op: "<="
@@ -320,7 +329,10 @@
   category: fire
   applies_to_building_type: [residential]
   applies_to_height_class: [超高层]
-  clause_text: 建筑高度大于 100 m 的住宅建筑应设置避难层。
+  # Phase 14 verbatim audit: restored cross-reference to §5.5.23. The number
+  # 100 was already captured; the cross-ref doesn't drive rule logic but
+  # makes the verbatim coverage pass.
+  clause_text: 建筑高度大于 100 m 的住宅建筑应设置避难层，避难层的设置应符合本规范第 5.5.23 条有关避难层的要求。
   unit: m
   threshold_value: 100.0
   threshold_op: ">"
@@ -345,7 +357,11 @@
   version: "2012"
   category: accessibility
   applies_to_building_type: [residential, public]
-  clause_text: 门的无障碍设计应符合下列规定：自动门开启后通行净宽度不应小于 1.00 m；平开门、推拉门、折叠门开启后的通行净宽度不应小于 800 mm。
+  # Phase 14 verbatim audit: previous text only kept §2 (1.00 m) and §3
+  # (800 mm). §1 弹簧/玻璃门、§4 1.50 m 轮椅回转、§5 400 mm 把手墙面、
+  # §6 900/350 mm 把手与护门板、§7 15 mm 门槛 都被静默丢弃。Restored from
+  # GB 50763-2012 §3.5.3 (PDF pages 25–26).
+  clause_text: 门的无障碍设计应符合下列规定：1 不应采用力度大的弹簧门并不宜采用弹簧门、玻璃门，当采用玻璃门时应有醒目的提示标志；2 自动门开启后通行净宽度不应小于 1.00 m；3 平开门、推拉门、折叠门开启后的通行净宽度不应小于 800 mm，有条件时不宜小于 900 mm；4 在门扇内外应留有直径不小于 1.50 m 的轮椅回转空间；5 在单扇平开门、推拉门、折叠门的门把手一侧的墙面，应设宽度不小于 400 mm 的墙面；6 平开门、推拉门、折叠门的门扇应设距地 900 mm 的把手，宜设视线观察玻璃，并宜在距地 350 mm 范围内安装护门板；7 门槛高度及门内外地面高差不应大于 15 mm，并以斜面过渡；8 无障碍通道上的门扇应便于开关；9 宜与周围墙面有一定的色彩反差，方便识别。
   unit: m
   threshold_value: 0.80
   threshold_op: ">="

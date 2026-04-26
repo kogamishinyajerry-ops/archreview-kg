@@ -437,6 +437,54 @@ def clause_fidelity() -> None:
         raise typer.Exit(code=1)
 
 
+@clause_app.command("verbatim")
+def clause_verbatim() -> None:
+    """Audit paraphrase=true clauses for PDF-vs-yaml number-coverage drift.
+
+    Phase 14 lane. Surfaces numbers the source PDF carries that the yaml
+    `clause_text` does not — the bug class behind GB50352-6.7.3 silently
+    losing its 1.1m / 1.2m branches in the Phase 8 paraphrase pass.
+
+    Informational only — exits 0 even when findings exist. Use for human
+    review when adding or refreshing paraphrased clauses.
+    """
+    from rich.console import Console
+    from rich.table import Table
+
+    from archkg.knowledge.loader import load_standards
+    from archkg.knowledge.verbatim import audit_paraphrased
+
+    standards = load_standards()
+    standards_root = Path(__file__).resolve().parents[2] / "standards_raw"
+    findings = audit_paraphrased(standards, standards_root)
+
+    console = Console()
+    if not findings:
+        console.print("[green]✓ no paraphrased clauses found, or no PDFs available[/green]")
+        return
+
+    summary = Table(title="paraphrase=true clauses · verbatim audit", show_header=False)
+    summary.add_column("k")
+    summary.add_column("v", justify="right")
+    summary.add_row("paraphrased clauses checked", str(len(findings)))
+    summary.add_row(
+        "clauses with PDF-only numbers",
+        str(sum(1 for f in findings if f.pdf_only_numbers)),
+    )
+    console.print(summary)
+
+    t = Table(title="Per-clause coverage", header_style="bold cyan")
+    t.add_column("clause_id", style="cyan")
+    t.add_column("PDF body chars", justify="right")
+    t.add_column("PDF-only numbers")
+    t.add_column("yaml-only numbers")
+    for f in findings:
+        pdf_only = ", ".join(f"{n:g}" for n in f.pdf_only_numbers) or "—"
+        yaml_only = ", ".join(f"{n:g}" for n in f.yaml_only_numbers) or "—"
+        t.add_row(f.clause_id, str(f.pdf_body_chars), pdf_only, yaml_only)
+    console.print(t)
+
+
 @clause_app.command("coverage")
 def clause_coverage() -> None:
     """Report which standards clauses are covered by at least one rule card."""
