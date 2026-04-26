@@ -35,6 +35,11 @@ left compliant):
     RC-WHEELCHAIR-PASSAGE-WIDTH-7F      floors ≥ 7
     RC-REFUGE-LAYER-100M                height_m > 100
 
+  EVAC_STAIR_BANDS (Phase 18-G / v1.0.7):
+    RC-EVAC-STAIR-TYPE-33M              height_m > 33
+    RC-CLOSED-STAIRWELL-21M             21 < height_m ≤ 33
+    RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB    fire_class ∈ {一/二级} ∧ height_class ∈ {低/多层}
+
 Out of scope here: the remaining REMINDER_BY_DESIGN rules (severity=info
 project reminders) that always fire on residential without a finite
 logic_expression we can mirror — RC-BALCONY-*, RC-WINDOW-SILL-*,
@@ -122,7 +127,7 @@ _DOOR_WIDTHS = [0.80, 0.85, 0.90, 0.95]  # 2 fail, 2 pass
 # threshold without producing a degenerate 2x2 box that breaks the
 # builder's polygonizer at the page corner. Codex P18-D R1.
 _BEDROOM_DIMS = [(3.0, 1.6), (3.0, 1.8), (3.0, 2.5), (4.0, 4.0)]  # area 4.8/5.4/7.5/16
-_FLOORS = [3, 5, 6, 7, 12, 18, 35]
+_FLOORS = [3, 5, 6, 7, 11, 12, 18, 35]
 _NET_HEIGHTS = [2.20, 2.30, 2.40, 2.50, 2.80]  # 2 fail (<2.40), 3 pass
 _LEVELS: list[Literal["basement", "ground", "upper", "mezzanine"]] = [
     "basement",
@@ -298,6 +303,48 @@ def predict_expected_violations(p: CaseParameters) -> list[ExpectedViolation]:
                 note=f"{p.height_m:.1f} m > 100 m → GB 50016-5.5.31 refuge layer required",
             )
         )
+    # RC-EVAC-STAIR-TYPE-33M: fires when height > 33 m (smoke-proof stair
+    # required, no 乙级防火门 exemption on this branch).
+    if p.height_m > 33.0:
+        expected.append(
+            ExpectedViolation(
+                rule_id="RC-EVAC-STAIR-TYPE-33M",
+                entity_hint="project",
+                note=f"{p.height_m:.1f} m > 33 m → GB 50016-5.5.27 §3 smoke-proof stair required",
+            )
+        )
+    # RC-CLOSED-STAIRWELL-21M: fires only in the 21 < height ≤ 33 mid-rise
+    # band. Above 33 m the smoke-proof rule above takes over; under 21 m
+    # an open stairwell is permitted.
+    if 21.0 < p.height_m <= 33.0:
+        expected.append(
+            ExpectedViolation(
+                rule_id="RC-CLOSED-STAIRWELL-21M",
+                entity_hint="project",
+                note=f"{p.height_m:.1f} m in (21, 33] → GB 50016-5.5.27 §2 closed stairwell required",
+            )
+        )
+    # RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB: fires only for the
+    # 一/二级 fire-class + 低层/多层 height-class cell of GB 50016 表 5.5.29.
+    # Examiner currently writes fire_class='二级' on every case, and
+    # height_class is '多层' for floors < 7. So this rule fires whenever
+    # floors < 7 (and would silently NOT fire when we eventually emit
+    # 中高层/高层/超高层).
+    if (
+        _examiner_fire_class(p) in ("一级", "二级")
+        and _examiner_height_class(p) in ("低层", "多层")
+    ):
+        expected.append(
+            ExpectedViolation(
+                rule_id="RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+                entity_hint="project",
+                note=(
+                    f"fire_class={_examiner_fire_class(p)} / "
+                    f"height_class={_examiner_height_class(p)} → "
+                    "GB 50016 表 5.5.29 (一/二级 + 单/多层): door-to-exit ≤ 40 m"
+                ),
+            )
+        )
 
     # Stair schedule rules: when included with adversarial values, all
     # 5 fire on stair-1.
@@ -425,23 +472,38 @@ def _write_pdf(pdf_path: Path, p: CaseParameters) -> None:
     doc.close()
 
 
+def _examiner_height_class(p: CaseParameters) -> str:
+    """Project height_class examiner writes — single source of truth.
+
+    Phase 18-F: anchored on height_m because GB 50016-5.5.31 (refuge layer)
+    is gated on applies_to_height_class=[超高层] and 超高层 means height>100m
+    for residential. Predictor and writer must agree, so both call this
+    helper instead of redoing the classification inline.
+    """
+    if p.height_m > 100.0:
+        return "超高层"
+    if p.floors >= 7:
+        return "高层"
+    return "多层"
+
+
+def _examiner_fire_class(p: CaseParameters) -> str:
+    """Project fire_class examiner writes — single source of truth.
+
+    Phase 18-G: still hardcoded to 二级 on every case, but routed through
+    a helper so the predictor of RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB and
+    the writer agree even when we eventually start sampling fire_class.
+    """
+    return "二级"
+
+
 def _write_project_meta(meta_path: Path, p: CaseParameters, project_id: str) -> None:
     payload = {
         "project_id": project_id,
         "project_name": f"adversarial case (seed={p.seed})",
         "building_type": "residential",
-        # Phase 18-F: a 35F / 105.5m residential is 超高层 (super high-rise),
-        # not 高层. GB 50016-5.5.31 (RC-REFUGE-LAYER-100M) gates on
-        # applies_to_height_class=[超高层]; mis-labeling as 高层 makes the
-        # engine skip the rule and the adversarial battery surfaces a
-        # spurious FN. Anchor on height_m so the predictor and engine
-        # see the same project class.
-        "height_class": (
-            "超高层" if p.height_m > 100.0
-            else "高层" if p.floors >= 7
-            else "多层"
-        ),
-        "fire_class": "二级",
+        "height_class": _examiner_height_class(p),
+        "fire_class": _examiner_fire_class(p),
         "climate_zone": "寒冷",
         "use_type": "住宅",
         "height_m": round(p.height_m, 1),

@@ -28,7 +28,11 @@ def test_seed_is_deterministic() -> None:
 
 
 def test_predict_no_false_violation_for_compliant_params() -> None:
-    """All-compliant params produce zero expected violations."""
+    """All-compliant geometry/schedule params produce zero entity-level
+    violations. Phase 18-G note: project-level reminder rules
+    (RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB, RC-ELEVATOR-REQUIRED at low rise,
+    etc.) may still fire as info reminders — filter them out before
+    asserting."""
     p = CaseParameters(
         seed=0,
         corridor_width_m=1.50,  # ≥ 1.20
@@ -45,7 +49,8 @@ def test_predict_no_false_violation_for_compliant_params() -> None:
         stair_metrics_below_threshold=False,
     )
     expected = predict_expected_violations(p)
-    assert expected == []
+    entity_violations = [v for v in expected if v.entity_hint != "project"]
+    assert entity_violations == []
 
 
 def test_predict_corridor_violation_drives_two_rules() -> None:
@@ -230,6 +235,10 @@ def test_predict_matches_live_engine_semantics(seed: int) -> None:
         "RC-ENTRANCE-PLATFORM-WIDTH-7F",
         "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
         "RC-REFUGE-LAYER-100M",
+        # Phase 18-G: evac-stair / closed-stairwell / door-to-exit branch.
+        "RC-EVAC-STAIR-TYPE-33M",
+        "RC-CLOSED-STAIRWELL-21M",
+        "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
     ]
 
     def _eval(rule_id: str, env: dict[str, object]) -> bool:
@@ -247,6 +256,10 @@ def test_predict_matches_live_engine_semantics(seed: int) -> None:
         "net_height_m": p.bedroom_net_height_m,
         "level": p.bedroom_level,
     }
+    from archkg.adversarial.examiner import (
+        _examiner_fire_class,
+        _examiner_height_class,
+    )
     project_env = {
         # Examiner always writes building_type='residential', so mirror
         # that here. RC-ACCESSIBLE-RESIDENTIAL-RATIO short-circuits on
@@ -257,6 +270,11 @@ def test_predict_matches_live_engine_semantics(seed: int) -> None:
         "accessible_units": p.accessible_units,
         "floors": p.floors,
         "height_m": p.height_m,
+        # Phase 18-G: door-to-exit reads fire_class + height_class. Use
+        # the same helpers the predictor and writer use so the test
+        # locks all three sides together.
+        "fire_class": _examiner_fire_class(p),
+        "height_class": _examiner_height_class(p),
     }
     corridor_env = {"min_width_m": p.corridor_width_m}
     door_envs = [{"width_m": w} for w in p.door_widths_m]
@@ -279,6 +297,9 @@ def test_predict_matches_live_engine_semantics(seed: int) -> None:
         "RC-ENTRANCE-PLATFORM-WIDTH-7F",
         "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
         "RC-REFUGE-LAYER-100M",
+        "RC-EVAC-STAIR-TYPE-33M",
+        "RC-CLOSED-STAIRWELL-21M",
+        "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
     ):
         if _eval(rid, dict(project_env)):
             fired.add(rid)
@@ -381,10 +402,13 @@ def test_examiner_super_high_rise_case_fires_refuge_through_full_engine(
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
 
-    # Seed 5041 produces 35F / 105.5m / height_class=超高层 in v1.0.6.
-    case = generate_case(seed=5041, out_dir=tmp_path)
+    # Seed 6 produces 35F / 105.5m / height_class=超高层 under the v1.0.7
+    # _FLOORS distribution. The seed→params mapping is sensitive to
+    # _FLOORS contents (it reseeds the RNG from index 0), so the safety-
+    # net asserts pin the assumption — bump the seed if either fails.
+    case = generate_case(seed=6, out_dir=tmp_path)
     assert case.parameters.floors == 35
-    assert case.parameters.height_m > 100.0  # safety net for the seed assumption
+    assert case.parameters.height_m > 100.0
     review_dir = _review_case(case)
     issues = json.loads((review_dir / "issues.json").read_text())
     fired = {i["rule_card_id"] for i in issues}
