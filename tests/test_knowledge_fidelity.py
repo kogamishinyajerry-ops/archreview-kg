@@ -187,3 +187,30 @@ def test_finding_dataclass_is_frozen() -> None:
     except Exception:
         return
     raise AssertionError("FidelityFinding should be frozen")
+
+
+def test_clause_text_mm_normalization_emits_meter_equivalent() -> None:
+    """Phase 17: GB50763-3.5.3 carries '800 mm' for swing-door minimum width;
+    a rule expression naturally uses 0.80 m. fidelity must accept both forms."""
+    from archkg.knowledge.fidelity import _numbers_from_clause_text
+    nums = _numbers_from_clause_text("折叠门开启后的通行净宽度不应小于 800 mm。")
+    assert 800.0 in nums  # raw value still present
+    assert 0.8 in nums    # m-converted equivalent emitted by Phase 17 normalization
+
+
+def test_clause_text_cm_normalization_emits_meter_equivalent() -> None:
+    from archkg.knowledge.fidelity import _numbers_from_clause_text
+    nums = _numbers_from_clause_text("台阶高度 15 cm，宽度 30 cm。")
+    assert 15.0 in nums
+    assert 30.0 in nums
+    assert 0.15 in nums
+    assert 0.30 in nums
+
+
+def test_template_mm_normalization_matches_clause() -> None:
+    """Symmetric: rule output_template mentioning '800 mm' must also unlock
+    the 0.80 m equivalent into the template number set."""
+    from archkg.knowledge.fidelity import _numbers_from_template
+    nums = _numbers_from_template("门净宽 {width_m} m，小于 800 mm。")
+    assert 800.0 in nums
+    assert 0.8 in nums

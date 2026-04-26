@@ -58,6 +58,16 @@ class RuleCard(BaseModel):
         None,
         description="Override issue severity. Default: 'error' for entity-level rules, 'info' for Project-level rules. Use 'info' for entity-anchored reminders the engine cannot fully verify (e.g. 6.3.5 stair-well child safety: engine knows the well is wide but cannot tell if mitigations were taken).",
     )
+    # Phase 17 Codex P2: when a rule's threshold is a derived quantity
+    # (e.g. RC-ACCESSIBLE-RESIDENTIAL-RATIO checks accessible/total ratio
+    # against 0.02), the default _pick_measured = first numeric input
+    # produces a meaningless evidence record (total_units=200 vs ratio
+    # threshold=0.02). Setting suppress_measured=True leaves evidence.
+    # measured_value as None so the report doesn't compare apples to oranges.
+    suppress_measured: bool = Field(
+        False,
+        description="When true, engine emits evidence.measured_value=None instead of the first-numeric-input fallback. Use for rules where no single input is the 'measured' value (ratios, multi-field predicates).",
+    )
     test_cases: list[RuleCardTestCase] = Field(default_factory=list)
 
     @field_validator("logic_expression")

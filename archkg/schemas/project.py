@@ -38,4 +38,18 @@ class ProjectMeta(BaseModel):
     use_type: str | None = Field(None, description="Specific use, e.g. '住宅' / '公寓' / '宿舍'.")
     height_m: float | None = Field(None, gt=0.0, description="Building height in metres.")
     floors: int | None = Field(None, ge=1)
+    # Phase 17: residential housing unit accounting for GB 50763-7.4.3
+    # (无障碍住房比例: 每 100 套 ≥2 套). Both fields optional — projects
+    # without an accessibility plan won't carry these numbers, and the
+    # rule short-circuits to a reminder rather than failing on None.
+    total_units: int | None = Field(
+        None,
+        ge=1,
+        description="Total residential housing unit count (套数). Drives GB 50763-7.4.3.",
+    )
+    accessible_units: int | None = Field(
+        None,
+        ge=0,
+        description="Count of units designed as 无障碍住房. Compared against total_units * 0.02.",
+    )
     notes: str | None = None

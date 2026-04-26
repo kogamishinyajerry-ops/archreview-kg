@@ -205,3 +205,52 @@ def test_unset_optional_meta_fields_no_op_gracefully() -> None:
         f"threshold-gated rules false-fired on unset optional meta: "
         f"{[i.rule_card_id for i in threshold_fires]}"
     )
+
+
+def test_residential_below_accessibility_ratio_triggers_rc_ratio() -> None:
+    """Phase 17: GB 50763-7.4.3 ratio rule fires when accessible_units / total_units
+    is below 2/100. ProjectMeta now carries total_units + accessible_units so the
+    rule can decide instead of falling back to a reminder."""
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    meta = ProjectMeta(
+        project_id="P-RATIO",
+        building_type="residential",
+        height_class="多层",
+        total_units=200,
+        accessible_units=2,  # 1% — below 2/100 ratio
+    )
+    result = evaluate(_empty_graph(), rules, standards, project_meta=meta)
+    fires = [i for i in result.issues if i.rule_card_id == "RC-ACCESSIBLE-RESIDENTIAL-RATIO"]
+    assert len(fires) == 1
+    assert "GB 50763-7.4.3" in fires[0].message
+
+
+def test_residential_meets_accessibility_ratio_no_fire() -> None:
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    meta = ProjectMeta(
+        project_id="P-RATIO-OK",
+        building_type="residential",
+        height_class="多层",
+        total_units=100,
+        accessible_units=3,  # 3% > 2/100
+    )
+    result = evaluate(_empty_graph(), rules, standards, project_meta=meta)
+    fires = [i for i in result.issues if i.rule_card_id == "RC-ACCESSIBLE-RESIDENTIAL-RATIO"]
+    assert fires == []
+
+
+def test_residential_unset_unit_counts_skipped_gracefully() -> None:
+    """Without total_units/accessible_units the ratio rule short-circuits to pass —
+    not a false positive for projects where the accessibility plan isn't in scope yet."""
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    meta = ProjectMeta(
+        project_id="P-NO-COUNTS",
+        building_type="residential",
+        height_class="多层",
+    )
+    result = evaluate(_empty_graph(), rules, standards, project_meta=meta)
+    fires = [i for i in result.issues if i.rule_card_id == "RC-ACCESSIBLE-RESIDENTIAL-RATIO"]
+    assert fires == []

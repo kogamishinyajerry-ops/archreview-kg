@@ -216,7 +216,7 @@ def evaluate(
             passed = evaluate_expression(tree, env)
             if passed:
                 continue
-            measured = _pick_measured(env, rule.inputs)
+            measured = None if rule.suppress_measured else _pick_measured(env, rule.inputs)
             evidence = IssueEvidence(
                 snippet=_format_message(rule.output_template, env),
                 page_index=0,
@@ -245,7 +245,7 @@ def evaluate(
             if passed:
                 continue
 
-            measured = _pick_measured(env, rule.inputs)
+            measured = None if rule.suppress_measured else _pick_measured(env, rule.inputs)
             evidence = IssueEvidence(
                 snippet=_format_message(rule.output_template, env),
                 page_index=entity.page_index,

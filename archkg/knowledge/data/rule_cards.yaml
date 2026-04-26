@@ -766,3 +766,94 @@
     - name: industrial_passes
       entity: { building_type: industrial }
       expect_pass: true
+
+# =====================================================================
+# Phase 17: final-coverage rules. Closes the last 2 uncovered clauses
+# (GB50763-3.5.3 + GB50763-7.4.3) using ProjectMeta unit-count fields and
+# fidelity.py mm/m unit normalization. Coverage 28/30 (93%) → 30/30 (100%).
+# =====================================================================
+
+- id: RC-ACCESSIBLE-DOOR-WIDTH-0.80
+  source_clause_ids:
+    - GB50763-3.5.3
+  applies_to: Door
+  inputs:
+    - width_m
+  # Codex P17 round-2: previous gate `width_m >= 0.80` produced ZERO issue
+  # for a 0.95 m automatic door even though the clause requires ≥1.00 m for
+  # automatic doors. Door schema still has no door_kind discriminator, so
+  # the harness can't pick the right branch automatically. Resolution:
+  # trigger on the strictest threshold (1.00 m for 自动门) and emit an info
+  # reminder for ALL doors below that — reviewer applies the actual branch
+  # by door type. False-positive on a compliant 0.85 m 平开门 is acceptable
+  # because reminder severity keeps it out of the violation count, while a
+  # false-negative on a 0.95 m 自动门 (the previous bug) was masking real
+  # non-compliance.
+  logic_expression: "width_m is None or width_m >= 1.00"
+  threshold_value: 1.00
+  severity: info
+  output_template: "门净宽 {width_m} m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。"
+  test_cases:
+    - name: passes_above_strictest_threshold
+      entity: { width_m: 1.00 }
+      expect_pass: true
+    - name: passes_clearly_above
+      entity: { width_m: 1.20 }
+      expect_pass: true
+    - name: fires_for_swing_door_below_1m
+      entity: { width_m: 0.85 }
+      expect_pass: false
+    - name: fires_for_auto_door_below_1m
+      entity: { width_m: 0.95 }
+      expect_pass: false
+    - name: fires_below_swing_threshold
+      entity: { width_m: 0.75 }
+      expect_pass: false
+    - name: width_unknown_skipped
+      entity: { width_m: null }
+      expect_pass: true
+
+- id: RC-ACCESSIBLE-RESIDENTIAL-RATIO
+  source_clause_ids:
+    - GB50763-7.4.3
+  applies_to: Project
+  inputs:
+    - building_type
+    - total_units
+    - accessible_units
+  # 居住建筑应按每 100 套住房设置不少于 2 套无障碍住房 → ratio 2/100 = 0.02.
+  # Expression uses the 100/2 multiplication form so all numeric literals
+  # (100 and 2) are present verbatim in clause text — fidelity-friendly.
+  # Short-circuits on:
+  #   - non-residential project (filtered earlier by Phase 9 anyway)
+  #   - either count unset (ProjectMeta optional fields) — promote to manual review
+  logic_expression: "building_type != 'residential' or total_units is None or accessible_units is None or accessible_units * 100 >= total_units * 2"
+  threshold_value: 0.02
+  # Codex P17 P2: this rule IS machine-decidable (engine knows both counts
+  # and the threshold is exact). severity=error so a real ratio breach
+  # counts as a violation. suppress_measured=True because no single input
+  # is the "measured value" — the actual measurement is the derived ratio
+  # accessible/total, which the engine doesn't compute; reporting raw
+  # total_units against a 0.02 ratio threshold would be meaningless.
+  severity: error
+  suppress_measured: true
+  output_template: "项目共 {total_units} 套住房，无障碍住房 {accessible_units} 套，未达 GB 50763-7.4.3 每 100 套住房不少于 2 套无障碍住房（≥2%）的要求。"
+  test_cases:
+    - name: residential_meets_ratio
+      entity: { building_type: residential, total_units: 200, accessible_units: 5 }
+      expect_pass: true
+    - name: residential_below_ratio
+      entity: { building_type: residential, total_units: 100, accessible_units: 1 }
+      expect_pass: false
+    - name: residential_edge_2_per_100
+      entity: { building_type: residential, total_units: 100, accessible_units: 2 }
+      expect_pass: true
+    - name: counts_unset_skipped
+      entity: { building_type: residential, total_units: null, accessible_units: null }
+      expect_pass: true
+    - name: accessible_unset_skipped
+      entity: { building_type: residential, total_units: 100, accessible_units: null }
+      expect_pass: true
+    - name: public_passes_expression
+      entity: { building_type: public, total_units: 50, accessible_units: 0 }
+      expect_pass: true

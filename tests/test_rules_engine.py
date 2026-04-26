@@ -146,6 +146,8 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
         "RC-WINDOW-SILL-PROTECTION-RESI", "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
         "RC-EXIT-SEPARATION-MIN-5M-RESI", "RC-RAILING-HEIGHT-6.7.3",
         "RC-CHILD-RAILING-VERTICAL-SPACING-0.11", "RC-STAIR-LANDING-WIDTH-1.2",
+        # Phase 17: GB 50763-7.4.3 ratio rule (project-level).
+        "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
     }
     assert skipped_ids == project_rule_ids
     rule_ids = sorted(i.rule_card_id for i in issues)
@@ -160,6 +162,12 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
         "RC-STAIR-FLIGHT-WIDTH-1.10",
         "RC-STAIR-TREAD-WIDTH-0.26", "RC-STAIR-RISER-HEIGHT-0.175",
         "RC-STAIR-HANDRAIL-0.90", "RC-STAIR-WELL-WIDTH-0.11",
+        # Phase 17 Codex round-2: RC-ACCESSIBLE-DOOR-WIDTH-0.80 trigger now
+        # uses the strictest 1.00 m branch (自动门) so all doors < 1.00 m
+        # surface as info-level reminders (door-narrow=0.85 + door-ok=0.95
+        # both fire). reviewer picks the right branch by door type.
+        "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+        "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
     ])
 
     by_rule = {i.rule_card_id: i for i in issues}
@@ -266,3 +274,40 @@ def test_rule_severity_override_for_reminder() -> None:
     result = evaluate(graph, rules, standards)
     well = next(i for i in result.issues if i.rule_card_id == "RC-STAIR-WELL-WIDTH-0.11")
     assert well.severity == "info"
+
+
+def test_suppress_measured_skips_evidence_measured_value() -> None:
+    """Codex Phase 17 P2: rules without a single-metric measured value
+    (e.g. ratio rules whose 'measurement' is a derived quantity) set
+    suppress_measured=True so evidence doesn't compare apples to oranges
+    (raw total_units count against a 0.02 ratio threshold)."""
+    from archkg.schemas import ProjectMeta
+
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    ratio_rule = next(r for r in rules if r.id == "RC-ACCESSIBLE-RESIDENTIAL-RATIO")
+    assert ratio_rule.suppress_measured is True
+    assert ratio_rule.severity == "error"
+
+    meta = ProjectMeta(
+        project_id="P-RATIO",
+        building_type="residential",
+        height_class="多层",
+        total_units=200,
+        accessible_units=2,  # 1% — below 2/100
+    )
+    graph = EntityGraph(
+        source_pdf="x.pdf", points_per_meter=50.0,
+        page_index=0, page_width_pt=500, page_height_pt=400,
+        rooms=[], doors=[], corridors=[], dimensions=[],
+    )
+    result = evaluate(graph, rules, standards, project_meta=meta)
+    fires = [i for i in result.issues if i.rule_card_id == "RC-ACCESSIBLE-RESIDENTIAL-RATIO"]
+    assert len(fires) == 1
+    issue = fires[0]
+    assert issue.severity == "error"
+    # suppress_measured: evidence.measured_value should be None even though
+    # total_units (200) was a numeric input that _pick_measured would otherwise pick.
+    assert issue.evidence.measured_value is None
+    # threshold_value still set (the 0.02 ratio) for the report header
+    assert issue.evidence.threshold_value == pytest.approx(0.02)

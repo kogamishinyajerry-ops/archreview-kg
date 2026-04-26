@@ -55,6 +55,16 @@ _LIST_MARKER = re.compile(r"(?<![\d.])\d+[．）)](?=[\s一-鿿])")
 # Fractions like "1/3" — treat as a single value (the float quotient) so
 # the numerator/denominator don't pollute the number set independently.
 _FRACTION = re.compile(r"(\d+)\s*/\s*(\d+)")
+# Phase 17: unit normalization. GB 50763-3.5.3 writes "800 mm" while a rule
+# expression naturally uses 0.80 m — without this normalization the numeric-
+# fidelity check blocks the rule even though it's semantically correct.
+# Match `\d+(?:\.\d+)?` immediately followed by `mm` / `cm` / `m` (with
+# optional whitespace) and emit the m-converted value alongside the raw.
+# Word-boundary-ish guard: must not be followed by another letter/digit so
+# we don't catch things like "1.5 metres" or "100mm-deep" (we want the
+# value either way, but the normalisation only applies to clean tokens).
+_MM_TOKEN = re.compile(r"(\d+(?:\.\d+)?)\s*mm(?![A-Za-z])")
+_CM_TOKEN = re.compile(r"(\d+(?:\.\d+)?)\s*cm(?![A-Za-z])")
 
 
 @dataclass(frozen=True)
@@ -83,7 +93,14 @@ def _numbers_from_template(template: str) -> set[float]:
     cleaned = re.sub(r"\{[^}]+\}", " ", template)
     cleaned = _CITATION.sub(" ", cleaned)
     cleaned = _TABLE_REF.sub(" ", cleaned)
-    return {float(m.group(0)) for m in _NUMBER_TOKEN.finditer(cleaned)}
+    out = {float(m.group(0)) for m in _NUMBER_TOKEN.finditer(cleaned)}
+    # Phase 17: emit m-converted values for mm/cm tokens so a template
+    # mentioning "800 mm" carries the equivalent 0.80 m number.
+    for m in _MM_TOKEN.finditer(cleaned):
+        out.add(float(m.group(1)) / 1000.0)
+    for m in _CM_TOKEN.finditer(cleaned):
+        out.add(float(m.group(1)) / 100.0)
+    return out
 
 
 def _numbers_from_clause_text(text: str) -> set[float]:
@@ -111,6 +128,13 @@ def _numbers_from_clause_text(text: str) -> set[float]:
         out.add(float(m.group(0)))
     for m in _FLOOR_PHRASE.finditer(text):
         out.add(float(_CN_FLOOR_NUMERAL[m.group(1)]))
+    # Phase 17: emit m-converted values for mm/cm tokens. Rule expressions
+    # like `width_m >= 0.80` should fidelity-pass against clauses that say
+    # "800 mm" without forcing yaml authors to paraphrase.
+    for m in _MM_TOKEN.finditer(text):
+        out.add(float(m.group(1)) / 1000.0)
+    for m in _CM_TOKEN.finditer(text):
+        out.add(float(m.group(1)) / 100.0)
     return out
 
 
