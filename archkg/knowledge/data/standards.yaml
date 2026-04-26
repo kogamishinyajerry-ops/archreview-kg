@@ -57,7 +57,13 @@
   version: "2011"
   category: geometric
   applies_to_building_type: [residential]
-  applies_to_height_class: [低层, 多层]
+  # Codex P13-full P1: clause text covers BOTH 6F-and-below (1.05 m) and
+  # 7F-and-above (1.10 m) branches. Restricting applies_to_height_class to
+  # [低层, 多层] meant 高层/超高层 residential projects skipped this rule
+  # entirely — silencing the 1.10 m branch the clause exists to enforce.
+  # Leaving applies_to_height_class unset makes the clause applicable to
+  # all residential height classes; the per-floor-band logic stays the
+  # rule card's responsibility.
   clause_text: 住宅的阳台栏板或栏杆净高，六层及六层以下的不应低于 1.05 m；七层及七层以上的不应低于 1.10 m。
   unit: m
   threshold_value: 1.05
@@ -239,7 +245,12 @@
   version: "2019"
   category: geometric
   applies_to_building_type: [residential, public]
-  clause_text: 阳台、外廊、室内回廊、内天井、上人屋面及室外楼梯等临空处应设置防护栏杆。当临空高度在 24.0 m 以下时，栏杆高度不应低于 1.05 m。
+  # Codex P13-full Round 2: previous text only carried the <24 m branch and
+  # silently dropped the 24 m+ (1.1 m) and 上人屋面/公共场所 (1.2 m) branches.
+  # Verbatim §2 from GB 50352-2019 6.7.3 (PDF page 33) restored. Items 1/3/4
+  # cover material strength / 可踏部位起算 / 0.1 m 留空 — non-numeric or
+  # geometric-detail rules — so this entry remains paraphrase=true.
+  clause_text: 阳台、外廊、室内回廊、内天井、上人屋面及室外楼梯等临空处应设置防护栏杆。当临空高度在 24.0 m 以下时，栏杆高度不应低于 1.05 m；当临空高度在 24.0 m 及以上时，栏杆高度不应低于 1.1 m。上人屋面和交通、商业、旅馆、医院、学校等建筑临开敞中庭的栏杆高度不应小于 1.2 m。
   unit: m
   threshold_value: 1.05
   threshold_op: ">="

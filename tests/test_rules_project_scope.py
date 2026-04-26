@@ -46,15 +46,32 @@ def test_project_rules_skip_without_meta() -> None:
         assert "project-meta" in s.reason or "项目" in s.reason
 
 
-def test_low_rise_residential_passes_all_project_rules() -> None:
-    """6 floors / 14m residential project — below both 6.4.1 triggers and below
-    the 33m / 100m fire thresholds — produces zero project-level issues."""
+def test_low_rise_residential_passes_threshold_gated_project_rules() -> None:
+    """6 floors / 14m residential — below the 6.4.1 / 33m / 100m thresholds.
+
+    Threshold-gated rules (elevator, evac-stair, refuge, accessibility-7F)
+    must NOT fire. Phase 13 full adds reminder cards that gate purely on
+    building_type and always fire for residential — those are excluded
+    from this regression because they are by-design reminders, not
+    threshold checks.
+    """
     standards = load_standards()
     rules = load_rules(standards=standards)
     meta = _residential_meta(floors=6, height_m=14.0)
     result = evaluate(_empty_graph(), rules, standards, project_meta=meta)
-    project_issues = [i for i in result.issues if i.bbox is None]
-    assert project_issues == [], f"unexpected: {[i.message for i in project_issues]}"
+    threshold_gated_ids = {
+        "RC-ELEVATOR-REQUIRED", "RC-EVAC-STAIR-TYPE-33M", "RC-CLOSED-STAIRWELL-21M",
+        "RC-REFUGE-LAYER-100M", "RC-ACCESSIBLE-RESIDENTIAL-7F",
+        "RC-ENTRANCE-PLATFORM-WIDTH-7F", "RC-ELEVATOR-BEDROOM-ADJACENCY",
+        "RC-WHEELCHAIR-PASSAGE-WIDTH-7F", "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+    }
+    threshold_fires = [
+        i for i in result.issues if i.rule_card_id in threshold_gated_ids
+    ]
+    assert threshold_fires == [], (
+        f"threshold-gated rules false-fired on low-rise residential: "
+        f"{[i.rule_card_id for i in threshold_fires]}"
+    )
 
 
 def test_seven_floor_residential_triggers_elevator_rule() -> None:
@@ -163,7 +180,9 @@ def test_stairwell_band_boundaries(height_m: float, expected_fires: set[str]) ->
 
 
 def test_unset_optional_meta_fields_no_op_gracefully() -> None:
-    """Rules use `is None` checks so unset floors/height_m don't false-positive."""
+    """Rules that gate on floors/height_m must use `is None` checks so unset
+    optional fields don't false-positive. Reminder cards that gate on
+    building_type fire by design and are out of scope for this regression."""
     standards = load_standards()
     rules = load_rules(standards=standards)
     meta = ProjectMeta(
@@ -173,5 +192,16 @@ def test_unset_optional_meta_fields_no_op_gracefully() -> None:
         # No floors, no height_m
     )
     result = evaluate(_empty_graph(), rules, standards, project_meta=meta)
-    project_issues = [i for i in result.issues if i.bbox is None]
-    assert project_issues == []
+    threshold_gated_ids = {
+        "RC-ELEVATOR-REQUIRED", "RC-EVAC-STAIR-TYPE-33M", "RC-CLOSED-STAIRWELL-21M",
+        "RC-REFUGE-LAYER-100M", "RC-ACCESSIBLE-RESIDENTIAL-7F",
+        "RC-ENTRANCE-PLATFORM-WIDTH-7F", "RC-ELEVATOR-BEDROOM-ADJACENCY",
+        "RC-WHEELCHAIR-PASSAGE-WIDTH-7F", "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+    }
+    threshold_fires = [
+        i for i in result.issues if i.rule_card_id in threshold_gated_ids
+    ]
+    assert threshold_fires == [], (
+        f"threshold-gated rules false-fired on unset optional meta: "
+        f"{[i.rule_card_id for i in threshold_fires]}"
+    )

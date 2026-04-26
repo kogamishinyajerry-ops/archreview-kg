@@ -1,9 +1,12 @@
+{% set violations = issues | rejectattr('severity', 'equalto', 'info') | list %}
+{% set reminders = issues | selectattr('severity', 'equalto', 'info') | list %}
 # 审查报告 — ArchReview-KG
 
 - 源文件：`{{ source_pdf }}`
 - 实体图谱：`{{ entity_graph_path }}`
 - 标注 PDF：`{{ annotated_pdf }}`
-- 问题数：**{{ issues|length }}**
+- 违规数：**{{ violations|length }}**（severity ≠ info）
+- 人工核对提醒数：**{{ reminders|length }}**（severity = info）
 {% if project_meta %}
 
 ## 项目上下文
@@ -22,14 +25,26 @@
 {% endif %}
 {% endif %}
 
-## 问题清单
+## 违规清单
 
-{% if not issues %}
+{% if not violations %}
 未发现违反所配置规则卡的问题。
 {% else %}
 | issue_id | rule_card_id | 条文 | 实体 | 测量值 | 阈值 | 单位 | 信息 | reviewer | status | note |
 |---|---|---|---|---|---|---|---|---|---|---|
-{% for i in issues %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} |  | open |  |
+{% for i in violations %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} |  | open |  |
+{% endfor %}
+{% endif %}
+
+{% if reminders %}
+## 人工核对提醒（规则卡无法自动判定的条款）
+
+> 以下条款属于规则卡仅能依靠 ProjectMeta 提示、无法从图纸实体图谱直接判定的范围，
+> 请结合图纸和说明书逐项人工核对。
+
+| issue_id | rule_card_id | 条文 | 阈值 | 提醒 | reviewer | status | note |
+|---|---|---|---|---|---|---|---|
+{% for i in reminders %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} {{ i.evidence.unit or '' }} | {{ i.message }} |  | open |  |
 {% endfor %}
 {% endif %}
 

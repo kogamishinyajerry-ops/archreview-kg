@@ -122,10 +122,21 @@ def test_evaluate_against_synthetic_graph_flags_corridor_door_bedroom() -> None:
         # Phase 11-C Path B: Codex-drafted, human-validated.
         "RC-ELEVATOR-BEDROOM-ADJACENCY", "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
         "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+        # Phase 13 full: project-level reminder cards.
+        "RC-BALCONY-VERTICAL-SPACING-RESI", "RC-BALCONY-RAILING-HEIGHT-RESI",
+        "RC-WINDOW-SILL-PROTECTION-RESI", "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+        "RC-EXIT-SEPARATION-MIN-5M-RESI", "RC-RAILING-HEIGHT-6.7.3",
+        "RC-CHILD-RAILING-VERTICAL-SPACING-0.11", "RC-STAIR-LANDING-WIDTH-1.2",
     }
     assert skipped_ids == project_rule_ids
     rule_ids = sorted(i.rule_card_id for i in issues)
-    assert rule_ids == sorted(["RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA"])
+    # Phase 13 full adds RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20: same 1.20 m
+    # threshold as RC-CORRIDOR-WIDTH but sourced from GB 50763-3.5.1 (无障碍设计规范),
+    # so the narrow corridor fires twice — once per regulatory provenance.
+    assert rule_ids == sorted([
+        "RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH", "RC-BEDROOM-AREA",
+        "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+    ])
 
     by_rule = {i.rule_card_id: i for i in issues}
     assert by_rule["RC-CORRIDOR-WIDTH"].evidence.measured_value == pytest.approx(1.05)

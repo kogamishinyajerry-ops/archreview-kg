@@ -288,3 +288,321 @@
     - name: not_a_bedroom_skipped
       entity: { label: bathroom, area_m2: 3.0 }
       expect_pass: true
+
+# =====================================================================
+# Phase 13 full (Claude-drafted, fidelity-aware): 13 cards adding 13 new
+# clauses to coverage. Entity-level cards (Room/Corridor) where engine
+# can decide; Project-level reminders (info-level) where data isn't in
+# the entity graph but the clause still belongs in the harness.
+# Coverage target: 11/30 → 24/30 (≈80%).
+# =====================================================================
+
+# --- Entity-level: Room / Corridor ---
+
+- id: RC-LIVING-BEDROOM-NETHEIGHT-2.4
+  source_clause_ids:
+    - GB50096-5.5.2
+  applies_to: Room
+  inputs:
+    - label
+    - net_height_m
+  # net_height_m comes from Room.properties (engine fallback). None → skip.
+  logic_expression: "(label != 'bedroom' and label != 'living') or net_height_m is None or net_height_m >= 2.40"
+  output_template: "{label} 室内净高 {net_height_m} m，小于规范 GB 50096-5.5.2 要求的 2.40 m。"
+  test_cases:
+    - name: bedroom_ok
+      entity: { label: bedroom, net_height_m: 2.50 }
+      expect_pass: true
+    - name: living_just_below_threshold
+      entity: { label: living, net_height_m: 2.30 }
+      expect_pass: false
+    - name: bathroom_skipped
+      entity: { label: bathroom, net_height_m: 2.00 }
+      expect_pass: true
+    - name: edge_exactly_2_40
+      entity: { label: bedroom, net_height_m: 2.40 }
+      expect_pass: true
+    - name: net_height_unknown_skipped
+      entity: { label: bedroom, net_height_m: null }
+      expect_pass: true
+
+- id: RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1
+  source_clause_ids:
+    - GB50096-5.5.3
+  applies_to: Room
+  inputs:
+    - label
+    - pitched_roof
+    - majority_net_height_m
+  # Only fires when room is bedroom/living AND has a pitched roof.
+  # `pitched_roof != True` short-circuits when False/None (None != True is True).
+  logic_expression: "(label != 'bedroom' and label != 'living') or pitched_roof != True or majority_net_height_m is None or majority_net_height_m >= 2.10"
+  output_template: "{label} 在坡屋顶下，二分之一面积处净高 {majority_net_height_m} m，小于规范 GB 50096-5.5.3 要求的 2.10 m。"
+  test_cases:
+    - name: flat_roof_skipped
+      entity: { label: bedroom, pitched_roof: false, majority_net_height_m: 1.80 }
+      expect_pass: true
+    - name: pitched_roof_ok
+      entity: { label: bedroom, pitched_roof: true, majority_net_height_m: 2.20 }
+      expect_pass: true
+    - name: pitched_roof_too_low
+      entity: { label: living, pitched_roof: true, majority_net_height_m: 2.00 }
+      expect_pass: false
+    - name: edge_exactly_2_10
+      entity: { label: bedroom, pitched_roof: true, majority_net_height_m: 2.10 }
+      expect_pass: true
+    - name: bathroom_skipped
+      entity: { label: bathroom, pitched_roof: true, majority_net_height_m: 1.80 }
+      expect_pass: true
+    - name: pitched_roof_unknown_skipped
+      entity: { label: bedroom, pitched_roof: null, majority_net_height_m: 1.50 }
+      expect_pass: true
+    - name: majority_height_unknown_skipped
+      entity: { label: bedroom, pitched_roof: true, majority_net_height_m: null }
+      expect_pass: true
+
+- id: RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0
+  source_clause_ids:
+    - GB50352-6.3.3
+  applies_to: Room
+  inputs:
+    - label
+    - level
+    - net_height_m
+  # Codex P13-full P1: basement-ness is a `level` property, not a room label.
+  # The previous `label in {'basement','mezzanine'}` gate let a bedroom located
+  # in the basement (label=bedroom, level=basement) escape the 2.0 m check.
+  # `level == 'basement'` catches any room actually in the basement; mezzanine
+  # is room-typed via `label == 'mezzanine'` per existing entity conventions.
+  logic_expression: "(level != 'basement' and label != 'mezzanine') or net_height_m is None or net_height_m >= 2.0"
+  output_template: "{label}（{level}）净高 {net_height_m} m，小于 GB 50352-6.3.3 规定的 2.0 m。"
+  test_cases:
+    - name: basement_storage_ok
+      entity: { label: storage, level: basement, net_height_m: 2.20 }
+      expect_pass: true
+    - name: basement_room_too_low
+      entity: { label: storage, level: basement, net_height_m: 1.80 }
+      expect_pass: false
+    - name: bedroom_in_basement_too_low_now_caught
+      entity: { label: bedroom, level: basement, net_height_m: 1.80 }
+      expect_pass: false
+    - name: mezzanine_too_low
+      entity: { label: mezzanine, level: upper, net_height_m: 1.95 }
+      expect_pass: false
+    - name: edge_exactly_2_0_basement
+      entity: { label: storage, level: basement, net_height_m: 2.0 }
+      expect_pass: true
+    - name: upper_floor_room_skipped
+      entity: { label: bedroom, level: upper, net_height_m: 1.90 }
+      expect_pass: true
+    - name: net_height_unknown_skipped
+      entity: { label: storage, level: basement, net_height_m: null }
+      expect_pass: true
+
+- id: RC-NO-LIVING-IN-BASEMENT
+  source_clause_ids:
+    - GB50352-6.4.7
+  applies_to: Room
+  inputs:
+    - label
+    - level
+  # No numeric literals — the clause forbids residential rooms in basements.
+  # `level` is a Room.properties field ('basement' / 'ground' / 'upper' / null).
+  logic_expression: "(label != 'bedroom' and label != 'living') or level != 'basement'"
+  output_template: "{label} 位于 {level}，按 GB 50352-6.4.7 地下室不应布置居室，请核对房间用途与所在层。"
+  test_cases:
+    - name: bedroom_in_upper_floor_ok
+      entity: { label: bedroom, level: upper }
+      expect_pass: true
+    - name: bedroom_in_basement_fails
+      entity: { label: bedroom, level: basement }
+      expect_pass: false
+    - name: living_in_basement_fails
+      entity: { label: living, level: basement }
+      expect_pass: false
+    - name: storage_in_basement_skipped
+      entity: { label: storage, level: basement }
+      expect_pass: true
+    - name: level_unknown_passes
+      entity: { label: bedroom, level: null }
+      expect_pass: true
+
+- id: RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20
+  source_clause_ids:
+    - GB50763-3.5.1
+  applies_to: Corridor
+  inputs:
+    - min_width_m
+  # Distinct from RC-CORRIDOR-WIDTH (which sources GB50096-5.7.2). Same
+  # threshold value, independent regulatory provenance — accessibility code.
+  logic_expression: "min_width_m is None or min_width_m >= 1.20"
+  output_template: "无障碍室内走道净宽 {min_width_m} m，小于 GB 50763-3.5.1 规定的 1.20 m。"
+  test_cases:
+    - name: ok_wide
+      entity: { min_width_m: 1.50 }
+      expect_pass: true
+    - name: fail_too_narrow
+      entity: { min_width_m: 1.10 }
+      expect_pass: false
+    - name: edge_exactly_1_20
+      entity: { min_width_m: 1.20 }
+      expect_pass: true
+    - name: width_unknown_skipped
+      entity: { min_width_m: null }
+      expect_pass: true
+
+# --- Project-level reminders (info-level) ---
+# These clauses describe constraints the entity graph cannot resolve
+# (window-sill height, balcony rail spacing, exit separation, etc).
+# Strategy: gate on building_type so the reminder only fires when the
+# project is in scope; logic_expression carries no numeric literals so
+# fidelity check sees zero drift. All thresholds live in output_template
+# and are sourced verbatim from the clause text.
+
+- id: RC-BALCONY-VERTICAL-SPACING-RESI
+  source_clause_ids:
+    - GB50096-5.6.2
+  applies_to: Project
+  inputs:
+    - building_type
+  # Residential project → expression False → reminder fires. Other types
+  # are filtered out earlier by Phase 9 applicability (clause is residential-only).
+  logic_expression: "building_type != 'residential'"
+  output_template: "项目为住宅，请核对阳台栏杆垂直杆件净距 ≤ 0.11 m，且采用防止儿童攀登的构造（GB 50096-5.6.2）。"
+  test_cases:
+    - name: residential_triggers_reminder
+      entity: { building_type: residential }
+      expect_pass: false
+    - name: public_skipped_by_expression
+      entity: { building_type: public }
+      expect_pass: true
+
+- id: RC-BALCONY-RAILING-HEIGHT-RESI
+  source_clause_ids:
+    - GB50096-5.6.3
+  applies_to: Project
+  inputs:
+    - building_type
+  logic_expression: "building_type != 'residential'"
+  output_template: "项目为住宅，请核对阳台栏板/栏杆净高：六层及以下不应低于 1.05 m，七层及以上不应低于 1.10 m（GB 50096-5.6.3）。"
+  test_cases:
+    - name: residential_triggers_reminder
+      entity: { building_type: residential }
+      expect_pass: false
+    - name: industrial_passes_expression
+      entity: { building_type: industrial }
+      expect_pass: true
+
+- id: RC-WINDOW-SILL-PROTECTION-RESI
+  source_clause_ids:
+    - GB50096-5.8.1
+  applies_to: Project
+  inputs:
+    - building_type
+  logic_expression: "building_type != 'residential'"
+  output_template: "项目为住宅，请核对外窗窗台距楼面/地面净高 < 0.90 m 时是否设防护设施（GB 50096-5.8.1）。"
+  test_cases:
+    - name: residential_triggers_reminder
+      entity: { building_type: residential }
+      expect_pass: false
+    - name: public_passes
+      entity: { building_type: public }
+      expect_pass: true
+
+- id: RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI
+  source_clause_ids:
+    - GB50096-6.1.2
+  applies_to: Project
+  inputs:
+    - building_type
+  logic_expression: "building_type != 'residential'"
+  output_template: "项目为住宅，请核对公共出入口台阶高度 > 0.70 m 且侧面临空时是否设防护设施，防护净高 ≥ 1.05 m（GB 50096-6.1.2）。"
+  test_cases:
+    - name: residential_triggers_reminder
+      entity: { building_type: residential }
+      expect_pass: false
+    - name: public_passes
+      entity: { building_type: public }
+      expect_pass: true
+
+- id: RC-EXIT-SEPARATION-MIN-5M-RESI
+  source_clause_ids:
+    - GB50096-6.2.4
+  applies_to: Project
+  inputs:
+    - building_type
+  logic_expression: "building_type != 'residential'"
+  output_template: "项目为住宅，请核对两个安全出口的距离不应小于 5 m（GB 50096-6.2.4，安全出口分散布置）。"
+  test_cases:
+    - name: residential_triggers_reminder
+      entity: { building_type: residential }
+      expect_pass: false
+    - name: public_passes
+      entity: { building_type: public }
+      expect_pass: true
+
+- id: RC-RAILING-HEIGHT-6.7.3
+  source_clause_ids:
+    - GB50352-6.7.3
+  applies_to: Project
+  inputs:
+    - building_type
+  # 6.7.3 applies to residential + public; trigger reminder for both,
+  # skip industrial. Codex P13-full Round 2: clause has THREE branches
+  # (1.05 / 1.1 / 1.2 m) — the reminder must list all three so reviewers
+  # don't think the harness only cares about the <24m case.
+  logic_expression: "building_type == 'industrial'"
+  output_template: "项目为 {building_type}，请核对阳台/外廊/室内回廊/上人屋面等临空处栏杆高度：临空高度 < 24.0 m 时 ≥ 1.05 m；临空高度 ≥ 24.0 m 时 ≥ 1.1 m；上人屋面或交通/商业/旅馆/医院/学校等建筑临开敞中庭 ≥ 1.2 m（GB 50352-6.7.3）。"
+  test_cases:
+    - name: residential_triggers_reminder
+      entity: { building_type: residential }
+      expect_pass: false
+    - name: public_triggers_reminder
+      entity: { building_type: public }
+      expect_pass: false
+    - name: industrial_passes
+      entity: { building_type: industrial }
+      expect_pass: true
+
+- id: RC-CHILD-RAILING-VERTICAL-SPACING-0.11
+  source_clause_ids:
+    - GB50352-6.7.4
+  applies_to: Project
+  inputs:
+    - building_type
+  # Codex P13-full P2: clause text narrows scope to 住宅/托儿所/幼儿园/中小学
+  # — child-oriented occupancies. building_type=public covers libraries, malls,
+  # offices etc. that are out of clause scope, so firing on all public projects
+  # is over-broad. Restrict the reminder to residential until ProjectMeta gains
+  # a use_type taxonomy that can distinguish 托幼/中小学 from generic public.
+  logic_expression: "building_type != 'residential'"
+  output_template: "项目为住宅，请核对栏杆采用防止攀爬构造，垂直杆件净间距 ≤ 0.11 m（GB 50352-6.7.4，住宅/托幼/中小学等场所）。"
+  test_cases:
+    - name: residential_triggers_reminder
+      entity: { building_type: residential }
+      expect_pass: false
+    - name: public_passes_until_use_type_gate
+      entity: { building_type: public }
+      expect_pass: true
+    - name: industrial_passes
+      entity: { building_type: industrial }
+      expect_pass: true
+
+- id: RC-STAIR-LANDING-WIDTH-1.2
+  source_clause_ids:
+    - GB50352-6.8.4
+  applies_to: Project
+  inputs:
+    - building_type
+  logic_expression: "building_type == 'industrial'"
+  output_template: "项目为 {building_type}，请核对楼梯转向端处平台宽度 ≥ 1.2 m（不应小于梯段净宽），直跑楼梯中间平台宽度 ≥ 0.9 m（GB 50352-6.8.4）。"
+  test_cases:
+    - name: residential_triggers_reminder
+      entity: { building_type: residential }
+      expect_pass: false
+    - name: public_triggers_reminder
+      entity: { building_type: public }
+      expect_pass: false
+    - name: industrial_passes
+      entity: { building_type: industrial }
+      expect_pass: true
