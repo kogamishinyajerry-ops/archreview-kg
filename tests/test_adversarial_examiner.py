@@ -453,6 +453,46 @@ def test_examiner_super_high_rise_case_fires_refuge_through_full_engine(
     assert "超高层" in refuge_skipped[0].reason
 
 
+def test_predict_door_to_exit_40m_skip_branch_against_engine() -> None:
+    """Phase 18-H: with fire_class sampling, the 三/四级 branch of
+    RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB must NOT fire even when
+    height_class is 多层. Pin the negative branch so the predictor can't
+    silently regress to "always fire on residential" — that would
+    re-introduce a perpetual reminder TP and let a real builder gap
+    hide behind a saturating signal.
+    """
+    from archkg.knowledge.loader import load_rules
+    from archkg.rules.engine import compile_expression, evaluate_expression
+
+    p = CaseParameters(
+        seed=0,
+        corridor_width_m=1.50,
+        door_widths_m=(0.95, 0.95, 0.95, 0.95),
+        bedroom_w_m=3.0,
+        bedroom_h_m=3.0,
+        floors=3,
+        height_m=10.0,
+        total_units=100,
+        accessible_units=5,
+        bedroom_net_height_m=2.50,
+        bedroom_level="upper",
+        include_stair_schedule=False,
+        stair_metrics_below_threshold=False,
+        fire_class="三级",
+    )
+    rule = next(r for r in load_rules() if r.id == "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB")
+    env = {"fire_class": "三级", "height_class": "多层"}
+    for k in rule.inputs:
+        env.setdefault(k, None)
+    tree = compile_expression(rule.logic_expression, rule.inputs)
+    engine_fires = not evaluate_expression(tree, env)
+    predicted = {v.rule_id for v in predict_expected_violations(p)}
+    assert not engine_fires, "三级 + 多层 must PASS GB 50016 表 5.5.29 一/二级 branch"
+    assert "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB" not in predicted, (
+        "predictor must mirror the fire_class skip branch — no fire on 三/四级"
+    )
+
+
 def test_predict_seven_floor_low_height_edge_against_engine() -> None:
     """Codex P18-F R1 P1: sample_parameters() emits ``height_m = floors *
     {2.8,3.0} + 0.5``, so every 7F case is 20.1m or 21.5m — never the

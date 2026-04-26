@@ -39,6 +39,9 @@ left compliant):
     RC-EVAC-STAIR-TYPE-33M              height_m > 33
     RC-CLOSED-STAIRWELL-21M             21 < height_m ≤ 33
     RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB    fire_class ∈ {一/二级} ∧ height_class ∈ {低/多层}
+                                        (Phase 18-H: fire_class now sampled
+                                         across {一级,二级,三级,四级} so the
+                                         skip branch is reachable too)
 
 Out of scope here: the remaining REMINDER_BY_DESIGN rules (severity=info
 project reminders) that always fire on residential without a finite
@@ -91,6 +94,10 @@ class CaseParameters:
     # When stair schedule is included, every metric is tripped to keep
     # the L1 contract simple (one stair → 5 expected stair rule fires).
     stair_metrics_below_threshold: bool
+    # Phase 18-H: defaults to '二级' so older test fixtures don't have
+    # to construct fire_class explicitly. sample_parameters() always
+    # overwrites this with a real RNG draw.
+    fire_class: Literal["一级", "二级", "三级", "四级"] = "二级"
 
 
 @dataclass
@@ -135,6 +142,18 @@ _LEVELS: list[Literal["basement", "ground", "upper", "mezzanine"]] = [
     "upper",
 ]
 _TOTAL_UNITS = [50, 100, 200, 500]
+# Phase 18-H: fire_class sampling. RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB only
+# fires when fire_class ∈ {一级, 二级} AND height_class ∈ {低层, 多层}.
+# Mixing 三级/四级 makes the rule's negative branch reachable (rule's
+# logic_expression evaluates to PASS, no fire) and the predictor's
+# fire/no-fire signal is no longer trivially deterministic from
+# height_class alone.
+_FIRE_CLASSES: list[Literal["一级", "二级", "三级", "四级"]] = [
+    "一级",
+    "二级",
+    "三级",
+    "四级",
+]
 
 
 def sample_parameters(seed: int) -> CaseParameters:
@@ -161,6 +180,12 @@ def sample_parameters(seed: int) -> CaseParameters:
         bedroom_level=rng.choice(_LEVELS),
         include_stair_schedule=rng.random() < 0.5,
         stair_metrics_below_threshold=True,
+        # Phase 18-H: fire_class draw goes LAST so adding it doesn't
+        # shift the RNG state for any pre-existing field. Codex P18-H
+        # R1 P1 caught that inserting the draw earlier (before
+        # include_stair_schedule) flipped 46/100 stair-schedule seeds
+        # and confounded the per-rule TP delta.
+        fire_class=rng.choice(_FIRE_CLASSES),
     )
 
 
@@ -490,11 +515,12 @@ def _examiner_height_class(p: CaseParameters) -> str:
 def _examiner_fire_class(p: CaseParameters) -> str:
     """Project fire_class examiner writes — single source of truth.
 
-    Phase 18-G: still hardcoded to 二级 on every case, but routed through
-    a helper so the predictor of RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB and
-    the writer agree even when we eventually start sampling fire_class.
+    Phase 18-H: now sampled across {一级, 二级, 三级, 四级}. Returning
+    p.fire_class lets writer + predictor + lock-in test stay locked
+    together (Phase 18-G refactor) without any of them re-deriving the
+    classification.
     """
-    return "二级"
+    return p.fire_class
 
 
 def _write_project_meta(meta_path: Path, p: CaseParameters, project_id: str) -> None:
