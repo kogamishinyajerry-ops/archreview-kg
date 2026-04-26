@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from archkg.graph.builder import EntityGraph
 from archkg.knowledge.loader import load_rules, load_standards
 from archkg.rules.engine import evaluate
@@ -122,6 +124,42 @@ def test_layered_skip_refuge_layer_for_non_super_high_rise() -> None:
     assert refuge_in_issues == [], "Phase 9 applicability should pre-empt Phase 11-B eval"
     assert len(refuge_in_skipped) == 1
     assert "超高层" in refuge_in_skipped[0].reason
+
+
+@pytest.mark.parametrize(
+    ("height_m", "expected_fires"),
+    [
+        # Boundaries Codex flagged in the P11-C nit. evaluate() against a 多层
+        # residential meta — applicability filter only excludes the 超高层-only
+        # refuge-layer rule.
+        (20.9, set()),  # below 21 — open stair allowed, no project-level fires
+        (21.0, set()),  # exactly 21 — clause says "不大于 21" allows open stair
+        (21.1, {"RC-CLOSED-STAIRWELL-21M"}),  # just above 21 — closed required
+        (33.0, {"RC-CLOSED-STAIRWELL-21M"}),  # exactly 33 — still in the closed band
+        (33.1, {"RC-EVAC-STAIR-TYPE-33M"}),  # just above 33 — smoke-proof required
+    ],
+)
+def test_stairwell_band_boundaries(height_m: float, expected_fires: set[str]) -> None:
+    """Codex P11-C nit: explicit ±1 boundary regression around 21.0 / 33.0 m."""
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    # Use a residential meta tall enough for the elevator + accessibility rules
+    # to fire too — we filter those out below so the band test stays focused.
+    meta = ProjectMeta(
+        project_id="P-BOUND",
+        building_type="residential",
+        height_class="多层" if height_m <= 33 else "高层",
+        floors=8,
+        height_m=height_m,
+    )
+    result = evaluate(_empty_graph(), rules, standards, project_meta=meta)
+    stair_fires = {
+        i.rule_card_id for i in result.issues
+        if i.rule_card_id in {"RC-CLOSED-STAIRWELL-21M", "RC-EVAC-STAIR-TYPE-33M"}
+    }
+    assert stair_fires == expected_fires, (
+        f"height_m={height_m}: expected stair fires {expected_fires}, got {stair_fires}"
+    )
 
 
 def test_unset_optional_meta_fields_no_op_gracefully() -> None:

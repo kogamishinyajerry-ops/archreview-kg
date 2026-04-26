@@ -119,19 +119,28 @@
   applies_to: Project
   inputs:
     - floors
-    - height_m
-  # Pass when neither 7+ floors nor >16m entry height — i.e. low-rise that doesn't need accessibility design.
-  logic_expression: "(floors is None or floors < 7) and (height_m is None or height_m <= 16.0)"
-  output_template: "项目 {floors} 层 / 入口距地 {height_m} m，按 GB 50096-6.6.1 应对建筑入口、入口平台、候梯厅、公共走道做无障碍设计，请确认。"
+  # GB50096-6.6.1 says "七层及七层以上" — gates on floor count only, not on
+  # the >16m entry-height trigger that drives RC-ELEVATOR-REQUIRED. Codex P1
+  # caught: the original copy-paste from the elevator pattern over-fired for
+  # 5/6F tall buildings.
+  logic_expression: "floors is None or floors < 7"
+  output_template: "项目 {floors} 层（≥7 层），按 GB 50096-6.6.1 应对建筑入口、入口平台、候梯厅、公共走道做无障碍设计，请确认。"
   test_cases:
-    - name: low_rise_ok
-      entity: { floors: 6, height_m: 14.0 }
+    - name: six_floors_ok
+      entity: { floors: 6 }
       expect_pass: true
     - name: seven_floors_triggers
-      entity: { floors: 7, height_m: 18.0 }
+      entity: { floors: 7 }
       expect_pass: false
-    - name: tall_with_few_floors_triggers
-      entity: { floors: 5, height_m: 17.5 }
+    - name: floors_unset_passes
+      entity: { floors: null }
+      expect_pass: true
+    # Boundary regression for Codex P11-C nit: explicit ±1 around the 7-floor edge.
+    - name: edge_just_below_seven
+      entity: { floors: 6 }
+      expect_pass: true
+    - name: edge_at_seven
+      entity: { floors: 7 }
       expect_pass: false
 
 - id: RC-ENTRANCE-PLATFORM-WIDTH-7F
@@ -205,37 +214,37 @@
   applies_to: Project
   inputs:
     - floors
-    - height_m
-  # Same accessibility gate as RC-ACCESSIBLE-RESIDENTIAL-7F. Differentiated
-  # output: this is the wheelchair-route width check (not generic corridor width
-  # which RC-CORRIDOR-WIDTH already handles entity-side).
-  logic_expression: "(floors is None or floors < 7) and (height_m is None or height_m <= 16.0)"
-  output_template: "项目 {floors} 层 / 入口距地 {height_m} m，按 GB 50096-6.6.4 供轮椅通行的走道和通道净宽不应小于 1.20 m，请确认无障碍通行路径的最窄处宽度。"
+  # 6.6.4 itself doesn't carry a 7-floor trigger — it's the accessibility-route
+  # width requirement. We surface it as a 7F+ reminder because that is when
+  # 6.6.1's accessibility-design obligation kicks in and 6.6.4 becomes operational.
+  # Codex P1: drop the >16m trigger; gate on floors only.
+  logic_expression: "floors is None or floors < 7"
+  output_template: "项目 {floors} 层（≥7 层），按 GB 50096-6.6.4 供轮椅通行的走道和通道净宽不应小于 1.20 m，请确认无障碍通行路径的最窄处宽度。"
   test_cases:
-    - name: low_rise_no_accessibility_trigger
-      entity: { floors: 6, height_m: 14.0 }
+    - name: six_floors_no_trigger
+      entity: { floors: 6 }
       expect_pass: true
-    - name: seven_floors_triggers_manual_width_check
-      entity: { floors: 7, height_m: 18.0 }
+    - name: seven_floors_triggers
+      entity: { floors: 7 }
       expect_pass: false
-    - name: tall_with_few_floors_triggers_manual_width_check
-      entity: { floors: 5, height_m: 17.5 }
-      expect_pass: false
-    - name: floors_unset_height_below_threshold
-      entity: { floors: null, height_m: 12.0 }
+    - name: floors_unset_passes
+      entity: { floors: null }
       expect_pass: true
 
-- id: RC-DOOR-TO-EXIT-40M
+- id: RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB
+  # Branch-specific: covers ONLY the 一级/二级耐火 + 低层/多层 cell of GB 50016 表 5.5.29.
+  # Other table branches (三/四级 fire class, 中高层/高层/超高层) have different
+  # distance limits and need their own rule cards (Phase 13 RAG candidate).
+  # The narrow rule ID makes the partial scope grep-and-see, per Codex P11-C P2.
   source_clause_ids:
     - GB50016-5.5.29
   applies_to: Project
   inputs:
     - fire_class
     - height_class
-  # Pass unless the project is in the 一/二级 + 低层/多层 branch from the clause text.
-  # Higher fire-classes and taller buildings have different distance limits not encoded here.
+  # Pass unless the project lands in the 一/二级 + 低层/多层 cell.
   logic_expression: "fire_class is None or (fire_class != '一级' and fire_class != '二级') or (height_class != '低层' and height_class != '多层')"
-  output_template: "项目耐火等级 {fire_class} / 高度类别 {height_class}，按 GB 50016-5.5.29 位于两个安全出口之间的户门至最近安全出口直线距离不应大于 40 m，请核对疏散距离。"
+  output_template: "项目耐火等级 {fire_class} / 高度类别 {height_class}，按 GB 50016 表 5.5.29（一/二级 + 单/多层 分支）位于两个安全出口之间的户门至最近安全出口直线距离不应大于 40 m，请核对疏散距离。注：本规则仅覆盖 一/二级 + 单/多层 分支；其它耐火/高度组合需另行查表。"
   test_cases:
     - name: grade_one_multistory_triggers
       entity: { fire_class: 一级, height_class: 多层 }
@@ -243,10 +252,10 @@
     - name: grade_two_low_rise_triggers
       entity: { fire_class: 二级, height_class: 低层 }
       expect_pass: false
-    - name: grade_three_multistory_not_this_branch
+    - name: grade_three_multistory_out_of_branch
       entity: { fire_class: 三级, height_class: 多层 }
       expect_pass: true
-    - name: grade_one_high_rise_not_this_branch
+    - name: grade_one_high_rise_out_of_branch
       entity: { fire_class: 一级, height_class: 高层 }
       expect_pass: true
     - name: fire_class_unset_passes
