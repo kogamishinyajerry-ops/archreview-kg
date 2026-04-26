@@ -134,8 +134,13 @@ _DOOR_WIDTHS = [0.80, 0.85, 0.90, 0.95]  # 2 fail, 2 pass
 # threshold without producing a degenerate 2x2 box that breaks the
 # builder's polygonizer at the page corner. Codex P18-D R1.
 _BEDROOM_DIMS = [(3.0, 1.6), (3.0, 1.8), (3.0, 2.5), (4.0, 4.0)]  # area 4.8/5.4/7.5/16
-_FLOORS = [3, 5, 6, 7, 11, 12, 18, 35]
-_NET_HEIGHTS = [2.20, 2.30, 2.40, 2.50, 2.80]  # 2 fail (<2.40), 3 pass
+_FLOORS = [3, 5, 6, 7, 11, 12, 18, 35, 40]
+_NET_HEIGHTS = [1.80, 2.20, 2.30, 2.40, 2.50, 2.80]
+# Codex P18-I R1 P0: 1.80 added so the basement+sub-2.0m branch of
+# RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0 is actually reachable. Without
+# it the rule was in the targeted set but had a 0% fire rate, which
+# the per-rule audit then silently masked. (1/6) * (1/3 basement share)
+# ≈ 5.5% per case — above the 5% statistical-power floor.
 _LEVELS: list[Literal["basement", "ground", "upper", "mezzanine"]] = [
     "basement",
     "ground",
@@ -154,6 +159,44 @@ _FIRE_CLASSES: list[Literal["一级", "二级", "三级", "四级"]] = [
     "三级",
     "四级",
 ]
+
+
+# Phase 18-I (Codex R1 P0): single source of truth for the rules the
+# predictor claims coverage of. The audit test and the sample-stats
+# CLI both iterate this universe and zero-fill missing rules so a rule
+# that drops to 0% fires can't disappear silently. Update this list
+# in lock-step with predict_expected_violations() — adding/removing
+# branches there without touching this list will let the
+# predictor/audit drift apart.
+TARGETED_RULES: tuple[str, ...] = (
+    # AUTODETECTABLE
+    "RC-CORRIDOR-WIDTH",
+    "RC-DOOR-WIDTH",
+    "RC-BEDROOM-AREA",
+    "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+    # PROJECT_META_DRIVEN
+    "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+    # ROOM_SCHEDULE
+    "RC-LIVING-BEDROOM-NETHEIGHT-2.4",
+    "RC-NO-LIVING-IN-BASEMENT",
+    "RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0",
+    # STAIR_SCHEDULE
+    "RC-STAIR-FLIGHT-WIDTH-1.10",
+    "RC-STAIR-TREAD-WIDTH-0.26",
+    "RC-STAIR-RISER-HEIGHT-0.175",
+    "RC-STAIR-HANDRAIL-0.90",
+    "RC-STAIR-WELL-WIDTH-0.11",
+    # HIGH_RISE_PROJECT (Phase 18-F)
+    "RC-ELEVATOR-REQUIRED",
+    "RC-ACCESSIBLE-RESIDENTIAL-7F",
+    "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+    "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+    "RC-REFUGE-LAYER-100M",
+    # EVAC_STAIR_BANDS (Phase 18-G)
+    "RC-EVAC-STAIR-TYPE-33M",
+    "RC-CLOSED-STAIRWELL-21M",
+    "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+)
 
 
 def sample_parameters(seed: int) -> CaseParameters:

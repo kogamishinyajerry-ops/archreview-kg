@@ -453,6 +453,68 @@ def test_examiner_super_high_rise_case_fires_refuge_through_full_engine(
     assert "超高层" in refuge_skipped[0].reason
 
 
+def test_predictor_fire_rates_meet_minimum_floor() -> None:
+    """Phase 18-I: every rule in TARGETED_RULES must fire on at least
+    5% of a 1000-seed sweep. Rules with sub-5% rates can't produce
+    stable P/R signal in 100-case batteries — a 1-case TP delta moves
+    the metric by 1 percentage point.
+
+    Codex P18-I R1 P0: zero-fill the targeted-rule universe so a rule
+    that drops to 0% (because its sample distribution went unreachable)
+    can't disappear from the audit's iteration. Without zero-fill the
+    test silently passed even when RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0
+    had no reachable sample — the only branch was 'basement +
+    net_height < 2.0' but _NET_HEIGHTS only sampled values ≥ 2.20.
+
+    If this assertion ever fails, audit via:
+        archkg adversarial sample-stats -n 1000 --seed 5000
+
+    and either widen the relevant sample distribution or drop the rule
+    from TARGETED_RULES with a reason.
+    """
+    from collections import Counter
+
+    from archkg.adversarial.examiner import TARGETED_RULES
+
+    n = 1000
+    seed_start = 5000
+    min_rate = 0.05  # 5%
+
+    counts: Counter[str] = Counter({rid: 0 for rid in TARGETED_RULES})
+    for s in range(seed_start, seed_start + n):
+        p = sample_parameters(s)
+        seen: set[str] = set()
+        for v in predict_expected_violations(p):
+            if v.rule_id in seen:
+                continue
+            seen.add(v.rule_id)
+            counts[v.rule_id] += 1
+
+    underrepresented = {
+        rid: counts[rid] for rid in TARGETED_RULES if counts[rid] / n < min_rate
+    }
+    assert not underrepresented, (
+        f"rules with fire rate < {min_rate * 100:.0f}% over {n} seeds:\n"
+        + "\n".join(
+            f"  {rid}: {c}/{n} = {100 * c / n:.2f}%"
+            for rid, c in sorted(underrepresented.items())
+        )
+        + "\nrun `archkg adversarial sample-stats` and tune distributions."
+    )
+
+    # Catch drift between predictor and TARGETED_RULES the other way:
+    # any rule the predictor emits but TARGETED_RULES missed indicates
+    # the universe needs updating. Zero-fill won't catch this since
+    # counts stays in sync with predictions.
+    seen_rules = {rid for rid, c in counts.items() if c > 0}
+    targeted_set = set(TARGETED_RULES)
+    extra = seen_rules - targeted_set
+    assert not extra, (
+        f"predictor emitted rules NOT in TARGETED_RULES:\n  {sorted(extra)}\n"
+        "add them to TARGETED_RULES so the audit covers them."
+    )
+
+
 def test_predict_door_to_exit_40m_skip_branch_against_engine() -> None:
     """Phase 18-H: with fire_class sampling, the 三/四级 branch of
     RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB must NOT fire even when

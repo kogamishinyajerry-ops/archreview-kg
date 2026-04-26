@@ -534,6 +534,99 @@ def adversarial_run(
     console.print(rules_table)
 
 
+@adversarial_app.command("sample-stats")
+def adversarial_sample_stats(
+    n: int = typer.Option(
+        1000, "-n", "--n", min=1,
+        help="Number of seeds to sample for the audit.",
+    ),
+    seed_start: int = typer.Option(
+        5000, "--seed",
+        help="Starting seed; seed_start..seed_start+n is examined.",
+    ),
+) -> None:
+    """Audit per-rule fire rates across N seeds without running the
+    builder/engine. Pure predictor sweep — fast (<1s for 1000 seeds) —
+    surfaces rules whose fire rate is too low for stable statistical
+    signal in the battery (Phase 18-I).
+
+    Two columns:
+      - cases / case_rate: number of CASES where the rule was expected
+        to fire at least once. Mirrors the adjudicator's set-based
+        scoring (a case with 4 failing doors counts once for
+        RC-DOOR-WIDTH). This is the primary signal.
+      - occurrences / mean_per_case: total ExpectedViolation entries
+        for that rule across the sweep, exposing the per-case load
+        (RC-DOOR-WIDTH may fire 4 times per case when all 4 doors are
+        sub-threshold). Useful for distribution tuning.
+
+    Codex P18-I R1 P0: zero-fill from TARGETED_RULES so a rule that
+    drops to 0% fires shows up in the table instead of silently
+    disappearing.
+    """
+    from collections import Counter
+
+    from rich.console import Console
+    from rich.table import Table
+
+    from archkg.adversarial.examiner import (
+        TARGETED_RULES,
+        predict_expected_violations,
+        sample_parameters,
+    )
+
+    case_counts: Counter[str] = Counter({rid: 0 for rid in TARGETED_RULES})
+    occurrence_counts: Counter[str] = Counter({rid: 0 for rid in TARGETED_RULES})
+    for s in range(seed_start, seed_start + n):
+        p = sample_parameters(s)
+        seen: set[str] = set()
+        for v in predict_expected_violations(p):
+            occurrence_counts[v.rule_id] += 1
+            if v.rule_id not in seen:
+                seen.add(v.rule_id)
+                case_counts[v.rule_id] += 1
+
+    console = Console()
+    table = Table(
+        title=f"Sample-stats over {n} seeds (start={seed_start})",
+        header_style="bold cyan",
+    )
+    table.add_column("rule_id", style="yellow")
+    table.add_column("cases", justify="right")
+    table.add_column("case_rate", justify="right")
+    table.add_column("occurrences", justify="right")
+    table.add_column("mean_per_case", justify="right")
+    # Sort by case_rate desc; zero-fired rules sink to the bottom and
+    # surface gaps visually.
+    for rid in sorted(
+        case_counts.keys(),
+        key=lambda r: (-case_counts[r], r),
+    ):
+        cases = case_counts[rid]
+        occ = occurrence_counts[rid]
+        case_rate = 100.0 * cases / n
+        mean_per_case = occ / cases if cases else 0.0
+        table.add_row(
+            rid,
+            str(cases),
+            f"{case_rate:.1f}%",
+            str(occ),
+            f"{mean_per_case:.2f}" if cases else "—",
+        )
+    console.print(table)
+    min_rid, min_c = min(case_counts.items(), key=lambda x: x[1])
+    if min_c == 0:
+        console.print(
+            f"[red]rules with 0 cases: {sorted(rid for rid, c in case_counts.items() if c == 0)}"
+            "[/red]\nthese are in TARGETED_RULES but unreachable from the current "
+            "sample distribution. Either widen sampling or drop from TARGETED_RULES."
+        )
+    else:
+        console.print(
+            f"lowest case_rate: [yellow]{min_rid}[/yellow] = {100.0 * min_c / n:.1f}%"
+        )
+
+
 def _fmt(v: float | None) -> str:
     return "—" if v is None else f"{v:.2f}"
 
