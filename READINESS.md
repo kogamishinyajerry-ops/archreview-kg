@@ -119,6 +119,8 @@ archkg studio
   `TextPrimitive(source="ocr")` 写入 `primitives.json`，并参与 room label binding。
 - 结果页新增 OCR 证据面：展示 OCR text count、绑定房间数、低置信度数量与样例文本行；
   standalone `archkg viewer` 从 run artifacts 重渲染时也保留该证据面。
+- OCR 证据面新增 label QA candidates：label 冲突、未绑定高置信度 label、低置信度 label
+  只作为人工复核提示，不自动修改 `Room.label`，也不改变规则结论。
 - OCR 不作为默认依赖；本机未安装 PaddleOCR 或 OCR 返回空时，流水线不崩溃，
   继续按 partial 审图降级，并保留 "栅格图无 OCR" 质量提示。
 - 这不是 production OCR 准确率承诺。OCR-bound room labels 仍需人工核对，

@@ -13,7 +13,10 @@ from typing import Any
 
 from shapely.geometry import Point, Polygon
 
+from archkg.graph.builder import LABEL_KEYWORDS
+
 LOW_CONFIDENCE_THRESHOLD = 0.70
+HIGH_CONFIDENCE_LABEL_THRESHOLD = 0.85
 MAX_OCR_ROWS = 12
 
 
@@ -22,6 +25,7 @@ def build_ocr_diagnostics(
     graph: Mapping[str, Any],
     *,
     low_confidence_threshold: float = LOW_CONFIDENCE_THRESHOLD,
+    high_confidence_label_threshold: float = HIGH_CONFIDENCE_LABEL_THRESHOLD,
     limit: int = MAX_OCR_ROWS,
 ) -> dict[str, Any]:
     """Return a template-friendly OCR evidence summary.
@@ -35,8 +39,12 @@ def build_ocr_diagnostics(
     rooms = _rooms(graph)
 
     rows: list[dict[str, Any]] = []
+    qa_candidates: list[dict[str, Any]] = []
     low_confidence_count = 0
     bound_room_count = 0
+    label_conflict_count = 0
+    unbound_high_confidence_label_count = 0
+    low_confidence_label_count = 0
     for text in ocr_texts:
         confidence = _float(text.get("confidence"), default=0.0)
         is_low_confidence = confidence < low_confidence_threshold
@@ -44,21 +52,70 @@ def build_ocr_diagnostics(
             low_confidence_count += 1
 
         room = _find_room_for_text(text, rooms)
+        bbox = _bbox(text.get("bbox"))
+        raw_text = str(text.get("text") or "")
+        normalized_label = _classify_label(raw_text)
+        room_label = _room_label(room)
         if room is not None:
             bound_room_count += 1
 
+        if normalized_label is not None:
+            candidate_base = {
+                "text": raw_text,
+                "normalized_label": normalized_label,
+                "confidence": confidence,
+                "confidence_pct": confidence * 100.0,
+                "bbox": bbox,
+                "bbox_text": _format_bbox(bbox),
+                "room_id": room.get("id") if room is not None else None,
+                "room_label": room_label,
+            }
+            if room_label is not None and room_label != normalized_label:
+                label_conflict_count += 1
+                qa_candidates.append(
+                    candidate_base
+                    | {
+                        "reason_code": "label_conflict",
+                        "reason": "label 冲突",
+                        "detail": (
+                            f"OCR label={normalized_label}, "
+                            f"但绑定 Room 当前 label={room_label}。"
+                        ),
+                    }
+                )
+            if room is None and confidence >= high_confidence_label_threshold:
+                unbound_high_confidence_label_count += 1
+                qa_candidates.append(
+                    candidate_base
+                    | {
+                        "reason_code": "unbound_high_confidence_label",
+                        "reason": "未绑定高置信度 label",
+                        "detail": "OCR 识别到支持的房间 label, 但中心点未落入任何 Room polygon。",
+                    }
+                )
+            if is_low_confidence:
+                low_confidence_label_count += 1
+                qa_candidates.append(
+                    candidate_base
+                    | {
+                        "reason_code": "low_confidence_label",
+                        "reason": "低置信度 label",
+                        "detail": "OCR label 置信度低于阈值, 需人工核对后再信任 label-dependent 规则。",
+                    }
+                )
+
         if len(rows) < limit:
-            bbox = _bbox(text.get("bbox"))
             rows.append(
                 {
-                    "text": str(text.get("text") or ""),
+                    "text": raw_text,
+                    "normalized_label": normalized_label,
                     "confidence": confidence,
                     "confidence_pct": confidence * 100.0,
                     "low_confidence": is_low_confidence,
                     "bbox": bbox,
                     "bbox_text": _format_bbox(bbox),
                     "room_id": room.get("id") if room is not None else None,
-                    "room_label": room.get("label") if room is not None else None,
+                    "room_label": room_label,
                     "binding_state": "已绑定房间" if room is not None else "未绑定",
                 }
             )
@@ -77,6 +134,13 @@ def build_ocr_diagnostics(
         "low_confidence_count": low_confidence_count,
         "labeled_room_count": labeled_room_count,
         "low_confidence_threshold": low_confidence_threshold,
+        "high_confidence_label_threshold": high_confidence_label_threshold,
+        "qa_candidate_count": len(qa_candidates),
+        "label_conflict_count": label_conflict_count,
+        "unbound_high_confidence_label_count": unbound_high_confidence_label_count,
+        "low_confidence_label_count": low_confidence_label_count,
+        "qa_candidates": qa_candidates[:limit],
+        "qa_omitted_count": max(len(qa_candidates) - limit, 0),
         "rows": rows,
     }
 
@@ -125,6 +189,24 @@ def _find_room_for_text(
         except Exception:
             continue
     return None
+
+
+def _classify_label(text: str) -> str | None:
+    lo = text.lower()
+    for keyword, normalized in LABEL_KEYWORDS.items():
+        if keyword in lo:
+            return normalized
+    return None
+
+
+def _room_label(room: Mapping[str, Any] | None) -> str | None:
+    if room is None:
+        return None
+    label = room.get("label")
+    if not isinstance(label, str):
+        return None
+    stripped = label.strip()
+    return stripped or None
 
 
 def _bbox(raw: object) -> tuple[float, float, float, float] | None:

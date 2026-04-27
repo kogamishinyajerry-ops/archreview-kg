@@ -33,11 +33,16 @@ and keeps the no-OCR transparency warning.
   re-rendering. Result pages now show OCR text count, bound-room count,
   low-confidence count, and sample OCR rows with confidence / bbox /
   room binding state.
+- OCR evidence now includes label QA candidates for reviewer attention:
+  label conflicts, unbound high-confidence room labels, and low-confidence
+  room labels. These candidates do not mutate `Room.label` and do not
+  change compliance results.
 
 ### Still limited
 
 - OCR accuracy is not claimed. Users must inspect the entity overlay
-  and the OCR evidence panel before trusting label-dependent rules.
+  and the OCR evidence / label QA panel before trusting label-dependent
+  rules.
 - `room_schedule.yaml` still cannot patch label-less raster rooms; it
   remains a vector-PDF path because it selects existing `room_id` or
   `label`.

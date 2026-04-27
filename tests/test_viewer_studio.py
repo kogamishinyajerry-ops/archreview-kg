@@ -647,8 +647,20 @@ def test_post_review_raster_ocr_evidence_panel_and_standalone_rerender(
                 confidence=0.93,
             ),
             TextPrimitive(
-                text="疑似杂字",
+                text="厨房",
+                bbox=(190.0, 140.0, 230.0, 170.0),
+                source="ocr",
+                confidence=0.91,
+            ),
+            TextPrimitive(
+                text="客厅",
                 bbox=(5000.0, 5000.0, 5030.0, 5020.0),
+                source="ocr",
+                confidence=0.95,
+            ),
+            TextPrimitive(
+                text="卫生间",
+                bbox=(5200.0, 5200.0, 5230.0, 5220.0),
                 source="ocr",
                 confidence=0.42,
             ),
@@ -684,16 +696,24 @@ def test_post_review_raster_ocr_evidence_panel_and_standalone_rerender(
     assert "OCR 文本" in body
     assert "低置信度" in body
     assert "卧室" in body
-    assert "疑似杂字" in body
+    assert "厨房" in body
+    assert "客厅" in body
+    assert "卫生间" in body
     assert "已绑定房间" in body
     assert "未绑定" in body
+    assert "OCR label QA 候选" in body
+    assert "label 冲突" in body
+    assert "未绑定高置信度 label" in body
+    assert "低置信度 label" in body
 
     index_path = _render_index(run_dir, run_dir / "source.pdf")
     rerendered = index_path.read_text("utf-8")
     assert "OCR 证据面" in rerendered
     assert "卧室" in rerendered
-    assert "疑似杂字" in rerendered
+    assert "厨房" in rerendered
+    assert "客厅" in rerendered
     assert "低置信度" in rerendered
+    assert "OCR label QA 候选" in rerendered
 
 
 def test_get_index_drop_hint_no_false_room_schedule_remediation(studio_client) -> None:

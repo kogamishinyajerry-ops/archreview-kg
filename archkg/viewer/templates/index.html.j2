@@ -812,11 +812,44 @@
       <div class="k">已有 label 的 Room</div>
       <div class="v">{{ ocr_diagnostics.labeled_room_count }}</div>
     </div>
+    <div class="kpi warn">
+      <div class="k">QA 候选</div>
+      <div class="v">{{ ocr_diagnostics.qa_candidate_count }}</div>
+    </div>
   </div>
   <div class="metric-note" style="margin-top: 10px;">
     OCR beta 只提供识别证据，不代表自动合规结论。低置信度阈值：
-    {{ "%.0f"|format(ocr_diagnostics.low_confidence_threshold * 100) }}%。
+    {{ "%.0f"|format(ocr_diagnostics.low_confidence_threshold * 100) }}%；
+    高置信度 label 阈值：{{ "%.0f"|format(ocr_diagnostics.high_confidence_label_threshold * 100) }}%。
   </div>
+  {% if ocr_diagnostics.qa_candidate_count %}
+    <div class="metric-note" style="margin-top: 12px;">
+      <strong>OCR label QA 候选</strong>：以下仅为人工复核提示，不会自动修改 Room.label，也不会改变规则结论。
+    </div>
+    <div class="evidence-list" style="margin-top: 10px;">
+      {% for candidate in ocr_diagnostics.qa_candidates %}
+        <div class="evidence-row low">
+          <div>
+            <div class="text">{{ candidate.reason }}</div>
+            <div class="sub">{{ candidate.text }} → {{ candidate.normalized_label }}</div>
+          </div>
+          <div>
+            <div class="sub">置信度</div>
+            <div>{{ "%.0f"|format(candidate.confidence_pct) }}%</div>
+          </div>
+          <div>
+            <span class="pill">{{ candidate.room_label or "未绑定" }}</span>
+          </div>
+          <div class="sub">{{ candidate.detail }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    {% if ocr_diagnostics.qa_omitted_count %}
+      <div class="metric-note" style="margin-top: 10px;">
+        另有 {{ ocr_diagnostics.qa_omitted_count }} 条 OCR label QA 候选未在此面板展示；完整数据见 primitives.json 与 entity_graph.json。
+      </div>
+    {% endif %}
+  {% endif %}
   <div class="evidence-list" style="margin-top: 12px;">
     {% for row in ocr_diagnostics.rows %}
       <div class="evidence-row {% if row.low_confidence %}low{% endif %}">
