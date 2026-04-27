@@ -58,6 +58,8 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     md = (out_dir / "report.md").read_text(encoding="utf-8")
     assert "审查报告" in md
     assert "GB50096" in md
+    assert "规则输入就绪度" in md
+    assert "缺输入不等于通过" in md
     # Should contain reviewer/status placeholder columns
     assert "reviewer" in md
     assert "status" in md

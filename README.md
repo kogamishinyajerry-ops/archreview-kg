@@ -96,7 +96,7 @@ archkg studio
 > **规则输入就绪度**: 完整审图模式会额外生成 `rule_input_readiness.json`，逐张规则卡说明本次 evidence
 > 是否足够运行：`ready`、`missing_input`、`low_confidence`、`manual_only`、`not_applicable` 或
 > `unsupported_entity`。它不改变 `issues.json`，只解释哪些规则缺项目字段、缺实体输入、只适合作为人工提醒，
-> 或因 ProjectMeta 适用性被跳过。
+> 或因 ProjectMeta 适用性被跳过。结果页和 `report.md` 会显示同一份摘要，明确提示“缺输入不等于通过”。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 

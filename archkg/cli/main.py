@@ -110,6 +110,7 @@ def review(
         write_drawing_understanding,
     )
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.rule_readiness import build_rule_readiness_view
 
     out.mkdir(parents=True, exist_ok=True)
 
@@ -268,6 +269,9 @@ def review(
         out_md=out / "report.md",
         project_meta=meta,
         skipped=result.skipped,
+        rule_readiness=build_rule_readiness_view(
+            rule_readiness.model_dump(mode="json")
+        ),
     )
     _print_review_summary(
         out_dir=out,

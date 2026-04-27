@@ -389,6 +389,7 @@ def run_pipeline(
         write_drawing_understanding,
     )
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.rule_readiness import build_rule_readiness_view
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -613,6 +614,9 @@ def run_pipeline(
         out_md=out_dir / "report.md",
         project_meta=meta,
         skipped=result.skipped,
+        rule_readiness=build_rule_readiness_view(
+            rule_readiness.model_dump(mode="json")
+        ),
     )
 
     if annotated.exists():
@@ -736,6 +740,7 @@ def _render_viewer_index(
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.rule_readiness import load_rule_readiness_view
 
     n_lines = sum(len(p.get("lines", [])) for p in primitives.get("pages", []))
     n_texts = sum(len(p.get("texts", [])) for p in primitives.get("pages", []))
@@ -764,6 +769,7 @@ def _render_viewer_index(
         graph,
         ocr_diagnostics,
     )
+    rule_readiness = load_rule_readiness_view(out_dir)
 
     html = env.get_template("index.html.j2").render(
         source_pdf=str(source_pdf),
@@ -779,6 +785,7 @@ def _render_viewer_index(
         clause_refs=clause_refs,
         ocr_diagnostics=ocr_diagnostics,
         drawing_understanding=drawing_understanding,
+        rule_readiness=rule_readiness,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 

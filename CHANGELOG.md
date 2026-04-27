@@ -100,6 +100,10 @@ and keeps the no-OCR transparency warning.
   `ready`, `missing_input`, `low_confidence`, `manual_only`,
   `not_applicable`, or `unsupported_entity` without changing
   `issues.json` behavior.
+- P33-02 renders the same readiness payload in `report.md`, Studio
+  pre-rendered `index.html`, and standalone `archkg viewer` re-renders.
+  Missing readiness artifacts degrade to an explicit "缺失 readiness 不代表通过"
+  warning so old run directories stay viewable.
 
 ### Still limited
 

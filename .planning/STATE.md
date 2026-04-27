@@ -12,13 +12,14 @@ Status:
 
 - P31 completed sheet-region manual cropping and deterministic complex fixture.
 - P32 completed intelligent plan review software research.
-- P33-01 is implemented in the working tree: full CLI and Studio review runs now write `rule_input_readiness.json` beside `issues.json`.
+- P33-01 is complete: full CLI and Studio review runs now write `rule_input_readiness.json` beside `issues.json`.
+- P33-02 is implemented in the working tree: Viewer/Studio/report surfaces render the readiness summary and old runs degrade with an explicit missing-readiness warning.
 
 ## Current Phase
 
 P33: Rule-input readiness dashboard.
 
-P33-01 adds the underlying per-run readiness artifact. Next P33 work should render the same status in the Viewer/Studio surface so reviewers can see why a rule is ready, missing input, low confidence, manual-only, not applicable, or unsupported for this run.
+P33 now has both the machine-readable artifact and reviewer-facing surfaces. After validation/commit, the next implementation phase is P34: sheet-region candidate suggestions.
 
 ## Key Decisions
 
@@ -31,7 +32,7 @@ P33-01 adds the underlying per-run readiness artifact. Next P33 work should rend
 
 ## Open Risks
 
-- Static readiness tiers can still drift from actual run evidence if future builder inputs are added without extending P33 readiness coverage and tests.
+- Static readiness tiers can still drift from actual run evidence if future builder inputs are added without extending readiness coverage and tests.
 - Sheet-region candidates can cause silent false negatives if automatic cropping becomes default too early.
 - Issue lifecycle can blur candidate findings and confirmed defects if schema naming is loose.
 - IFC dependencies may be heavy or optional; P36 must degrade cleanly.
@@ -39,4 +40,4 @@ P33-01 adds the underlying per-run readiness artifact. Next P33 work should rend
 
 ## Next Action
 
-Validate and commit P33-01, then continue with P33-02: surface `rule_input_readiness.json` in the Viewer/Studio result page without changing rule-engine issue behavior.
+Validate and commit P33-02, then enter P34-01: generate sheet-region candidates with evidence summaries, without default auto-cropping.

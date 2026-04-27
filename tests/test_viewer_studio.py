@@ -87,6 +87,10 @@ def test_post_review_with_pdf_only_succeeds(studio_client) -> None:
 
     follow = client.get(target)
     assert follow.status_code == 200
+    body = follow.data.decode("utf-8")
+    assert "规则输入就绪度" in body
+    assert "缺输入不等于通过" in body
+    assert "RC-ELEVATOR-REQUIRED" in body
     run_id = target.removeprefix("/runs/").rstrip("/")
     run_dir = state_dir / "runs" / run_id
     readiness = json.loads((run_dir / "rule_input_readiness.json").read_text("utf-8"))
@@ -415,6 +419,24 @@ def test_standalone_viewer_rerender_honours_inspect_only(tmp_path: Path) -> None
     assert "Issues (规则未跑)" in body
 
 
+def test_standalone_viewer_rerender_without_readiness_artifact_degrades(
+    tmp_path: Path,
+) -> None:
+    from archkg.viewer.server import _render_index
+    from archkg.viewer.studio import run_pipeline
+
+    out_dir = tmp_path / "out"
+    run_pipeline(SAMPLE_PDF, out_dir)
+    (out_dir / "rule_input_readiness.json").unlink()
+
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "规则输入就绪度暂无数据" in body
+    assert "缺失 readiness 不代表通过" in body
+    assert "Issues" in body
+
+
 def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
     """Phase 20-A: a 200-DPI raster render of the demo PDF should
     produce roughly the same entity counts (4 rooms / 1 corridor /
@@ -467,6 +489,7 @@ def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
         "issues.json",
         "primitives.json",
         "report.md",
+        "rule_input_readiness.json",
         "source.pdf",
         "source_preview.png",
     ):

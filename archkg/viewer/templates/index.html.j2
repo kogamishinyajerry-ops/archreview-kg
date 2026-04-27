@@ -454,6 +454,21 @@
   .tier-pill.tier-reminder-by-design { color: #f6db80; border-color: rgba(255, 223, 118, .5); background: rgba(255, 223, 118, .12); }
   .tier-pill.tier-stair-pending { color: #ffac6a; border-color: rgba(255, 143, 74, .5); background: rgba(255, 143, 74, .12); }
   .tier-pill.tier-unknown { color: #b4bfd3; border-color: rgba(154, 168, 188, .56); background: rgba(154, 168, 188, .12); }
+  .status-pill {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    padding: 2px 8px;
+    color: #eaf0f8;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .status-ready { color: #7fffc1; border-color: rgba(75, 211, 123, .55); background: rgba(75, 211, 123, .12); }
+  .status-missing-input { color: #ffcd75; border-color: rgba(255, 184, 75, .55); background: rgba(255, 184, 75, .12); }
+  .status-low-confidence { color: #ffdf76; border-color: rgba(255, 223, 118, .55); background: rgba(255, 223, 118, .12); }
+  .status-manual-only { color: #9ec2ff; border-color: rgba(58, 131, 255, .45); background: rgba(58, 131, 255, .12); }
+  .status-not-applicable { color: #b4bfd3; border-color: rgba(154, 168, 188, .55); background: rgba(154, 168, 188, .12); }
+  .status-unsupported-entity { color: #ff9d99; border-color: rgba(255, 92, 85, .45); background: rgba(255, 92, 85, .12); }
   .issue-message {
     margin: 8px 0 0;
     color: #dbe7fc;
@@ -480,7 +495,7 @@
   }
   .quick-rail {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
     margin-top: 10px;
   }
@@ -622,6 +637,7 @@
 {% set knowledge_overview = knowledge_overview | default({}, true) %}
 {% set layer_available = layer_available | default({'source': true, 'overlay': true, 'annotated': true}, true) %}
 {% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
+{% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
 
 <header>
   <div>
@@ -674,8 +690,12 @@
       <span class="qk">02 问题面板</span>
       <div class="qv">高风险与热点规则先看图</div>
     </a>
+    <a class="quick-chip" href="#panel-readiness">
+      <span class="qk">03 就绪度</span>
+      <div class="qv">缺输入、不适用、人工核对分清楚</div>
+    </a>
     <a class="quick-chip" href="#panel-report">
-      <span class="qk">03 报告与条文</span>
+      <span class="qk">04 报告与条文</span>
       <div class="qv">快速打开报告与条文触达</div>
     </a>
   </div>
@@ -790,6 +810,83 @@
       <div class="t">人工核对清单</div>
     </div>
   </div>
+</section>
+
+<section class="panel full" id="panel-readiness">
+  <h2>规则输入就绪度</h2>
+  {% if not rule_readiness.available %}
+    <div class="alert warn">
+      <strong>规则输入就绪度暂无数据</strong>：缺失 readiness 不代表通过。旧 run 或仅识图模式可能没有
+      <code>rule_input_readiness.json</code>。{{ rule_readiness.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>缺输入不等于通过</strong>：{{ rule_readiness.warning_text }}
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      {% for row in rule_readiness.summary_rows %}
+        <div class="kpi {{ row.tone }}">
+          <div class="k">{{ row.label }} · {{ row.status }}</div>
+          <div class="v">{{ row.count }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <h3>缺失/低置信输入来源</h3>
+        {% if rule_readiness.source_rows %}
+          <div class="bar">
+            {% for row in rule_readiness.source_rows %}
+              <div class="bar-row">
+                <div class="bar-label">{{ row.source_label }}</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: {{ "%.1f"|format(100.0 * row.count / (rule_readiness.blocked_count or 1)) }}%; background: var(--orange);"></div>
+                </div>
+                <div class="bar-value">{{ row.count }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="metric-note">当前没有 missing_input / low_confidence / unsupported_entity 来源。</div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>非 ready 规则摘要</h3>
+        <div class="table-wrap" style="max-height: 320px;">
+          <table>
+            <thead>
+              <tr>
+                <th>rule</th>
+                <th>状态</th>
+                <th>来源</th>
+                <th>缺失输入</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rule_readiness.non_ready_rules %}
+                <tr>
+                  <td><code>{{ row.rule_id }}</code></td>
+                  <td><span class="status-pill {{ row.status_class }}">{{ row.status_label }}</span></td>
+                  <td>{{ row.source_label }}</td>
+                  <td><code>{{ row.missing_inputs }}</code></td>
+                  <td>{{ row.reason }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5">全部规则 ready。</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if rule_readiness.omitted_non_ready_count %}
+          <div class="metric-note">另有 {{ rule_readiness.omitted_non_ready_count }} 张非 ready 规则未展开，完整数据见 <code>rule_input_readiness.json</code>。</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="links">
+      <a href="rule_input_readiness.json" target="_blank">rule_input_readiness.json</a>
+    </div>
+  {% endif %}
 </section>
 
 {% if drawing_understanding is defined %}

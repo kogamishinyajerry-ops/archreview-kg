@@ -25,6 +25,41 @@
 {% endif %}
 {% endif %}
 
+## 规则输入就绪度
+
+{% if not rule_readiness or not rule_readiness.available %}
+规则输入就绪度暂无数据；缺失 readiness 不代表通过。请检查本 run 是否来自旧版本或仅识图模式。
+{% else %}
+> {{ rule_readiness.warning_text }}
+
+| 状态 | 数量 |
+|---|---:|
+{% for row in rule_readiness.summary_rows %}| {{ row.label }} (`{{ row.status }}`) | {{ row.count }} |
+{% endfor %}
+
+{% if rule_readiness.source_rows %}
+### 缺失/低置信输入来源
+
+| 来源 | 数量 |
+|---|---:|
+{% for row in rule_readiness.source_rows %}| {{ row.source_label }} | {{ row.count }} |
+{% endfor %}
+{% endif %}
+
+{% if rule_readiness.non_ready_rules %}
+### 非 ready 规则示例
+
+| rule_card_id | 状态 | 来源 | missing_inputs | 说明 |
+|---|---|---|---|---|
+{% for row in rule_readiness.non_ready_rules %}| `{{ row.rule_id }}` | {{ row.status_label }} (`{{ row.status }}`) | {{ row.source_label }} | {{ row.missing_inputs }} | {{ row.reason }} |
+{% endfor %}
+{% if rule_readiness.omitted_non_ready_count %}
+
+另有 {{ rule_readiness.omitted_non_ready_count }} 张非 ready 规则未在本报告摘要中展开，完整数据见 `rule_input_readiness.json`。
+{% endif %}
+{% endif %}
+{% endif %}
+
 ## 违规清单
 
 {% if not violations %}

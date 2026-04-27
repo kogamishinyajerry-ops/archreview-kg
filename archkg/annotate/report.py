@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from importlib.resources import files
 from pathlib import Path
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -32,6 +33,7 @@ def render(
     out_md: Path,
     project_meta: ProjectMeta | None = None,
     skipped: list[SkippedRule] | None = None,
+    rule_readiness: dict[str, Any] | None = None,
 ) -> Path:
     used_ids = {i.standard_clause_id for i in issues}
     clauses_used = [c for c in clauses if c.id in used_ids]
@@ -50,6 +52,7 @@ def render(
         clauses_used=[c.model_dump() for c in clauses_used],
         project_meta=meta_payload,
         skipped=[{"rule_id": s.rule_id, "reason": s.reason} for s in (skipped or [])],
+        rule_readiness=rule_readiness,
     )
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_md.write_text(rendered, encoding="utf-8")
