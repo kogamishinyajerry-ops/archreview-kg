@@ -21,6 +21,7 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "primitives.json",
         "entity_graph.json",
         "drawing_understanding.json",
+        "sheet_classification.json",
         "rule_input_readiness.json",
         "sheet_region_candidates.json",
         "sheet_region_candidates_overlay.png",
@@ -38,6 +39,13 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     assert readiness["schema_version"] == "rule_input_readiness.v1"
     assert len(readiness["rules"]) == 32
     assert readiness["summary"]["missing_input"] >= 1
+
+    sheet_classification = json.loads(
+        (out_dir / "sheet_classification.json").read_text(encoding="utf-8")
+    )
+    assert sheet_classification["schema_version"] == "sheet_classification.v1"
+    assert sheet_classification["pages"][0]["sheet_type"] == "plan"
+    assert sheet_classification["pages"][0]["eligible_for_graph"] is True
 
     issues = json.loads((out_dir / "issues.json").read_text(encoding="utf-8"))
     review_state = json.loads((out_dir / "review_state.json").read_text(encoding="utf-8"))
@@ -76,6 +84,8 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "GB50096" in md
     assert "规则输入就绪度" in md
     assert "缺输入不等于通过" in md
+    assert "Sheet 分类" in md
+    assert "sheet_classification.json" in md
     assert "Issue 生命周期" in md
     # Should contain reviewer/status placeholder columns
     assert "reviewer" in md

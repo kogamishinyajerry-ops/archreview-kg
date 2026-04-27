@@ -41,6 +41,7 @@ archkg viewer -d out
 - `entity_graph.json` — 抽出的实体图谱
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
+- `sheet_classification.json` — 多页图纸 sheet 类型分类（plan / schedule / title / legend / detail / elevation / unknown），只做路由证据，不自动跳页
 - `sheet_region_candidates.json` — 设计区 / 标题栏 / 排表 / 图例的候选区域和候选排除文本摘要（只建议，不自动裁剪）
 - `sheet_region_candidates_overlay.png` — 候选区域框线预览图，便于复制 region 前人工确认
 - `index.html` — viewer 渲染的查阅页
@@ -116,6 +117,10 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > 是否足够运行：`ready`、`missing_input`、`low_confidence`、`manual_only`、`not_applicable` 或
 > `unsupported_entity`。它不改变 `issues.json`，只解释哪些规则缺项目字段、缺实体输入、只适合作为人工提醒，
 > 或因 ProjectMeta 适用性被跳过。结果页和 `report.md` 会显示同一份摘要，明确提示“缺输入不等于通过”。
+>
+> **Sheet 分类**: 完整审图会生成 `sheet_classification.json`，逐页标记 `plan`、`schedule`、`title`、
+> `legend`、`detail`、`elevation` 或 `unknown`，并说明是否适合进入 graph。P38-01 阶段它只作为
+> 复核和后续路由证据展示，不会自动跳过非平面页，也不会改变 `entity_graph.json`。
 >
 > **候选区域**: 完整审图会生成 `sheet_region_candidates.json`，提示可能的 `design_region`、`title_block`、
 > `schedule`、`legend` 和候选排除文本。它不会自动修改 `primitives.json` 或 `entity_graph.json`；
@@ -323,6 +328,7 @@ archkg clause readiness
 - P35：issue lifecycle / review state。规则引擎输出 candidate，人审状态写入 `review_state.json`，再 confirmed / rejected / needs_info / resolved / superseded。
 - P36：IFC/IDS side lane。`archkg ifc validate` 复用 IfcOpenShell / IfcTester，不重造完整 BIM checker，输出独立 IFC evidence artifacts。
 - P37：rule-card authoring / citation assistant。`archkg rule-card draft` 只产 `rule_card_draft.v1` 草稿，人工确认前不进入 active rule_cards。
+- P38：multi-sheet classification。`sheet_classification.json` 先把多页套图中的 plan / schedule / title / legend / detail / elevation / unknown 作为路由证据展示，后续再进入受保护的 graph 路由。
 
 ---
 

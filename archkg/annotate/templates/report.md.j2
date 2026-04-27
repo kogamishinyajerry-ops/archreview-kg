@@ -61,6 +61,26 @@
 {% endif %}
 {% endif %}
 
+## Sheet 分类
+
+{% if not sheet_classification %}
+sheet_classification.json 暂无数据；缺失分类不代表可直接进入 graph。
+{% else %}
+> 页分类只作路由证据；P38-01 不会因为分类结果自动跳过 graph build。
+
+| 类型 | 数量 |
+|---|---:|
+{% for sheet_type, count in sheet_classification.summary.items() %}| `{{ sheet_type }}` | {{ count }} |
+{% endfor %}
+
+| page | type | graph eligible | confidence | reason |
+|---|---|---|---:|---|
+{% for page in sheet_classification.pages %}| {{ page.page_index }} | `{{ page.sheet_type }}` | {{ page.eligible_for_graph }} | {{ "%.0f"|format(page.confidence * 100.0) }}% | {{ page.reason }} |
+{% endfor %}
+
+完整数据见 `sheet_classification.json`。
+{% endif %}
+
 ## Issue 生命周期
 
 `issues.json` 是规则引擎输出的候选观察，默认状态为 `candidate`；人工确认、驳回、补信息、解决或被新 run 替代的状态写入 `review_state.json`，不回写到 `issues.json`。

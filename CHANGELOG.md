@@ -128,6 +128,12 @@ and keeps the no-OCR transparency warning.
   extracted threshold, proposed inputs, applicability, ambiguity notes,
   missing evidence, and proposed tests. Status is fixed to `draft`; active
   `rule_cards.yaml` is never mutated by this command.
+- P38-01 adds `sheet_classification.json` to full CLI and Studio review
+  runs. The artifact classifies each page as plan / schedule / title /
+  legend / detail / elevation / unknown, records confidence and evidence
+  texts, and marks graph eligibility as advisory routing evidence. Viewer
+  and `report.md` render the same payload, while old runs without the
+  artifact show an explicit missing-classification warning.
 
 ### Still limited
 

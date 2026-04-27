@@ -487,6 +487,30 @@ def test_standalone_viewer_renders_review_state_and_missing_state_warning(
     assert "缺失复核状态不代表已确认" in body
 
 
+def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
+    tmp_path: Path,
+) -> None:
+    from archkg.viewer.server import _render_index
+    from archkg.viewer.studio import run_pipeline
+
+    out_dir = tmp_path / "out"
+    run_pipeline(SAMPLE_PDF, out_dir)
+
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "Sheet 分类" in body
+    assert "平面图" in body
+    assert "sheet_classification.json" in body
+
+    (out_dir / "sheet_classification.json").unlink()
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "sheet_classification.json 暂无数据" in body
+    assert "缺失分类不代表可直接进入 graph" in body
+
+
 def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
     """Phase 20-A: a 200-DPI raster render of the demo PDF should
     produce roughly the same entity counts (4 rooms / 1 corridor /

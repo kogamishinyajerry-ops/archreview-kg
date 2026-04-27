@@ -645,6 +645,7 @@
 {% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
 {% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
+{% set sheet_classification = sheet_classification | default({'available': false, 'summary_rows': [], 'pages': [], 'warning_text': 'sheet_classification.json 暂无数据; 缺失分类不代表可直接进入 graph.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_region_candidates = sheet_region_candidates | default({'available': false, 'candidates': [], 'excluded_texts': [], 'warning_text': '候选区域暂无数据; 缺失 candidate artifact 不代表已裁剪或已确认.', 'unavailable_reason': 'missing'}, true) %}
 
 <header>
@@ -702,12 +703,16 @@
       <span class="qk">03 就绪度</span>
       <div class="qv">缺输入、不适用、人工核对分清楚</div>
     </a>
+    <a class="quick-chip" href="#panel-sheet-classification">
+      <span class="qk">04 Sheet 分类</span>
+      <div class="qv">平面、排表、标题页先分流</div>
+    </a>
     <a class="quick-chip" href="#panel-sheet-regions">
-      <span class="qk">04 候选区域</span>
+      <span class="qk">05 候选区域</span>
       <div class="qv">设计区、标题栏、排表先确认</div>
     </a>
     <a class="quick-chip" href="#panel-report">
-      <span class="qk">05 报告与条文</span>
+      <span class="qk">06 报告与条文</span>
       <div class="qv">快速打开报告与条文触达</div>
     </a>
   </div>
@@ -897,6 +902,70 @@
     </div>
     <div class="links">
       <a href="rule_input_readiness.json" target="_blank">rule_input_readiness.json</a>
+    </div>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-sheet-classification">
+  <h2>Sheet 分类</h2>
+  {% if not sheet_classification.available %}
+    <div class="alert warn">
+      <strong>sheet_classification.json 暂无数据</strong>：{{ sheet_classification.warning_text }}
+      {{ sheet_classification.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>分类只作路由证据</strong>：{{ sheet_classification.warning_text }}
+    </div>
+    {% if sheet_classification.summary_rows %}
+      <div class="kpis" style="margin-top: 12px;">
+        {% for row in sheet_classification.summary_rows %}
+          <div class="kpi">
+            <div class="k">{{ row.sheet_label }} · {{ row.sheet_type }}</div>
+            <div class="v">{{ row.count }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="table-wrap" style="max-height: 320px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>page</th>
+            <th>type</th>
+            <th>graph</th>
+            <th>confidence</th>
+            <th>signals</th>
+            <th>reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in sheet_classification.pages %}
+            <tr>
+              <td>{{ row.page_index }}</td>
+              <td>{{ row.sheet_label }} <code>{{ row.sheet_type }}</code></td>
+              <td>{{ row.eligible_label }}</td>
+              <td>{{ "%.0f"|format(row.confidence_pct) }}%</td>
+              <td>
+                {% if row.evidence_texts %}
+                  {{ row.evidence_texts | join(' / ') }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>{{ row.reason }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6">暂无页分类。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if sheet_classification.omitted_page_count %}
+      <div class="metric-note">另有 {{ sheet_classification.omitted_page_count }} 页未展开，完整数据见 <code>sheet_classification.json</code>。</div>
+    {% endif %}
+    <div class="links">
+      <a href="sheet_classification.json" target="_blank">sheet_classification.json</a>
     </div>
   {% endif %}
 </section>

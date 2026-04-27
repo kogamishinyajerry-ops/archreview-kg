@@ -9,6 +9,20 @@ from archkg import control_sync
 from archkg.cli.main import app
 
 
+def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> None:
+    (tmp_path / "sheet_classification.json").write_text(
+        '{"schema_version":"sheet_classification.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "scratch.txt").write_text("ignore me", encoding="utf-8")
+
+    snapshot = control_sync._collect_run_snapshot(tmp_path)
+
+    assert snapshot["exists"] is True
+    assert "sheet_classification.json" in snapshot["artifacts"]
+    assert "scratch.txt" not in snapshot["artifacts"]
+
+
 def test_github_snapshot_falls_back_to_rest_api_when_gh_cli_missing(monkeypatch) -> None:
     monkeypatch.setattr(control_sync.shutil, "which", lambda _name: None)
 

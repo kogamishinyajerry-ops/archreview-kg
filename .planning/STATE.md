@@ -18,13 +18,14 @@ Status:
 - P34-02 is complete: candidate boxes are rendered into `sheet_region_candidates_overlay.png` and shown in the result page.
 - P35-01 is complete: full CLI and Studio review runs now write `review_state.json`, while `issues.json` stays the rule-engine candidate output.
 - P36-01 is complete: `archkg ifc validate` provides an optional IFC/IDS side lane with separate artifacts and clean missing-dependency degradation.
-- P37-01 is implemented in the working tree: `archkg rule-card draft` writes draft-only rule-card authoring artifacts and does not mutate active `rule_cards.yaml`.
+- P37-01 is complete: `archkg rule-card draft` writes draft-only rule-card authoring artifacts and does not mutate active `rule_cards.yaml`.
+- P38-01 is complete: full CLI and Studio review runs now write `sheet_classification.json`, and Viewer/report render it with explicit missing-artifact degradation.
 
 ## Current Phase
 
-P37: Rule-card authoring and citation assistant.
+P38: Multi-sheet classification.
 
-P37-01 now adds a safe local draft lane. It writes `rule_card_draft.v1` JSON with source clause, extracted threshold, proposed inputs, ambiguity notes, missing evidence, and proposed tests. Status is fixed to `draft`; promotion to active rule cards remains out of scope.
+P38-01 adds an advisory sheet-classification artifact. It classifies each page as plan / schedule / title / legend / detail / elevation / unknown, records confidence and evidence texts, and marks whether the page is graph-eligible. This phase does not yet auto-skip non-plan pages or mutate `entity_graph.json`.
 
 ## Key Decisions
 
@@ -42,8 +43,9 @@ P37-01 now adds a safe local draft lane. It writes `rule_card_draft.v1` JSON wit
 - Feedback/report editing can drift if legacy `open` status is not normalized; keep compatibility tests around `open -> candidate`.
 - Real IfcTester JSON shapes can vary by installed version; keep adapter tests around raw-report normalization and issue mapping.
 - Rule-card draft heuristics are intentionally conservative; ambiguous clauses need human review and may require split/branch rules.
+- Sheet classification is heuristic and advisory; do not use it to suppress graph extraction until P38-02 adds protected routing and regression coverage.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Validate and commit P37-01, then decide whether to enter P38 multi-sheet classification or add a P37-02 reviewed-promotion gate design.
+Enter P38-02 protected graph routing for eligible plan pages only.

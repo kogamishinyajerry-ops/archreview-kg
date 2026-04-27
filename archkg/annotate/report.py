@@ -36,6 +36,7 @@ def render(
     project_meta: ProjectMeta | None = None,
     skipped: list[SkippedRule] | None = None,
     rule_readiness: dict[str, Any] | None = None,
+    sheet_classification: dict[str, Any] | None = None,
     review_state: IssueReviewState | dict[str, Any] | None = None,
 ) -> Path:
     used_ids = {i.standard_clause_id for i in issues}
@@ -73,6 +74,7 @@ def render(
         project_meta=meta_payload,
         skipped=[{"rule_id": s.rule_id, "reason": s.reason} for s in (skipped or [])],
         rule_readiness=rule_readiness,
+        sheet_classification=sheet_classification,
         review_state=review_state_model.model_dump(mode="json"),
     )
     out_md.parent.mkdir(parents=True, exist_ok=True)

@@ -95,6 +95,10 @@ def review(
     from archkg.graph.builder import write_json as write_graph
     from archkg.ingest.primitive_extractor import extract
     from archkg.ingest.primitive_extractor import write_json as write_prims
+    from archkg.ingest.sheet_classification import (
+        build_sheet_classification,
+        write_sheet_classification,
+    )
     from archkg.ingest.sheet_region import (
         crop_primitives_to_region,
         parse_sheet_region,
@@ -149,6 +153,11 @@ def review(
         raise typer.BadParameter(str(exc), param_hint="--sheet-region") from exc
 
     primitives = extract(pdf, points_per_meter=points_per_meter)
+    sheet_classification = build_sheet_classification(primitives)
+    sheet_classification_path = write_sheet_classification(
+        sheet_classification,
+        out / "sheet_classification.json",
+    )
     sheet_candidates = build_sheet_region_candidates(
         primitives,
         applied_region=crop_region,
@@ -293,6 +302,7 @@ def review(
         rule_readiness=build_rule_readiness_view(
             rule_readiness.model_dump(mode="json")
         ),
+        sheet_classification=sheet_classification.model_dump(mode="json"),
         review_state=review_state,
     )
     _print_review_summary(
@@ -308,6 +318,7 @@ def review(
         schedule_apply=schedule_apply,
         stair_schedule_apply=stair_schedule_apply,
         drawing_understanding_path=drawing_understanding_path,
+        sheet_classification_path=sheet_classification_path,
         readiness_path=readiness_path,
         review_state_path=review_state_path,
         sheet_candidates_path=sheet_candidates_path,
@@ -329,6 +340,7 @@ def _print_review_summary(
     schedule_apply: Any = None,
     stair_schedule_apply: Any = None,
     drawing_understanding_path: Path | None = None,
+    sheet_classification_path: Path | None = None,
     readiness_path: Path | None = None,
     review_state_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
@@ -454,6 +466,8 @@ def _print_review_summary(
     art.add_row("entity overlay PNG", str(out_dir / "entity_overlay.png"))
     if drawing_understanding_path is not None:
         art.add_row("drawing understanding", str(drawing_understanding_path))
+    if sheet_classification_path is not None:
+        art.add_row("sheet classification", str(sheet_classification_path))
     if readiness_path is not None:
         art.add_row("rule input readiness", str(readiness_path))
     if review_state_path is not None:
