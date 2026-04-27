@@ -98,6 +98,10 @@ def review(
         crop_primitives_to_region,
         parse_sheet_region,
     )
+    from archkg.ingest.sheet_region_candidates import (
+        build_sheet_region_candidates,
+        write_sheet_region_candidates,
+    )
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.knowledge.run_readiness import (
         build_rule_input_readiness,
@@ -143,6 +147,14 @@ def review(
         raise typer.BadParameter(str(exc), param_hint="--sheet-region") from exc
 
     primitives = extract(pdf, points_per_meter=points_per_meter)
+    sheet_candidates = build_sheet_region_candidates(
+        primitives,
+        applied_region=crop_region,
+    )
+    sheet_candidates_path = write_sheet_region_candidates(
+        sheet_candidates,
+        out / "sheet_region_candidates.json",
+    )
     if crop_region is not None:
         primitives = crop_primitives_to_region(primitives, crop_region)
     primitives_path = write_prims(primitives, out / "primitives.json")
@@ -287,6 +299,7 @@ def review(
         stair_schedule_apply=stair_schedule_apply,
         drawing_understanding_path=drawing_understanding_path,
         readiness_path=readiness_path,
+        sheet_candidates_path=sheet_candidates_path,
     )
 
 
@@ -305,6 +318,7 @@ def _print_review_summary(
     stair_schedule_apply: Any = None,
     drawing_understanding_path: Path | None = None,
     readiness_path: Path | None = None,
+    sheet_candidates_path: Path | None = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
@@ -428,6 +442,8 @@ def _print_review_summary(
         art.add_row("drawing understanding", str(drawing_understanding_path))
     if readiness_path is not None:
         art.add_row("rule input readiness", str(readiness_path))
+    if sheet_candidates_path is not None:
+        art.add_row("sheet region candidates", str(sheet_candidates_path))
     art.add_row("issues JSON", str(out_dir / "issues.json"))
     art.add_row("annotated PDF", str(annotated_path))
     art.add_row("report MD", str(report_path))

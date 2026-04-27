@@ -13,13 +13,14 @@ Status:
 - P31 completed sheet-region manual cropping and deterministic complex fixture.
 - P32 completed intelligent plan review software research.
 - P33-01 is complete: full CLI and Studio review runs now write `rule_input_readiness.json` beside `issues.json`.
-- P33-02 is implemented in the working tree: Viewer/Studio/report surfaces render the readiness summary and old runs degrade with an explicit missing-readiness warning.
+- P33-02 is complete: Viewer/Studio/report surfaces render the readiness summary and old runs degrade with an explicit missing-readiness warning.
+- P34-01 is implemented in the working tree: full CLI and Studio review runs now write `sheet_region_candidates.json` and render candidate regions without default auto-cropping.
 
 ## Current Phase
 
-P33: Rule-input readiness dashboard.
+P34: Sheet-region candidate suggestions.
 
-P33 now has both the machine-readable artifact and reviewer-facing surfaces. After validation/commit, the next implementation phase is P34: sheet-region candidate suggestions.
+P34-01 adds advisory candidate regions for design area, title block, schedules, legends, and excluded text. The invariant is unchanged: candidates are evidence for user review; only explicit `--sheet-region` changes graph input.
 
 ## Key Decisions
 
@@ -40,4 +41,4 @@ P33 now has both the machine-readable artifact and reviewer-facing surfaces. Aft
 
 ## Next Action
 
-Validate and commit P33-02, then enter P34-01: generate sheet-region candidates with evidence summaries, without default auto-cropping.
+Validate and commit P34-01, then continue with the next P34/P35 slice: either add candidate overlay visualization or begin issue lifecycle/review-state storage.

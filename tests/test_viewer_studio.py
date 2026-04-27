@@ -251,6 +251,23 @@ def test_post_review_sheet_region_crops_primitives_and_persists_meta(
     assert "KITCHEN" not in texts
 
 
+def test_run_pipeline_renders_sheet_region_candidate_panel(tmp_path: Path) -> None:
+    out_dir = tmp_path / "out"
+    run_pipeline(REPO_ROOT / "samples" / "generated_complex_titleblock.pdf", out_dir)
+
+    candidates = json.loads((out_dir / "sheet_region_candidates.json").read_text("utf-8"))
+    assert candidates["schema_version"] == "sheet_region_candidates.v1"
+    assert any(
+        candidate["kind"] == "title_block"
+        for candidate in candidates["pages"][0]["candidates"]
+    )
+
+    html = (out_dir / "index.html").read_text("utf-8")
+    assert "候选区域" in html
+    assert "title_block" in html
+    assert "不自动裁剪" in html
+
+
 def test_post_review_min_room_area_filter_passes_through(studio_client) -> None:
     """Phase 19-D: ``min_room_area_m2`` form field threads from the
     studio form into the builder's room-area noise filter. With a 100
@@ -490,6 +507,7 @@ def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
         "primitives.json",
         "report.md",
         "rule_input_readiness.json",
+        "sheet_region_candidates.json",
         "source.pdf",
         "source_preview.png",
     ):

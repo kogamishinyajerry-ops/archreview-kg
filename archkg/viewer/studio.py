@@ -377,6 +377,10 @@ def run_pipeline(
     from archkg.ingest.raster_extractor import extract as extract_raster
     from archkg.ingest.raster_extractor import wrap_image_as_pdf
     from archkg.ingest.sheet_region import crop_primitives_to_region
+    from archkg.ingest.sheet_region_candidates import (
+        build_sheet_region_candidates,
+        write_sheet_region_candidates,
+    )
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.knowledge.run_readiness import (
         build_rule_input_readiness,
@@ -425,6 +429,11 @@ def run_pipeline(
         pdf_path = wrapped_pdf
     else:
         primitives = extract_pdf(pdf_path, points_per_meter=points_per_meter)
+    sheet_candidates = build_sheet_region_candidates(
+        primitives,
+        applied_region=sheet_region,
+    )
+    write_sheet_region_candidates(sheet_candidates, out_dir / "sheet_region_candidates.json")
     if sheet_region is not None:
         primitives = crop_primitives_to_region(primitives, sheet_region)
     write_prims(primitives, out_dir / "primitives.json")
@@ -741,6 +750,7 @@ def _render_viewer_index(
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
     from archkg.viewer.rule_readiness import load_rule_readiness_view
+    from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
 
     n_lines = sum(len(p.get("lines", [])) for p in primitives.get("pages", []))
     n_texts = sum(len(p.get("texts", [])) for p in primitives.get("pages", []))
@@ -770,6 +780,7 @@ def _render_viewer_index(
         ocr_diagnostics,
     )
     rule_readiness = load_rule_readiness_view(out_dir)
+    sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
 
     html = env.get_template("index.html.j2").render(
         source_pdf=str(source_pdf),
@@ -786,6 +797,7 @@ def _render_viewer_index(
         ocr_diagnostics=ocr_diagnostics,
         drawing_understanding=drawing_understanding,
         rule_readiness=rule_readiness,
+        sheet_region_candidates=sheet_region_candidates,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 

@@ -40,6 +40,7 @@ archkg viewer -d out
 - `entity_graph.json` — 抽出的实体图谱
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
+- `sheet_region_candidates.json` — 设计区 / 标题栏 / 排表 / 图例的候选区域和候选排除文本摘要（只建议，不自动裁剪）
 - `index.html` — viewer 渲染的查阅页
 
 ---
@@ -97,6 +98,10 @@ archkg studio
 > 是否足够运行：`ready`、`missing_input`、`low_confidence`、`manual_only`、`not_applicable` 或
 > `unsupported_entity`。它不改变 `issues.json`，只解释哪些规则缺项目字段、缺实体输入、只适合作为人工提醒，
 > 或因 ProjectMeta 适用性被跳过。结果页和 `report.md` 会显示同一份摘要，明确提示“缺输入不等于通过”。
+>
+> **候选区域**: 完整审图会生成 `sheet_region_candidates.json`，提示可能的 `design_region`、`title_block`、
+> `schedule`、`legend` 和候选排除文本。它不会自动修改 `primitives.json` 或 `entity_graph.json`；
+> 只有用户显式传 `--sheet-region x0,y0,x1,y1` 时才会真正裁剪。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 

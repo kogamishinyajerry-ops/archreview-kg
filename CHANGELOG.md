@@ -104,6 +104,10 @@ and keeps the no-OCR transparency warning.
   pre-rendered `index.html`, and standalone `archkg viewer` re-renders.
   Missing readiness artifacts degrade to an explicit "缺失 readiness 不代表通过"
   warning so old run directories stay viewable.
+- P34-01 adds `sheet_region_candidates.json` to CLI and Studio review
+  runs. The detector suggests design/title-block/schedule/legend regions
+  and excluded-text summaries, but does not crop or mutate graph input
+  unless the caller explicitly supplies `--sheet-region`.
 
 ### Still limited
 

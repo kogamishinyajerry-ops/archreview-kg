@@ -495,7 +495,7 @@
   }
   .quick-rail {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 10px;
     margin-top: 10px;
   }
@@ -638,6 +638,7 @@
 {% set layer_available = layer_available | default({'source': true, 'overlay': true, 'annotated': true}, true) %}
 {% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
+{% set sheet_region_candidates = sheet_region_candidates | default({'available': false, 'candidates': [], 'excluded_texts': [], 'warning_text': '候选区域暂无数据; 缺失 candidate artifact 不代表已裁剪或已确认.', 'unavailable_reason': 'missing'}, true) %}
 
 <header>
   <div>
@@ -694,8 +695,12 @@
       <span class="qk">03 就绪度</span>
       <div class="qv">缺输入、不适用、人工核对分清楚</div>
     </a>
+    <a class="quick-chip" href="#panel-sheet-regions">
+      <span class="qk">04 候选区域</span>
+      <div class="qv">设计区、标题栏、排表先确认</div>
+    </a>
     <a class="quick-chip" href="#panel-report">
-      <span class="qk">04 报告与条文</span>
+      <span class="qk">05 报告与条文</span>
       <div class="qv">快速打开报告与条文触达</div>
     </a>
   </div>
@@ -885,6 +890,88 @@
     </div>
     <div class="links">
       <a href="rule_input_readiness.json" target="_blank">rule_input_readiness.json</a>
+    </div>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-sheet-regions">
+  <h2>候选区域</h2>
+  {% if not sheet_region_candidates.available %}
+    <div class="alert warn">
+      <strong>候选区域暂无数据</strong>：{{ sheet_region_candidates.warning_text }}
+      {{ sheet_region_candidates.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>不自动裁剪</strong>：{{ sheet_region_candidates.warning_text }}
+      如需应用候选，请复制 design_region 的坐标重新运行 <code>--sheet-region x0,y0,x1,y1</code>。
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <h3>区域候选</h3>
+        <div class="table-wrap" style="max-height: 320px;">
+          <table>
+            <thead>
+              <tr>
+                <th>page</th>
+                <th>kind</th>
+                <th>region</th>
+                <th>confidence</th>
+                <th>reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in sheet_region_candidates.candidates %}
+                <tr>
+                  <td>{{ row.page_index }}</td>
+                  <td><span class="pill">{{ row.kind }}</span> {{ row.kind_label }}</td>
+                  <td><code>{{ row.copy_region }}</code></td>
+                  <td>{{ "%.0f"|format(row.confidence_pct) }}%</td>
+                  <td>{{ row.reason }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5">当前未生成区域候选。</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if sheet_region_candidates.omitted_candidate_count %}
+          <div class="metric-note">另有 {{ sheet_region_candidates.omitted_candidate_count }} 个候选未展开，完整数据见 <code>sheet_region_candidates.json</code>。</div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>候选排除文本摘要</h3>
+        <div class="table-wrap" style="max-height: 320px;">
+          <table>
+            <thead>
+              <tr>
+                <th>page</th>
+                <th>text</th>
+                <th>bbox</th>
+                <th>reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in sheet_region_candidates.excluded_texts %}
+                <tr>
+                  <td>{{ row.page_index }}</td>
+                  <td>{{ row.text }}</td>
+                  <td><code>{{ row.region }}</code></td>
+                  <td>{{ row.reason }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="4">当前没有候选排除文本。</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if sheet_region_candidates.omitted_excluded_count %}
+          <div class="metric-note">另有 {{ sheet_region_candidates.omitted_excluded_count }} 条文本未展开，完整数据见 <code>sheet_region_candidates.json</code>。</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="links">
+      <a href="sheet_region_candidates.json" target="_blank">sheet_region_candidates.json</a>
     </div>
   {% endif %}
 </section>
