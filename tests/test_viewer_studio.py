@@ -613,6 +613,89 @@ def test_post_review_raster_use_ocr_persists_texts_and_clears_no_ocr_warning(
     assert "栅格图无 OCR" not in body
 
 
+def test_post_review_raster_ocr_evidence_panel_and_standalone_rerender(
+    studio_client,
+    monkeypatch,
+) -> None:
+    """Phase 20-C: OCR beta must be auditable on the result page.
+
+    It is not enough to say "OCR ran"; the viewer needs to expose the
+    OCR text, confidence, and room binding hints. The same diagnostics
+    must survive standalone ``archkg viewer`` re-rendering from run
+    artifacts.
+    """
+    import fitz
+
+    from archkg.ingest import raster_extractor
+    from archkg.viewer.server import _render_index
+
+    client, state_dir = studio_client
+
+    def fake_ocr_page_image(
+        image_path: Path,
+        *,
+        keep_only_dimensions: bool = True,
+        lang: str = "ch",
+    ) -> list[TextPrimitive]:
+        del image_path, lang
+        assert keep_only_dimensions is False
+        return [
+            TextPrimitive(
+                text="卧室",
+                bbox=(140.0, 140.0, 180.0, 170.0),
+                source="ocr",
+                confidence=0.93,
+            ),
+            TextPrimitive(
+                text="疑似杂字",
+                bbox=(5000.0, 5000.0, 5030.0, 5020.0),
+                source="ocr",
+                confidence=0.42,
+            ),
+        ]
+
+    monkeypatch.setattr(raster_extractor.ocr, "ocr_page_image", fake_ocr_page_image)
+
+    doc = fitz.open(SAMPLE_PDF)
+    try:
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(200 / 72, 200 / 72), alpha=False)
+        png_bytes = pix.tobytes(output="png")
+    finally:
+        doc.close()
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(png_bytes), "plan.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "200",
+            "min_room_area_m2": "0",
+            "use_ocr": "1",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    follow = client.get(f"/runs/{run_id}/")
+    body = follow.data.decode("utf-8")
+    assert "OCR 证据面" in body
+    assert "OCR 文本" in body
+    assert "低置信度" in body
+    assert "卧室" in body
+    assert "疑似杂字" in body
+    assert "已绑定房间" in body
+    assert "未绑定" in body
+
+    index_path = _render_index(run_dir, run_dir / "source.pdf")
+    rerendered = index_path.read_text("utf-8")
+    assert "OCR 证据面" in rerendered
+    assert "卧室" in rerendered
+    assert "疑似杂字" in rerendered
+    assert "低置信度" in rerendered
+
+
 def test_get_index_drop_hint_no_false_room_schedule_remediation(studio_client) -> None:
     """Codex P20-A R3 P1 + R4 P1: the upload-page must not tell raster
     users that room_schedule.yaml can unlock anything for them. The

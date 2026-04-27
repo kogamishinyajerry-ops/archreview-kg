@@ -194,6 +194,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         json.loads(primitives_path.read_text("utf-8")) if primitives_path.exists() else {}
     )
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
 
     # Codex P19-C R2 P0: honour inspect_only mode on re-render. Without
     # this, archkg viewer re-renders an inspect_only run as a misleading
@@ -212,6 +213,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     clause_refs = _clause_refs(issues)
     issue_payload = _issue_metrics_payload(issues)
     issue_summary = issue_payload["summary"]
+    ocr_diagnostics = build_ocr_diagnostics(primitives, graph)
 
     stats = {
         "lines": n_lines,
@@ -232,6 +234,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         issue_summary=issue_summary,
         issue_metrics=issue_payload,
         clause_refs=clause_refs,
+        ocr_diagnostics=ocr_diagnostics,
         mode=mode,
         quality_flags=quality_flags,
     )

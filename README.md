@@ -78,7 +78,8 @@ archkg studio
 >
 > **栅格 OCR beta**: PNG/JPEG 上传默认不跑 OCR；如本机已安装 `.[ocr]` 可在 Studio 识图参数里勾选
 > "栅格 OCR beta"。OCR 成功返回文本时会写入 `primitives.json` 并参与房间标签绑定；
-> OCR 不可用或无结果时仍按 partial 审图降级，并明确提示 5 张 label-dependent Room 规则不会触发。
+> 结果页会显示 OCR 证据面（文本、置信度、绑定房间、低置信度提示）。OCR 不可用或无结果时仍按
+> partial 审图降级，并明确提示 5 张 label-dependent Room 规则不会触发。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 

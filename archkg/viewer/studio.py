@@ -689,6 +689,7 @@ def _render_viewer_index(
         json.loads(primitives_path.read_text("utf-8")) if primitives_path.exists() else {}
     )
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
 
     n_lines = sum(len(p.get("lines", [])) for p in primitives.get("pages", []))
     n_texts = sum(len(p.get("texts", [])) for p in primitives.get("pages", []))
@@ -710,6 +711,7 @@ def _render_viewer_index(
     issue_summary = issue_payload["summary"]
     clause_refs = _clause_refs(issues)
     knowledge_overview = _knowledge_overview()
+    ocr_diagnostics = build_ocr_diagnostics(primitives, graph)
 
     html = env.get_template("index.html.j2").render(
         source_pdf=str(source_pdf),
@@ -723,6 +725,7 @@ def _render_viewer_index(
         issue_summary=issue_summary,
         issue_metrics=issue_payload,
         clause_refs=clause_refs,
+        ocr_diagnostics=ocr_diagnostics,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 

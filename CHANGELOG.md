@@ -28,11 +28,16 @@ and keeps the no-OCR transparency warning.
   `tests/test_ingest_raster_ocr.py` verifies opt-in extraction and
   OCR label binding, while `tests/test_viewer_studio.py` verifies the
   Studio toggle, run metadata, and warning behavior.
+- `archkg.viewer.ocr_diagnostics` adds a shared OCR evidence payload
+  for both Studio pre-rendering and standalone `archkg viewer`
+  re-rendering. Result pages now show OCR text count, bound-room count,
+  low-confidence count, and sample OCR rows with confidence / bbox /
+  room binding state.
 
 ### Still limited
 
 - OCR accuracy is not claimed. Users must inspect the entity overlay
-  and OCR-bound labels before trusting label-dependent rules.
+  and the OCR evidence panel before trusting label-dependent rules.
 - `room_schedule.yaml` still cannot patch label-less raster rooms; it
   remains a vector-PDF path because it selects existing `room_id` or
   `label`.

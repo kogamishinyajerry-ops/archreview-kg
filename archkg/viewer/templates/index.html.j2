@@ -186,6 +186,33 @@
   }
   .risk-item b { font-size: 22px; display: block; }
   .risk-item .t { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .evidence-list {
+    display: grid;
+    gap: 8px;
+  }
+  .evidence-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.9fr) minmax(90px, 0.5fr) minmax(130px, 0.8fr) minmax(130px, 1fr);
+    gap: 10px;
+    align-items: center;
+    border: 1px solid rgba(76, 104, 150, 0.32);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.025);
+  }
+  .evidence-row .text {
+    font-weight: 700;
+    color: #eaf0f8;
+    word-break: break-word;
+  }
+  .evidence-row .sub {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .evidence-row.low {
+    border-color: rgba(255, 184, 75, 0.45);
+    background: rgba(255, 184, 75, 0.08);
+  }
 
   .metric-grid {
     margin-top: 12px;
@@ -765,8 +792,65 @@
   </div>
 </section>
 
+{% if ocr_diagnostics is defined and ocr_diagnostics.text_count %}
+<section class="panel full" id="panel-ocr">
+  <h2>⑥ OCR 证据面</h2>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="k">OCR 文本</div>
+      <div class="v">{{ ocr_diagnostics.text_count }}</div>
+    </div>
+    <div class="kpi ok">
+      <div class="k">已绑定房间</div>
+      <div class="v">{{ ocr_diagnostics.bound_room_count }}</div>
+    </div>
+    <div class="kpi warn">
+      <div class="k">低置信度</div>
+      <div class="v">{{ ocr_diagnostics.low_confidence_count }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">已有 label 的 Room</div>
+      <div class="v">{{ ocr_diagnostics.labeled_room_count }}</div>
+    </div>
+  </div>
+  <div class="metric-note" style="margin-top: 10px;">
+    OCR beta 只提供识别证据，不代表自动合规结论。低置信度阈值：
+    {{ "%.0f"|format(ocr_diagnostics.low_confidence_threshold * 100) }}%。
+  </div>
+  <div class="evidence-list" style="margin-top: 12px;">
+    {% for row in ocr_diagnostics.rows %}
+      <div class="evidence-row {% if row.low_confidence %}low{% endif %}">
+        <div>
+          <div class="text">{{ row.text }}</div>
+          <div class="sub">bbox {{ row.bbox_text }}</div>
+        </div>
+        <div>
+          <div class="sub">置信度</div>
+          <div>{{ "%.0f"|format(row.confidence_pct) }}%</div>
+        </div>
+        <div>
+          <span class="pill">{{ row.binding_state }}</span>
+        </div>
+        <div class="sub">
+          {% if row.room_id %}
+            {{ row.room_id }} · {{ row.room_label or "未分类" }}
+          {% else %}
+            未绑定到任何 Room polygon
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% if ocr_diagnostics.omitted_count %}
+    <div class="metric-note" style="margin-top: 10px;">
+      另有 {{ ocr_diagnostics.omitted_count }} 条 OCR 文本未在此面板展示；完整数据见 primitives.json。
+    </div>
+  {% endif %}
+</section>
+{% endif %}
+
 <section class="panel">
-  <h2>⑥ 知识库快照</h2>
+  <h2>⑦ 知识库快照</h2>
   {% if knowledge_overview.error %}
     <div class="alert warn">知识库字段读取失败：{{ knowledge_overview.error }}</div>
   {% else %}
