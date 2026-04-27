@@ -116,6 +116,12 @@ and keeps the no-OCR transparency warning.
   Studio, and `archkg feedback` now render or update candidate /
   confirmed / rejected / needs_info / resolved / superseded states
   without mutating the rule output.
+- P36-01 adds the optional IFC/IDS side lane:
+  `archkg ifc validate --ifc model.ifc --ids requirements.ids -o out/ifc`.
+  When IfcOpenShell/IfcTester is installed it writes
+  `ids_report_raw.json`, `ifc_validation.json`, and `ifc_issues.json`.
+  Missing optional dependencies degrade with a clear message and do not
+  affect the PDF review pipeline.
 
 ### Still limited
 

@@ -16,13 +16,14 @@ Status:
 - P33-02 is complete: Viewer/Studio/report surfaces render the readiness summary and old runs degrade with an explicit missing-readiness warning.
 - P34-01 is complete: full CLI and Studio review runs now write `sheet_region_candidates.json` and render candidate regions without default auto-cropping.
 - P34-02 is complete: candidate boxes are rendered into `sheet_region_candidates_overlay.png` and shown in the result page.
-- P35-01 is implemented in the working tree: full CLI and Studio review runs now write `review_state.json`, while `issues.json` stays the rule-engine candidate output.
+- P35-01 is complete: full CLI and Studio review runs now write `review_state.json`, while `issues.json` stays the rule-engine candidate output.
+- P36-01 is implemented in the working tree: `archkg ifc validate` provides an optional IFC/IDS side lane with separate artifacts and clean missing-dependency degradation.
 
 ## Current Phase
 
-P35: Issue lifecycle and review state.
+P36: IFC/IDS side lane.
 
-P35-01 now separates candidate findings from human lifecycle state. Report, Viewer, Studio, and feedback can show or update review status without rewriting rule-engine evidence.
+P36-01 now adds an independent openBIM validation lane. It writes `ids_report_raw.json`, `ifc_validation.json`, and `ifc_issues.json` only under the IFC output directory; it does not touch PDF review `issues.json`.
 
 ## Key Decisions
 
@@ -38,9 +39,9 @@ P35-01 now separates candidate findings from human lifecycle state. Report, View
 - Static readiness tiers can still drift from actual run evidence if future builder inputs are added without extending readiness coverage and tests.
 - Sheet-region candidates can cause silent false negatives if automatic cropping becomes default too early.
 - Feedback/report editing can drift if legacy `open` status is not normalized; keep compatibility tests around `open -> candidate`.
-- IFC dependencies may be heavy or optional; P36 must degrade cleanly.
+- Real IfcTester JSON shapes can vary by installed version; keep adapter tests around raw-report normalization and issue mapping.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Validate and commit P35-01, then inspect whether P35 needs a second plan for cross-run supersession workflows before entering P36.
+Validate and commit P36-01, then enter P37-01 rule-card authoring / citation assistant unless a real IFC dependency integration test is requested.

@@ -54,6 +54,14 @@ archkg studio
 ```
 
 打开后:
+
+## IFC/IDS Side Lane（可选）
+
+```bash
+archkg ifc validate --ifc model.ifc --ids requirements.ids -o out/ifc
+```
+
+该路径独立于 PDF 图纸识别流水线。安装 IfcOpenShell/IfcTester 后会写出 `ids_report_raw.json`、`ifc_validation.json` 和 `ifc_issues.json`；缺少可选依赖时 CLI 会清晰降级提示，PDF 审图命令不受影响。
 1. **拖** PDF 平面图到上方框
 2. 展开 "ProjectMeta YAML" / "房间排表 YAML" / "楼梯排表 YAML" 区块, 选填本项目的 YAML（不填也能跑, 只触发 4 张直判规则）
 3. 点 "▶ 跑审图"
@@ -305,7 +313,7 @@ archkg clause readiness
 - P33：Rule-input readiness dashboard。每次 run 说明每张规则为什么 ready / missing / low confidence / manual-only / not applicable。
 - P34：sheet-region 自动候选建议。先输出候选区域和排除证据，不默认自动裁剪。
 - P35：issue lifecycle / review state。规则引擎输出 candidate，人审状态写入 `review_state.json`，再 confirmed / rejected / needs_info / resolved / superseded。
-- P36：IFC/IDS side lane。优先复用 IfcOpenShell / IfcTester，不重造完整 BIM checker。
+- P36：IFC/IDS side lane。`archkg ifc validate` 复用 IfcOpenShell / IfcTester，不重造完整 BIM checker，输出独立 IFC evidence artifacts。
 - P37：rule-card authoring / citation assistant。AI 只产 draft，人工确认前不进入 active rule_cards。
 
 ---

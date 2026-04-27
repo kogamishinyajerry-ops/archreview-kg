@@ -8,6 +8,11 @@ from archkg.schemas.entity import (
     Stair,
     Wall,
 )
+from archkg.schemas.ifc_validation import (
+    IfcIdsIssue,
+    IfcIdsValidationReport,
+    IfcIdsValidationStatus,
+)
 from archkg.schemas.issue import Issue, IssueEvidence, Severity
 from archkg.schemas.primitives import (
     LinePrimitive,
@@ -50,6 +55,9 @@ __all__ = [
     "EntityType",
     "FireClass",
     "HeightClass",
+    "IfcIdsIssue",
+    "IfcIdsValidationReport",
+    "IfcIdsValidationStatus",
     "Issue",
     "IssueEvidence",
     "IssueReviewState",

@@ -757,6 +757,53 @@ adversarial_app = typer.Typer(
 app.add_typer(adversarial_app, name="adversarial")
 
 
+ifc_app = typer.Typer(
+    help="Optional openBIM IFC/IDS validation lane.",
+    no_args_is_help=True,
+)
+app.add_typer(ifc_app, name="ifc")
+
+
+@ifc_app.command("validate")
+def ifc_validate(
+    ifc_path: Path = typer.Option(
+        ...,
+        "--ifc",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="IFC model file to validate.",
+    ),
+    ids_path: Path = typer.Option(
+        ...,
+        "--ids",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="IDS requirements file.",
+    ),
+    out: Path = typer.Option(
+        Path("out/ifc"),
+        "-o",
+        "--out",
+        help="Output directory for IFC-side artifacts.",
+    ),
+) -> None:
+    """Validate an IFC model against IDS without touching PDF review artifacts."""
+    from archkg.ifc.ids_validator import IfcIdsDependencyError, validate_ifc_ids
+
+    try:
+        result = validate_ifc_ids(ifc_path=ifc_path, ids_path=ids_path, out_dir=out)
+    except IfcIdsDependencyError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"status={result.status} issues={result.issue_count}")
+    typer.echo(f"wrote {result.raw_report_path}")
+    typer.echo(f"wrote {result.issues_path}")
+    typer.echo(f"wrote {out / 'ifc_validation.json'}")
+
+
 @adversarial_app.command("run")
 def adversarial_run(
     battery_size: int = typer.Option(
