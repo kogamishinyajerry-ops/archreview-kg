@@ -26,6 +26,9 @@ SAMPLE_PDF = REPO_ROOT / "samples" / "sample_clean.pdf"
 SAMPLE_META = REPO_ROOT / "samples" / "project_meta_demo.yaml"
 SAMPLE_ROOM = REPO_ROOT / "samples" / "room_schedule_demo.yaml"
 SAMPLE_STAIR = REPO_ROOT / "samples" / "stair_schedule_demo.yaml"
+RASTER_FIXTURE_200DPI = (
+    REPO_ROOT / "tests" / "fixtures" / "raster_suite" / "sample_raster_200dpi.png"
+)
 
 
 @pytest.fixture
@@ -714,6 +717,118 @@ def test_post_review_raster_ocr_evidence_panel_and_standalone_rerender(
     assert "客厅" in rerendered
     assert "低置信度" in rerendered
     assert "OCR label QA 候选" in rerendered
+
+
+def _p21_fixture_ocr_texts() -> list[TextPrimitive]:
+    """Deterministic OCR payload for fixture-based raster regression tests."""
+    return [
+        TextPrimitive(
+            text="卧室",
+            bbox=(820.0, 130.0, 900.0, 170.0),
+            source="ocr",
+            confidence=0.95,
+        ),
+        TextPrimitive(
+            text="厨房",
+            bbox=(200.0, 120.0, 270.0, 170.0),
+            source="ocr",
+            confidence=0.95,
+        ),
+        TextPrimitive(
+            text="客厅",
+            bbox=(800.0, 840.0, 900.0, 890.0),
+            source="ocr",
+            confidence=0.95,
+        ),
+        TextPrimitive(
+            text="卫生间",
+            bbox=(200.0, 840.0, 280.0, 890.0),
+            source="ocr",
+            confidence=0.95,
+        ),
+        TextPrimitive(
+            text="卧室",
+            bbox=(810.0, 140.0, 900.0, 180.0),
+            source="ocr",
+            confidence=0.45,
+        ),
+        TextPrimitive(
+            text="厨房",
+            bbox=(1500.0, 1500.0, 1580.0, 1580.0),
+            source="ocr",
+            confidence=0.96,
+        ),
+    ]
+
+
+def test_post_review_raster_fixture_ocr_candidate_panel_and_json_signal(
+    studio_client,
+    monkeypatch,
+) -> None:
+    """P21: lock OCR evidence panel + candidate accounting on a real raster fixture.
+
+    The fixture is a real 200-DPI rendered input (not synthetic geometry),
+    while OCR remains deterministic via monkeypatch so CI stays dependency-free.
+    """
+    import json
+
+    from archkg.ingest import raster_extractor
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.server import _render_index
+
+    client, state_dir = studio_client
+    ocr_texts = _p21_fixture_ocr_texts()
+
+    def fake_ocr_page_image(
+        image_path: Path,
+        *,
+        keep_only_dimensions: bool = True,
+        lang: str = "ch",
+    ) -> list[TextPrimitive]:
+        del image_path, lang
+        assert keep_only_dimensions is False
+        return ocr_texts
+
+    monkeypatch.setattr(raster_extractor.ocr, "ocr_page_image", fake_ocr_page_image)
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(RASTER_FIXTURE_200DPI.read_bytes()), "sample_raster_200dpi.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "200",
+            "min_room_area_m2": "0",
+            "use_ocr": "1",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    follow = client.get(f"/runs/{run_id}/")
+    body = follow.data.decode("utf-8")
+    assert "OCR 证据面" in body
+    assert "OCR label QA 候选" in body
+    assert "低置信度 label" in body
+    assert "未绑定高置信度 label" in body
+    assert "不会自动修改 Room.label，也不会改变规则结论" in body
+
+    primitives = json.loads((run_dir / "primitives.json").read_text("utf-8"))
+    graph = json.loads((run_dir / "entity_graph.json").read_text("utf-8"))
+    diagnostics = build_ocr_diagnostics(primitives, graph)
+    assert diagnostics["text_count"] == len(ocr_texts)
+    assert diagnostics["qa_candidate_count"] == 2
+    assert diagnostics["low_confidence_label_count"] == 1
+    assert diagnostics["unbound_high_confidence_label_count"] == 1
+    # QA candidates should stay in evidence view, not become rule outcomes.
+    issues = (run_dir / "issues.json").read_text("utf-8")
+    assert "label 冲突" not in issues
+    assert "低置信度" not in issues
+
+    index_text = _render_index(run_dir, run_dir / "source.pdf").read_text("utf-8")
+    assert "OCR 证据面" in index_text
+    assert "OCR label QA 候选" in index_text
 
 
 def test_get_index_drop_hint_no_false_room_schedule_remediation(studio_client) -> None:

@@ -117,3 +117,40 @@ def test_build_ocr_diagnostics_marks_label_qa_candidates() -> None:
     assert candidates[1]["text"] == "客厅"
     assert candidates[1]["room_id"] is None
     assert candidates[2]["normalized_label"] == "bathroom"
+
+
+def test_build_ocr_diagnostics_truncates_rows_and_qa_candidates() -> None:
+    primitives = {
+        "pages": [
+            {
+                "texts": [
+                    {
+                        "text": f"卧室_{idx}",
+                        "bbox": [10 + idx * 5, 10 + idx * 2, 20 + idx * 5, 20 + idx * 2],
+                        "source": "ocr",
+                        "confidence": 0.96,
+                    }
+                    for idx in range(14)
+                ]
+            }
+        ]
+    }
+    graph = {
+        "rooms": [
+            {
+                "id": "room-1",
+                "label": "kitchen",
+                "polygon": [[0, 0], [150, 0], [150, 80], [0, 80]],
+            }
+        ]
+    }
+
+    diagnostics = build_ocr_diagnostics(primitives, graph, limit=12)
+
+    assert diagnostics["text_count"] == 14
+    assert diagnostics["displayed_count"] == 12
+    assert diagnostics["omitted_count"] == 2
+    assert diagnostics["bound_room_count"] == 14
+    assert diagnostics["qa_candidate_count"] == 14
+    assert diagnostics["qa_omitted_count"] == 2
+    assert diagnostics["qa_candidates"][0]["reason_code"] == "label_conflict"
