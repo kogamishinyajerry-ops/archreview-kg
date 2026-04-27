@@ -41,6 +41,7 @@ archkg viewer -d out
 - `entity_graph.json` — 抽出的实体图谱
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `sheet_graphs.json` — 每个高置信 plan sheet 的独立 graph 证据输出；P39-01 不把多 plan 页合并进主规则结论
+- `sheet_issues.json` — 每个 plan sheet 的候选问题 preview；P39-02 不写入主 `issues.json` / `review_state.json`
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
 - `sheet_classification.json` — 多页图纸 sheet 类型分类（plan / schedule / title / legend / detail / elevation / unknown），只做路由证据，不自动跳页
 - `sheet_routing.json` — 受保护 graph 路由决策；只有高置信单一 plan 页场景才过滤非 graph 页，否则回退 legacy 全页输入
@@ -125,7 +126,9 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > `sheet_routing.json`：只有“多页、恰好一个高置信 plan、其余页都是高置信非 graph 类型”时，
 > 才把 graph 输入收窄到该 plan 页；unknown、低置信或多个 plan 页会回退 legacy 全页输入。
 > 另会生成 `sheet_graphs.json`，对每个高置信 plan sheet 独立 build graph，作为多页图纸理解证据；
-> P39-01 不把这些 per-sheet graph 自动合并成最终违规结论。
+> P39-01 不把这些 per-sheet graph 自动合并成最终违规结论。P39-02 起还会生成
+> `sheet_issues.json`，按 sheet graph 运行规则得到候选问题 preview；它不写入主 `issues.json`
+> 或 `review_state.json`，避免多页候选和人工复核状态混在一起。
 >
 > **候选区域**: 完整审图会生成 `sheet_region_candidates.json`，提示可能的 `design_region`、`title_block`、
 > `schedule`、`legend` 和候选排除文本。它不会自动修改 `primitives.json` 或 `entity_graph.json`；
@@ -334,7 +337,7 @@ archkg clause readiness
 - P36：IFC/IDS side lane。`archkg ifc validate` 复用 IfcOpenShell / IfcTester，不重造完整 BIM checker，输出独立 IFC evidence artifacts。
 - P37：rule-card authoring / citation assistant。`archkg rule-card draft` 只产 `rule_card_draft.v1` 草稿，人工确认前不进入 active rule_cards。
 - P38：multi-sheet classification。`sheet_classification.json` 先把多页套图中的 plan / schedule / title / legend / detail / elevation / unknown 作为路由证据展示；`sheet_routing.json` 再以保守条件把单一高置信 plan 页送入 graph，否则回退 legacy 全页输入。
-- P39：multi-plan graph outputs。`sheet_graphs.json` 为每个高置信 plan sheet 生成独立 graph 证据，先解决复杂套图“只看第一页”的盲点；主 `entity_graph.json` 和规则结论暂不自动聚合多 plan 页。
+- P39：multi-plan graph outputs。`sheet_graphs.json` 为每个高置信 plan sheet 生成独立 graph 证据；`sheet_issues.json` 生成 per-sheet candidate issue preview。主 `entity_graph.json`、`issues.json` 和 `review_state.json` 暂不自动聚合多 plan 页。
 
 ---
 

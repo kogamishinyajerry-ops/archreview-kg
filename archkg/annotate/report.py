@@ -39,6 +39,7 @@ def render(
     sheet_classification: dict[str, Any] | None = None,
     sheet_routing: dict[str, Any] | None = None,
     sheet_graphs: dict[str, Any] | None = None,
+    sheet_issues: dict[str, Any] | None = None,
     review_state: IssueReviewState | dict[str, Any] | None = None,
 ) -> Path:
     used_ids = {i.standard_clause_id for i in issues}
@@ -79,6 +80,7 @@ def render(
         sheet_classification=sheet_classification,
         sheet_routing=sheet_routing,
         sheet_graphs=sheet_graphs,
+        sheet_issues=sheet_issues,
         review_state=review_state_model.model_dump(mode="json"),
     )
     out_md.parent.mkdir(parents=True, exist_ok=True)

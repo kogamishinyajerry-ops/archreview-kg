@@ -101,7 +101,7 @@ Goal: handle larger real sheet sets with better source classification and benchm
 
 - Build a separate graph for each high-confidence plan sheet.
 - Keep primary `entity_graph.json` and rule-engine output stable until aggregation semantics are explicit.
-- Surface per-sheet graph counts and skipped-page reasons in Viewer/Studio/report.
+- Surface per-sheet graph counts, skipped-page reasons, and per-sheet issue preview in Viewer/Studio/report.
 
 ### P40: Real Drawing Benchmark Expansion
 

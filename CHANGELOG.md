@@ -146,6 +146,11 @@ and keeps the no-OCR transparency warning.
   and render the per-sheet graph counts in Viewer/Studio/report surfaces.
   The primary `entity_graph.json` and rule-engine issue output remain
   unchanged in this slice.
+- P39-02 adds `sheet_issues.json` as a per-sheet issue preview artifact.
+  It evaluates the existing rule cards against each `sheet_graphs.json`
+  plan graph and groups candidate issues by page. This preview is rendered
+  in Viewer/Studio/report surfaces but is not merged into primary
+  `issues.json` or `review_state.json`.
 
 ### Still limited
 

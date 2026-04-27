@@ -398,6 +398,7 @@ def run_pipeline(
     )
     from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
+    from archkg.rules.sheet_issues import build_sheet_issues, write_sheet_issues
     from archkg.schemas import ProjectMeta
     from archkg.viewer.drawing_understanding import (
         build_drawing_understanding,
@@ -632,6 +633,13 @@ def run_pipeline(
 
     standards = load_standards()
     rules = load_rules(standards=standards)
+    sheet_issues = build_sheet_issues(
+        sheet_graphs,
+        rules,
+        standards,
+        project_meta=meta,
+    )
+    write_sheet_issues(sheet_issues, out_dir / "sheet_issues.json")
     result = evaluate(graph, rules, standards, project_meta=meta)
     rule_readiness = build_rule_input_readiness(
         graph,
@@ -667,6 +675,7 @@ def run_pipeline(
         sheet_classification=sheet_classification.model_dump(mode="json"),
         sheet_routing=routing.decision.model_dump(mode="json"),
         sheet_graphs=sheet_graphs.model_dump(mode="json"),
+        sheet_issues=sheet_issues.model_dump(mode="json"),
         review_state=review_state,
     )
 
@@ -795,6 +804,7 @@ def _render_viewer_index(
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
     from archkg.viewer.sheet_graphs import load_sheet_graphs_view
+    from archkg.viewer.sheet_issues import load_sheet_issues_view
     from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
     from archkg.viewer.sheet_routing import load_sheet_routing_view
 
@@ -829,6 +839,7 @@ def _render_viewer_index(
     review_state = load_review_state_view(out_dir, issues)
     sheet_classification = load_sheet_classification_view(out_dir)
     sheet_graphs = load_sheet_graphs_view(out_dir)
+    sheet_issues = load_sheet_issues_view(out_dir)
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
 
@@ -850,6 +861,7 @@ def _render_viewer_index(
         review_state=review_state,
         sheet_classification=sheet_classification,
         sheet_graphs=sheet_graphs,
+        sheet_issues=sheet_issues,
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
     )

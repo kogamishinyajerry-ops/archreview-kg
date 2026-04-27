@@ -23,6 +23,7 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "entity_graph.json",
         "drawing_understanding.json",
         "sheet_graphs.json",
+        "sheet_issues.json",
         "sheet_classification.json",
         "sheet_routing.json",
         "rule_input_readiness.json",
@@ -55,6 +56,9 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     sheet_graphs = json.loads((out_dir / "sheet_graphs.json").read_text("utf-8"))
     assert sheet_graphs["schema_version"] == "sheet_graphs.v1"
     assert sheet_graphs["graph_count"] == 1
+    sheet_issues = json.loads((out_dir / "sheet_issues.json").read_text("utf-8"))
+    assert sheet_issues["schema_version"] == "sheet_issues.v1"
+    assert sheet_issues["sheet_count"] == 1
 
     issues = json.loads((out_dir / "issues.json").read_text(encoding="utf-8"))
     review_state = json.loads((out_dir / "review_state.json").read_text(encoding="utf-8"))
@@ -154,6 +158,12 @@ def test_review_writes_sheet_graphs_for_multiple_plan_pages(
     assert [entry["graph"]["page_index"] for entry in payload["graphs"]] == [0, 1]
     assert all(entry["component_counts"]["rooms"] >= 1 for entry in payload["graphs"])
 
+    sheet_issues = json.loads((out_dir / "sheet_issues.json").read_text("utf-8"))
+    assert sheet_issues["schema_version"] == "sheet_issues.v1"
+    assert sheet_issues["sheet_count"] == 2
+    assert [group["page_index"] for group in sheet_issues["sheets"]] == [0, 1]
+    assert all(group["issue_count"] >= 2 for group in sheet_issues["sheets"])
+
 
 def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> None:
     runner = CliRunner()
@@ -172,6 +182,8 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "sheet_routing.json" in md
     assert "Sheet Graphs" in md
     assert "sheet_graphs.json" in md
+    assert "Sheet Issue Preview" in md
+    assert "sheet_issues.json" in md
     assert "Issue 生命周期" in md
     # Should contain reviewer/status placeholder columns
     assert "reviewer" in md

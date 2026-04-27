@@ -502,14 +502,17 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "Sheet 分类" in body
     assert "Sheet 路由" in body
     assert "Sheet Graphs" in body
+    assert "Sheet Issue Preview" in body
     assert "平面图" in body
     assert "sheet_classification.json" in body
     assert "sheet_routing.json" in body
     assert "sheet_graphs.json" in body
+    assert "sheet_issues.json" in body
 
     (out_dir / "sheet_classification.json").unlink()
     (out_dir / "sheet_routing.json").unlink()
     (out_dir / "sheet_graphs.json").unlink()
+    (out_dir / "sheet_issues.json").unlink()
     index_path = _render_index(out_dir, SAMPLE_PDF)
     body = index_path.read_text("utf-8")
 
@@ -519,6 +522,8 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "缺失路由不代表已按 sheet 类型过滤" in body
     assert "sheet_graphs.json 暂无数据" in body
     assert "缺失多页 graph 不代表没有其他 plan sheet" in body
+    assert "sheet_issues.json 暂无数据" in body
+    assert "缺失 per-sheet issue preview 不代表多页无候选问题" in body
 
 
 def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:

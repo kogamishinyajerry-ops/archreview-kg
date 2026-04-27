@@ -200,6 +200,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
     from archkg.viewer.sheet_graphs import load_sheet_graphs_view
+    from archkg.viewer.sheet_issues import load_sheet_issues_view
     from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
     from archkg.viewer.sheet_routing import load_sheet_routing_view
 
@@ -231,6 +232,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     review_state = load_review_state_view(out_dir, issues)
     sheet_classification = load_sheet_classification_view(out_dir)
     sheet_graphs = load_sheet_graphs_view(out_dir)
+    sheet_issues = load_sheet_issues_view(out_dir)
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
 
@@ -259,6 +261,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         review_state=review_state,
         sheet_classification=sheet_classification,
         sheet_graphs=sheet_graphs,
+        sheet_issues=sheet_issues,
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
         mode=mode,

@@ -112,6 +112,21 @@ sheet_graphs.json 暂无数据；缺失多页 graph 不代表没有其他 plan s
 graph_count: {{ sheet_graphs.graph_count }}。完整数据见 `sheet_graphs.json`。
 {% endif %}
 
+## Sheet Issue Preview
+
+{% if not sheet_issues %}
+sheet_issues.json 暂无数据；缺失 per-sheet issue preview 不代表多页无候选问题。
+{% else %}
+> Per-sheet issue preview 只作多 plan 页候选问题预览；P39-02 不写入主 `issues.json` 或 `review_state.json`。
+
+| page | candidate issues | skipped rules |
+|---|---:|---:|
+{% for sheet in sheet_issues.sheets %}| {{ sheet.page_index }} | {{ sheet.issue_count }} | {{ sheet.skipped_rule_count }} |
+{% endfor %}
+
+sheet_count: {{ sheet_issues.sheet_count }}；issue_count: {{ sheet_issues.issue_count }}。完整数据见 `sheet_issues.json`。
+{% endif %}
+
 ## Issue 生命周期
 
 `issues.json` 是规则引擎输出的候选观察，默认状态为 `candidate`；人工确认、驳回、补信息、解决或被新 run 替代的状态写入 `review_state.json`，不回写到 `issues.json`。

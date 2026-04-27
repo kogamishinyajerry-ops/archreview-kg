@@ -119,6 +119,7 @@ def review(
     )
     from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
+    from archkg.rules.sheet_issues import build_sheet_issues, write_sheet_issues
     from archkg.schemas import ProjectMeta
     from archkg.viewer.drawing_understanding import (
         build_drawing_understanding,
@@ -290,6 +291,13 @@ def review(
 
     standards = load_standards()
     rules = load_rules(standards=standards)
+    sheet_issues = build_sheet_issues(
+        sheet_graphs,
+        rules,
+        standards,
+        project_meta=meta,
+    )
+    sheet_issues_path = write_sheet_issues(sheet_issues, out / "sheet_issues.json")
     result = evaluate(graph, rules, standards, project_meta=meta)
     rule_readiness = build_rule_input_readiness(
         graph,
@@ -328,6 +336,7 @@ def review(
         sheet_classification=sheet_classification.model_dump(mode="json"),
         sheet_routing=routing.decision.model_dump(mode="json"),
         sheet_graphs=sheet_graphs.model_dump(mode="json"),
+        sheet_issues=sheet_issues.model_dump(mode="json"),
         review_state=review_state,
     )
     _print_review_summary(
@@ -344,6 +353,7 @@ def review(
         stair_schedule_apply=stair_schedule_apply,
         drawing_understanding_path=drawing_understanding_path,
         sheet_graphs_path=sheet_graphs_path,
+        sheet_issues_path=sheet_issues_path,
         sheet_classification_path=sheet_classification_path,
         sheet_routing_path=sheet_routing_path,
         readiness_path=readiness_path,
@@ -368,6 +378,7 @@ def _print_review_summary(
     stair_schedule_apply: Any = None,
     drawing_understanding_path: Path | None = None,
     sheet_graphs_path: Path | None = None,
+    sheet_issues_path: Path | None = None,
     sheet_classification_path: Path | None = None,
     sheet_routing_path: Path | None = None,
     readiness_path: Path | None = None,
@@ -497,6 +508,8 @@ def _print_review_summary(
         art.add_row("drawing understanding", str(drawing_understanding_path))
     if sheet_graphs_path is not None:
         art.add_row("sheet graphs", str(sheet_graphs_path))
+    if sheet_issues_path is not None:
+        art.add_row("sheet issue preview", str(sheet_issues_path))
     if sheet_classification_path is not None:
         art.add_row("sheet classification", str(sheet_classification_path))
     if sheet_routing_path is not None:
