@@ -121,6 +121,8 @@ archkg studio
   standalone `archkg viewer` 从 run artifacts 重渲染时也保留该证据面。
 - OCR 证据面新增 label QA candidates：label 冲突、未绑定高置信度 label、低置信度 label
   只作为人工复核提示，不自动修改 `Room.label`，也不改变规则结论。
+- OCR 数字文本新增 Door/Corridor 尺寸绑定证据：展示 OCR 值、绑定实体与实体当前尺寸值；
+  这是对既有 dimension binding 路径的审计展示，不新增合规输出通道。
 - OCR 不作为默认依赖；本机未安装 PaddleOCR 或 OCR 返回空时，流水线不崩溃，
   继续按 partial 审图降级，并保留 "栅格图无 OCR" 质量提示。
 - 这不是 production OCR 准确率承诺。OCR-bound room labels 仍需人工核对，

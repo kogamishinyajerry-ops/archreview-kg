@@ -850,6 +850,54 @@
       </div>
     {% endif %}
   {% endif %}
+  {% if ocr_diagnostics.dimension_text_count %}
+    <div class="metric-note" style="margin-top: 12px;">
+      <strong>OCR 尺寸绑定证据</strong>：以下展示 OCR 数字文本与 Door/Corridor 的绑定关系；这是实体尺寸证据，不是单独的合规结论。
+    </div>
+    <div class="kpis" style="margin-top: 10px;">
+      <div class="kpi">
+        <div class="k">OCR 尺寸文本</div>
+        <div class="v">{{ ocr_diagnostics.dimension_text_count }}</div>
+      </div>
+      <div class="kpi ok">
+        <div class="k">已绑定实体</div>
+        <div class="v">{{ ocr_diagnostics.bound_dimension_count }}</div>
+      </div>
+      <div class="kpi warn">
+        <div class="k">未绑定尺寸</div>
+        <div class="v">{{ ocr_diagnostics.unbound_dimension_count }}</div>
+      </div>
+    </div>
+    <div class="evidence-list" style="margin-top: 10px;">
+      {% for row in ocr_diagnostics.dimension_rows %}
+        <div class="evidence-row {% if not row.target_id %}low{% endif %}">
+          <div>
+            <div class="text">{{ row.text }}</div>
+            <div class="sub">bbox {{ row.bbox_text }}</div>
+          </div>
+          <div>
+            <div class="sub">OCR 值</div>
+            <div>{{ row.value_text }}</div>
+          </div>
+          <div>
+            <span class="pill">{{ row.binding_state }}</span>
+          </div>
+          <div class="sub">
+            {% if row.target_id %}
+              {{ row.target_id }} · entity={{ row.target_value_text }}
+            {% else %}
+              未匹配到 1m 内的 Door/Corridor
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% if ocr_diagnostics.dimension_omitted_count %}
+      <div class="metric-note" style="margin-top: 10px;">
+        另有 {{ ocr_diagnostics.dimension_omitted_count }} 条 OCR 尺寸文本未在此面板展示；完整数据见 primitives.json 与 entity_graph.json。
+      </div>
+    {% endif %}
+  {% endif %}
   <div class="evidence-list" style="margin-top: 12px;">
     {% for row in ocr_diagnostics.rows %}
       <div class="evidence-row {% if row.low_confidence %}low{% endif %}">

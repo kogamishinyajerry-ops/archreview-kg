@@ -13,7 +13,12 @@ from typing import Any
 
 from shapely.geometry import Point, Polygon
 
-from archkg.graph.builder import LABEL_KEYWORDS
+from archkg.graph.builder import (
+    CORRIDOR_KEYWORDS,
+    DIM_VALUE_RE,
+    DOOR_KEYWORDS,
+    LABEL_KEYWORDS,
+)
 
 LOW_CONFIDENCE_THRESHOLD = 0.70
 HIGH_CONFIDENCE_LABEL_THRESHOLD = 0.85
@@ -37,9 +42,13 @@ def build_ocr_diagnostics(
     """
     ocr_texts = _ocr_texts(primitives)
     rooms = _rooms(graph)
+    doors = _entities(graph, "doors")
+    corridors = _entities(graph, "corridors")
+    ppm = _points_per_meter(primitives, graph)
 
     rows: list[dict[str, Any]] = []
     qa_candidates: list[dict[str, Any]] = []
+    dimension_rows: list[dict[str, Any]] = []
     low_confidence_count = 0
     bound_room_count = 0
     label_conflict_count = 0
@@ -55,9 +64,24 @@ def build_ocr_diagnostics(
         bbox = _bbox(text.get("bbox"))
         raw_text = str(text.get("text") or "")
         normalized_label = _classify_label(raw_text)
+        dimension_value_m = _dimension_value_m(raw_text)
         room_label = _room_label(room)
         if room is not None:
             bound_room_count += 1
+
+        if dimension_value_m is not None:
+            dimension_rows.append(
+                _dimension_row(
+                    text,
+                    raw_text=raw_text,
+                    value_m=dimension_value_m,
+                    confidence=confidence,
+                    bbox=bbox,
+                    doors=doors,
+                    corridors=corridors,
+                    ppm=ppm,
+                )
+            )
 
         if normalized_label is not None:
             candidate_base = {
@@ -125,6 +149,7 @@ def build_ocr_diagnostics(
         for room in rooms
         if isinstance(room.get("label"), str) and str(room.get("label")).strip()
     )
+    bound_dimension_count = sum(1 for row in dimension_rows if row["target_id"])
     return {
         "text_count": len(ocr_texts),
         "displayed_count": len(rows),
@@ -141,6 +166,11 @@ def build_ocr_diagnostics(
         "low_confidence_label_count": low_confidence_label_count,
         "qa_candidates": qa_candidates[:limit],
         "qa_omitted_count": max(len(qa_candidates) - limit, 0),
+        "dimension_text_count": len(dimension_rows),
+        "bound_dimension_count": bound_dimension_count,
+        "unbound_dimension_count": len(dimension_rows) - bound_dimension_count,
+        "dimension_rows": dimension_rows[:limit],
+        "dimension_omitted_count": max(len(dimension_rows) - limit, 0),
         "rows": rows,
     }
 
@@ -163,10 +193,14 @@ def _ocr_texts(primitives: Mapping[str, Any]) -> list[Mapping[str, Any]]:
 
 
 def _rooms(graph: Mapping[str, Any]) -> list[Mapping[str, Any]]:
-    rooms = graph.get("rooms")
-    if not isinstance(rooms, list):
+    return _entities(graph, "rooms")
+
+
+def _entities(graph: Mapping[str, Any], key: str) -> list[Mapping[str, Any]]:
+    entities = graph.get(key)
+    if not isinstance(entities, list):
         return []
-    return [room for room in rooms if isinstance(room, Mapping)]
+    return [entity for entity in entities if isinstance(entity, Mapping)]
 
 
 def _find_room_for_text(
@@ -199,6 +233,104 @@ def _classify_label(text: str) -> str | None:
     return None
 
 
+def _dimension_value_m(text: str) -> float | None:
+    match = DIM_VALUE_RE.search(text)
+    if match is None:
+        return None
+    value_m = float(match.group(1))
+    if value_m >= 100:
+        value_m = value_m / 1000.0
+    return value_m
+
+
+def _dimension_row(
+    text: Mapping[str, Any],
+    *,
+    raw_text: str,
+    value_m: float,
+    confidence: float,
+    bbox: tuple[float, float, float, float] | None,
+    doors: list[Mapping[str, Any]],
+    corridors: list[Mapping[str, Any]],
+    ppm: float,
+) -> dict[str, Any]:
+    target = _find_dimension_target(text, doors, corridors, ppm)
+    target_kind = target["kind"] if target is not None else None
+    target_id = target["id"] if target is not None else None
+    target_value_m = target["value_m"] if target is not None else None
+    return {
+        "text": raw_text,
+        "value_m": value_m,
+        "value_text": _format_m(value_m),
+        "confidence": confidence,
+        "confidence_pct": confidence * 100.0,
+        "bbox": bbox,
+        "bbox_text": _format_bbox(bbox),
+        "target_kind": target_kind,
+        "target_id": target_id,
+        "target_value_m": target_value_m,
+        "target_value_text": _format_m(target_value_m),
+        "binding_state": f"绑定 {target_kind}" if target_kind else "未绑定尺寸实体",
+    }
+
+
+def _find_dimension_target(
+    text: Mapping[str, Any],
+    doors: list[Mapping[str, Any]],
+    corridors: list[Mapping[str, Any]],
+    ppm: float,
+) -> dict[str, Any] | None:
+    bbox = _bbox(text.get("bbox"))
+    if bbox is None:
+        return None
+    cx = (bbox[0] + bbox[2]) / 2
+    cy = (bbox[1] + bbox[3]) / 2
+    raw_text = str(text.get("text") or "").lower()
+    prefer_door = any(keyword in raw_text for keyword in DOOR_KEYWORDS)
+    prefer_corridor = any(keyword in raw_text for keyword in CORRIDOR_KEYWORDS)
+
+    candidates: list[dict[str, Any]] = []
+    if prefer_corridor or not prefer_door:
+        candidates.extend(
+            _dimension_candidates(corridors, kind="Corridor", value_key="min_width_m")
+        )
+    if prefer_door or not prefer_corridor:
+        candidates.extend(_dimension_candidates(doors, kind="Door", value_key="width_m"))
+
+    best: dict[str, Any] | None = None
+    best_dist = 1.0 * ppm
+    for candidate in candidates:
+        ex, ey = candidate["center"]
+        dist = ((cx - ex) ** 2 + (cy - ey) ** 2) ** 0.5
+        if dist < best_dist:
+            best_dist = dist
+            best = candidate
+    return best
+
+
+def _dimension_candidates(
+    entities: list[Mapping[str, Any]],
+    *,
+    kind: str,
+    value_key: str,
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for entity in entities:
+        bbox = _bbox(entity.get("bbox"))
+        entity_id = entity.get("id")
+        if bbox is None or not isinstance(entity_id, str):
+            continue
+        out.append(
+            {
+                "kind": kind,
+                "id": entity_id,
+                "center": ((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2),
+                "value_m": _float(entity.get(value_key), default=0.0),
+            }
+        )
+    return out
+
+
 def _room_label(room: Mapping[str, Any] | None) -> str | None:
     if room is None:
         return None
@@ -223,6 +355,21 @@ def _format_bbox(bbox: tuple[float, float, float, float] | None) -> str:
     if bbox is None:
         return "-"
     return ", ".join(f"{v:.1f}" for v in bbox)
+
+
+def _format_m(value: float | None) -> str:
+    if value is None:
+        return "-"
+    return f"{value:.2f} m"
+
+
+def _points_per_meter(
+    primitives: Mapping[str, Any],
+    graph: Mapping[str, Any],
+) -> float:
+    raw = graph.get("points_per_meter", primitives.get("points_per_meter"))
+    value = _float(raw, default=50.0)
+    return value if value > 0 else 50.0
 
 
 def _float(raw: object, *, default: float) -> float:

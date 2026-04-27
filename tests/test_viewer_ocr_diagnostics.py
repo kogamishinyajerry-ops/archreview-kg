@@ -119,6 +119,77 @@ def test_build_ocr_diagnostics_marks_label_qa_candidates() -> None:
     assert candidates[2]["normalized_label"] == "bathroom"
 
 
+def test_build_ocr_diagnostics_marks_dimension_binding_evidence() -> None:
+    primitives = {
+        "points_per_meter": 50.0,
+        "pages": [
+            {
+                "texts": [
+                    {
+                        "text": "DOOR 0.85",
+                        "bbox": [95, 95, 105, 105],
+                        "source": "ocr",
+                        "confidence": 0.94,
+                    },
+                    {
+                        "text": "走廊 1200 mm",
+                        "bbox": [235, 20, 265, 35],
+                        "source": "ocr",
+                        "confidence": 0.91,
+                    },
+                    {
+                        "text": "999",
+                        "bbox": [1000, 1000, 1030, 1020],
+                        "source": "ocr",
+                        "confidence": 0.88,
+                    },
+                ]
+            }
+        ],
+    }
+    graph = {
+        "points_per_meter": 50.0,
+        "rooms": [],
+        "doors": [
+            {
+                "id": "door-1",
+                "bbox": [90, 90, 110, 110],
+                "width_m": 0.85,
+            }
+        ],
+        "corridors": [
+            {
+                "id": "corridor-1",
+                "bbox": [200, 0, 300, 50],
+                "min_width_m": 1.2,
+                "polygon": [[200, 0], [300, 0], [300, 50], [200, 50]],
+            }
+        ],
+    }
+
+    diagnostics = build_ocr_diagnostics(primitives, graph)
+
+    assert diagnostics["dimension_text_count"] == 3
+    assert diagnostics["bound_dimension_count"] == 2
+    assert diagnostics["unbound_dimension_count"] == 1
+
+    rows = diagnostics["dimension_rows"]
+    assert rows[0]["text"] == "DOOR 0.85"
+    assert rows[0]["target_kind"] == "Door"
+    assert rows[0]["target_id"] == "door-1"
+    assert rows[0]["value_m"] == 0.85
+    assert rows[0]["target_value_m"] == 0.85
+    assert rows[0]["binding_state"] == "绑定 Door"
+
+    assert rows[1]["target_kind"] == "Corridor"
+    assert rows[1]["target_id"] == "corridor-1"
+    assert rows[1]["value_m"] == 1.2
+    assert rows[1]["target_value_m"] == 1.2
+
+    assert rows[2]["target_id"] is None
+    assert rows[2]["binding_state"] == "未绑定尺寸实体"
+
+
 def test_build_ocr_diagnostics_truncates_rows_and_qa_candidates() -> None:
     primitives = {
         "pages": [

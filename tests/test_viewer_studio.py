@@ -758,6 +758,12 @@ def _p21_fixture_ocr_texts() -> list[TextPrimitive]:
             source="ocr",
             confidence=0.96,
         ),
+        TextPrimitive(
+            text="DOOR 0.77",
+            bbox=(1118.0, 675.0, 1160.0, 695.0),
+            source="ocr",
+            confidence=0.94,
+        ),
     ]
 
 
@@ -810,6 +816,9 @@ def test_post_review_raster_fixture_ocr_candidate_panel_and_json_signal(
     body = follow.data.decode("utf-8")
     assert "OCR 证据面" in body
     assert "OCR label QA 候选" in body
+    assert "OCR 尺寸绑定证据" in body
+    assert "DOOR 0.77" in body
+    assert "绑定 Door" in body
     assert "低置信度 label" in body
     assert "未绑定高置信度 label" in body
     assert "不会自动修改 Room.label，也不会改变规则结论" in body
@@ -821,6 +830,10 @@ def test_post_review_raster_fixture_ocr_candidate_panel_and_json_signal(
     assert diagnostics["qa_candidate_count"] == 2
     assert diagnostics["low_confidence_label_count"] == 1
     assert diagnostics["unbound_high_confidence_label_count"] == 1
+    assert diagnostics["dimension_text_count"] == 1
+    assert diagnostics["bound_dimension_count"] == 1
+    assert diagnostics["dimension_rows"][0]["text"] == "DOOR 0.77"
+    assert diagnostics["dimension_rows"][0]["target_kind"] == "Door"
     # QA candidates should stay in evidence view, not become rule outcomes.
     issues = (run_dir / "issues.json").read_text("utf-8")
     assert "label 冲突" not in issues
@@ -829,6 +842,7 @@ def test_post_review_raster_fixture_ocr_candidate_panel_and_json_signal(
     index_text = _render_index(run_dir, run_dir / "source.pdf").read_text("utf-8")
     assert "OCR 证据面" in index_text
     assert "OCR label QA 候选" in index_text
+    assert "OCR 尺寸绑定证据" in index_text
 
 
 def test_get_index_drop_hint_no_false_room_schedule_remediation(studio_client) -> None:

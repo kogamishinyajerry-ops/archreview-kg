@@ -37,12 +37,16 @@ and keeps the no-OCR transparency warning.
   label conflicts, unbound high-confidence room labels, and low-confidence
   room labels. These candidates do not mutate `Room.label` and do not
   change compliance results.
+- OCR numeric texts now surface dimension binding evidence in the viewer:
+  matched Door / Corridor entity, OCR-derived value, and current entity
+  value. This documents the existing dimension-binding path without
+  adding a new compliance-result lane.
 
 ### Still limited
 
 - OCR accuracy is not claimed. Users must inspect the entity overlay
-  and the OCR evidence / label QA panel before trusting label-dependent
-  rules.
+  and the OCR evidence / label QA / dimension evidence panels before
+  trusting OCR-dependent results.
 - `room_schedule.yaml` still cannot patch label-less raster rooms; it
   remains a vector-PDF path because it selects existing `room_id` or
   `label`.
