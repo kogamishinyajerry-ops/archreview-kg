@@ -183,7 +183,7 @@ def test_benchmark_suite_fails_known_gap_that_unexpectedly_passes(tmp_path: Path
     assert result["cases"][0]["benchmark_passed"] is True
 
 
-def test_packaged_suite_manifest_tracks_medfield_known_gap() -> None:
+def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     manifest_path = repo_root / "samples/understanding_benchmarks/suite_manifest.json"
 
@@ -191,14 +191,14 @@ def test_packaged_suite_manifest_tracks_medfield_known_gap() -> None:
 
     assert result["passed"] is True
     assert result["pending_count"] == 1
-    assert result["known_gap_count"] == 1
+    assert result["known_gap_count"] == 0
     assert result["failed_count"] == 0
     medfield = next(
         case for case in result["cases"] if case["case_id"] == "medfield-a1-first-floor"
     )
-    assert medfield["status"] == "known_gap"
-    assert medfield["benchmark_passed"] is False
-    assert medfield["score"] < 1.0
+    assert medfield["status"] == "pass"
+    assert medfield["passed"] is True
+    assert medfield["score"] == 1.0
 
 
 def test_benchmark_suite_markdown_report() -> None:

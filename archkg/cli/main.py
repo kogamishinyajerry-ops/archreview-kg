@@ -52,6 +52,15 @@ def review(
     pdf: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
     out: Path = typer.Option(Path("out"), "-o", "--out"),
     points_per_meter: float = typer.Option(50.0, "--ppm"),
+    min_room_area_m2: float = typer.Option(
+        0.0,
+        "--min-room-area-m2",
+        min=0.0,
+        help=(
+            "Drop sub-threshold room polygons before evaluation. "
+            "Use 1-3 m² on noisy real CAD sheets; 0 disables filtering."
+        ),
+    ),
     project_meta: Path | None = typer.Option(
         None, "--project-meta", exists=True, dir_okay=False, readable=True,
         help="Optional ProjectMeta YAML (building_type/height_class etc.) to filter inapplicable rules.",
@@ -80,6 +89,11 @@ def review(
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
+    from archkg.viewer.drawing_understanding import (
+        build_drawing_understanding,
+        write_drawing_understanding,
+    )
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
 
     out.mkdir(parents=True, exist_ok=True)
 
@@ -109,7 +123,7 @@ def review(
     primitives = extract(pdf, points_per_meter=points_per_meter)
     primitives_path = write_prims(primitives, out / "primitives.json")
 
-    graph = build_graph(primitives)
+    graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
 
     schedule_apply = None
     if room_schedule is not None:
@@ -186,6 +200,18 @@ def review(
 
     graph_path = write_graph(graph, out / "entity_graph.json")
     render_overlay(graph, pdf, out / "entity_overlay.png")
+    primitives_payload = primitives.model_dump(mode="json")
+    graph_payload = graph.model_dump(mode="json")
+    ocr_diagnostics = build_ocr_diagnostics(primitives_payload, graph_payload)
+    drawing_understanding = build_drawing_understanding(
+        primitives_payload,
+        graph_payload,
+        ocr_diagnostics,
+    )
+    drawing_understanding_path = write_drawing_understanding(
+        drawing_understanding,
+        out / "drawing_understanding.json",
+    )
 
     standards = load_standards()
     rules = load_rules(standards=standards)
@@ -218,6 +244,7 @@ def review(
         project_meta=meta,
         schedule_apply=schedule_apply,
         stair_schedule_apply=stair_schedule_apply,
+        drawing_understanding_path=drawing_understanding_path,
     )
 
 
@@ -234,6 +261,7 @@ def _print_review_summary(
     project_meta: Any = None,
     schedule_apply: Any = None,
     stair_schedule_apply: Any = None,
+    drawing_understanding_path: Path | None = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
@@ -353,6 +381,8 @@ def _print_review_summary(
     art.add_row("primitives", str(primitives_path))
     art.add_row("entity graph", str(graph_path))
     art.add_row("entity overlay PNG", str(out_dir / "entity_overlay.png"))
+    if drawing_understanding_path is not None:
+        art.add_row("drawing understanding", str(drawing_understanding_path))
     art.add_row("issues JSON", str(out_dir / "issues.json"))
     art.add_row("annotated PDF", str(annotated_path))
     art.add_row("report MD", str(report_path))
@@ -377,6 +407,15 @@ def build_graph_cmd(
         None, "--overlay-pdf", help="If set, also render an overlay PNG against this PDF."
     ),
     overlay_out: Path = typer.Option(Path("entity_overlay.png"), "--overlay-out"),
+    min_room_area_m2: float = typer.Option(
+        0.0,
+        "--min-room-area-m2",
+        min=0.0,
+        help=(
+            "Drop sub-threshold room polygons before writing the graph. "
+            "Use 1-3 m² on noisy real CAD sheets; 0 disables filtering."
+        ),
+    ),
 ) -> None:
     """Build entity_graph.json from primitives.json (and optionally a debug overlay PNG)."""
     import json as _json
@@ -386,7 +425,7 @@ def build_graph_cmd(
 
     raw = _json.loads(primitives.read_text(encoding="utf-8"))
     p = Primitives.model_validate(raw)
-    graph = build_graph(p)
+    graph = build_graph(p, min_room_area_m2=min_room_area_m2)
     written = write_json(graph, out)
     typer.echo(
         f"wrote {written}  rooms={len(graph.rooms)} doors={len(graph.doors)} "

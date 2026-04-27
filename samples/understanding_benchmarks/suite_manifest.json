@@ -12,12 +12,12 @@
     {
       "case_id": "medfield-a1-first-floor",
       "fixture_kind": "real_public_pdf",
-      "status": "known_gap",
+      "status": "active",
       "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
       "run_dir": "real/medfield_a1_first_floor_run",
       "expect": "real/medfield_a1_first_floor_expected.json",
       "provenance": "real/medfield_a1_first_floor_provenance.json",
-      "notes": "A-1 First Floor Plan has human-entered expected inventory. Current recognizer over-segments this real sheet and misses vertical circulation, so this is scored as known_gap until the recognizer improves."
+      "notes": "A-1 First Floor Plan has human-entered expected inventory. Current recognizer passes this case using a 3.0 m² real-CAD noise floor and text-hint vertical circulation evidence; this is recognition benchmarking only, not GB compliance validation."
     }
   ]
 }

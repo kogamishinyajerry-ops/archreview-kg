@@ -9,6 +9,7 @@ from existing artifacts.
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -42,45 +43,52 @@ def build_drawing_understanding(
     standalone viewer re-rendering, and tests can use the same function.
     """
     ocr_diagnostics = ocr_diagnostics or {}
-    pages = _list(primitives.get("pages"))
-    rooms = _list(graph.get("rooms"))
-    doors = _list(graph.get("doors"))
-    corridors = _list(graph.get("corridors"))
-    stairs = _list(graph.get("stairs"))
+    pages = _mapping_list(primitives.get("pages"))
+    rooms = _mapping_list(graph.get("rooms"))
+    doors = _mapping_list(graph.get("doors"))
+    corridors = _mapping_list(graph.get("corridors"))
+    stairs = _mapping_list(graph.get("stairs"))
+    vertical_hint_rows = [] if stairs else _vertical_circulation_hint_rows(pages)
     dimensions = _list(graph.get("dimensions"))
     n_lines = sum(len(_list(page.get("lines"))) for page in pages)
     n_texts = sum(len(_list(page.get("texts"))) for page in pages)
 
-    drawing_type = _drawing_type(n_lines, rooms, doors, corridors, stairs)
-    likely_design = _likely_design(drawing_type, rooms, stairs)
+    vertical_circulation_count = len(stairs) + len(vertical_hint_rows)
+    vertical_sources = vertical_hint_rows if vertical_hint_rows else stairs
+    drawing_type = _drawing_type(n_lines, rooms, doors, corridors, vertical_sources)
+    likely_design = _likely_design(drawing_type, rooms, vertical_sources)
     component_counts = {
         "lines": n_lines,
         "texts": n_texts,
         "rooms": len(rooms),
         "doors": len(doors),
         "corridors": len(corridors),
-        "stairs": len(stairs),
+        "stairs": vertical_circulation_count,
         "dimensions": len(dimensions),
         "ocr_texts": _int(ocr_diagnostics.get("text_count")),
     }
     spaces = [_space_row(room) for room in rooms[:limit]]
     openings = [_opening_row(door) for door in doors[:limit]]
     circulation = [_corridor_row(corridor) for corridor in corridors[:limit]]
-    vertical_circulation = [_stair_row(stair) for stair in stairs[:limit]]
+    vertical_circulation: list[Mapping[str, Any]] = [
+        _stair_row(stair) for stair in stairs[:limit]
+    ]
+    if len(vertical_circulation) < limit:
+        vertical_circulation.extend(vertical_hint_rows[: limit - len(vertical_circulation)])
     graph_dimensions = [_dimension_row(dim) for dim in dimensions[:limit]]
     ocr_dimensions = _list(ocr_diagnostics.get("dimension_rows"))[:limit]
     benchmark_signals = _benchmark_signals(
         rooms=rooms,
         doors=doors,
         corridors=corridors,
-        stairs=stairs,
+        stairs=vertical_sources,
         dimensions=dimensions,
         ocr_diagnostics=ocr_diagnostics,
     )
 
     summary = (
         f"{likely_design}。识别到 {len(rooms)} 个空间、{len(doors)} 个门/洞口、"
-        f"{len(corridors)} 条走廊、{len(stairs)} 个楼梯/垂直交通对象、"
+        f"{len(corridors)} 条走廊、{vertical_circulation_count} 个楼梯/垂直交通对象、"
         f"{len(dimensions) + len(ocr_dimensions)} 条尺寸证据。"
     )
     return {
@@ -93,7 +101,7 @@ def build_drawing_understanding(
             rooms=rooms,
             doors=doors,
             corridors=corridors,
-            stairs=stairs,
+            stairs=vertical_sources,
             dimensions=dimensions,
             n_lines=n_lines,
             n_texts=n_texts,
@@ -125,7 +133,7 @@ def build_drawing_understanding(
             rooms=rooms,
             doors=doors,
             corridors=corridors,
-            stairs=stairs,
+            stairs=vertical_sources,
             dimensions=dimensions,
             ocr_diagnostics=ocr_diagnostics,
         ),
@@ -309,6 +317,58 @@ def _stair_row(stair: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _vertical_circulation_hint_rows(
+    pages: Sequence[Mapping[str, Any]],
+) -> list[Mapping[str, Any]]:
+    rows: list[Mapping[str, Any]] = []
+    for page_index, page in enumerate(pages):
+        if not isinstance(page, Mapping):
+            continue
+        for raw_text in _list(page.get("texts")):
+            if not isinstance(raw_text, Mapping):
+                continue
+            label = _str(raw_text.get("text")).strip()
+            kind = _vertical_circulation_kind(label)
+            if kind is None:
+                continue
+            confidence = 0.70 if kind == "stair_keyword" else 0.62
+            rows.append(
+                {
+                    "id": f"vertical-text-{len(rows) + 1}",
+                    "component": "楼梯/垂直交通",
+                    "category": "vertical_circulation",
+                    "semantic_kind": "stair",
+                    "label": label,
+                    "label_zh": (
+                        "楼梯方向标注"
+                        if kind == "stair_direction"
+                        else "楼梯文字标注"
+                    ),
+                    "metric_text": f"文本提示 {label}",
+                    "bbox_text": _format_bbox(raw_text.get("bbox")),
+                    "page_index": page_index,
+                    "confidence": confidence,
+                    "confidence_band": _confidence_band(confidence, uncertain=True),
+                    "uncertain": True,
+                    "evidence_source": "text_hint",
+                }
+            )
+    return rows
+
+
+def _vertical_circulation_kind(text: str) -> str | None:
+    normalized = text.strip().upper()
+    compact = normalized.strip(" .:-_")
+    if compact in {"UP", "DN", "DOWN"}:
+        return "stair_direction"
+    if "楼梯" in text:
+        return "stair_keyword"
+    words = set(re.findall(r"[A-Z]+", normalized))
+    if words & {"STAIR", "STAIRS", "STAIRWAY"}:
+        return "stair_keyword"
+    return None
+
+
 def _dimension_row(dim: Mapping[str, Any]) -> dict[str, Any]:
     value_m = _float(dim.get("value_m"))
     confidence = _float(dim.get("confidence"))
@@ -476,6 +536,12 @@ def _uncertainty_flags(
 
 def _list(raw: object) -> list[Any]:
     return raw if isinstance(raw, list) else []
+
+
+def _mapping_list(raw: object) -> list[Mapping[str, Any]]:
+    if not isinstance(raw, list):
+        return []
+    return [item for item in raw if isinstance(item, Mapping)]
 
 
 def _str(raw: object) -> str:

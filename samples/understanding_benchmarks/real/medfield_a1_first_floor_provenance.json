@@ -23,11 +23,15 @@
     "manual_expected_inventory": "samples/understanding_benchmarks/real/medfield_a1_first_floor_expected.json"
   },
   "current_recognizer_observation": {
-    "rooms": 169,
-    "doors": 204,
-    "corridors": 2,
-    "stairs": 0,
+    "run_parameters": {
+      "points_per_meter": 50.0,
+      "min_room_area_m2": 3.0
+    },
+    "rooms": 42,
+    "doors": 89,
+    "corridors": 1,
+    "stairs": 5,
     "dimensions": 181,
-    "interpretation": "The recognizer over-segments this real vector PDF sheet and misses stair/vertical-circulation taxonomy. This is intentionally kept as a known_gap fixture, not a passing capability claim."
+    "interpretation": "The recognizer now passes the manually annotated component-inventory benchmark for this real vector PDF sheet by combining a 3.0 m² polygon noise floor with UP/DN text-hint vertical-circulation evidence. This remains a recognition benchmark, not a GB compliance-accuracy claim."
   }
 }

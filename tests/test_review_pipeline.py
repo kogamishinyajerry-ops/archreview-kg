@@ -58,3 +58,39 @@ def test_annotated_pdf_is_a_real_pdf(sample_pdf: Path, tmp_path: Path) -> None:
     annotated = out_dir / "annotated.pdf"
     head = annotated.read_bytes()[:5]
     assert head == b"%PDF-"
+
+
+def test_review_cli_threads_min_room_area_into_understanding(
+    sample_pdf: Path,
+    tmp_path: Path,
+) -> None:
+    runner = CliRunner()
+    out_default = tmp_path / "out-default"
+    out_filtered = tmp_path / "out-filtered"
+
+    result_default = runner.invoke(app, ["review", str(sample_pdf), "-o", str(out_default)])
+    assert result_default.exit_code == 0, result_default.output
+
+    result_filtered = runner.invoke(
+        app,
+        [
+            "review",
+            str(sample_pdf),
+            "-o",
+            str(out_filtered),
+            "--min-room-area-m2",
+            "100.0",
+        ],
+    )
+    assert result_filtered.exit_code == 0, result_filtered.output
+
+    default_payload = json.loads(
+        (out_default / "drawing_understanding.json").read_text(encoding="utf-8")
+    )
+    filtered_payload = json.loads(
+        (out_filtered / "drawing_understanding.json").read_text(encoding="utf-8")
+    )
+    assert default_payload["component_counts"]["rooms"] > 0
+    assert filtered_payload["component_counts"]["rooms"] < default_payload[
+        "component_counts"
+    ]["rooms"]

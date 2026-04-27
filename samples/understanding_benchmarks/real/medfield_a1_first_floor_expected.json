@@ -86,5 +86,5 @@
       "Counts are recognition-benchmark inventory targets, not GB compliance findings."
     ]
   },
-  "authoring_note": "Human-entered expected inventory for the real Medfield A-1 first-floor plan. The current recognizer is expected to fail this case because it over-segments rooms/doors and does not surface vertical circulation as a typed component."
+  "authoring_note": "Human-entered expected inventory for the real Medfield A-1 first-floor plan. Passing this benchmark means the recognizer can produce a plausible component inventory for this sheet with the recorded real-CAD noise floor; it is not a claim that GB compliance findings are correct."
 }

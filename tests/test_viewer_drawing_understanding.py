@@ -225,6 +225,58 @@ def test_build_drawing_understanding_emits_component_taxonomy_and_profile() -> N
     assert any("楼梯/垂直交通" in flag for flag in payload["uncertainty_flags"])
 
 
+def test_build_drawing_understanding_infers_stair_hint_from_direction_text() -> None:
+    primitives = {
+        "points_per_meter": 50.0,
+        "pages": [
+            {
+                "lines": [{"p0": [0, 0], "p1": [100, 0]} for _ in range(12)],
+                "texts": [
+                    {"text": "UP", "bbox": [10, 10, 20, 20], "source": "vector"},
+                    {"text": "DN", "bbox": [30, 10, 40, 20], "source": "vector"},
+                    {"text": "SETUP", "bbox": [200, 10, 240, 20], "source": "vector"},
+                ],
+            }
+        ],
+    }
+    graph = {
+        "rooms": [
+            {
+                "id": "room-1",
+                "label": "living",
+                "area_m2": 24.0,
+                "bbox": [0, 0, 100, 100],
+                "confidence": 0.8,
+            }
+        ],
+        "doors": [
+            {
+                "id": "door-1",
+                "bbox": [90, 90, 110, 110],
+                "width_m": 0.9,
+                "connects": ["room-1"],
+                "confidence": 0.78,
+            }
+        ],
+        "corridors": [],
+        "stairs": [],
+        "dimensions": [],
+    }
+
+    payload = build_drawing_understanding(primitives, graph, {"text_count": 3})
+
+    assert payload["component_counts"]["stairs"] == 2
+    assert payload["benchmark_signals"]["has_vertical_circulation"] is True
+    assert "vertical_circulation" in payload["drawing_profile"]["evidence_signals"]
+    vertical_rows = payload["components"]["vertical_circulation"]
+    assert [row["label"] for row in vertical_rows] == ["UP", "DN"]
+    assert all(row["semantic_kind"] == "stair" for row in vertical_rows)
+    assert all(row["evidence_source"] == "text_hint" for row in vertical_rows)
+    inventory = payload["component_inventory"]
+    assert any(row["semantic_kind"] == "stair" for row in inventory)
+    assert not any(row["label"] == "SETUP" for row in inventory)
+
+
 def test_load_or_build_rebuilds_legacy_payload_without_taxonomy(tmp_path) -> None:
     (tmp_path / "drawing_understanding.json").write_text(
         json.dumps({"drawing_type": "建筑平面图"}, ensure_ascii=False),
