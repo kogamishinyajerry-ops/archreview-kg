@@ -1,0 +1,16 @@
+{
+  "workflow": "gsd",
+  "truth_hierarchy": [
+    "repo",
+    "github",
+    "notion"
+  ],
+  "current_milestone": "M2 evidence-first plan review platform",
+  "current_phase": "P33 rule-input readiness dashboard",
+  "planning_updated_at": "2026-04-28",
+  "agent_contract": {
+    "gpt-5.5-xhigh": "architecture, roadmap, risk gates, acceptance criteria, scope arbitration",
+    "codex-5.3-spark": "bounded implementation slices, fixture/test expansion, mechanical docs sync, no architecture rewrites",
+    "current_codex": "repo edits, verification, Notion mirror sync, handoff summaries"
+  }
+}

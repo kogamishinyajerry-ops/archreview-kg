@@ -89,6 +89,12 @@ and keeps the no-OCR transparency warning.
   practice: build rule-input readiness, source-classified drawing
   evidence, reviewable issue lifecycle, and an IFC/IDS side lane before
   claiming broader real-plan compliance capability.
+- P32-B records the major post-research pivot in repo-owned planning
+  artifacts: `.planning/PROJECT.md`, `.planning/ROADMAP.md`,
+  `.planning/STATE.md`, and executable phase plans for P33-P37.
+  The new roadmap prioritizes runtime rule-input readiness, sheet-region
+  candidates, issue lifecycle, IFC/IDS reuse, and draft-only rule authoring
+  before broader real-plan compliance claims.
 
 ### Still limited
 

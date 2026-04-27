@@ -180,47 +180,44 @@ archkg adversarial sample-stats -n 1000 --seed 5000   # 审计 per-rule 触发�
 
 把 v1.0 当作**规则知识库与引擎的完整态**，而非**生产可用审图服务**。
 
-## 走到"真自动审批"还需要什么
+## P32 后重大转向：先做可信度平台，再扩自动审查
 
-按 ROI 排序：
+P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别数量”调整为
+**证据优先的智能审图可信度平台**。
 
-### 高 ROI（解锁现有规则）
+成熟审图软件与政府级 BIM 审查实践的共同模式是：先定义输入交付要求和证据来源，
+再运行规则，再把发现变成可复核的 issue 生命周期。ArchReview-KG 也应采用这个路径。
 
-1. **graph builder 加 Room.properties 自动抽取** ← v1.0.2 已开手动数据路径 `--room-schedule`
-   - 当前：`samples/room_schedule_demo.yaml` 等 YAML 让用户填净高 / 楼层 / 坡屋顶 → 4 张 PARTIAL_AUTODETECT 规则可触发
-   - 下一步：从剖面图 / 图签 / 楼层结构自动产出同一份数据，让 schedule 退化为 override
-   - 难点：净高来自剖面图（不在平面图）；level / pitched_roof 来自图签或楼层标识
-   - 依赖：CAD/PDF 多页面理解 + OCR / 文字定位
+新的近期路线：
 
-2. **graph builder 加 PDF 楼梯检测**
-   - 解锁 5 张 STAIR_PENDING 规则
-   - 难点：楼梯多边形识别 + tread/riser/well/handrail 数据从平面图或剖面图绑定
-   - 依赖：vision/CV + 几何约束推理
+1. **P33 Rule-input readiness dashboard**
+   - 每次 run 为 32 张规则输出 `ready / missing_input / low_confidence / manual_only / not_applicable`。
+   - 目标是让用户明确知道“哪些规则真的可判、哪些规则缺证据”，而不是只看 issue 数量。
 
-3. **真实图纸鲁棒性测试**
-   - 当前 sample_clean.pdf 是 3.6 KB toy demo
-   - 实际项目图纸几十 MB，多页 + 多比例 + 多种规范图签
-   - builder 在真实 noise 下的失败模式未测
+2. **P34 Sheet-region candidate suggestions**
+   - 在 P31 手动 `--sheet-region` 基础上，自动建议 design / title block / schedule / legend 区域。
+   - 默认只提示，不自动裁剪，避免静默丢失设计证据。
 
-### 中 ROI（提升用户体验）
+3. **P35 Issue lifecycle / review state**
+   - 规则引擎只输出 candidate。
+   - 人工复核再进入 `confirmed / rejected / needs_info / resolved / superseded`。
+   - 为后续 BCF-like export 做准备。
 
-4. **Door / Stair schema 加 subtype 字段**
-   - door_kind ∈ {auto, swing, sliding, folding}：让 RC-ACCESSIBLE-DOOR-WIDTH 拆 0.80/1.00 严格分支（当前是 reminder 妥协）
-   - Stair.single_side_handrail / Stair.serves_floors_under_7：让 RC-STAIR-FLIGHT-WIDTH-1.10 升级为硬规则（含 1.00m 例外）
+4. **P36 IFC/IDS side lane**
+   - 复用 IfcOpenShell / IfcTester 做 IFC + IDS 校验 spike。
+   - PDF 图纸识别和 IFC 模型检查保持解耦，不重造完整 BIM checker。
 
-5. **ProjectMeta 自动从图签抽取**
-   - 现在 ProjectMeta 来自 `--project-meta` YAML 手填
-   - 自动从图纸首页图签抽 building_type / height_class / floors
+5. **P37 Rule-card authoring / code-citation assistant**
+   - AI 只生成 draft rule-card / citation / ambiguity notes。
+   - 人工确认前不得进入 active `rule_cards.yaml`，也不得生成最终违规。
 
-### 大工程（产品形态）
+新的 readiness 评价标准：
 
-6. **Web 上传界面 + 审图 worker**
-   - 当前 archkg 是 CLI only
-   - 需要：上传服务、异步任务队列、报告网页化、复核协作
+- 不再以 rule count 作为成熟度主指标。
+- 以真实图纸 expected inventory、每次 run 的规则输入就绪度、证据来源绑定、issue 复核状态、
+  rerun 后问题是否 resolved 为主要指标。
 
-7. **审图工作流支持人审注释回写**
-   - feedback recorder 已在 — Reviewer 在 report.md 标 status=confirmed 后跑 `archkg feedback --apply`，已确认违规自动入库 test_cases
-   - 体验：复核界面化 + 减少手工编辑 markdown
+repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 
 ## 给现在想用的人的指引
 

@@ -270,6 +270,8 @@ archkg clause readiness
 - [P32 智能审图软件调研与开发指引](docs/research/2026-04-28-intelligent-plan-review-landscape.md) —
   记录 Solibri / IDS / BCF / CORENET X / Archistar eCheck / 国内 BIM 智能审图等参考,
   并把后续路线收敛到 rule-input readiness、sheet 区域候选、issue lifecycle 和 IFC/IDS side lane。
+- [P32 后重大转向路线图](docs/strategy/2026-04-28-major-pivot-roadmap.md) —
+  将项目主线从“扩大规则/识别数量”转为“证据优先的审图可信度平台”。
 
 ---
 
@@ -277,11 +279,19 @@ archkg clause readiness
 
 完整 changelog 见 [CHANGELOG.md](CHANGELOG.md)。
 
-**v1.1.x 候选方向**（按用户优先级排序）:
-- FN auto-promote 基础设施（battery 出 FN 自动 codify 到 rule_cards.yaml test_cases）
-- 真实 PDF robustness pass（CAD 多页、OCR 文字、varied scales）
-- 继续加 rule 到 ~25 张（剩余多需 builder 出新 entity: balcony/window/railing）
-- Web 上传界面 + 异步 worker（产品化方向）
+当前 repo 内规划真值在 [.planning/](.planning/)：
+
+- [PROJECT.md](.planning/PROJECT.md)：P32 后项目北极星与不可越过的能力边界。
+- [ROADMAP.md](.planning/ROADMAP.md)：P33-P43 证据优先路线图。
+- [STATE.md](.planning/STATE.md)：当前阶段、风险与下一步。
+
+**P32 后新主线**：
+
+- P33：Rule-input readiness dashboard。每次 run 说明每张规则为什么 ready / missing / low confidence / manual-only / not applicable。
+- P34：sheet-region 自动候选建议。先输出候选区域和排除证据，不默认自动裁剪。
+- P35：issue lifecycle / review state。规则引擎输出 candidate，人审再 confirmed / rejected / needs_info。
+- P36：IFC/IDS side lane。优先复用 IfcOpenShell / IfcTester，不重造完整 BIM checker。
+- P37：rule-card authoring / citation assistant。AI 只产 draft，人工确认前不进入 active rule_cards。
 
 ---
 
