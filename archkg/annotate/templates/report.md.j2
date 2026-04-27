@@ -7,6 +7,7 @@
 - 标注 PDF：`{{ annotated_pdf }}`
 - 违规数：**{{ violations|length }}**（severity ≠ info）
 - 人工核对提醒数：**{{ reminders|length }}**（severity = info）
+- Issue 状态文件：`review_state.json`
 {% if project_meta %}
 
 ## 项目上下文
@@ -60,6 +61,15 @@
 {% endif %}
 {% endif %}
 
+## Issue 生命周期
+
+`issues.json` 是规则引擎输出的候选观察，默认状态为 `candidate`；人工确认、驳回、补信息、解决或被新 run 替代的状态写入 `review_state.json`，不回写到 `issues.json`。
+
+| 状态 | 数量 |
+|---|---:|
+{% for status, count in review_state.summary.items() %}| `{{ status }}` | {{ count }} |
+{% endfor %}
+
 ## 违规清单
 
 {% if not violations %}
@@ -67,7 +77,7 @@
 {% else %}
 | issue_id | rule_card_id | 条文 | 实体 | 测量值 | 阈值 | 单位 | 信息 | reviewer | status | note |
 |---|---|---|---|---|---|---|---|---|---|---|
-{% for i in violations %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} |  | open |  |
+{% for i in violations %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} | {{ i.review_state.reviewer or '' }} | {{ i.review_state.status }} | {{ i.review_state.note or '' }} |
 {% endfor %}
 {% endif %}
 
@@ -79,7 +89,7 @@
 
 | issue_id | rule_card_id | 条文 | 阈值 | 提醒 | reviewer | status | note |
 |---|---|---|---|---|---|---|---|
-{% for i in reminders %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} {{ i.evidence.unit or '' }} | {{ i.message }} |  | open |  |
+{% for i in reminders %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} {{ i.evidence.unit or '' }} | {{ i.message }} | {{ i.review_state.reviewer or '' }} | {{ i.review_state.status }} | {{ i.review_state.note or '' }} |
 {% endfor %}
 {% endif %}
 
@@ -107,5 +117,5 @@
 
 复核字段说明：
 - `reviewer`: 复核人姓名
-- `status`: `open` / `confirmed` / `rejected`
-- `note`: 复核意见。`/archkg feedback <run_id>` 会读取本表格回写到 feedback YAML。
+- `status`: `candidate` / `confirmed` / `rejected` / `needs_info` / `resolved` / `superseded`
+- `note`: 复核意见。`/archkg feedback <run_id>` 会读取本表格回写到 `feedback.yaml` 和 `review_state.json`。

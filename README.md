@@ -37,6 +37,7 @@ archkg viewer -d out
 - `annotated.pdf` — 标注红框 + 文字说明的 PDF
 - `report.md` — 中文复核报告（违规清单 + 人工核对提醒分区）
 - `issues.json` — 结构化问题清单（rule_id / bbox / severity / 证据）
+- `review_state.json` — 人工复核状态层（candidate / confirmed / rejected / needs_info / resolved / superseded），不回写 `issues.json`
 - `entity_graph.json` — 抽出的实体图谱
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
@@ -303,7 +304,7 @@ archkg clause readiness
 
 - P33：Rule-input readiness dashboard。每次 run 说明每张规则为什么 ready / missing / low confidence / manual-only / not applicable。
 - P34：sheet-region 自动候选建议。先输出候选区域和排除证据，不默认自动裁剪。
-- P35：issue lifecycle / review state。规则引擎输出 candidate，人审再 confirmed / rejected / needs_info。
+- P35：issue lifecycle / review state。规则引擎输出 candidate，人审状态写入 `review_state.json`，再 confirmed / rejected / needs_info / resolved / superseded。
 - P36：IFC/IDS side lane。优先复用 IfcOpenShell / IfcTester，不重造完整 BIM checker。
 - P37：rule-card authoring / citation assistant。AI 只产 draft，人工确认前不进入 active rule_cards。
 

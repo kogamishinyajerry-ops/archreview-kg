@@ -25,6 +25,7 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "sheet_region_candidates.json",
         "sheet_region_candidates_overlay.png",
         "issues.json",
+        "review_state.json",
         "annotated.pdf",
         "report.md",
     ]
@@ -39,6 +40,7 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     assert readiness["summary"]["missing_input"] >= 1
 
     issues = json.loads((out_dir / "issues.json").read_text(encoding="utf-8"))
+    review_state = json.loads((out_dir / "review_state.json").read_text(encoding="utf-8"))
     rule_ids = {i["rule_card_id"] for i in issues}
 
     # The synthetic plan has a 1.05 m corridor and 0.85 m doors -> these two rules MUST fire.
@@ -52,6 +54,15 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         assert i["entity_ids"]
         assert "bbox" in i and len(i["bbox"]) == 4
         assert "evidence" in i
+        assert "status" not in i
+        assert "reviewer" not in i
+
+    assert review_state["schema_version"] == "issue_review_state.v1"
+    assert review_state["run_id"] == out_dir.name
+    assert {item["issue_id"] for item in review_state["items"]} == {
+        i["issue_id"] for i in issues
+    }
+    assert {item["status"] for item in review_state["items"]} == {"candidate"}
 
 
 def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> None:
@@ -65,10 +76,11 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "GB50096" in md
     assert "规则输入就绪度" in md
     assert "缺输入不等于通过" in md
+    assert "Issue 生命周期" in md
     # Should contain reviewer/status placeholder columns
     assert "reviewer" in md
     assert "status" in md
-    assert "open" in md
+    assert "candidate" in md
 
 
 def test_annotated_pdf_is_a_real_pdf(sample_pdf: Path, tmp_path: Path) -> None:

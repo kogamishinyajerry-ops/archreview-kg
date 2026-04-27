@@ -17,6 +17,11 @@ from archkg.schemas.primitives import (
     TextSource,
 )
 from archkg.schemas.project import ClimateZone, FireClass, ProjectMeta
+from archkg.schemas.review_state import (
+    IssueReviewState,
+    IssueReviewStateItem,
+    IssueReviewStatus,
+)
 from archkg.schemas.room_schedule import RoomLevel, RoomSchedule, RoomScheduleEntry
 from archkg.schemas.rule_card import EntityType, RuleCard, RuleCardTestCase, RuleScope
 from archkg.schemas.rule_readiness import (
@@ -47,6 +52,9 @@ __all__ = [
     "HeightClass",
     "Issue",
     "IssueEvidence",
+    "IssueReviewState",
+    "IssueReviewStateItem",
+    "IssueReviewStatus",
     "LinePrimitive",
     "PagePrimitives",
     "Primitives",

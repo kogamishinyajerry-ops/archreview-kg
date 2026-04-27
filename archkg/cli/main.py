@@ -108,6 +108,7 @@ def review(
         build_rule_input_readiness,
         write_rule_input_readiness,
     )
+    from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
     from archkg.viewer.drawing_understanding import (
@@ -276,6 +277,8 @@ def review(
         _json.dumps([i.model_dump() for i in result.issues], ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    review_state = build_review_state(result.issues, run_id=out.name)
+    review_state_path = write_review_state(review_state, out / "review_state.json")
 
     annotated = annotate_pdf(pdf, result.issues, out / "annotated.pdf")
     report_path = render_report(
@@ -290,6 +293,7 @@ def review(
         rule_readiness=build_rule_readiness_view(
             rule_readiness.model_dump(mode="json")
         ),
+        review_state=review_state,
     )
     _print_review_summary(
         out_dir=out,
@@ -305,6 +309,7 @@ def review(
         stair_schedule_apply=stair_schedule_apply,
         drawing_understanding_path=drawing_understanding_path,
         readiness_path=readiness_path,
+        review_state_path=review_state_path,
         sheet_candidates_path=sheet_candidates_path,
         sheet_candidates_overlay_path=sheet_candidates_overlay_path,
     )
@@ -325,6 +330,7 @@ def _print_review_summary(
     stair_schedule_apply: Any = None,
     drawing_understanding_path: Path | None = None,
     readiness_path: Path | None = None,
+    review_state_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
     sheet_candidates_overlay_path: Path | None = None,
 ) -> None:
@@ -450,6 +456,8 @@ def _print_review_summary(
         art.add_row("drawing understanding", str(drawing_understanding_path))
     if readiness_path is not None:
         art.add_row("rule input readiness", str(readiness_path))
+    if review_state_path is not None:
+        art.add_row("issue review state", str(review_state_path))
     if sheet_candidates_path is not None:
         art.add_row("sheet region candidates", str(sheet_candidates_path))
     if sheet_candidates_overlay_path is not None:
@@ -463,7 +471,7 @@ def _print_review_summary(
             f"下一步：\n"
             f"  • 打开 [bold]{annotated_path}[/bold] 看红框标注\n"
             f"  • 打开 [bold]{report_path}[/bold] 看可复核的问题清单\n"
-            f"  • 编辑 status=confirmed 后跑 [bold]archkg feedback {out_dir} --apply[/bold]",
+            f"  • 将 candidate 改为 confirmed/rejected 后跑 [bold]archkg feedback {out_dir} --apply[/bold]",
             title="✅ 审图完成",
             border_style="green",
         )

@@ -15,13 +15,14 @@ Status:
 - P33-01 is complete: full CLI and Studio review runs now write `rule_input_readiness.json` beside `issues.json`.
 - P33-02 is complete: Viewer/Studio/report surfaces render the readiness summary and old runs degrade with an explicit missing-readiness warning.
 - P34-01 is complete: full CLI and Studio review runs now write `sheet_region_candidates.json` and render candidate regions without default auto-cropping.
-- P34-02 is implemented in the working tree: candidate boxes are rendered into `sheet_region_candidates_overlay.png` and shown in the result page.
+- P34-02 is complete: candidate boxes are rendered into `sheet_region_candidates_overlay.png` and shown in the result page.
+- P35-01 is implemented in the working tree: full CLI and Studio review runs now write `review_state.json`, while `issues.json` stays the rule-engine candidate output.
 
 ## Current Phase
 
-P34: Sheet-region candidate suggestions.
+P35: Issue lifecycle and review state.
 
-P34 now has advisory candidate data and a visual overlay. The invariant is unchanged: candidates are evidence for user review; only explicit `--sheet-region` changes graph input.
+P35-01 now separates candidate findings from human lifecycle state. Report, Viewer, Studio, and feedback can show or update review status without rewriting rule-engine evidence.
 
 ## Key Decisions
 
@@ -36,10 +37,10 @@ P34 now has advisory candidate data and a visual overlay. The invariant is uncha
 
 - Static readiness tiers can still drift from actual run evidence if future builder inputs are added without extending readiness coverage and tests.
 - Sheet-region candidates can cause silent false negatives if automatic cropping becomes default too early.
-- Issue lifecycle can blur candidate findings and confirmed defects if schema naming is loose.
+- Feedback/report editing can drift if legacy `open` status is not normalized; keep compatibility tests around `open -> candidate`.
 - IFC dependencies may be heavy or optional; P36 must degrade cleanly.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Validate and commit P34-02, then enter P35-01: issue lifecycle / review-state storage.
+Validate and commit P35-01, then inspect whether P35 needs a second plan for cross-run supersession workflows before entering P36.

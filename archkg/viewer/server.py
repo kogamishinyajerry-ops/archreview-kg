@@ -196,6 +196,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
 
@@ -224,6 +225,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         ocr_diagnostics,
     )
     rule_readiness = load_rule_readiness_view(out_dir)
+    review_state = load_review_state_view(out_dir, issues)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
 
     stats = {
@@ -248,6 +250,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         ocr_diagnostics=ocr_diagnostics,
         drawing_understanding=drawing_understanding,
         rule_readiness=rule_readiness,
+        review_state=review_state,
         sheet_region_candidates=sheet_region_candidates,
         mode=mode,
         quality_flags=quality_flags,

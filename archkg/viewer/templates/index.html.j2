@@ -469,6 +469,12 @@
   .status-manual-only { color: #9ec2ff; border-color: rgba(58, 131, 255, .45); background: rgba(58, 131, 255, .12); }
   .status-not-applicable { color: #b4bfd3; border-color: rgba(154, 168, 188, .55); background: rgba(154, 168, 188, .12); }
   .status-unsupported-entity { color: #ff9d99; border-color: rgba(255, 92, 85, .45); background: rgba(255, 92, 85, .12); }
+  .review-candidate { color: #dbe7fc; border-color: rgba(157, 174, 204, .5); background: rgba(157, 174, 204, .12); }
+  .review-confirmed { color: #ff9d99; border-color: rgba(255, 92, 85, .55); background: rgba(255, 92, 85, .14); }
+  .review-rejected { color: #7fffc1; border-color: rgba(75, 211, 123, .55); background: rgba(75, 211, 123, .12); }
+  .review-needs-info { color: #ffcd75; border-color: rgba(255, 184, 75, .55); background: rgba(255, 184, 75, .12); }
+  .review-resolved { color: #8acbff; border-color: rgba(92, 200, 255, .55); background: rgba(92, 200, 255, .12); }
+  .review-superseded { color: #b4bfd3; border-color: rgba(154, 168, 188, .55); background: rgba(154, 168, 188, .12); }
   .issue-message {
     margin: 8px 0 0;
     color: #dbe7fc;
@@ -638,6 +644,7 @@
 {% set layer_available = layer_available | default({'source': true, 'overlay': true, 'annotated': true}, true) %}
 {% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
+{% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
 {% set sheet_region_candidates = sheet_region_candidates | default({'available': false, 'candidates': [], 'excluded_texts': [], 'warning_text': '候选区域暂无数据; 缺失 candidate artifact 不代表已裁剪或已确认.', 'unavailable_reason': 'missing'}, true) %}
 
 <header>
@@ -1327,6 +1334,16 @@
 
 <section class="panel full" id="panel-issues">
   <h2>③ Issues ({% if mode is defined and mode == "inspect_only" %}规则未跑{% else %}{{ issues|length }}{% endif %})</h2>
+  {% if not (mode is defined and mode == "inspect_only") %}
+    <p style="color: {% if review_state.available %}var(--muted){% else %}var(--orange){% endif %};">复核状态：{{ review_state.warning_text }}</p>
+    {% if review_state.summary_rows %}
+      <div class="bar-list" style="margin-bottom: 14px;">
+        {% for row in review_state.summary_rows %}
+          <div class="bar-row"><span class="bar-label">{{ row.label }} · {{ row.status }}</span><span class="bar-value">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endif %}
   {% if mode is defined and mode == "inspect_only" %}
     <p style="color: var(--orange);">本次只跑识图，不输出规则问题。Issues 条目为空不等于合规。</p>
   {% elif issues %}
@@ -1334,12 +1351,14 @@
       {% for i in issues %}
       {% set issue_tier = issue_tiers.get(i.rule_card_id, "UNKNOWN") %}
       {% set issue_tier_class = issue_tier | lower | replace('_', '-') %}
+      {% set issue_review = review_state.issue_states.get(i.issue_id, review_state.default_state) %}
         <article class="issue-item tier-{{ issue_tier_class }}">
         <div class="line">
           {% set issue_sev = i.severity or "info" %}
           {% set severity_key = (issue_sev | lower | replace(" ", "")) %}
           <span class="level severity-{{ severity_key }}">{{ issue_sev | upper }}</span>
           <span><code>{{ i.issue_id }}</code></span>
+          <span class="status-pill {{ issue_review.status_class }}">复核状态 {{ issue_review.status_label }} · {{ issue_review.status }}</span>
           <span class="pill">{{ i.rule_card_id }}</span>
           <span class="pill tier-pill tier-{{ issue_tier_class }}">{{ issue_tier }}</span>
           <span class="pill">{{ i.standard_clause_id }}</span>
@@ -1349,6 +1368,9 @@
           {% endif %}
         </div>
         <p class="issue-message">{{ i.message }}</p>
+        {% if issue_review.reviewer or issue_review.note %}
+          <p class="issue-message">reviewer {{ issue_review.reviewer or '—' }}{% if issue_review.note %} · {{ issue_review.note }}{% endif %}</p>
+        {% endif %}
       </article>
       {% endfor %}
     </div>
@@ -1359,6 +1381,7 @@
   <div class="links">
     <a href="entity_graph.json" target="_blank">entity_graph.json</a>
     {% if not (mode is defined and mode == "inspect_only") %}<a href="issues.json" target="_blank">issues.json</a>{% endif %}
+    {% if not (mode is defined and mode == "inspect_only") %}<a href="review_state.json" target="_blank">review_state.json</a>{% endif %}
     <a href="primitives.json" target="_blank">primitives.json</a>
     <a href="report.md" target="_blank">report.md</a>
     {% if not (mode is defined and mode == "inspect_only") %}<a href="feedback.yaml" target="_blank">feedback.yaml</a>{% endif %}

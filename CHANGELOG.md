@@ -111,6 +111,11 @@ and keeps the no-OCR transparency warning.
 - P34-02 adds `sheet_region_candidates_overlay.png`, a source-preview
   overlay with color-coded candidate boxes, and renders it in the
   Viewer/Studio candidate panel.
+- P35-01 adds `review_state.json` as a separate issue lifecycle layer.
+  `issues.json` remains rule-engine candidate evidence; report, Viewer,
+  Studio, and `archkg feedback` now render or update candidate /
+  confirmed / rejected / needs_info / resolved / superseded states
+  without mutating the rule output.
 
 ### Still limited
 

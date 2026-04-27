@@ -456,6 +456,37 @@ def test_standalone_viewer_rerender_without_readiness_artifact_degrades(
     assert "Issues" in body
 
 
+def test_standalone_viewer_renders_review_state_and_missing_state_warning(
+    tmp_path: Path,
+) -> None:
+    from archkg.viewer.server import _render_index
+    from archkg.viewer.studio import run_pipeline
+
+    out_dir = tmp_path / "out"
+    run_pipeline(SAMPLE_PDF, out_dir)
+    state_path = out_dir / "review_state.json"
+    state = json.loads(state_path.read_text("utf-8"))
+    state["items"][0]["status"] = "resolved"
+    state["items"][0]["reviewer"] = "Zhu"
+    state["items"][0]["note"] = "fixed in rev B"
+    state["summary"] = {"candidate": len(state["items"]) - 1, "resolved": 1}
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "复核状态" in body
+    assert "resolved" in body
+    assert "fixed in rev B" in body
+
+    state_path.unlink()
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "review_state.json 暂无数据" in body
+    assert "缺失复核状态不代表已确认" in body
+
+
 def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
     """Phase 20-A: a 200-DPI raster render of the demo PDF should
     produce roughly the same entity counts (4 rooms / 1 corridor /

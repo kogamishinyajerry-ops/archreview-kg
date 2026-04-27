@@ -387,6 +387,7 @@ def run_pipeline(
         build_rule_input_readiness,
         write_rule_input_readiness,
     )
+    from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
     from archkg.viewer.drawing_understanding import (
@@ -618,6 +619,8 @@ def run_pipeline(
         json.dumps([i.model_dump() for i in result.issues], ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    review_state = build_review_state(result.issues, run_id=out_dir.name)
+    write_review_state(review_state, out_dir / "review_state.json")
 
     annotated = annotate_pdf(pdf_path, result.issues, out_dir / "annotated.pdf")
     render_report(
@@ -632,6 +635,7 @@ def run_pipeline(
         rule_readiness=build_rule_readiness_view(
             rule_readiness.model_dump(mode="json")
         ),
+        review_state=review_state,
     )
 
     if annotated.exists():
@@ -755,6 +759,7 @@ def _render_viewer_index(
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
 
@@ -786,6 +791,7 @@ def _render_viewer_index(
         ocr_diagnostics,
     )
     rule_readiness = load_rule_readiness_view(out_dir)
+    review_state = load_review_state_view(out_dir, issues)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
 
     html = env.get_template("index.html.j2").render(
@@ -803,6 +809,7 @@ def _render_viewer_index(
         ocr_diagnostics=ocr_diagnostics,
         drawing_understanding=drawing_understanding,
         rule_readiness=rule_readiness,
+        review_state=review_state,
         sheet_region_candidates=sheet_region_candidates,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")

@@ -9,8 +9,10 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from archkg.labels import label_building_type
+from archkg.review_state import build_review_state, review_state_by_issue_id
 from archkg.rules.engine import SkippedRule
 from archkg.schemas import Issue, ProjectMeta, StandardClause
+from archkg.schemas.review_state import IssueReviewState
 
 
 def _env() -> Environment:
@@ -34,6 +36,7 @@ def render(
     project_meta: ProjectMeta | None = None,
     skipped: list[SkippedRule] | None = None,
     rule_readiness: dict[str, Any] | None = None,
+    review_state: IssueReviewState | dict[str, Any] | None = None,
 ) -> Path:
     used_ids = {i.standard_clause_id for i in issues}
     clauses_used = [c for c in clauses if c.id in used_ids]
@@ -44,15 +47,33 @@ def render(
         meta_payload = project_meta.model_dump()
         meta_payload["building_type_label"] = label_building_type(project_meta.building_type)
 
+    if isinstance(review_state, dict):
+        review_state_model = IssueReviewState.model_validate(review_state)
+    elif review_state is None:
+        review_state_model = build_review_state(issues, run_id=None)
+    else:
+        review_state_model = review_state
+
+    review_state_by_id = review_state_by_issue_id(review_state_model)
+    issue_payloads: list[dict[str, Any]] = []
+    for issue in issues:
+        payload = issue.model_dump()
+        item = review_state_by_id.get(issue.issue_id)
+        if item is None:
+            item = build_review_state([issue], run_id=None).items[0]
+        payload["review_state"] = item.model_dump(mode="json")
+        issue_payloads.append(payload)
+
     rendered = template.render(
         source_pdf=str(source_pdf),
         entity_graph_path=str(entity_graph_path),
         annotated_pdf=str(annotated_pdf),
-        issues=[i.model_dump() for i in issues],
+        issues=issue_payloads,
         clauses_used=[c.model_dump() for c in clauses_used],
         project_meta=meta_payload,
         skipped=[{"rule_id": s.rule_id, "reason": s.reason} for s in (skipped or [])],
         rule_readiness=rule_readiness,
+        review_state=review_state_model.model_dump(mode="json"),
     )
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_md.write_text(rendered, encoding="utf-8")
