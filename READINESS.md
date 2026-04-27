@@ -130,6 +130,10 @@ archkg studio
 - 结果页新增 `drawing_understanding.json` + "图纸理解摘要" 面板：汇总图纸类型、
   可能设计对象、空间 / 门洞 / 通行部件清单，以及 graph/OCR 尺寸证据绑定状态。
   这是识图闭环和人工复核入口，不是新的规范纠错通道，也不代表复杂真实施工图已经可全自动理解。
+- P24 起 `drawing_understanding.json` 升级为 v2 schema：增加 typed `component_inventory`、
+  `drawing_profile` 与 `benchmark_signals`。楼梯/垂直交通从 stair schedule 或未来 builder 输出进入
+  同一部件清单；旧 run 目录里的 P23 摘要会在 standalone viewer 重渲染时自动重建为 v2。
+  这些字段服务于"识别到什么"的横向基准，不提升 OCR/CV 准确率，也不扩大规范纠错范围。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 

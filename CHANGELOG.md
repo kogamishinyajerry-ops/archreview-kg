@@ -47,6 +47,13 @@ and keeps the no-OCR transparency warning.
   elements, graph dimension evidence, OCR-bound dimension evidence,
   and uncertainty flags. This is an evidence inventory for reviewing
   what the drawing appears to contain, not a new rule-engine output.
+- P24 upgrades `drawing_understanding.json` to
+  `drawing_understanding.v2`: it now includes typed
+  `component_inventory`, `drawing_profile`, and `benchmark_signals`.
+  Stair / vertical-circulation entities from schedule or future builder
+  output are included in the same component taxonomy as rooms, openings,
+  corridors, dimensions, and OCR-bound dimensions. Standalone viewer
+  re-rendering rebuilds legacy P23 payloads that lack the v2 taxonomy.
 
 ### Still limited
 
@@ -60,6 +67,9 @@ and keeps the no-OCR transparency warning.
   builder / OCR evidence. It does not claim production-grade recognition
   for noisy scans, multi-page construction sets, or arbitrary complex
   real drawings.
+- The v2 taxonomy is descriptive. It records evidence categories and
+  confidence bands for review/benchmarking, but it does not alter issue
+  generation or make schedule-only stairs geometrically located.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 

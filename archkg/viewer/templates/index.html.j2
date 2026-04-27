@@ -809,6 +809,10 @@
       <div class="v">{{ drawing_understanding.component_counts.doors }}</div>
     </div>
     <div class="kpi">
+      <div class="k">垂直交通</div>
+      <div class="v">{{ drawing_understanding.component_counts.stairs }}</div>
+    </div>
+    <div class="kpi">
       <div class="k">尺寸证据</div>
       <div class="v">{{ drawing_understanding.component_counts.dimensions + drawing_understanding.dimension_evidence.ocr_dimension_count }}</div>
     </div>
@@ -816,6 +820,15 @@
   <div class="metric-note" style="margin-top: 10px;">
     {{ drawing_understanding.summary }} 这是图纸内容识别摘要，不是规范纠错结论。
   </div>
+  {% if drawing_understanding.drawing_profile is defined %}
+    <div class="metric-note" style="margin-top: 10px;">识别档案</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+      <span class="pill">{{ drawing_understanding.drawing_profile.understanding_level }}</span>
+      {% for signal in drawing_understanding.drawing_profile.evidence_signals %}
+        <span class="pill">{{ signal }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
   <div class="metric-grid">
     <div>
       <div class="metric-note">部件清单</div>
@@ -850,6 +863,22 @@
               <span class="pill">{{ opening.connects_text }}</span>
             </div>
             <div class="sub">bbox {{ opening.bbox_text }}</div>
+          </div>
+        {% endfor %}
+        {% for vertical in drawing_understanding.components.vertical_circulation[:4] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">楼梯/垂直交通</div>
+              <div class="sub">{{ vertical.id }} · {{ vertical.metric_text }}</div>
+            </div>
+            <div>
+              <div class="sub">类型</div>
+              <div>垂直交通</div>
+            </div>
+            <div>
+              <span class="pill">{{ vertical.confidence_band }}</span>
+            </div>
+            <div class="sub">bbox {{ vertical.bbox_text }}</div>
           </div>
         {% endfor %}
       </div>

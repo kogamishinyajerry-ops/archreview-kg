@@ -113,6 +113,15 @@ def test_post_review_with_full_meta_and_schedules_succeeds(studio_client) -> Non
     assert "RC-STAIR-FLIGHT-WIDTH-1.10" in issues, (
         "stair schedule must materialize a Stair entity that the rules can fire on"
     )
+    understanding = json.loads((run_dir / "drawing_understanding.json").read_text("utf-8"))
+    assert understanding["component_counts"]["stairs"] == 1
+    assert understanding["components"]["vertical_circulation"][0]["id"] == "stair-1"
+    assert any(
+        row["semantic_kind"] == "stair" for row in understanding["component_inventory"]
+    )
+    index_text = (run_dir / "index.html").read_text("utf-8")
+    assert "垂直交通" in index_text
+    assert "识别档案" in index_text
 
 
 def test_post_review_without_pdf_redirects_with_flash(studio_client) -> None:
