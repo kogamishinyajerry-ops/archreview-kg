@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-241%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-285%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -38,6 +38,7 @@ archkg viewer -d out
 - `report.md` — 中文复核报告（违规清单 + 人工核对提醒分区）
 - `issues.json` — 结构化问题清单（rule_id / bbox / severity / 证据）
 - `entity_graph.json` — 抽出的实体图谱
+- `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / 空间、洞口、通行、尺寸证据清单）
 - `index.html` — viewer 渲染的查阅页
 
 ---
@@ -83,6 +84,10 @@ archkg studio
 > 也不会改变规则结论。OCR 数字文本还会显示 Door/Corridor 尺寸绑定证据，说明 OCR 值绑定到了哪个实体；
 > 这只是证据展示，不是单独的合规结论。OCR 不可用或无结果时仍按 partial 审图降级，
 > 并明确提示 5 张 label-dependent Room 规则不会触发。
+>
+> **图纸理解摘要**: 每次结果页会生成 `drawing_understanding.json` 并显示 "图纸理解摘要" 面板，
+> 汇总当前识别出的图纸类型、可能设计对象、空间/门洞/通行部件与尺寸证据。这个面板的目标是先回答
+> "这张图在设计什么、有哪些部件、尺寸证据绑定到了哪里"；它不会把 QA 候选或 OCR 尺寸直接升级为规范违规结论。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 
@@ -199,7 +204,7 @@ samples/
   project_meta_demo.yaml
   room_schedule_demo.yaml
   stair_schedule_demo.yaml
-tests/                   241 pytest
+tests/                   285 pytest
 ```
 
 ---

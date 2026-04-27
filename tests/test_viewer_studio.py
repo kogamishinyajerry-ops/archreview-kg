@@ -845,6 +845,67 @@ def test_post_review_raster_fixture_ocr_candidate_panel_and_json_signal(
     assert "OCR 尺寸绑定证据" in index_text
 
 
+def test_post_review_raster_fixture_writes_drawing_understanding(
+    studio_client,
+    monkeypatch,
+) -> None:
+    """P23: first explain the drawing, then worry about compliance."""
+    from archkg.ingest import raster_extractor
+    from archkg.viewer.server import _render_index
+
+    client, state_dir = studio_client
+    ocr_texts = _p21_fixture_ocr_texts()
+
+    def fake_ocr_page_image(
+        image_path: Path,
+        *,
+        keep_only_dimensions: bool = True,
+        lang: str = "ch",
+    ) -> list[TextPrimitive]:
+        del image_path, lang
+        assert keep_only_dimensions is False
+        return ocr_texts
+
+    monkeypatch.setattr(raster_extractor.ocr, "ocr_page_image", fake_ocr_page_image)
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(RASTER_FIXTURE_200DPI.read_bytes()), "sample_raster_200dpi.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "200",
+            "min_room_area_m2": "0",
+            "use_ocr": "1",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    understanding = json.loads(
+        (run_dir / "drawing_understanding.json").read_text("utf-8")
+    )
+    assert understanding["drawing_type"] == "建筑平面图"
+    assert "平面图" in understanding["likely_design"]
+    assert understanding["component_counts"]["rooms"] >= 1
+    assert understanding["component_counts"]["doors"] >= 1
+    assert understanding["components"]["spaces"]
+    assert understanding["components"]["openings"]
+    assert understanding["dimension_evidence"]["ocr_bound_count"] >= 1
+    assert "规范" not in understanding["summary"]
+
+    body = client.get(f"/runs/{run_id}/").data.decode("utf-8")
+    assert "图纸理解摘要" in body
+    assert "建筑平面图" in body
+    assert "部件清单" in body
+    assert "尺寸证据" in body
+
+    index_text = _render_index(run_dir, run_dir / "source.pdf").read_text("utf-8")
+    assert "图纸理解摘要" in index_text
+    assert "部件清单" in index_text
+
+
 def test_get_index_drop_hint_no_false_room_schedule_remediation(studio_client) -> None:
     """Codex P20-A R3 P1 + R4 P1: the upload-page must not tell raster
     users that room_schedule.yaml can unlock anything for them. The

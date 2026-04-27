@@ -792,9 +792,114 @@
   </div>
 </section>
 
+{% if drawing_understanding is defined %}
+<section class="panel full" id="panel-understanding">
+  <h2>⑥ 图纸理解摘要</h2>
+  <div class="kpis">
+    <div class="kpi ok">
+      <div class="k">图纸类型</div>
+      <div class="v" style="font-size: 20px;">{{ drawing_understanding.drawing_type }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">空间</div>
+      <div class="v">{{ drawing_understanding.component_counts.rooms }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">门/洞口</div>
+      <div class="v">{{ drawing_understanding.component_counts.doors }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">尺寸证据</div>
+      <div class="v">{{ drawing_understanding.component_counts.dimensions + drawing_understanding.dimension_evidence.ocr_dimension_count }}</div>
+    </div>
+  </div>
+  <div class="metric-note" style="margin-top: 10px;">
+    {{ drawing_understanding.summary }} 这是图纸内容识别摘要，不是规范纠错结论。
+  </div>
+  <div class="metric-grid">
+    <div>
+      <div class="metric-note">部件清单</div>
+      <div class="evidence-list" style="margin-top: 8px;">
+        {% for space in drawing_understanding.components.spaces[:4] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">{{ space.label_zh }}</div>
+              <div class="sub">{{ space.id }} · {{ space.area_text }}</div>
+            </div>
+            <div>
+              <div class="sub">类型</div>
+              <div>空间</div>
+            </div>
+            <div>
+              <span class="pill">{{ "需核对" if space.uncertain else "已识别" }}</span>
+            </div>
+            <div class="sub">bbox {{ space.bbox_text }}</div>
+          </div>
+        {% endfor %}
+        {% for opening in drawing_understanding.components.openings[:4] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">门/洞口</div>
+              <div class="sub">{{ opening.id }} · {{ opening.width_text }}</div>
+            </div>
+            <div>
+              <div class="sub">类型</div>
+              <div>开口</div>
+            </div>
+            <div>
+              <span class="pill">{{ opening.connects_text }}</span>
+            </div>
+            <div class="sub">bbox {{ opening.bbox_text }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <div class="metric-note">尺寸证据</div>
+      <div class="evidence-list" style="margin-top: 8px;">
+        {% for dim in drawing_understanding.dimension_evidence.graph_dimensions[:3] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">{{ dim.text }}</div>
+              <div class="sub">graph dimension</div>
+            </div>
+            <div>
+              <div class="sub">值</div>
+              <div>{{ dim.value_text }}</div>
+            </div>
+            <div><span class="pill">实体图谱</span></div>
+            <div class="sub">bbox {{ dim.bbox_text }}</div>
+          </div>
+        {% endfor %}
+        {% for dim in drawing_understanding.dimension_evidence.ocr_dimensions[:3] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">{{ dim.text }}</div>
+              <div class="sub">OCR dimension</div>
+            </div>
+            <div>
+              <div class="sub">值</div>
+              <div>{{ dim.value_text }}</div>
+            </div>
+            <div><span class="pill">{{ dim.binding_state }}</span></div>
+            <div class="sub">{{ dim.target_id or "未绑定" }}</div>
+          </div>
+        {% endfor %}
+      </div>
+      {% if drawing_understanding.uncertainty_flags %}
+        <div class="metric-note" style="margin-top: 10px;">不确定点</div>
+        {% for flag in drawing_understanding.uncertainty_flags[:4] %}
+          <div class="alert warn" style="margin-top: 8px;">{{ flag }}</div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 {% if ocr_diagnostics is defined and ocr_diagnostics.text_count %}
 <section class="panel full" id="panel-ocr">
-  <h2>⑥ OCR 证据面</h2>
+  <h2>⑦ OCR 证据面</h2>
   <div class="kpis">
     <div class="kpi">
       <div class="k">OCR 文本</div>
@@ -931,7 +1036,7 @@
 {% endif %}
 
 <section class="panel">
-  <h2>⑦ 知识库快照</h2>
+  <h2>⑧ 知识库快照</h2>
   {% if knowledge_overview.error %}
     <div class="alert warn">知识库字段读取失败：{{ knowledge_overview.error }}</div>
   {% else %}

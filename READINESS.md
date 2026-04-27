@@ -114,7 +114,7 @@ archkg studio
   落在墙体 centerline 内, 可能让所有 door 邻接判定都失败 → 全被丢弃。
   **症状**: 结果里 door 数量为 0 或明显偏少。**应对**: CAD 里把双线墙合并为单线再导出, 或等 v1.3+ 处理
 
-**v1.4-dev 应对** (raster OCR bridge):
+**v1.4-dev 应对** (raster OCR + drawing understanding bridge):
 - PNG/JPEG/TIFF/BMP 上传可选启用 **栅格 OCR beta**。OCR 成功时，文本作为
   `TextPrimitive(source="ocr")` 写入 `primitives.json`，并参与 room label binding。
 - 结果页新增 OCR 证据面：展示 OCR text count、绑定房间数、低置信度数量与样例文本行；
@@ -127,6 +127,9 @@ archkg studio
   继续按 partial 审图降级，并保留 "栅格图无 OCR" 质量提示。
 - 这不是 production OCR 准确率承诺。OCR-bound room labels 仍需人工核对，
   噪声扫描图 / 手绘图纸仍可能无法可靠识别。
+- 结果页新增 `drawing_understanding.json` + "图纸理解摘要" 面板：汇总图纸类型、
+  可能设计对象、空间 / 门洞 / 通行部件清单，以及 graph/OCR 尺寸证据绑定状态。
+  这是识图闭环和人工复核入口，不是新的规范纠错通道，也不代表复杂真实施工图已经可全自动理解。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 

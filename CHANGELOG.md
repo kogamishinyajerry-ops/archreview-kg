@@ -4,7 +4,7 @@ All notable changes to ArchReview-KG. Version tags follow `v<major>.<minor>.<pat
 patch releases (`v1.0.x`) are individual ship phases reviewed by Codex GPT-5.4,
 minor releases (`v1.1.0` / `v1.2.0`) are stable milestones rolling up multiple patches.
 
-## Unreleased — 2026-04-27 — Raster OCR label bridge (v1.4 development slice)
+## Unreleased — 2026-04-27 — Raster OCR + drawing understanding bridge (v1.4 development slice)
 
 Raster uploads can now opt into OCR text extraction without making
 PaddleOCR a required dependency. This is a bridge slice, not a
@@ -41,6 +41,12 @@ and keeps the no-OCR transparency warning.
   matched Door / Corridor entity, OCR-derived value, and current entity
   value. This documents the existing dimension-binding path without
   adding a new compliance-result lane.
+- Viewer runs now write `drawing_understanding.json` and render a
+  "图纸理解摘要" panel. The payload summarizes drawing type, likely
+  design object, component counts, spaces, openings, circulation
+  elements, graph dimension evidence, OCR-bound dimension evidence,
+  and uncertainty flags. This is an evidence inventory for reviewing
+  what the drawing appears to contain, not a new rule-engine output.
 
 ### Still limited
 
@@ -50,6 +56,10 @@ and keeps the no-OCR transparency warning.
 - `room_schedule.yaml` still cannot patch label-less raster rooms; it
   remains a vector-PDF path because it selects existing `room_id` or
   `label`.
+- The drawing understanding payload is only as good as the current
+  builder / OCR evidence. It does not claim production-grade recognition
+  for noisy scans, multi-page construction sets, or arbitrary complex
+  real drawings.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 
