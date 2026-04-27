@@ -2,216 +2,992 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
-<title>ArchReview-KG · Demo Viewer</title>
+<title>ArchReview-KG · 工作台结果</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
-    --bg: #0e1014;
-    --panel: #161a22;
-    --border: #2a3140;
-    --text: #e6edf3;
-    --muted: #7d8590;
-    --blue: #2f81f7;
-    --orange: #f59e0b;
-    --red: #f85149;
-    --green: #3fb950;
-    --yellow: #eac54f;
+    --bg: #0b0f16;
+    --panel: rgba(22, 30, 42, 0.9);
+    --panel-soft: rgba(255, 255, 255, 0.04);
+    --panel-line: rgba(76, 104, 150, 0.35);
+    --text: #eaf0f8;
+    --muted: #93a0b4;
+    --blue: #3a83ff;
+    --green: #4bd37b;
+    --orange: #ffb84b;
+    --red: #ff5c55;
+    --tier-autodetect: #4bd37b;
+    --tier-partial: #5cc8ff;
+    --tier-project: #35d0d0;
+    --tier-reminder: #ffdf76;
+    --tier-stair: #ff8f4a;
+    --tier-unknown: #9aa8bc;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; padding: 0; font: 14px/1.55 -apple-system, BlinkMacSystemFont,
-      "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
-    background: var(--bg); color: var(--text);
+    margin: 0;
+    color: var(--text);
+    font: 14px/1.6 "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Source Han Sans CN", "WenQuanYi Micro Hei", sans-serif;
+    background: radial-gradient(1300px 700px at 12% -8%, #1a2740 0%, transparent 46%),
+      radial-gradient(800px 600px at 100% 0%, #132235 0%, transparent 40%),
+      var(--bg);
+  }
+  a { color: inherit; }
+  img { display: block; width: 100%; border-radius: 10px; }
+
+  .page {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 18px;
   }
   header {
-    padding: 20px 28px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    padding: 12px 0 18px;
+    border-bottom: 1px solid var(--panel-line);
   }
-  header h1 { font-size: 20px; margin: 0; font-weight: 600; }
-  header .badge {
-    background: var(--green); color: #00130a; padding: 2px 10px;
-    border-radius: 999px; font-size: 12px; font-weight: 600;
+  .eyebrow {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: .08em;
   }
-  header .meta { color: var(--muted); font-size: 13px; margin-left: auto; }
-  main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
-  .full { grid-column: 1 / -1; }
+  .title {
+    margin: 2px 0 0;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: .01em;
+  }
+  .meta {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .badge {
+    border: 1px solid var(--panel-line);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 8px 12px;
+    font-weight: 700;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .badge.ok {
+    color: #7fffc1;
+    border-color: rgba(75, 211, 123, 0.5);
+    background: rgba(75, 211, 123, 0.13);
+  }
+  .badge.warn {
+    color: #ffcd75;
+    border-color: rgba(255, 184, 75, 0.55);
+    background: rgba(255, 184, 75, 0.14);
+  }
+  .badge.bad {
+    color: #ff7d8a;
+    border-color: rgba(255, 92, 85, 0.45);
+    background: rgba(255, 92, 85, 0.14);
+  }
+
   .panel {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 10px; padding: 16px;
+    margin-top: 14px;
+    background: linear-gradient(180deg, rgba(17, 23, 33, 0.86), rgba(17, 23, 33, 0.72));
+    border: 1px solid var(--panel-line);
+    border-radius: 14px;
+    padding: 16px;
   }
-  .panel h2 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-  .panel img { max-width: 100%; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
-  .panel iframe { width: 100%; height: 520px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .stat {
-    background: var(--bg); border: 1px solid var(--border);
-    padding: 12px 14px; border-radius: 8px;
+  .full { grid-column: 1 / -1; }
+  .panel h2 {
+    margin: 0 0 12px;
+    color: #c4d2ea;
+    font-size: 14px;
+    letter-spacing: .02em;
   }
-  .stat .v { font-size: 28px; font-weight: 700; color: var(--blue); }
-  .stat .v.warn { color: var(--orange); }
-  .stat .v.bad { color: var(--red); }
-  .stat .v.ok { color: var(--green); }
-  .stat .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table th { text-align: left; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 600; }
-  table td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  table tr:hover { background: rgba(47, 129, 247, 0.06); }
-  code { background: rgba(110,118,129,.18); padding: 1px 6px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-  .severity-error { color: var(--red); font-weight: 600; }
-  .pipeline { display: flex; gap: 0; margin: 8px 0 16px; }
-  .step {
-    flex: 1; background: var(--bg); border: 1px solid var(--border);
-    padding: 10px 14px; position: relative;
+  .alert {
+    border-radius: 12px;
+    border: 1px solid transparent;
+    padding: 11px 14px;
+    line-height: 1.8;
+    margin-top: 10px;
   }
-  .step:first-child { border-radius: 8px 0 0 8px; }
-  .step:last-child { border-radius: 0 8px 8px 0; }
-  .step + .step { border-left: none; }
-  .step .num { color: var(--blue); font-weight: 700; font-size: 12px; }
-  .step .name { font-weight: 600; }
-  .step .out { color: var(--muted); font-size: 12px; font-family: ui-monospace, monospace; }
-  details { margin-top: 8px; }
-  summary { cursor: pointer; color: var(--muted); font-size: 12px; }
-  pre {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-    padding: 12px; overflow: auto; font-size: 12px; max-height: 320px;
+  .alert.warn {
+    border-color: rgba(255, 184, 75, 0.45);
+    background: rgba(255, 184, 75, 0.1);
+    color: #ffebb3;
   }
-  .links a { color: var(--blue); text-decoration: none; margin-right: 12px; font-size: 13px; }
-  .links a:hover { text-decoration: underline; }
-  .footer { padding: 14px 28px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); }
+  .alert.fail {
+    border-color: rgba(255, 92, 85, 0.4);
+    background: rgba(255, 92, 85, 0.09);
+    color: #ffd0ce;
+  }
+  .alert.soft {
+    border-color: rgba(75, 211, 123, 0.33);
+    background: rgba(75, 211, 123, 0.12);
+    color: #c9ffd8;
+  }
+
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .kpi {
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    padding: 12px;
+    background: var(--panel-soft);
+  }
+  .kpi .k { color: var(--muted); font-size: 12px; }
+  .kpi .v {
+    margin-top: 4px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: .01em;
+    color: var(--blue);
+  }
+  .kpi.bad .v { color: var(--red); }
+  .kpi.warn .v { color: var(--orange); }
+  .kpi.ok .v { color: var(--green); }
+
+  .flow {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .flow .f {
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-right: 1px solid var(--panel-line);
+  }
+  .flow .f:last-child { border-right: 0; }
+  .flow .idx {
+    color: var(--blue);
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+  .flow .name { font-weight: 600; }
+  .flow .out { font-size: 12px; color: var(--muted); }
+
+  .risk {
+    margin-top: 14px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .risk-item {
+    border-radius: 10px;
+    border: 1px solid var(--panel-line);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px;
+  }
+  .risk-item b { font-size: 22px; display: block; }
+  .risk-item .t { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+  .metric-grid {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 12px;
+  }
+  .metric-card {
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .metric-card h3 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .knowledge-grid {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+  }
+  .knowledge-card {
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .knowledge-kpi {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .knowledge-kpi .item {
+    border: 1px dashed var(--panel-line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .knowledge-kpi .n {
+    font-size: 22px;
+    margin-top: 2px;
+    color: #d9e6ff;
+  }
+  .knowledge-kpi .l {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .knowledge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .knowledge-item {
+    border: 1px dashed var(--panel-line);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .metric-card .bar {
+    display: grid;
+    gap: 4px;
+  }
+  .metric-note {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 8px;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 72px 1fr 50px;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .bar-label { color: #c7d6ee; }
+  .bar-track {
+    height: 9px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.6));
+  }
+  .bar-value {
+    text-align: right;
+    color: #d8e3ff;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gallery {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .img-card {
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    background: #111827;
+    overflow: hidden;
+  }
+  .img-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid var(--panel-line);
+  }
+  .img-head .muted { color: var(--muted); font-weight: 400; }
+  .img-wrap { background: #0d1320; padding: 8px; }
+  .img-wrap.layer-view {
+    position: relative;
+    min-height: 220px;
+    display: grid;
+    align-items: center;
+    justify-items: center;
+  }
+  .img-wrap.layer-view img {
+    width: 100%;
+    border-radius: 8px;
+  }
+  .layer-switch {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 6px 0 10px;
+  }
+  .layer-switch .chip {
+    border: 1px solid var(--panel-line);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--muted);
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .layer-switch .chip.active {
+    color: #cbe1ff;
+    border-color: rgba(87, 151, 255, 0.6);
+    background: rgba(58, 131, 255, 0.22);
+  }
+  .layer-switch .chip:focus-visible {
+    outline: 2px solid rgba(87, 151, 255, 0.6);
+    outline-offset: 2px;
+  }
+  .layer-switch .chip.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .issue-list {
+    margin-top: 14px;
+    display: grid;
+    gap: 10px;
+    max-height: 520px;
+    overflow: auto;
+  }
+  .issue-item {
+    border: 1px solid var(--panel-line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .issue-item .line {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .issue-item.tier-autodetectable {
+    border-left: 4px solid var(--tier-autodetect);
+  }
+  .issue-item.tier-partial-autodetect {
+    border-left: 4px solid var(--tier-partial);
+  }
+  .issue-item.tier-project-meta-driven {
+    border-left: 4px solid var(--tier-project);
+  }
+  .issue-item.tier-reminder-by-design {
+    border-left: 4px solid var(--tier-reminder);
+  }
+  .issue-item.tier-stair-pending {
+    border-left: 4px solid var(--tier-stair);
+  }
+  .issue-item.tier-unknown {
+    border-left: 4px solid var(--tier-unknown);
+  }
+  .issue-item .level {
+    font-size: 12px;
+    border-radius: 999px;
+    padding: 2px 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .issue-item .level.severity-error {
+    color: var(--red);
+    border-color: rgba(255,92,85,.45);
+  }
+  .issue-item .level.severity-warning {
+    color: var(--orange);
+    border-color: rgba(255,184,75,.45);
+  }
+  .issue-item .level.severity-info {
+    color: var(--blue);
+    border-color: rgba(58,131,255,.35);
+  }
+
+  .pill {
+    color: var(--muted);
+    font-size: 12px;
+    border: 1px dashed var(--panel-line);
+    border-radius: 999px;
+    padding: 2px 7px;
+    margin-left: 4px;
+  }
+  .tier-pill {
+    color: #ecf2ff;
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .tier-pill.tier-autodetectable { color: #63e089; border-color: rgba(75, 211, 123, .6); background: rgba(75, 211, 123, .12); }
+  .tier-pill.tier-partial-autodetect { color: #8acbff; border-color: rgba(92, 200, 255, .56); background: rgba(92, 200, 255, .12); }
+  .tier-pill.tier-project-meta-driven { color: #6ff3f3; border-color: rgba(53, 208, 208, .5); background: rgba(53, 208, 208, .14); }
+  .tier-pill.tier-reminder-by-design { color: #f6db80; border-color: rgba(255, 223, 118, .5); background: rgba(255, 223, 118, .12); }
+  .tier-pill.tier-stair-pending { color: #ffac6a; border-color: rgba(255, 143, 74, .5); background: rgba(255, 143, 74, .12); }
+  .tier-pill.tier-unknown { color: #b4bfd3; border-color: rgba(154, 168, 188, .56); background: rgba(154, 168, 188, .12); }
+  .issue-message {
+    margin: 8px 0 0;
+    color: #dbe7fc;
+    font-size: 13px;
+  }
+  .links {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .links a {
+    color: #9cc4ff;
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(156, 196, 255, 0.6);
+    font-size: 13px;
+  }
+
+  .side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .quick-rail {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .quick-chip {
+    border: 1px solid var(--panel-line);
+    border-radius: 12px;
+    padding: 10px;
+    text-decoration: none;
+    color: var(--text);
+    background: linear-gradient(180deg, rgba(19, 27, 40, 0.96), rgba(13, 20, 32, 0.9));
+  }
+  .quick-chip:hover {
+    border-color: rgba(120, 170, 255, 0.55);
+  }
+  .quick-chip .qk {
+    color: var(--blue);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: .02em;
+  }
+  .quick-chip .qv {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .ref-list {
+    margin: 0;
+    padding-left: 16px;
+    color: var(--text);
+    font-size: 13px;
+  }
+  .ref-item {
+    margin: 0 0 8px;
+  }
+  .ref-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: rgba(58, 131, 255, 0.12);
+    border-radius: 6px;
+    padding: 1px 5px;
+    color: #9ec2ff;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  th {
+    text-align: left;
+    color: var(--muted);
+    border-bottom: 1px solid var(--panel-line);
+    font-weight: 600;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  td {
+    border-bottom: 1px solid rgba(76,104,150,0.2);
+    padding: 8px 10px;
+    vertical-align: top;
+    color: #dde8ff;
+    line-height: 1.45;
+  }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #9ec2ff;
+  }
+
+  .footer {
+    margin: 12px 0 30px;
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+  }
+
+  @media (max-width: 1100px) {
+    .kpis,
+    .flow,
+    .risk,
+    .metric-grid,
+    .knowledge-grid,
+    .knowledge-kpi,
+    .gallery,
+    .side {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 720px) {
+    .page { padding: 12px; }
+    header {
+      display: block;
+    }
+    .badge { margin-top: 8px; display: inline-block; }
+    .kpis,
+    .flow,
+    .risk,
+    .knowledge-kpi,
+    .gallery,
+    .side,
+    .metric-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .table-wrap {
+    max-height: 360px;
+    overflow: auto;
+    border: 1px solid var(--panel-line);
+    border-radius: 12px;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .report {
+    margin-top: 12px;
+    background: #0f1722;
+    border: 1px solid var(--panel-line);
+    border-radius: 12px;
+    padding: 12px;
+    max-height: 340px;
+    overflow: auto;
+  }
+  .report pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #dbe6ff;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
 </style>
 </head>
 <body>
 
+<div class="page">
+{% set issue_metrics = issue_metrics | default({'severity_chart': [], 'top_rules': [], 'top_clauses': [], 'rule_tier_bars': [], 'rule_tiers': {}}, true) %}
+{% set knowledge_overview = knowledge_overview | default({}, true) %}
+{% set layer_available = layer_available | default({'source': true, 'overlay': true, 'annotated': true}, true) %}
+{% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
+
 <header>
-  <h1>🏛️ ArchReview-KG · Demo Viewer</h1>
+  <div>
+    <p class="eyebrow">ArchReview-KG · 民用建筑审图看板</p>
+    <h1 class="title">设计图快速复核结果</h1>
+    <p class="meta">{{ source_pdf }} · {{ created_at }}</p>
+  </div>
   {% if mode is defined and mode == "inspect_only" %}
-  <span class="badge" style="background: var(--orange); color: #000;">仅识图模式 · 规则评估未执行</span>
+    <span class="badge warn">规则评估未执行 · 仅识图模式</span>
   {% else %}
-  <span class="badge">{{ issues|length }} issues flagged</span>
+    {% set issue_total = issue_summary.total if issue_summary is defined else issues|length %}
+    {% if issue_total == 0 %}
+      <span class="badge ok">当前暂无规则违背</span>
+    {% else %}
+      <span class="badge bad">发现 {{ issue_total }} 条复核项</span>
+    {% endif %}
   {% endif %}
-  <span class="meta">{{ source_pdf }} · {{ created_at }}</span>
 </header>
 
 {% if mode is defined and mode == "inspect_only" %}
-<div style="margin: 16px; padding: 14px 18px; border-radius: 10px;
-            background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.6);
-            color: var(--text); font-size: 13px; line-height: 1.7;">
-<strong style="color: var(--orange);">⚠ 仅识图模式</strong> — 本次跑只完成了 PDF Ingest 与 Entity
-Graph 构建，<strong>没有评估规则、没有生成违规清单、没有标注 PDF</strong>。下方"问题清单"
-为空不表示合规，"流水线"步骤 3-5 显示为 skipped。先确认 builder 检出的实体数量是否合理，
-再用完整审图模式跑规则。
-</div>
+  <section class="panel">
+    <div class="alert fail">
+      <strong>规则评估未执行</strong>：仅做 PDF Ingest + Entity Graph，未运行规则引擎。
+      下方“问题清单”为空不代表合规，先确认识图实体数量合理后再跑完整审图。
+    </div>
+  </section>
 {% endif %}
 
 {% if quality_flags is defined and quality_flags %}
-<div style="margin: 16px; padding: 14px 18px; border-radius: 10px;
-            background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4);
-            color: var(--text); font-size: 13px; line-height: 1.7;">
-<strong style="color: var(--orange);">质量提示</strong> — 以下信号意味着 builder 检出的实体可能含有大量噪声，
-规则报告中的违规需谨慎解读：
-<ul style="margin: 8px 0 0 0; padding-left: 22px;">
-{% for flag in quality_flags %}
-  <li>{{ flag }}</li>
-{% endfor %}
-</ul>
-</div>
+  <section class="panel">
+    <div class="alert warn">
+      <strong>质量提示</strong>：识图噪声信号，建议先复核实体数量再读报告。
+      <ul style="margin: 6px 0 0 18px; padding: 0;">
+      {% for flag in quality_flags %}
+        <li>{{ flag }}</li>
+      {% endfor %}
+      </ul>
+    </div>
+  </section>
 {% endif %}
 
-<main>
-
-{% set inspect = mode is defined and mode == "inspect_only" %}
-<section class="panel full">
-  <h2>① 流水线</h2>
-  <div class="pipeline">
-    <div class="step"><div class="num">1</div><div class="name">PDF Ingest</div><div class="out">primitives.json · {{ stats.lines }} lines · {{ stats.texts }} texts</div></div>
-    <div class="step"><div class="num">2</div><div class="name">Entity Graph</div><div class="out">{{ stats.rooms }} rooms · {{ stats.doors }} doors · {{ stats.corridors }} corridor</div></div>
-    {% if inspect %}
-    <div class="step" style="opacity: .5;"><div class="num">3</div><div class="name">Rule Engine</div><div class="out" style="color: var(--orange);">⊘ skipped (inspect-only)</div></div>
-    <div class="step" style="opacity: .5;"><div class="num">4</div><div class="name">Annotate + Report</div><div class="out" style="color: var(--orange);">⊘ skipped</div></div>
-    <div class="step" style="opacity: .5;"><div class="num">5</div><div class="name">Feedback</div><div class="out" style="color: var(--orange);">⊘ skipped</div></div>
-    {% else %}
-    <div class="step"><div class="num">3</div><div class="name">Rule Engine</div><div class="out">3 rule cards × {{ stats.applicable_entities }} entities</div></div>
-    <div class="step"><div class="num">4</div><div class="name">Annotate + Report</div><div class="out">annotated.pdf · report.md</div></div>
-    <div class="step"><div class="num">5</div><div class="name">Feedback</div><div class="out">report.md → feedback.yaml</div></div>
-    {% endif %}
-  </div>
-  <div class="stats">
-    <div class="stat"><div class="v ok">{{ stats.rooms }}</div><div class="k">Rooms</div></div>
-    <div class="stat"><div class="v">{{ stats.doors }}</div><div class="k">Doors</div></div>
-    <div class="stat"><div class="v">{{ stats.corridors }}</div><div class="k">Corridors</div></div>
-    {% if inspect %}
-    <div class="stat"><div class="v warn">N/A</div><div class="k">Issues (规则未跑)</div></div>
-    {% else %}
-    <div class="stat"><div class="v {% if issues %}bad{% else %}ok{% endif %}">{{ issues|length }}</div><div class="k">Issues</div></div>
-    {% endif %}
-  </div>
-  <div class="links" style="margin-top: 12px;">
-    <a href="entity_graph.json" target="_blank">📦 entity_graph.json</a>
-    {% if not inspect %}<a href="issues.json" target="_blank">📋 issues.json</a>{% endif %}
-    <a href="primitives.json" target="_blank">🧱 primitives.json</a>
-    <a href="report.md" target="_blank">📝 report.md</a>
-    {% if not inspect %}<a href="feedback.yaml" target="_blank">✉️ feedback.yaml</a>{% endif %}
+<section class="panel">
+  <h2>快速路径</h2>
+  <div class="quick-rail">
+    <a class="quick-chip" href="#panel-layer">
+      <span class="qk">01 识图图层</span>
+      <div class="qv">实体图层 / 标注图一键对照</div>
+    </a>
+    <a class="quick-chip" href="#panel-issues">
+      <span class="qk">02 问题面板</span>
+      <div class="qv">高风险与热点规则先看图</div>
+    </a>
+    <a class="quick-chip" href="#panel-report">
+      <span class="qk">03 报告与条文</span>
+      <div class="qv">快速打开报告与条文触达</div>
+    </a>
   </div>
 </section>
 
 <section class="panel">
-  <h2>② 源图纸</h2>
-  <img src="source_preview.png" alt="source plan" />
-  <details><summary>下载源 PDF</summary><a href="source.pdf" target="_blank">source.pdf</a></details>
+  <h2>① 快速健康度</h2>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="k">Rooms</div>
+      <div class="v">{{ stats.rooms }}</div>
+    </div>
+    <div class="kpi warn">
+      <div class="k">Doors</div>
+      <div class="v">{{ stats.doors }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Corridors</div>
+      <div class="v">{{ stats.corridors }}</div>
+    </div>
+    <div class="kpi {% if not (mode is defined and mode == 'inspect_only') and issues %}bad{% endif %}">
+      <div class="k">问题</div>
+      <div class="v">{{ issues|length }}</div>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric-card">
+      <h3>风险占比</h3>
+      <div class="bar">
+        {% for row in issue_metrics.severity_chart %}
+          <div class="bar-row">
+            <div class="bar-label">{{ row.label }}</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: {{ "%.1f"|format(row.pct) }}%; background: {{ row.color }};"></div>
+            </div>
+            <div class="bar-value">{{ row.count }}（{{ "%.1f"|format(row.pct) }}%）</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="metric-card">
+      <h3>热点规则（Top {{ issue_metrics.top_rules | length }}）</h3>
+      <div class="bar">
+        {% if issue_metrics.top_rules %}
+          {% for row in issue_metrics.top_rules %}
+            {% set tier_key = row.tier | default('UNKNOWN') | lower | replace('_', '-') %}
+            <div class="bar-row">
+              <div class="bar-label">
+                {{ row.rule_card_id }}
+                <span class="pill tier-pill tier-{{ tier_key }}">{{ row.tier }}</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: {{ "%.1f"|format(row.pct) }}%; background: {{ row.color }};"></div>
+              </div>
+              <div class="bar-value">{{ row.count }} / {{ issue_summary.total }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="bar-row" style="grid-template-columns:1fr;">
+            <div class="bar-label">当前无规则触发，可复核规则链路是否完整</div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="metric-note">规则类型分层（Top 列表）</div>
+      <div class="bar">
+        {% if issue_metrics.rule_tier_bars %}
+          {% for row in issue_metrics.rule_tier_bars %}
+            <div class="bar-row">
+              <div class="bar-label">{{ row.label }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: {{ "%.1f"|format(row.pct) }}%; background: {{ row.color }};"></div>
+              </div>
+              <div class="bar-value">{{ row.count }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="bar-row" style="grid-template-columns:1fr;">
+            <div class="bar-label" style="color: var(--muted);">当前无可用分层数据</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="f"><div class="idx">1</div><div class="name">PDF Ingest</div><div class="out">primitives.json · {{ stats.lines }} line · {{ stats.texts }} text</div></div>
+    <div class="f"><div class="idx">2</div><div class="name">Entity Graph</div><div class="out">{{ stats.rooms }} rooms · {{ stats.doors }} doors · {{ stats.corridors }} corridors</div></div>
+    {% if mode is defined and mode == "inspect_only" %}
+      <div class="f" style="opacity:.45"><div class="idx">3</div><div class="name">Rule Engine</div><div class="out">skipped</div></div>
+      <div class="f" style="opacity:.45"><div class="idx">4</div><div class="name">Annotate + Report</div><div class="out">skipped</div></div>
+      <div class="f" style="opacity:.45"><div class="idx">5</div><div class="name">Feedback</div><div class="out">skipped</div></div>
+    {% else %}
+      <div class="f"><div class="idx">3</div><div class="name">Rule Engine</div><div class="out">{{ stats.applicable_entities }} 实体参与</div></div>
+      <div class="f"><div class="idx">4</div><div class="name">Annotate + Report</div><div class="out">annotated.pdf · report.md</div></div>
+      <div class="f"><div class="idx">5</div><div class="name">Feedback</div><div class="out">report.md → feedback.yaml</div></div>
+    {% endif %}
+  </div>
+
+  <div class="risk">
+    <div class="risk-item">
+      <b style="color: var(--red);">{{ issue_summary.error }}</b>
+      <div class="t">高风险（违规）</div>
+    </div>
+    <div class="risk-item">
+      <b style="color: var(--orange);">{{ issue_summary.warning }}</b>
+      <div class="t">提示（需核验）</div>
+    </div>
+    <div class="risk-item">
+      <b style="color: var(--blue);">{{ issue_summary.info }}</b>
+      <div class="t">人工核对清单</div>
+    </div>
+  </div>
 </section>
 
 <section class="panel">
-  <h2>③ 实体识别（彩色 overlay）</h2>
-  <img src="entity_overlay.png" alt="entity overlay" />
-</section>
-
-<section class="panel full">
-  <h2>④ 问题清单（{% if inspect %}规则未跑{% else %}{{ issues|length }} 条{% endif %}）</h2>
-  {% if inspect %}
-  <p style="color: var(--orange);">⊘ 仅识图模式下规则评估未执行，本节为空不代表合规。</p>
-  {% elif issues %}
-  <table>
-    <thead>
-      <tr>
-        <th>#</th><th>issue_id</th><th>rule</th><th>条文</th>
-        <th>实体</th><th>测量</th><th>阈值</th><th>说明</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in issues %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td><code>{{ i.issue_id }}</code></td>
-        <td><code>{{ i.rule_card_id }}</code></td>
-        <td><code>{{ i.standard_clause_id }}</code></td>
-        <td><code>{{ i.entity_ids|join(', ') }}</code></td>
-        <td><span class="severity-error">{{ "%.2f"|format(i.evidence.measured_value) if i.evidence.measured_value is not none else '—' }}</span></td>
-        <td>{{ "%.2f"|format(i.evidence.threshold_value) if i.evidence.threshold_value is not none else '—' }} {{ i.evidence.unit or '' }}</td>
-        <td>{{ i.message }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <h2>⑥ 知识库快照</h2>
+  {% if knowledge_overview.error %}
+    <div class="alert warn">知识库字段读取失败：{{ knowledge_overview.error }}</div>
   {% else %}
-  <p style="color: var(--green);">✓ 未发现违反规则的实体</p>
+    <div class="knowledge-kpi">
+      <div class="item">
+        <div class="l">标准条文</div>
+        <div class="n">{{ knowledge_overview.total_clauses }}</div>
+      </div>
+      <div class="item">
+        <div class="l">规则卡</div>
+        <div class="n">{{ knowledge_overview.total_rules }}</div>
+      </div>
+      <div class="item">
+        <div class="l">住宅相关</div>
+        <div class="n">{{ knowledge_overview.residential_rules }}</div>
+      </div>
+    </div>
+    <div class="knowledge-grid">
+      <div class="knowledge-card">
+        <h3>来源 Top</h3>
+        <div class="knowledge-list">
+          {% for name, count in knowledge_overview.by_source[:4] %}
+            <div class="knowledge-item">{{ name }} · {{ count }}</div>
+          {% else %}
+            <div class="knowledge-item">暂无</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="knowledge-card">
+        <h3>类别 Top</h3>
+        <div class="knowledge-list">
+          {% for name, count in knowledge_overview.by_category[:4] %}
+            <div class="knowledge-item">{{ name }} · {{ count }}</div>
+          {% else %}
+            <div class="knowledge-item">暂无</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
   {% endif %}
 </section>
 
-<section class="panel full">
-  <h2>⑤ {% if inspect %}源图副本（无标注，规则未跑）{% else %}标注 PDF{% endif %}</h2>
-  <img src="annotated_preview.png" alt="{% if inspect %}source pdf copy{% else %}annotated pdf{% endif %}" />
-  <details><summary>下载{% if inspect %}源图副本{% else %} annotated.pdf{% endif %}</summary><a href="annotated.pdf" target="_blank">annotated.pdf</a></details>
+<section class="panel full" id="panel-layer">
+  <h2>② 成果对照图</h2>
+  <div class="layer-switch" role="tablist" aria-label="图层切换">
+    <button class="chip {% if not layer_available.source %}is-disabled{% endif %}" data-layer="source" {% if not layer_available.source %}disabled{% endif %}>source</button>
+    <button class="chip {% if not layer_available.overlay %}is-disabled{% endif %}" data-layer="overlay" {% if not layer_available.overlay %}disabled{% endif %}>entity overlay</button>
+    <button class="chip {% if not layer_available.annotated %}is-disabled{% endif %}" data-layer="annotated" {% if not layer_available.annotated %}disabled{% endif %}>annotated</button>
+  </div>
+  <div class="gallery">
+    <div class="img-card">
+      <div class="img-head">图层对照 <span class="muted" id="layerState">source</span></div>
+      <div class="img-wrap layer-view">
+        <img id="layerImage" src="source_preview.png" alt="review layer" />
+      </div>
+    </div>
+    <div class="img-card">
+      <div class="img-head">标准图层参考</div>
+      <div class="img-wrap">
+        <div class="bar">
+          <div class="bar-row"><span class="bar-label">source</span><span class="bar-value"><a href="source_preview.png" target="_blank">source_preview.png</a></span></div>
+          <div class="bar-row"><span class="bar-label">entity overlay</span><span class="bar-value"><a href="entity_overlay.png" target="_blank">entity_overlay.png</a></span></div>
+          <div class="bar-row"><span class="bar-label">annotated</span><span class="bar-value"><a href="annotated_preview.png" target="_blank">annotated_preview.png</a></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="panel full" id="panel-issues">
+  <h2>③ Issues ({% if mode is defined and mode == "inspect_only" %}规则未跑{% else %}{{ issues|length }}{% endif %})</h2>
+  {% if mode is defined and mode == "inspect_only" %}
+    <p style="color: var(--orange);">本次只跑识图，不输出规则问题。Issues 条目为空不等于合规。</p>
+  {% elif issues %}
+    <div class="issue-list">
+      {% for i in issues %}
+      {% set issue_tier = issue_tiers.get(i.rule_card_id, "UNKNOWN") %}
+      {% set issue_tier_class = issue_tier | lower | replace('_', '-') %}
+        <article class="issue-item tier-{{ issue_tier_class }}">
+        <div class="line">
+          {% set issue_sev = i.severity or "info" %}
+          {% set severity_key = (issue_sev | lower | replace(" ", "")) %}
+          <span class="level severity-{{ severity_key }}">{{ issue_sev | upper }}</span>
+          <span><code>{{ i.issue_id }}</code></span>
+          <span class="pill">{{ i.rule_card_id }}</span>
+          <span class="pill tier-pill tier-{{ issue_tier_class }}">{{ issue_tier }}</span>
+          <span class="pill">{{ i.standard_clause_id }}</span>
+          <span class="pill">{{ i.entity_ids | join(', ') }}</span>
+          {% if i.evidence.measured_value is not none and i.evidence.threshold_value is not none %}
+            <span class="pill">{{ "%.2f"|format(i.evidence.measured_value) }} / {{ "%.2f"|format(i.evidence.threshold_value) }} {{ i.evidence.unit or '' }}</span>
+          {% endif %}
+        </div>
+        <p class="issue-message">{{ i.message }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="color: var(--green);">✓ 未发现违反规则的实体（当前规则集合）。</p>
+  {% endif %}
+
+  <div class="links">
+    <a href="entity_graph.json" target="_blank">entity_graph.json</a>
+    {% if not (mode is defined and mode == "inspect_only") %}<a href="issues.json" target="_blank">issues.json</a>{% endif %}
+    <a href="primitives.json" target="_blank">primitives.json</a>
+    <a href="report.md" target="_blank">report.md</a>
+    {% if not (mode is defined and mode == "inspect_only") %}<a href="feedback.yaml" target="_blank">feedback.yaml</a>{% endif %}
+  </div>
+</section>
+
+<section class="panel full" id="panel-report">
+  <h2>④ 标注 PDF</h2>
+  <div class="gallery">
+    <div class="img-card">
+      <div class="img-head">{% if mode is defined and mode == "inspect_only" %}源图副本（无标注）{% else %}规则标注版{% endif %}</div>
+      <div class="img-wrap"><img src="annotated_preview.png" alt="annotated preview" /></div>
+    </div>
+    <div class="report">
+      <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">审查报告快览</div>
+      <pre>{{ report_md }}</pre>
+    </div>
+  </div>
+  <div class="links" style="margin-top: 14px;">
+    <a href="annotated.pdf" target="_blank">下载 PDF 标注/副本</a>
+  </div>
 </section>
 
 <section class="panel full">
-  <h2>⑥ Markdown 报告</h2>
-  <pre>{{ report_md }}</pre>
+  <h2>⑤ 条文触达地图</h2>
+  <div class="metric-grid">
+    {% if clause_refs is defined and clause_refs %}
+    <div>
+      <ul class="ref-list">
+        {% for row in clause_refs %}
+        <li class="ref-item">
+          <span class="ref-id">{{ row.clause_id }}</span>
+          <div style="margin-top: 4px; color: var(--muted);">{{ row.source }} · {{ row.category }} · {{ row.threshold_value }} {{ row.unit }}</div>
+          <div style="color: #d8e3ff; margin-top: 4px;">{{ row.clause_text }}</div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% else %}
+      <div>
+        <p style="color: var(--muted);">当前未抽取到可汇总条文。</p>
+      </div>
+    {% endif %}
+
+    <div class="metric-card">
+      <h3>高频触发条文（Top {{ issue_metrics.top_clauses | length }}）</h3>
+      <div class="bar">
+        {% if issue_metrics.top_clauses %}
+          {% for row in issue_metrics.top_clauses %}
+            {% set pct = 0 %}
+            {% if issue_summary.total %}
+              {% set pct = 100.0 * row.count / issue_summary.total %}
+            {% endif %}
+            <div class="bar-row">
+              <div class="bar-label">{{ row.source }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: {{ "%.1f"|format(pct) }}%; background: linear-gradient(90deg, #4fd67a, #93edaa);"></div>
+              </div>
+              <div class="bar-value">{{ row.count }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="bar-row" style="grid-template-columns:1fr;">
+            <div class="bar-label" style="color: var(--muted);">当前无条文命中统计</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 </section>
 
-</main>
+<div class="footer">本地只读结果页 · 每次运行都会保留 source.pdf、预览图和 report.md 供复核</div>
 
-<div class="footer">
-  ArchReview-KG demo viewer · 静态、只读、零状态。规则与图谱由 CLI 命令 <code>archkg review</code> 产生。
 </div>
+<script>
+(function () {
+  const layerImage = document.getElementById("layerImage");
+  const layerState = document.getElementById("layerState");
+  const chips = Array.from(document.querySelectorAll('.layer-switch .chip'));
+  if (!layerImage || !layerState || !chips.length) {
+    return;
+  }
+  const layerSources = {
+    source: "source_preview.png",
+    overlay: "entity_overlay.png",
+    annotated: "annotated_preview.png",
+  };
+  const layerLabels = {
+    source: "source",
+    overlay: "entity overlay",
+    annotated: "annotated",
+  };
+
+  function applyLayer(next) {
+    const src = layerSources[next];
+    if (!src) {
+      return;
+    }
+    layerImage.src = src;
+    layerImage.alt = `review layer ${layerLabels[next] || next}`;
+    layerState.textContent = layerLabels[next] || next;
+    chips.forEach((chip) => {
+      chip.classList.toggle("active", chip.dataset.layer === next);
+      chip.setAttribute("aria-pressed", chip.dataset.layer === next ? "true" : "false");
+    });
+  }
+
+  chips.forEach((chip) => {
+    chip.type = "button";
+    chip.setAttribute("aria-pressed", chip.classList.contains("active") ? "true" : "false");
+    chip.addEventListener("click", () => {
+      applyLayer(chip.dataset.layer);
+    });
+  });
+
+  const active = chips.find((c) => c.classList.contains("active") && !c.disabled);
+  applyLayer((active && active.dataset.layer) || (chips.find((c) => !c.disabled) || chips[0]).dataset.layer);
+})();
+</script>
 </body>
 </html>

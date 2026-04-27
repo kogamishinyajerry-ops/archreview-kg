@@ -973,5 +973,87 @@ def feedback(
     typer.echo(f"wrote {out}")
 
 
+@app.command("control-sync")
+def control_sync(
+    run_dir: Path = typer.Option(
+        Path("out"),
+        "--run-dir",
+        "-d",
+        help="目录写入 control_sync.json 和本次状态快照。",
+    ),
+    sync_github: bool = typer.Option(
+        True,
+        "--github/--no-github",
+        help="同步 GitHub 状态（默认开）。优先用 `gh`，缺失时回退 GitHub REST API。",
+    ),
+    sync_notion: bool = typer.Option(
+        False,
+        "--notion/--no-notion",
+        help="同步到 Notion（需 API key 与 page_id）。",
+    ),
+    notion_api_key: str | None = typer.Option(
+        None,
+        "--notion-api-key",
+        envvar="NOTION_API_KEY",
+        show_default=False,
+        help="Notion integration token（如设置了 `NOTION_API_KEY` 环境变量可省略）。",
+    ),
+    notion_page_id: str | None = typer.Option(
+        None,
+        "--notion-page-id",
+        envvar="ARCHREVIEW_NOTION_PAGE_ID",
+        help="Notion 页面 ID 或完整页面链接（自动规范化支持）。",
+    ),
+) -> None:
+    """Upload a compact control status snapshot and sync it to GitHub/Notion.
+
+    输出/落盘文件:
+    - control_sync.json: 运行快照(git + 关键产物清单)
+
+    注意:
+    - 不提供 notion 参数时自动降级为本地快照
+    - GitHub 同步优先用 `gh` CLI; 缺失时用 GitHub REST API 只读回退
+    """
+    import json
+
+    from archkg.control_sync import sync_control_state
+
+    result = sync_control_state(
+        repo_root=Path(__file__).resolve().parents[2],
+        run_dir=run_dir,
+        sync_github=sync_github,
+        sync_notion=sync_notion,
+        notion_api_key=notion_api_key,
+        notion_page_id=notion_page_id,
+    )
+    typer.echo(json.dumps(result["snapshot"], ensure_ascii=False, indent=2))
+    typer.echo(f"local snapshot: {result['local_status_file']}")
+    if sync_github:
+        gh = result["sync"].get("github")
+        if gh is None:
+            typer.echo("github: disabled")
+        elif gh.get("status") == "ok":
+            typer.echo(f"github: ok ({gh.get('repo')})")
+        else:
+            typer.echo(f"github: {gh.get('status')} - {gh.get('reason') or gh.get('detail')}")
+    if sync_notion:
+        notion = result["sync"].get("notion")
+        notion_mode = notion.get("mode") if isinstance(notion, dict) else None
+        if notion is None:
+            typer.echo("notion: disabled")
+        elif notion.get("status") == "ok":
+            target = notion.get("page") or notion.get("database") or "unknown target"
+            if notion_mode:
+                fallback_reason = notion.get("fallback_reason")
+                if fallback_reason:
+                    typer.echo(f"notion: ok ({notion_mode}; fallback={fallback_reason}) -> {target}")
+                else:
+                    typer.echo(f"notion: ok ({notion_mode}) -> {target}")
+            else:
+                typer.echo(f"notion: ok -> {target}")
+        else:
+            typer.echo(f"notion: {notion.get('status')} - {notion.get('reason')}")
+
+
 if __name__ == "__main__":
     app()

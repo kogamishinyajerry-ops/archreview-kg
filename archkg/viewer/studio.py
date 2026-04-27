@@ -33,6 +33,7 @@ import json
 import shutil
 import traceback
 import uuid
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from importlib.resources import files
@@ -123,6 +124,204 @@ def _compute_quality_flags(graph: Any) -> tuple[str, ...]:
             "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20 不会触发。"
         )
     return tuple(flags)
+
+
+def _knowledge_overview() -> dict[str, Any]:
+    """Small summary payload for the upload page's knowledge-coverage panel."""
+    from archkg.knowledge.loader import load_rules, load_standards
+
+    try:
+        standards = load_standards()
+        rules = load_rules(standards=standards)
+    except Exception as exc:
+        return {"error": str(exc), "total_clauses": "—", "total_rules": "—"}
+
+    source_counter: Counter[str] = Counter(c.source for c in standards)
+    category_counter: Counter[str] = Counter(c.category for c in standards)
+    residential_rules = len([r for r in standards if "residential" in r.applies_to_building_type])
+
+    return {
+        "total_clauses": len(standards),
+        "total_rules": len(rules),
+        "by_source": sorted(source_counter.items(), key=lambda p: p[1], reverse=True),
+        "by_category": sorted(category_counter.items(), key=lambda p: p[1], reverse=True),
+        "residential_rules": residential_rules,
+    }
+
+
+def _rule_readiness_map() -> dict[str, str]:
+    """Load current rule->ready tier map for visual tagging.
+
+    If readiness metadata is temporarily unavailable, degrade to an empty
+    map and rely on ``UNKNOWN`` downstream.
+    """
+    try:
+        from archkg.knowledge.loader import load_rules, load_standards
+        from archkg.knowledge.readiness import classify_all
+
+        rules = load_rules(standards=load_standards())
+    except Exception:
+        return {}
+    return {finding.rule_id: finding.tier for finding in classify_all(rules)}
+
+
+def _issue_summary(issues: list[dict[str, Any]]) -> dict[str, int]:
+    """Summarise severity counts for the result dashboard."""
+    severity = Counter(i.get("severity", "info") for i in issues)
+    return {
+        "total": len(issues),
+        "error": int(severity.get("error", 0)),
+        "warning": int(severity.get("warning", 0)),
+        "info": int(severity.get("info", 0)),
+        "other": int(len(issues) - severity.get("error", 0) - severity.get("warning", 0) - severity.get("info", 0)),
+    }
+
+
+def _issue_metric_payload(
+    issues: list[dict[str, Any]],
+    *,
+    top_rules: int = 6,
+    top_sources: int = 6,
+) -> dict[str, Any]:
+    """Pre-compute compact chart data so Jinja templates stay mostly layout."""
+    summary = _issue_summary(issues)
+    total = max(summary["total"], 1)
+    rule_tiers = _rule_readiness_map()
+    tier_labels = {
+        "AUTODETECTABLE": "可自动检测",
+        "PARTIAL_AUTODETECT": "待补数据",
+        "PROJECT_META_DRIVEN": "项目驱动",
+        "REMINDER_BY_DESIGN": "设计复核",
+        "STAIR_PENDING": "STAIR 待建",
+        "UNKNOWN": "未映射",
+    }
+    tier_colors = {
+        "AUTODETECTABLE": "var(--tier-autodetect)",
+        "PARTIAL_AUTODETECT": "var(--tier-partial)",
+        "PROJECT_META_DRIVEN": "var(--tier-project)",
+        "REMINDER_BY_DESIGN": "var(--tier-reminder)",
+        "STAIR_PENDING": "var(--tier-stair)",
+        "UNKNOWN": "var(--tier-unknown)",
+    }
+    tier_order = (
+        "AUTODETECTABLE",
+        "PARTIAL_AUTODETECT",
+        "PROJECT_META_DRIVEN",
+        "REMINDER_BY_DESIGN",
+        "STAIR_PENDING",
+        "UNKNOWN",
+    )
+
+    severity_bars = [
+        ("error", "高风险", "var(--red)", summary["error"]),
+        ("warning", "警示", "var(--orange)", summary["warning"]),
+        ("info", "核对", "var(--blue)", summary["info"]),
+    ]
+    severity_chart = [
+        {
+            "key": key,
+            "label": label,
+            "color": color,
+            "count": count,
+            "pct": 100.0 * count / total,
+        }
+        for key, label, color, count in severity_bars
+    ]
+
+    rule_counter: Counter[str] = Counter()
+    clause_counter: Counter[str] = Counter()
+    for issue in issues:
+        rule_id = issue.get("rule_card_id")
+        if isinstance(rule_id, str):
+            rule_counter.update([rule_id])
+        clause_id = issue.get("standard_clause_id")
+        if isinstance(clause_id, str):
+            clause_counter.update([clause_id])
+    top_rule_tier_counter = Counter(
+        rule_tiers.get(rid, "UNKNOWN") for rid, _ in rule_counter.most_common(top_rules)
+    )
+    tier_rows = []
+    for tier in tier_order:
+        count = int(top_rule_tier_counter.get(tier, 0))
+        if count == 0:
+            continue
+        tier_rows.append(
+            {
+                "tier": tier,
+                "label": tier_labels[tier],
+                "count": count,
+                "pct": 100.0 * count / total,
+                "color": tier_colors[tier],
+            }
+        )
+
+    top_rule_rows = [
+        {
+            "rule_card_id": rid,
+            "count": count,
+            "tier": rule_tiers.get(rid, "UNKNOWN"),
+            "pct": 100.0 * count / summary["total"] if summary["total"] else 0.0,
+            "color": tier_colors[rule_tiers.get(rid, "UNKNOWN")],
+        }
+        for rid, count in rule_counter.most_common(top_rules)
+    ]
+    top_sources_rows = [
+        {"source": source, "count": count}
+        for source, count in clause_counter.most_common(top_sources)
+    ]
+
+    return {
+        "summary": summary,
+        "severity_chart": severity_chart,
+        "rule_tier_bars": tier_rows,
+        "rule_tiers": rule_tiers,
+        "top_rules": top_rule_rows,
+        "top_clauses": top_sources_rows,
+    }
+
+
+def _clause_refs(
+    issues: list[dict[str, Any]],
+    *,
+    limit: int = 8,
+) -> list[dict[str, Any]]:
+    """Create a compact clause reference list from top-used clause IDs."""
+    from archkg.knowledge.loader import load_standards
+
+    if not issues:
+        return []
+    clause_ids: list[str] = []
+    for issue in issues:
+        clause_id = issue.get("standard_clause_id")
+        if isinstance(clause_id, str):
+            clause_ids.append(clause_id)
+    top_clause_ids = [cid for cid, _ in Counter(clause_ids).most_common(limit)]
+
+    try:
+        standards = load_standards()
+        by_id = {c.id: c for c in standards}
+    except Exception:
+        return []
+
+    out = []
+    for cid in top_clause_ids:
+        clause = by_id.get(cid)
+        if clause is None:
+            continue
+        text = clause.clause_text.replace("\n", " ")
+        if len(text) > 85:
+            text = text[:82] + "…"
+        out.append(
+            {
+                "clause_id": cid,
+                "source": clause.source,
+                "category": clause.category,
+                "threshold_value": clause.threshold_value if clause.threshold_value is not None else "—",
+                "unit": clause.unit or "",
+                "clause_text": text,
+            }
+        )
+    return out
 
 
 def run_pipeline(
@@ -472,6 +671,10 @@ def _render_viewer_index(
         "corridors": len(graph.get("corridors", [])),
         "applicable_entities": applicable,
     }
+    issue_payload = _issue_metric_payload(issues)
+    issue_summary = issue_payload["summary"]
+    clause_refs = _clause_refs(issues)
+    knowledge_overview = _knowledge_overview()
 
     html = env.get_template("index.html.j2").render(
         source_pdf=str(source_pdf),
@@ -481,6 +684,10 @@ def _render_viewer_index(
         report_md=report_md,
         quality_flags=list(quality_flags),
         mode=mode,
+        knowledge_overview=knowledge_overview,
+        issue_summary=issue_summary,
+        issue_metrics=issue_payload,
+        clause_refs=clause_refs,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 
@@ -497,92 +704,359 @@ STUDIO_HTML = r"""
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
-<title>ArchReview-KG Studio · 上传图纸自动审图</title>
+<title>ArchReview-KG Studio</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
-    --bg: #0e1014;
-    --panel: #161a22;
-    --border: #2a3140;
-    --text: #e6edf3;
-    --muted: #7d8590;
-    --blue: #2f81f7;
-    --green: #3fb950;
-    --orange: #f59e0b;
-    --red: #f85149;
+    --bg: #070b12;
+    --panel: #111827;
+    --line: rgba(94, 114, 151, 0.35);
+    --text: #e8eefb;
+    --muted: #95a2b7;
+    --blue: #3f87ff;
+    --green: #34d399;
+    --orange: #f2b45b;
+    --red: #ff5c5c;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; font: 15px/1.55 -apple-system, BlinkMacSystemFont,
-      "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
-    background: var(--bg); color: var(--text);
+    margin: 0;
+    color: var(--text);
+    font: 14px/1.65 "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Source Han Sans CN", "WenQuanYi Micro Hei", sans-serif;
+    background: radial-gradient(1100px 550px at 8% -8%, #16243b 0%, transparent 52%),
+      radial-gradient(900px 640px at 110% 0%, #101e30 0%, transparent 45%),
+      var(--bg);
   }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 36px 24px 80px; }
-  header { padding-bottom: 22px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
-  header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; }
-  header p { margin: 0; color: var(--muted); font-size: 14px; }
-  .lede { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-          padding: 18px 22px; margin-bottom: 28px; font-size: 14px; line-height: 1.7; }
-  .lede strong { color: var(--blue); }
-  .lede ul { margin: 8px 0 0; padding-left: 24px; }
-  .lede li { margin-bottom: 4px; }
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 22px 16px 72px;
+  }
+  header {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 18px;
+    background: linear-gradient(180deg, rgba(18, 28, 43, 0.95), rgba(13, 20, 30, 0.9));
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  }
+  header .top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .brand {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: .01em;
+  }
+  .tag {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .kpi {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .kpi-item {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    min-width: 140px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .kpi-item .k { color: var(--muted); font-size: 12px; }
+  .kpi-item .v { margin-top: 2px; font-size: 18px; font-weight: 700; }
 
-  .drop {
-    border: 2px dashed var(--border); border-radius: 14px;
-    padding: 40px 24px; text-align: center; background: var(--panel);
-    transition: border-color .15s, background .15s;
-    cursor: pointer; margin-bottom: 22px;
+  .card {
+    margin-top: 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(17, 25, 37, 0.96), rgba(15, 22, 32, 0.9));
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+    padding: 16px;
   }
-  .drop.over { border-color: var(--blue); background: rgba(47, 129, 247, 0.08); }
-  .drop-icon { font-size: 32px; margin-bottom: 8px; }
-  .drop-hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .card h2 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #aab9d4;
+    letter-spacing: .05em;
+  }
+  .drop {
+    border: 2px dashed rgba(94, 114, 151, 0.55);
+    border-radius: 14px;
+    padding: 32px 20px;
+    text-align: center;
+    background: #111827;
+    transition: 0.18s border-color, .18s background;
+    cursor: pointer;
+    min-height: 190px;
+    display: grid;
+    place-items: center;
+    gap: 4px;
+  }
+  .drop.over {
+    border-color: var(--blue);
+    background: rgba(63, 135, 255, 0.09);
+  }
+  .drop-hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    max-width: 640px;
+    line-height: 1.7;
+  }
   .drop input[type=file] { display: none; }
   .file-pill {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
-    background: rgba(63, 185, 80, 0.08); color: var(--green);
-    font-size: 13px; margin-top: 12px;
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(52, 211, 153, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    color: var(--green);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
   }
-  .file-pill .x { color: var(--muted); cursor: pointer; }
-
-  details { margin-bottom: 16px; background: var(--panel);
-            border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; }
-  details summary { cursor: pointer; font-weight: 600; color: var(--text);
-                    user-select: none; }
-  details > div { padding-top: 10px; color: var(--muted); font-size: 13px; }
-  details label { display: block; margin: 10px 0 4px; color: var(--text);
-                  font-weight: 500; font-size: 14px; }
-  details input[type=file] { display: block; padding: 6px 0; color: var(--muted);
-                             font-family: inherit; font-size: 13px; width: 100%; }
-  details a { color: var(--blue); text-decoration: none; }
-  details a:hover { text-decoration: underline; }
-
-  .actions { display: flex; gap: 12px; margin-top: 26px; align-items: center; }
+  .file-pill .x { color: #d5deed; opacity: .9; cursor: pointer; }
+  .panel-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 12px;
+  }
+  .mini-vision {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .mini-cell {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .mini-cell .k {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .mini-cell .v {
+    margin-top: 3px;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .mini-track {
+    margin-top: 8px;
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .mini-track > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #56a8ff, #90d4ff);
+  }
+  details {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  details summary {
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+  }
+  details > div {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  details label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    color: var(--text);
+    font-size: 13px;
+  }
+  details input[type=file], .num {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    background: #0b1624;
+    padding: 7px 9px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .preset-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .preset {
+    border: 1px solid rgba(156, 203, 255, 0.45);
+    background: rgba(156, 203, 255, 0.1);
+    color: #c8deff;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
   .btn {
-    border: 0; padding: 12px 22px; border-radius: 8px; cursor: pointer;
-    font: inherit; font-weight: 600; transition: transform .05s, opacity .15s;
+    border: 0;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    padding: 11px 18px;
+    transition: transform .05s ease, opacity .2s;
   }
   .btn:active { transform: translateY(1px); }
-  .btn-primary { background: var(--blue); color: #fff; font-size: 15px; }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-  .btn-ghost:hover { color: var(--text); border-color: var(--blue); }
+  .btn-primary {
+    background: linear-gradient(180deg, #4d93ff, #2e7bff);
+    color: white;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .btn-primary:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+  .note {
+    margin-top: 10px;
+    color: #9fb0c7;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .foot {
+    margin-top: 18px;
+    color: #7e8da2;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .foot a { color: var(--blue); }
+  .foot code {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+  .flashes {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 92, 92, 0.45);
+    background: rgba(255, 92, 92, 0.1);
+    color: #ffd4d4;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
 
-  .footer { margin-top: 36px; color: var(--muted); font-size: 12px; line-height: 1.7; }
-  .footer code { background: var(--panel); padding: 2px 6px; border-radius: 4px; }
-  .footer a { color: var(--blue); text-decoration: none; }
+  .inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .path-timeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .step-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .step-card .idx {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    font-size: 11px;
+    text-align: center;
+    line-height: 18px;
+    background: rgba(156, 203, 255, 0.18);
+    color: #c8deff;
+    font-weight: 700;
+  }
+  .step-card .label {
+    color: #dce6f7;
+    margin-top: 6px;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .step-card .hint {
+    color: var(--muted);
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .step-card.active {
+    border-color: rgba(116, 185, 255, 0.9);
+    box-shadow: 0 0 0 1px rgba(116, 185, 255, 0.25) inset;
+    background: rgba(116, 185, 255, 0.06);
+  }
 
-  .flashes { padding: 12px 18px; margin-bottom: 18px; border-radius: 8px;
-             background: rgba(248, 81, 73, 0.08); border: 1px solid rgba(248, 81, 73, 0.4);
-             color: var(--red); font-size: 14px; line-height: 1.6;
-             white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, monospace; }
+
+  @media (max-width: 940px) {
+    .panel-grid {
+      grid-template-columns: 1fr;
+    }
+    header .top { display: block; }
+    .kpi { grid-template-columns: 1fr; margin-top: 8px; }
+    .brand { font-size: 24px; }
+    .actions { flex-direction: column; align-items: flex-start; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <h1>ArchReview-KG Studio</h1>
-  <p>v{{ version }} · 上传 PDF 平面图，自动审 GB 50096 / 50352 / 50016 / 50763 国标违规项</p>
+  <div class="top">
+    <div>
+      <h1 class="brand">ArchReview-KG Studio</h1>
+      <p class="tag">v{{ version }} · 面向民用建筑图纸的快速复核工作台</p>
+    </div>
+    <div class="kpi">
+      <div class="kpi-item">
+        <div class="k">版本</div>
+        <div class="v">{{ version }}</div>
+      </div>
+      <div class="kpi-item">
+        <div class="k">知识基座</div>
+        <div class="v">
+          {% if knowledge_overview.total_clauses is number %}
+            {{ knowledge_overview.total_clauses }} 条
+          {% else %}
+            {{ knowledge_overview.error or "读取中" }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 </header>
 
 {% with messages = get_flashed_messages() %}
@@ -591,114 +1065,160 @@ STUDIO_HTML = r"""
   {% endif %}
 {% endwith %}
 
-<div class="lede">
-<strong>这是评估阶段工具，不是即开即用生产服务</strong>。当前能力 (v{{ version }})：
-<ul>
-  <li>4 张规则可在任意 PDF 上直接判违规（户门净宽 / 走廊净宽 / 卧室面积 / 无障碍走廊）</li>
-  <li>填 ProjectMeta YAML 解锁 5 张项目级规则（无障碍住房比例 + 4 张高层规则）</li>
-  <li>填房间排表 YAML 解锁 4 张净高 / 楼层 / 坡屋顶规则（仅矢量 PDF；栅格图无 label/room_id 故 schedule selector 不匹配）</li>
-  <li>填楼梯排表 YAML 解锁 5 张楼梯踏步 / 踢面 / 扶手规则</li>
-  <li>另有 18 张人工核对清单 (severity=info) 自动生成</li>
-</ul>
-不填 YAML 也能跑，但只触发 4 张直判规则；其它 reminder 占多数。
+<div class="card">
+  <h2>3 步快速上手（只看结果）</h2>
+  <div class="path-timeline">
+    <div id="timeline-upload" class="step-card active">
+      <span class="idx">1</span>
+      <div class="label">上传图纸</div>
+      <div class="hint">拖拽 PDF / PNG（支持矢量与栅格）</div>
+    </div>
+    <div id="timeline-params" class="step-card">
+      <span class="idx">2</span>
+      <div class="label">自动识图</div>
+      <div class="hint">可选参数：识图速度 / 噪声过滤</div>
+    </div>
+    <div id="timeline-result" class="step-card">
+      <span class="idx">3</span>
+      <div class="label">结果可视化</div>
+      <div class="hint">图层、条文、问题列表一屏可见</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>知识库快照（规则覆盖）</h2>
+  {% if knowledge_overview.error %}
+    <div class="note">知识库加载失败：{{ knowledge_overview.error }}</div>
+  {% else %}
+    <div class="inline" style="gap: 16px;">
+      <div>条文 {{ knowledge_overview.total_clauses }} 条</div>
+      <div>规则卡 {{ knowledge_overview.total_rules }} 条</div>
+      <div>住宅相关 {{ knowledge_overview.residential_rules }} 条</div>
+    </div>
+    <div style="margin-top: 10px; color: var(--muted); font-size: 12px;">
+      {% for name, count in knowledge_overview.by_source[:3] %}
+        <span style="display:inline-block; margin-right: 8px; margin-bottom: 6px; border: 1px dashed var(--line); border-radius: 999px; padding: 2px 8px; font-size: 12px;">{{ name }} {{ count }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>民用建筑工作流目标</h2>
+  <div class="mini-vision">
+    <div class="mini-cell">
+      <div class="k">识图速度</div>
+      <div class="v">秒级</div>
+      <div class="mini-track"><span style="width: 90%;"></span></div>
+    </div>
+    <div class="mini-cell">
+      <div class="k">复核闭环</div>
+      <div class="v">3 步</div>
+      <div class="mini-track"><span style="width: 86%;"></span></div>
+    </div>
+    <div class="mini-cell">
+      <div class="k">规则可追溯</div>
+      <div class="v">{{ knowledge_overview.total_clauses if knowledge_overview.total_clauses is number else "—" }}</div>
+      <div class="mini-track"><span style="width: 72%;"></span></div>
+    </div>
+  </div>
+  <div class="note" style="margin-top: 10px;">
+    目标是把“识图-判读-出复核项”缩在一屏内完成，便于设计师快速决策与交底。
+  </div>
 </div>
 
 <form method="post" action="{{ url_for('review') }}" enctype="multipart/form-data" id="reviewForm">
+  <div class="panel-grid">
+    <div class="card">
+      <h2>1) 上传图纸（拖拽优先）</h2>
+      <label class="drop" id="drop">
+        <input type="file" name="pdf" id="pdfInput"
+               accept="application/pdf,image/png,image/jpeg,image/tiff,image/bmp" required />
+        <div style="font-size: 31px;">🧭</div>
+        <strong style="font-size: 18px;">把 PDF 平面图（或 PNG/JPEG 图片）拖到这里</strong>
+        <p class="drop-hint">先看识图结果，再决定规则策略。PDF 与 PNG/JPEG 都支持；
+          栅格图无 OCR，房间标签链路不触发 label-依赖规则。</p>
+        <div id="fileChosen"></div>
+      </label>
+      <div class="note" id="fileHint">已选：等待你拖拽文件</div>
+      <div class="note">支持：.pdf / .png / .jpg / .jpeg / .tif / .tiff / .bmp</div>
 
-<label class="drop" id="drop">
-  <input type="file" name="pdf" id="pdfInput"
-         accept="application/pdf,image/png,image/jpeg,image/tiff,image/bmp" required />
-  <div class="drop-icon">📄</div>
-  <div><strong>把 PDF 平面图（或 PNG/JPEG 图片）拖到这里</strong>，或点击选择</div>
-  <div class="drop-hint">PDF: 矢量路径自动提取墙线 + 文字标签。PNG/JPEG (v1.3+): CV 检测墙线，无 OCR 故无房间标签
-    （label-依赖规则在栅格输入下不触发，完整审图请上传矢量 PDF）。栅格图须正交墙体, 双线墙建议先合并单线再上传。</div>
-  <div id="fileChosen"></div>
-</label>
+      <details>
+        <summary>⚙️ 识图参数</summary>
+        <div>
+          <div class="inline">
+            <label style="margin: 0;">points_per_meter</label>
+            <div style="margin-left:auto; color: var(--muted);">常用：50 / 100 / 72</div>
+          </div>
+          <input id="ppmInput" class="num" type="number" name="points_per_meter" step="0.1" min="0.1" value="50.0" />
+          <div class="preset-row">
+            <button type="button" class="preset" data-ppm="50" data-room="1.0">默认（建筑）</button>
+            <button type="button" class="preset" data-ppm="100" data-room="2.0">精细 CAD（100）</button>
+            <button type="button" class="preset" data-ppm="72" data-room="0.0">英制图纸（72）</button>
+          </div>
+          <div class="inline" style="margin-top: 10px;">
+            <label style="margin: 0;">image_dpi</label>
+            <div style="margin-left:auto; color: var(--muted);">仅栅格图</div>
+          </div>
+          <input id="dpiInput" class="num" type="number" name="image_dpi" step="1" min="36" value="200" />
+          <div class="inline" style="margin-top: 10px;">
+            <label style="margin: 0;">min_room_area_m2</label>
+            <div style="margin-left:auto; color: var(--muted);">噪声剔除阈值</div>
+          </div>
+          <input id="noiseInput" class="num" type="number" name="min_room_area_m2" step="0.1" min="0" value="1.0" />
+          <label style="margin-top: 10px;">
+            <input type="checkbox" name="inspect_only" value="1" />
+            仅识图模式（先检查 Rooms / Doors / Corridors）
+          </label>
+        </div>
+      </details>
+    </div>
 
-<details>
-<summary>📋 ProjectMeta YAML（可选 · 解锁 5 张项目级规则）</summary>
-<div>
-  <p>项目级元数据：建筑类型 / 高度类别 / 层数 / 户数 / 耐火等级 / 气候区。
-  模板见 <a href="https://github.com/kogamishinyajerry-ops/archreview-kg/blob/main/samples/project_meta_demo.yaml" target="_blank">samples/project_meta_demo.yaml</a>。</p>
-  <label>project_meta.yaml</label>
-  <input type="file" name="project_meta" accept=".yaml,.yml" />
-</div>
-</details>
+    <div class="card">
+      <h2>2) 激活规则能力（可选）</h2>
+      <details open>
+        <summary>📋 ProjectMeta YAML（可选 · 解锁 5 张项目级规则）</summary>
+        <div>
+          目标：识别居住类型 / 高度 / 耐火等级 / 采光朝向；用于项目级条款映射。<br />
+          <a href="https://github.com/kogamishinyajerry-ops/archreview-kg/blob/main/samples/project_meta_demo.yaml" target="_blank">project_meta_demo.yaml</a>
+          <label>project_meta.yaml</label>
+          <input type="file" name="project_meta" accept=".yaml,.yml" />
+        </div>
+      </details>
+      <details>
+        <summary>🏠 填房间排表 YAML 解锁 4 张净高 / 楼层 / 坡屋顶规则（仅矢量 PDF）</summary>
+        <div>
+          仅矢量 PDF 且存在可匹配 room_id/label 时生效。<br />
+          <strong>⚠️ 仅矢量 PDF</strong>：栅格图的 room_id/label 缺失，不能匹配。<br />
+          <a href="https://github.com/kogamishinyajerry-ops/archreview-kg/blob/main/samples/room_schedule_demo.yaml" target="_blank">room_schedule_demo.yaml</a>
+          <label>room_schedule.yaml</label>
+          <input type="file" name="room_schedule" accept=".yaml,.yml" />
+        </div>
+      </details>
+      <details>
+        <summary>🪜 解锁 4 张净高 / 楼层 / 坡屋顶规则；仅矢量 PDF</summary>
+        <div>
+          需配套 project_meta.yaml。<br />
+          <a href="https://github.com/kogamishinyajerry-ops/archreview-kg/blob/main/samples/stair_schedule_demo.yaml" target="_blank">stair_schedule_demo.yaml</a>
+          <label>stair_schedule.yaml</label>
+          <input type="file" name="stair_schedule" accept=".yaml,.yml" />
+        </div>
+      </details>
+    </div>
+  </div>
 
-<details>
-<summary>🏠 房间排表 YAML（可选 · 解锁 4 张净高 / 楼层 / 坡屋顶规则；仅矢量 PDF）</summary>
-<div>
-  <p>每个房间的剖面信息：净高 / 所在楼层（地下室 / 地面层 / 上层 / 夹层）/ 是否坡屋顶 / 主截面净高。
-  模板见 <a href="https://github.com/kogamishinyajerry-ops/archreview-kg/blob/main/samples/room_schedule_demo.yaml" target="_blank">samples/room_schedule_demo.yaml</a>。
-  <em>需要同时填 ProjectMeta YAML，schedule 的 project_id 必须与 meta 一致。</em></p>
-  <p><em>⚠️ 栅格图（PNG/JPEG）上传时不生效：schedule entries 通过 room_id 或 label 匹配，
-  栅格 rooms 都是 fresh UUID 且 label=None，所以匹配不到任何 room。栅格图请改上传矢量 PDF。</em></p>
-  <label>room_schedule.yaml</label>
-  <input type="file" name="room_schedule" accept=".yaml,.yml" />
-</div>
-</details>
-
-<details>
-<summary>🪜 楼梯排表 YAML（可选 · 解锁 5 张楼梯规则）</summary>
-<div>
-  <p>每个楼梯实体的尺寸：踏步宽 / 踢面高 / 梯段净宽 / 扶手高 / 梯井净宽。
-  模板见 <a href="https://github.com/kogamishinyajerry-ops/archreview-kg/blob/main/samples/stair_schedule_demo.yaml" target="_blank">samples/stair_schedule_demo.yaml</a>。
-  <em>同样需要 ProjectMeta YAML。</em></p>
-  <label>stair_schedule.yaml</label>
-  <input type="file" name="stair_schedule" accept=".yaml,.yml" />
-</div>
-</details>
-
-<details>
-<summary>⚙️ 高级参数（PDF 比例尺 / 模式选择）</summary>
-<div>
-  <p><strong>points_per_meter (ppm)</strong>: PDF 中每米对应多少 PostScript 点。
-  Archicad / Revit 默认导出值约为 50；AutoCAD 用英制单位时按 1 inch = 72 pt 推算（如 1:50 平面 ≈ 0.5 m = 36 pt → ppm ≈ 72）。
-  不确定就先用 50，看实体数量是否合理；不合理再调。</p>
-  <label>points_per_meter</label>
-  <input type="number" name="points_per_meter" step="0.1" min="0.1" value="50.0"
-         style="width: 100px; padding: 4px 8px; background: var(--bg);
-                border: 1px solid var(--border); border-radius: 4px; color: var(--text);" />
-
-  <p style="margin-top: 16px;"><strong>image_dpi</strong> (仅栅格图: PNG / JPEG / TIFF / BMP):
-  PNG 渲染时的 DPI。我们用 <code>image_dpi × points_per_meter / 72</code> 计算像素/米。
-  常见取值: PDF 渲染出来的 PNG 一般是 200 (默认) 或 300 DPI；扫描件 96 / 150 / 200。
-  PNG metadata 里的 DPI 通常不可靠 (fitz 等工具会写错), 故以本字段为准。PDF 上传忽略此字段。</p>
-  <label>image_dpi</label>
-  <input type="number" name="image_dpi" step="1" min="36" value="200"
-         style="width: 100px; padding: 4px 8px; background: var(--bg);
-                border: 1px solid var(--border); border-radius: 4px; color: var(--text);" />
-
-  <p style="margin-top: 16px;"><strong>min_room_area_m2 (噪声地板)</strong>:
-  低于此面积的多边形不计入房间。真实住宅房间普遍 ≥4 m²；窗户框 / 标注框 / 卫浴洁具轮廓
-  通常 0.3–0.8 m²。默认 1.0 m² 可滤掉绝大多数 CAD 噪声又不伤真实小房间。
-  噪声特别多 (e.g. 169 rooms 这种) 可调到 4.0 m²；想保留所有候选房间设 0。</p>
-  <label>min_room_area_m2</label>
-  <input type="number" name="min_room_area_m2" step="0.1" min="0" value="1.0"
-         style="width: 100px; padding: 4px 8px; background: var(--bg);
-                border: 1px solid var(--border); border-radius: 4px; color: var(--text);" />
-
-  <p style="margin-top: 16px;"><strong>模式</strong>: 仅识图模式只跑实体提取 + 图谱构建，跳过规则评估。
-  适合在不熟悉的 PDF 上先看 builder 检出多少 rooms / doors / corridors 是否合理，
-  再决定要不要让规则引擎评估违规（避免被噪声违规淹没）。</p>
-  <label>
-    <input type="checkbox" name="inspect_only" value="1" />
-    🔍 仅识图模式（跳过规则评估，只看 builder 检出实体）
-  </label>
-</div>
-</details>
-
-<div class="actions">
-  <button type="submit" class="btn btn-primary" id="submitBtn">▶ 跑审图</button>
-  <a href="{{ url_for('demo') }}" class="btn btn-ghost">没图纸？跑内置 demo</a>
-</div>
+  <div class="actions">
+    <button type="submit" class="btn btn-primary" id="submitBtn">开始复核（可视化）</button>
+    <a href="{{ url_for('demo') }}" class="btn btn-ghost">先看内置 demo</a>
+  </div>
+  <p class="note">4 张基础规则可独立运行：户门净宽、走廊净宽、卧室面积、无障碍走廊宽度。</p>
 </form>
 
-<div class="footer">
-完整 README · <a href="https://github.com/kogamishinyajerry-ops/archreview-kg" target="_blank">GitHub</a> ·
-能力分级 <code>archkg clause readiness</code> ·
-对抗 lane 21/32 rules at F1=1.00.<br/>
-本地服务，所有数据只在你这台机器上处理。
+<div class="foot">
+  完整文档：<a href="https://github.com/kogamishinyajerry-ops/archreview-kg" target="_blank">GitHub</a> ·
+  知识口径检查：<code>archkg clause readiness</code><br />
+  数据只在本机处理，支持离线复核与交接交底。
 </div>
 
 </div>
@@ -707,14 +1227,48 @@ STUDIO_HTML = r"""
 const drop = document.getElementById('drop');
 const pdfInput = document.getElementById('pdfInput');
 const chosen = document.getElementById('fileChosen');
+const fileHint = document.getElementById('fileHint');
 const form = document.getElementById('reviewForm');
 const submitBtn = document.getElementById('submitBtn');
+const ppmInput = document.getElementById('ppmInput');
+const noiseInput = document.getElementById('noiseInput');
+document.querySelectorAll('.preset').forEach((btn) => {
+  btn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ppmInput.value = btn.dataset.ppm;
+    noiseInput.value = btn.dataset.room;
+  });
+});
 
 function showFile(file) {
   if (file) {
+    const uploadStep = document.getElementById('timeline-upload');
+    const paramStep = document.getElementById('timeline-params');
     chosen.innerHTML = '<div class="file-pill">' + file.name +
       ' <span class="x" onclick="event.preventDefault(); pdfInput.value=\'\'; document.getElementById(\'fileChosen\').innerHTML=\'\';">×</span></div>';
-  } else { chosen.innerHTML = ''; }
+    fileHint.textContent = `已选择 ${file.name}，准备提交`;
+    if (uploadStep) {
+      uploadStep.classList.add('active');
+    }
+    if (paramStep) {
+      paramStep.classList.add('active');
+    }
+  } else {
+    chosen.innerHTML = '';
+    fileHint.textContent = '已选：等待你拖拽文件';
+    const uploadStep = document.getElementById('timeline-upload');
+    const paramStep = document.getElementById('timeline-params');
+    const resultStep = document.getElementById('timeline-result');
+    if (uploadStep) {
+      uploadStep.classList.remove('active');
+    }
+    if (paramStep) {
+      paramStep.classList.remove('active');
+    }
+    if (resultStep) {
+      resultStep.classList.remove('active');
+    }
+  }
 }
 pdfInput.addEventListener('change', () => showFile(pdfInput.files[0]));
 drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
@@ -728,8 +1282,12 @@ drop.addEventListener('drop', (e) => {
   }
 });
 form.addEventListener('submit', () => {
+  const resultStep = document.getElementById('timeline-result');
   submitBtn.disabled = true;
   submitBtn.textContent = '⏳ 处理中…大约 3 秒';
+  if (resultStep) {
+    resultStep.classList.add('active');
+  }
 });
 </script>
 </body>
@@ -759,7 +1317,11 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
 
     @app.route("/", methods=["GET"])
     def index() -> str:
-        return render_template_string(STUDIO_HTML, version=archkg_version)
+        return render_template_string(
+            STUDIO_HTML,
+            version=archkg_version,
+            knowledge_overview=_knowledge_overview(),
+        )
 
     @app.route("/review", methods=["POST"])
     def review() -> Any:

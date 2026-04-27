@@ -56,6 +56,15 @@ archkg studio
 完成后页面跳转到结果视图: 左侧标注 PDF 预览 / 右侧问题清单 + 复核报告。
 点 "没图纸？跑内置 demo" 用 `samples/sample_clean.pdf` 看完整流程。
 
+## 3 步可视化上手（Studio / 本地优先）
+
+- 第 1 步：`archkg studio` 打开后，拖入 PDF / PNG / JPG。
+- 第 2 步：默认参数先跑一遍，`inspect_only` 适合先验实图面是否可读。
+- 第 3 步：结果页按三层看：
+  - **图层对照**：`source / entity overlay / annotated` 三种图层快速切换
+  - **问题面板**：先看 `高风险` 与 `热点规则` 再展开明细
+  - **条文地图**：点击 `条文触达地图` 与 `report.md` 做复核闭环
+
 > ⚠️ **真实 CAD 图纸提示** (v1.2.1 起): 第一次跑陌生 PDF 时, 展开 "⚙️ 高级参数" 选 **"🔍 仅识图模式"** —
 > 只跑实体提取, 跳过规则评估。如果 builder 检出 rooms / doors 数字看起来合理 (一户型 ~5-10 rooms), 再用完整模式让规则跑;
 > 如果数字异常 (例如 169 rooms), 顶部红色质量标记会提示 builder 在 over-segmenting, 这时规则报告里的违规多数是假阳性。
@@ -198,6 +207,12 @@ uv run mypy archkg
 
 # Lint
 uv run ruff check archkg tests
+
+# 控制面同步（本地快照 + 可选 GitHub/Notion）
+archkg control-sync --run-dir tmp/control
+archkg control-sync --run-dir tmp/control --github --notion --notion-page-id=<notion-page-id>
+
+说明: `--notion` 会优先尝试页面字段更新；页面不带可写字段时，自动写入该页内子数据库（如有）或回退为可见子块日志。
 
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
