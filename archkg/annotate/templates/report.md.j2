@@ -97,6 +97,21 @@ sheet_routing.json 暂无数据；缺失路由不代表已按 sheet 类型过滤
 完整数据见 `sheet_routing.json`。
 {% endif %}
 
+## Sheet Graphs
+
+{% if not sheet_graphs %}
+sheet_graphs.json 暂无数据；缺失多页 graph 不代表没有其他 plan sheet。
+{% else %}
+> 多页 graph 是按 plan sheet 生成的证据输出；P39-01 不把多 plan 页合并进主规则引擎结论。
+
+| page | rooms | doors | corridors | stairs | dimensions | confidence |
+|---|---:|---:|---:|---:|---:|---:|
+{% for entry in sheet_graphs.graphs %}| {{ entry.page_index }} | {{ entry.component_counts.rooms }} | {{ entry.component_counts.doors }} | {{ entry.component_counts.corridors }} | {{ entry.component_counts.stairs }} | {{ entry.component_counts.dimensions }} | {{ "%.0f"|format(entry.classification_confidence * 100.0) }}% |
+{% endfor %}
+
+graph_count: {{ sheet_graphs.graph_count }}。完整数据见 `sheet_graphs.json`。
+{% endif %}
+
 ## Issue 生命周期
 
 `issues.json` 是规则引擎输出的候选观察，默认状态为 `candidate`；人工确认、驳回、补信息、解决或被新 run 替代的状态写入 `review_state.json`，不回写到 `issues.json`。

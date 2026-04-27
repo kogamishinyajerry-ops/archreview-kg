@@ -373,6 +373,7 @@ def run_pipeline(
     from archkg.annotate.sheet_region_overlay import render_sheet_region_candidate_overlay
     from archkg.graph.builder import build_graph, render_overlay
     from archkg.graph.builder import write_json as write_graph
+    from archkg.graph.sheet_graphs import build_sheet_graphs, write_sheet_graphs
     from archkg.ingest.primitive_extractor import extract as extract_pdf
     from archkg.ingest.primitive_extractor import write_json as write_prims
     from archkg.ingest.raster_extractor import extract as extract_raster
@@ -454,6 +455,7 @@ def run_pipeline(
         sheet_candidates,
         out_dir / "sheet_region_candidates_overlay.png",
     )
+    sheet_graph_primitives = primitives
     routing = route_primitives_for_graph(
         primitives,
         sheet_classification,
@@ -462,7 +464,14 @@ def run_pipeline(
     write_sheet_routing(routing.decision, out_dir / "sheet_routing.json")
     primitives = routing.primitives
     if sheet_region is not None:
+        sheet_graph_primitives = crop_primitives_to_region(sheet_graph_primitives, sheet_region)
         primitives = crop_primitives_to_region(primitives, sheet_region)
+    sheet_graphs = build_sheet_graphs(
+        sheet_graph_primitives,
+        sheet_classification,
+        min_room_area_m2=min_room_area_m2,
+    )
+    write_sheet_graphs(sheet_graphs, out_dir / "sheet_graphs.json")
     write_prims(primitives, out_dir / "primitives.json")
     graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
 
@@ -657,6 +666,7 @@ def run_pipeline(
         ),
         sheet_classification=sheet_classification.model_dump(mode="json"),
         sheet_routing=routing.decision.model_dump(mode="json"),
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
         review_state=review_state,
     )
 
@@ -784,6 +794,7 @@ def _render_viewer_index(
     from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
+    from archkg.viewer.sheet_graphs import load_sheet_graphs_view
     from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
     from archkg.viewer.sheet_routing import load_sheet_routing_view
 
@@ -817,6 +828,7 @@ def _render_viewer_index(
     rule_readiness = load_rule_readiness_view(out_dir)
     review_state = load_review_state_view(out_dir, issues)
     sheet_classification = load_sheet_classification_view(out_dir)
+    sheet_graphs = load_sheet_graphs_view(out_dir)
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
 
@@ -837,6 +849,7 @@ def _render_viewer_index(
         rule_readiness=rule_readiness,
         review_state=review_state,
         sheet_classification=sheet_classification,
+        sheet_graphs=sheet_graphs,
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
     )

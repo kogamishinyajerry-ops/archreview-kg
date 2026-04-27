@@ -21,12 +21,13 @@ Status:
 - P37-01 is complete: `archkg rule-card draft` writes draft-only rule-card authoring artifacts and does not mutate active `rule_cards.yaml`.
 - P38-01 is complete: full CLI and Studio review runs now write `sheet_classification.json`, and Viewer/report render it with explicit missing-artifact degradation.
 - P38-02 is complete: full CLI and Studio review runs now write `sheet_routing.json`, and protected graph routing selects a single confident plan page only when fallback guards pass.
+- P39-01 is complete: full CLI and Studio review runs now write `sheet_graphs.json`, with one independent graph per high-confidence plan sheet.
 
 ## Current Phase
 
-P38: Multi-sheet classification.
+P39: Multi-plan graph outputs.
 
-P38-02 adds protected graph routing. It can route graph input to one confident plan page in title/schedule/detail mixed sets, but falls back to legacy all-page input for single-page runs, missing classification, unknown/low-confidence pages, or multiple plan pages.
+P39-01 adds a separate multi-plan graph evidence artifact. It builds independent per-sheet graphs for every high-confidence plan page, skips non-plan or low-confidence sheets with reasons, and leaves primary `entity_graph.json` plus rule-engine issue output unchanged.
 
 ## Key Decisions
 
@@ -45,8 +46,9 @@ P38-02 adds protected graph routing. It can route graph input to one confident p
 - Real IfcTester JSON shapes can vary by installed version; keep adapter tests around raw-report normalization and issue mapping.
 - Rule-card draft heuristics are intentionally conservative; ambiguous clauses need human review and may require split/branch rules.
 - Sheet routing is still page-level and conservative; multiple plan pages need future multi-graph support before automatic per-sheet graph outputs are trusted.
+- Per-sheet graphs are evidence only in P39-01; do not claim multi-plan compliance aggregation until rule evaluation, issue IDs, and report grouping are explicitly designed.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Enter P39 multi-plan graph outputs or P39 issue export/BCF-like packaging depending on next priority.
+Enter P39-02 per-sheet issue evaluation or P40 benchmark expansion.

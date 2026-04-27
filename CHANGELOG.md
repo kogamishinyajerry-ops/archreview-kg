@@ -140,6 +140,12 @@ and keeps the no-OCR transparency warning.
   low-confidence, missing-classification, single-page, or multiple-plan
   runs fall back to legacy all-page graph input, and the decision renders
   in Viewer/Studio/report surfaces.
+- P39-01 adds `sheet_graphs.json` as a multi-plan evidence artifact. Full
+  CLI and Studio runs now build an independent `EntityGraph` for each
+  confident plan sheet, skip non-plan/low-confidence sheets with reasons,
+  and render the per-sheet graph counts in Viewer/Studio/report surfaces.
+  The primary `entity_graph.json` and rule-engine issue output remain
+  unchanged in this slice.
 
 ### Still limited
 

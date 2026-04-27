@@ -93,6 +93,7 @@ def review(
     from archkg.annotate.sheet_region_overlay import render_sheet_region_candidate_overlay
     from archkg.graph.builder import build_graph, render_overlay
     from archkg.graph.builder import write_json as write_graph
+    from archkg.graph.sheet_graphs import build_sheet_graphs, write_sheet_graphs
     from archkg.ingest.primitive_extractor import extract
     from archkg.ingest.primitive_extractor import write_json as write_prims
     from archkg.ingest.sheet_classification import (
@@ -175,6 +176,7 @@ def review(
         sheet_candidates,
         out / "sheet_region_candidates_overlay.png",
     )
+    sheet_graph_primitives = primitives
     routing = route_primitives_for_graph(
         primitives,
         sheet_classification,
@@ -186,7 +188,14 @@ def review(
     )
     primitives = routing.primitives
     if crop_region is not None:
+        sheet_graph_primitives = crop_primitives_to_region(sheet_graph_primitives, crop_region)
         primitives = crop_primitives_to_region(primitives, crop_region)
+    sheet_graphs = build_sheet_graphs(
+        sheet_graph_primitives,
+        sheet_classification,
+        min_room_area_m2=min_room_area_m2,
+    )
+    sheet_graphs_path = write_sheet_graphs(sheet_graphs, out / "sheet_graphs.json")
     primitives_path = write_prims(primitives, out / "primitives.json")
 
     graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
@@ -318,6 +327,7 @@ def review(
         ),
         sheet_classification=sheet_classification.model_dump(mode="json"),
         sheet_routing=routing.decision.model_dump(mode="json"),
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
         review_state=review_state,
     )
     _print_review_summary(
@@ -333,6 +343,7 @@ def review(
         schedule_apply=schedule_apply,
         stair_schedule_apply=stair_schedule_apply,
         drawing_understanding_path=drawing_understanding_path,
+        sheet_graphs_path=sheet_graphs_path,
         sheet_classification_path=sheet_classification_path,
         sheet_routing_path=sheet_routing_path,
         readiness_path=readiness_path,
@@ -356,6 +367,7 @@ def _print_review_summary(
     schedule_apply: Any = None,
     stair_schedule_apply: Any = None,
     drawing_understanding_path: Path | None = None,
+    sheet_graphs_path: Path | None = None,
     sheet_classification_path: Path | None = None,
     sheet_routing_path: Path | None = None,
     readiness_path: Path | None = None,
@@ -483,6 +495,8 @@ def _print_review_summary(
     art.add_row("entity overlay PNG", str(out_dir / "entity_overlay.png"))
     if drawing_understanding_path is not None:
         art.add_row("drawing understanding", str(drawing_understanding_path))
+    if sheet_graphs_path is not None:
+        art.add_row("sheet graphs", str(sheet_graphs_path))
     if sheet_classification_path is not None:
         art.add_row("sheet classification", str(sheet_classification_path))
     if sheet_routing_path is not None:

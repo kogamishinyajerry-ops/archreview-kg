@@ -97,10 +97,11 @@ Goal: handle larger real sheet sets with better source classification and benchm
 - Classify architectural plan, detail, elevation, schedule, title, legend, and unknown sheets.
 - Route only eligible regions into graph building.
 
-### P39: Component Detector Expansion
+### P39: Multi-Plan Graph Outputs
 
-- Improve stair/vertical circulation, door subtype, window/balcony/railing hints, and schedule binding.
-- Keep every new detector behind confidence and benchmark checks.
+- Build a separate graph for each high-confidence plan sheet.
+- Keep primary `entity_graph.json` and rule-engine output stable until aggregation semantics are explicit.
+- Surface per-sheet graph counts and skipped-page reasons in Viewer/Studio/report.
 
 ### P40: Real Drawing Benchmark Expansion
 
