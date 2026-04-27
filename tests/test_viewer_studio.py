@@ -261,10 +261,12 @@ def test_run_pipeline_renders_sheet_region_candidate_panel(tmp_path: Path) -> No
         candidate["kind"] == "title_block"
         for candidate in candidates["pages"][0]["candidates"]
     )
+    assert (out_dir / "sheet_region_candidates_overlay.png").exists()
 
     html = (out_dir / "index.html").read_text("utf-8")
     assert "候选区域" in html
     assert "title_block" in html
+    assert "sheet_region_candidates_overlay.png" in html
     assert "不自动裁剪" in html
 
 
@@ -508,6 +510,7 @@ def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
         "report.md",
         "rule_input_readiness.json",
         "sheet_region_candidates.json",
+        "sheet_region_candidates_overlay.png",
         "source.pdf",
         "source_preview.png",
     ):

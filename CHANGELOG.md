@@ -108,6 +108,9 @@ and keeps the no-OCR transparency warning.
   runs. The detector suggests design/title-block/schedule/legend regions
   and excluded-text summaries, but does not crop or mutate graph input
   unless the caller explicitly supplies `--sheet-region`.
+- P34-02 adds `sheet_region_candidates_overlay.png`, a source-preview
+  overlay with color-coded candidate boxes, and renders it in the
+  Viewer/Studio candidate panel.
 
 ### Still limited
 

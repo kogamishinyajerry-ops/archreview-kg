@@ -22,13 +22,18 @@ def load_sheet_region_candidate_view(out_dir: Path, *, limit: int = 8) -> dict[s
         return _missing_view(f"could not read sheet_region_candidates.json: {exc}")
     if not isinstance(raw, dict):
         return _missing_view("sheet_region_candidates.json is not an object")
-    return build_sheet_region_candidate_view(raw, limit=limit)
+    return build_sheet_region_candidate_view(
+        raw,
+        limit=limit,
+        overlay_available=(path.parent / "sheet_region_candidates_overlay.png").exists(),
+    )
 
 
 def build_sheet_region_candidate_view(
     payload: dict[str, Any],
     *,
     limit: int = 8,
+    overlay_available: bool = False,
 ) -> dict[str, Any]:
     pages = payload.get("pages")
     page_rows: list[dict[str, Any]] = []
@@ -57,6 +62,8 @@ def build_sheet_region_candidate_view(
         "available": True,
         "schema_version": _string(payload.get("schema_version")) or "unknown",
         "artifact_name": "sheet_region_candidates.json",
+        "overlay_available": overlay_available,
+        "overlay_name": "sheet_region_candidates_overlay.png",
         "applied_region": _region_text(payload.get("applied_region")),
         "pages": page_rows,
         "candidates": candidate_rows[:limit],
@@ -75,6 +82,8 @@ def _missing_view(reason: str) -> dict[str, Any]:
         "available": False,
         "schema_version": "missing",
         "artifact_name": "sheet_region_candidates.json",
+        "overlay_available": False,
+        "overlay_name": "sheet_region_candidates_overlay.png",
         "applied_region": "—",
         "pages": [],
         "candidates": [],

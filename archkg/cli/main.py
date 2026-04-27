@@ -90,6 +90,7 @@ def review(
 
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
+    from archkg.annotate.sheet_region_overlay import render_sheet_region_candidate_overlay
     from archkg.graph.builder import build_graph, render_overlay
     from archkg.graph.builder import write_json as write_graph
     from archkg.ingest.primitive_extractor import extract
@@ -154,6 +155,11 @@ def review(
     sheet_candidates_path = write_sheet_region_candidates(
         sheet_candidates,
         out / "sheet_region_candidates.json",
+    )
+    sheet_candidates_overlay_path = render_sheet_region_candidate_overlay(
+        pdf,
+        sheet_candidates,
+        out / "sheet_region_candidates_overlay.png",
     )
     if crop_region is not None:
         primitives = crop_primitives_to_region(primitives, crop_region)
@@ -300,6 +306,7 @@ def review(
         drawing_understanding_path=drawing_understanding_path,
         readiness_path=readiness_path,
         sheet_candidates_path=sheet_candidates_path,
+        sheet_candidates_overlay_path=sheet_candidates_overlay_path,
     )
 
 
@@ -319,6 +326,7 @@ def _print_review_summary(
     drawing_understanding_path: Path | None = None,
     readiness_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
+    sheet_candidates_overlay_path: Path | None = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
@@ -444,6 +452,8 @@ def _print_review_summary(
         art.add_row("rule input readiness", str(readiness_path))
     if sheet_candidates_path is not None:
         art.add_row("sheet region candidates", str(sheet_candidates_path))
+    if sheet_candidates_overlay_path is not None:
+        art.add_row("sheet region overlay", str(sheet_candidates_overlay_path))
     art.add_row("issues JSON", str(out_dir / "issues.json"))
     art.add_row("annotated PDF", str(annotated_path))
     art.add_row("report MD", str(report_path))

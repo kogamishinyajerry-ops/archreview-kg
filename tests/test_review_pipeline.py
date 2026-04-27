@@ -23,6 +23,7 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "drawing_understanding.json",
         "rule_input_readiness.json",
         "sheet_region_candidates.json",
+        "sheet_region_candidates_overlay.png",
         "issues.json",
         "annotated.pdf",
         "report.md",

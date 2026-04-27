@@ -909,6 +909,12 @@
     <div class="metric-grid">
       <div class="metric-card">
         <h3>区域候选</h3>
+        {% if sheet_region_candidates.overlay_available %}
+          <div class="img-card" style="margin-bottom: 10px;">
+            <div class="img-head">候选区域框线层</div>
+            <div class="img-wrap"><img src="{{ sheet_region_candidates.overlay_name }}" alt="sheet region candidates overlay" /></div>
+          </div>
+        {% endif %}
         <div class="table-wrap" style="max-height: 320px;">
           <table>
             <thead>

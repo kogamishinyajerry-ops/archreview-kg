@@ -370,6 +370,7 @@ def run_pipeline(
     """
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
+    from archkg.annotate.sheet_region_overlay import render_sheet_region_candidate_overlay
     from archkg.graph.builder import build_graph, render_overlay
     from archkg.graph.builder import write_json as write_graph
     from archkg.ingest.primitive_extractor import extract as extract_pdf
@@ -434,6 +435,11 @@ def run_pipeline(
         applied_region=sheet_region,
     )
     write_sheet_region_candidates(sheet_candidates, out_dir / "sheet_region_candidates.json")
+    render_sheet_region_candidate_overlay(
+        pdf_path,
+        sheet_candidates,
+        out_dir / "sheet_region_candidates_overlay.png",
+    )
     if sheet_region is not None:
         primitives = crop_primitives_to_region(primitives, sheet_region)
     write_prims(primitives, out_dir / "primitives.json")

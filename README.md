@@ -41,6 +41,7 @@ archkg viewer -d out
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
 - `sheet_region_candidates.json` — 设计区 / 标题栏 / 排表 / 图例的候选区域和候选排除文本摘要（只建议，不自动裁剪）
+- `sheet_region_candidates_overlay.png` — 候选区域框线预览图，便于复制 region 前人工确认
 - `index.html` — viewer 渲染的查阅页
 
 ---
@@ -101,7 +102,8 @@ archkg studio
 >
 > **候选区域**: 完整审图会生成 `sheet_region_candidates.json`，提示可能的 `design_region`、`title_block`、
 > `schedule`、`legend` 和候选排除文本。它不会自动修改 `primitives.json` 或 `entity_graph.json`；
-> 只有用户显式传 `--sheet-region x0,y0,x1,y1` 时才会真正裁剪。
+> 只有用户显式传 `--sheet-region x0,y0,x1,y1` 时才会真正裁剪。结果页还会显示
+> `sheet_region_candidates_overlay.png`，用彩色框线帮助人工确认候选区域。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 
