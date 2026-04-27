@@ -83,6 +83,9 @@ def _collect_run_snapshot(run_dir: Path) -> dict[str, Any]:
         if p.is_file() and p.name in {
             "issues.json",
             "entity_graph.json",
+            "drawing_understanding.json",
+            "rule_input_readiness.json",
+            "entity_overlay.png",
             "annotated.pdf",
             "report.md",
             "feedback.yaml",

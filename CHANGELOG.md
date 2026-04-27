@@ -95,6 +95,11 @@ and keeps the no-OCR transparency warning.
   The new roadmap prioritizes runtime rule-input readiness, sheet-region
   candidates, issue lifecycle, IFC/IDS reuse, and draft-only rule authoring
   before broader real-plan compliance claims.
+- P33-01 adds `rule_input_readiness.json` to full CLI and Studio review
+  runs. The artifact covers all 32 loaded rule cards and marks each as
+  `ready`, `missing_input`, `low_confidence`, `manual_only`,
+  `not_applicable`, or `unsupported_entity` without changing
+  `issues.json` behavior.
 
 ### Still limited
 

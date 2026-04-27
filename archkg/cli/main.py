@@ -99,6 +99,10 @@ def review(
         parse_sheet_region,
     )
     from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.knowledge.run_readiness import (
+        build_rule_input_readiness,
+        write_rule_input_readiness,
+    )
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
     from archkg.viewer.drawing_understanding import (
@@ -235,6 +239,20 @@ def review(
     standards = load_standards()
     rules = load_rules(standards=standards)
     result = evaluate(graph, rules, standards, project_meta=meta)
+    rule_readiness = build_rule_input_readiness(
+        graph,
+        rules,
+        standards,
+        project_meta=meta,
+        skipped=result.skipped,
+        ocr_diagnostics=ocr_diagnostics,
+        schedule_apply=schedule_apply,
+        stair_schedule_apply=stair_schedule_apply,
+    )
+    readiness_path = write_rule_input_readiness(
+        rule_readiness,
+        out / "rule_input_readiness.json",
+    )
     (out / "issues.json").write_text(
         _json.dumps([i.model_dump() for i in result.issues], ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -264,6 +282,7 @@ def review(
         schedule_apply=schedule_apply,
         stair_schedule_apply=stair_schedule_apply,
         drawing_understanding_path=drawing_understanding_path,
+        readiness_path=readiness_path,
     )
 
 
@@ -281,6 +300,7 @@ def _print_review_summary(
     schedule_apply: Any = None,
     stair_schedule_apply: Any = None,
     drawing_understanding_path: Path | None = None,
+    readiness_path: Path | None = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
@@ -402,6 +422,8 @@ def _print_review_summary(
     art.add_row("entity overlay PNG", str(out_dir / "entity_overlay.png"))
     if drawing_understanding_path is not None:
         art.add_row("drawing understanding", str(drawing_understanding_path))
+    if readiness_path is not None:
+        art.add_row("rule input readiness", str(readiness_path))
     art.add_row("issues JSON", str(out_dir / "issues.json"))
     art.add_row("annotated PDF", str(annotated_path))
     art.add_row("report MD", str(report_path))

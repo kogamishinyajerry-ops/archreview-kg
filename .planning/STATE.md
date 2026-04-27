@@ -12,13 +12,13 @@ Status:
 
 - P31 completed sheet-region manual cropping and deterministic complex fixture.
 - P32 completed intelligent plan review software research.
-- Current turn starts the post-P32 strategic pivot into an evidence-first plan review platform.
+- P33-01 is implemented in the working tree: full CLI and Studio review runs now write `rule_input_readiness.json` beside `issues.json`.
 
 ## Current Phase
 
 P33: Rule-input readiness dashboard.
 
-P33 is the next implementation phase because it turns the P32 research conclusion into the first concrete workbench capability: every rule must tell the user whether it is runnable on the current evidence.
+P33-01 adds the underlying per-run readiness artifact. Next P33 work should render the same status in the Viewer/Studio surface so reviewers can see why a rule is ready, missing input, low confidence, manual-only, not applicable, or unsupported for this run.
 
 ## Key Decisions
 
@@ -31,7 +31,7 @@ P33 is the next implementation phase because it turns the P32 research conclusio
 
 ## Open Risks
 
-- Static readiness tiers may drift from actual run evidence unless P33 persists per-run readiness.
+- Static readiness tiers can still drift from actual run evidence if future builder inputs are added without extending P33 readiness coverage and tests.
 - Sheet-region candidates can cause silent false negatives if automatic cropping becomes default too early.
 - Issue lifecycle can blur candidate findings and confirmed defects if schema naming is loose.
 - IFC dependencies may be heavy or optional; P36 must degrade cleanly.
@@ -39,6 +39,4 @@ P33 is the next implementation phase because it turns the P32 research conclusio
 
 ## Next Action
 
-Execute P33-01.
-
-Start by adding a run-level readiness artifact that maps current graph/project/schedule/OCR evidence to each rule card's required inputs without changing rule-engine issue behavior.
+Validate and commit P33-01, then continue with P33-02: surface `rule_input_readiness.json` in the Viewer/Studio result page without changing rule-engine issue behavior.

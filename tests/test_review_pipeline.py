@@ -14,9 +14,24 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     result = runner.invoke(app, ["review", str(sample_pdf), "-o", str(out_dir)])
     assert result.exit_code == 0, result.output
 
-    expected = ["primitives.json", "entity_graph.json", "issues.json", "annotated.pdf", "report.md"]
+    expected = [
+        "primitives.json",
+        "entity_graph.json",
+        "drawing_understanding.json",
+        "rule_input_readiness.json",
+        "issues.json",
+        "annotated.pdf",
+        "report.md",
+    ]
     for name in expected:
         assert (out_dir / name).exists(), f"missing {name}"
+
+    readiness = json.loads(
+        (out_dir / "rule_input_readiness.json").read_text(encoding="utf-8")
+    )
+    assert readiness["schema_version"] == "rule_input_readiness.v1"
+    assert len(readiness["rules"]) == 32
+    assert readiness["summary"]["missing_input"] >= 1
 
     issues = json.loads((out_dir / "issues.json").read_text(encoding="utf-8"))
     rule_ids = {i["rule_card_id"] for i in issues}

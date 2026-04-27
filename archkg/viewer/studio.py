@@ -341,6 +341,7 @@ def run_pipeline(
 
     Same lane as `archkg review` but factored out so the studio's HTTP
     handler can call it directly. Writes primitives.json, entity_graph.json,
+    drawing_understanding.json, rule_input_readiness.json (full mode),
     issues.json, annotated.pdf, report.md, and entity_overlay.png into
     out_dir.
 
@@ -377,6 +378,10 @@ def run_pipeline(
     from archkg.ingest.raster_extractor import wrap_image_as_pdf
     from archkg.ingest.sheet_region import crop_primitives_to_region
     from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.knowledge.run_readiness import (
+        build_rule_input_readiness,
+        write_rule_input_readiness,
+    )
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
     from archkg.viewer.drawing_understanding import (
@@ -424,6 +429,7 @@ def run_pipeline(
     write_prims(primitives, out_dir / "primitives.json")
     graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
 
+    schedule_apply = None
     if room_schedule_path is not None:
         if meta is None:
             raise ValueError(
@@ -439,8 +445,10 @@ def run_pipeline(
                 f"room_schedule project_id '{schedule.project_id}' does not "
                 f"match project_meta project_id '{meta.project_id}'"
             )
-        graph = apply_room_schedule(graph, schedule).graph
+        schedule_apply = apply_room_schedule(graph, schedule)
+        graph = schedule_apply.graph
 
+    stair_schedule_apply = None
     if stair_schedule_path is not None:
         if meta is None:
             raise ValueError(
@@ -456,7 +464,8 @@ def run_pipeline(
                 f"stair_schedule project_id '{sched.project_id}' does not "
                 f"match project_meta project_id '{meta.project_id}'"
             )
-        graph = apply_stair_schedule(graph, sched).graph
+        stair_schedule_apply = apply_stair_schedule(graph, sched)
+        graph = stair_schedule_apply.graph
 
     graph_path = write_graph(graph, out_dir / "entity_graph.json")
     render_overlay(graph, pdf_path, out_dir / "entity_overlay.png")
@@ -578,6 +587,17 @@ def run_pipeline(
     standards = load_standards()
     rules = load_rules(standards=standards)
     result = evaluate(graph, rules, standards, project_meta=meta)
+    rule_readiness = build_rule_input_readiness(
+        graph,
+        rules,
+        standards,
+        project_meta=meta,
+        skipped=result.skipped,
+        ocr_diagnostics=ocr_diagnostics,
+        schedule_apply=schedule_apply,
+        stair_schedule_apply=stair_schedule_apply,
+    )
+    write_rule_input_readiness(rule_readiness, out_dir / "rule_input_readiness.json")
     (out_dir / "issues.json").write_text(
         json.dumps([i.model_dump() for i in result.issues], ensure_ascii=False, indent=2),
         encoding="utf-8",

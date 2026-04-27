@@ -74,7 +74,7 @@ def test_demo_route_produces_viewer_index(studio_client) -> None:
 
 
 def test_post_review_with_pdf_only_succeeds(studio_client) -> None:
-    client, _ = studio_client
+    client, state_dir = studio_client
     pdf_bytes = SAMPLE_PDF.read_bytes()
     resp = client.post(
         "/review",
@@ -87,6 +87,11 @@ def test_post_review_with_pdf_only_succeeds(studio_client) -> None:
 
     follow = client.get(target)
     assert follow.status_code == 200
+    run_id = target.removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+    readiness = json.loads((run_dir / "rule_input_readiness.json").read_text("utf-8"))
+    assert readiness["schema_version"] == "rule_input_readiness.v1"
+    assert len(readiness["rules"]) == 32
 
 
 def test_post_review_with_full_meta_and_schedules_succeeds(studio_client) -> None:

@@ -39,6 +39,7 @@ archkg viewer -d out
 - `issues.json` — 结构化问题清单（rule_id / bbox / severity / 证据）
 - `entity_graph.json` — 抽出的实体图谱
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
+- `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
 - `index.html` — viewer 渲染的查阅页
 
 ---
@@ -91,6 +92,11 @@ archkg studio
 > v1.4-dev P24 起，摘要还包含 `component_inventory`、`drawing_profile` 和 `benchmark_signals`：
 > 楼梯/垂直交通会进入 typed inventory，识别档案会显式列出 spatial layout / openings /
 > circulation / dimensions / OCR text 等证据信号，便于后续真实图纸 benchmark 横向比较。
+>
+> **规则输入就绪度**: 完整审图模式会额外生成 `rule_input_readiness.json`，逐张规则卡说明本次 evidence
+> 是否足够运行：`ready`、`missing_input`、`low_confidence`、`manual_only`、`not_applicable` 或
+> `unsupported_entity`。它不改变 `issues.json`，只解释哪些规则缺项目字段、缺实体输入、只适合作为人工提醒，
+> 或因 ProjectMeta 适用性被跳过。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 
@@ -207,6 +213,7 @@ archkg/
       rule_cards.yaml   规则卡（32 张）
     fidelity.py     numeric drift 审计 (clause vs rule_card threshold)
     readiness.py    coverage tier 分类
+    run_readiness.py  per-run rule_input_readiness.json 生成
   rules/
     engine.py       evaluate(graph, rules, standards, project_meta)
     applicability.py   building_type / height_class gate
