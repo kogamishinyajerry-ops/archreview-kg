@@ -95,3 +95,108 @@ def test_understanding_benchmark_cli_exits_nonzero_on_fail(tmp_path: Path) -> No
 
     assert result.exit_code == 1
     assert "cli-fail FAIL" in result.output
+
+
+def test_understanding_benchmark_suite_cli_writes_reports(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / "drawing_understanding.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "drawing_understanding.v2",
+                "drawing_type": "建筑平面图",
+                "likely_design": "住宅平面图",
+                "component_counts": {"rooms": 1},
+                "component_inventory": [{"semantic_kind": "residential_room"}],
+                "drawing_profile": {"evidence_signals": ["spatial_layout"]},
+                "benchmark_signals": {"has_spatial_layout": True},
+            }
+        ),
+        "utf-8",
+    )
+    expected_path = tmp_path / "expected.json"
+    expected_path.write_text(
+        json.dumps(
+            {
+                "benchmark_id": "suite-cli-pass",
+                "drawing_type": "建筑平面图",
+                "required_semantic_kinds": ["residential_room"],
+                "required_evidence_signals": ["spatial_layout"],
+            }
+        ),
+        "utf-8",
+    )
+    manifest_path = tmp_path / "suite.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "suite_id": "cli-suite",
+                "cases": [
+                    {
+                        "case_id": "active",
+                        "fixture_kind": "toy_vector_pdf",
+                        "run_dir": "run",
+                        "expect": "expected.json",
+                    },
+                    {
+                        "case_id": "real-pending",
+                        "fixture_kind": "real_public_pdf",
+                        "status": "pending_fixture",
+                    },
+                ],
+            }
+        ),
+        "utf-8",
+    )
+    out_json = tmp_path / "suite-result.json"
+    out_md = tmp_path / "suite-result.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "understanding-benchmark-suite",
+            "--manifest",
+            str(manifest_path),
+            "--out",
+            str(out_json),
+            "--markdown",
+            str(out_md),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert "cli-suite PASS active=1 pending=1 failed=0" in result.output
+    assert json.loads(out_json.read_text("utf-8"))["passed"] is True
+    assert "Drawing Understanding Benchmark Suite: cli-suite" in out_md.read_text("utf-8")
+
+
+def test_understanding_benchmark_suite_cli_exits_nonzero_on_failed_case(tmp_path: Path) -> None:
+    expected_path = tmp_path / "expected.json"
+    expected_path.write_text(json.dumps({"benchmark_id": "missing-run"}), "utf-8")
+    manifest_path = tmp_path / "suite.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "suite_id": "cli-suite-fail",
+                "cases": [
+                    {
+                        "case_id": "missing",
+                        "fixture_kind": "real_public_pdf",
+                        "run_dir": "missing",
+                        "expect": "expected.json",
+                    }
+                ],
+            }
+        ),
+        "utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        ["understanding-benchmark-suite", "--manifest", str(manifest_path)],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 1
+    assert "cli-suite-fail FAIL active=1 pending=0 failed=1" in result.output

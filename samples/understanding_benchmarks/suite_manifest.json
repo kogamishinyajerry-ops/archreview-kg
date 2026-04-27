@@ -1,0 +1,20 @@
+{
+  "schema_version": "understanding_benchmark_suite.v1",
+  "suite_id": "archreview-understanding-intake-v1",
+  "cases": [
+    {
+      "case_id": "sample-clean-full-manual",
+      "fixture_kind": "toy_vector_pdf",
+      "status": "manual_run_required",
+      "expect": "sample_clean_full.json",
+      "notes": "Run archkg review samples/sample_clean.pdf -o <run-dir> with demo schedules, then copy this row into a local manifest and set run_dir to that output directory."
+    },
+    {
+      "case_id": "medfield-public-plans",
+      "fixture_kind": "real_public_pdf",
+      "status": "pending_fixture",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "notes": "Public real-drawing intake placeholder; expected component inventory is not annotated yet, so this case is tracked but not scored."
+    }
+  ]
+}

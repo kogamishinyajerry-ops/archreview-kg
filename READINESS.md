@@ -139,6 +139,11 @@ archkg studio
   与期望部件清单、证据信号、benchmark flags 比对，输出 JSON / Markdown 跑分。
   当前只随仓库提供 `samples/understanding_benchmarks/sample_clean_full.json` 作为 toy fixture 基准；
   真实复杂图纸需要逐个加入期望清单后才能形成有效 benchmark。
+- P26 新增 `archkg understanding-benchmark-suite --manifest <suite.json>`：把多个识图 benchmark case
+  放进同一个 suite manifest。`active` case 会检查 run artifacts 并跑分；`pending_fixture` /
+  `manual_run_required` 只登记真实图纸或待生成样例，不计为通过证明。仓库里的
+  `samples/understanding_benchmarks/suite_manifest.json` 是 intake 模板，用于后续接入真实公开图纸
+  和人工标注的 expected inventory。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 

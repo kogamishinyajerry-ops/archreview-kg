@@ -61,6 +61,13 @@ and keeps the no-OCR transparency warning.
   writes machine-readable JSON plus optional Markdown reports. The first
   packaged spec is
   `samples/understanding_benchmarks/sample_clean_full.json`.
+- P26 adds `archkg understanding-benchmark-suite`: a suite manifest
+  runner for drawing-understanding benchmarks. Active cases run the
+  existing benchmark and fail on missing artifacts or failed checks,
+  while `pending_fixture` / `manual_run_required` rows track real-drawing
+  intake without counting as recognition proof. The first manifest
+  template is
+  `samples/understanding_benchmarks/suite_manifest.json`.
 
 ### Still limited
 
@@ -80,6 +87,10 @@ and keeps the no-OCR transparency warning.
 - Understanding benchmark scores measure recognition evidence only. They
   do not score GB compliance accuracy and do not make the toy fixture a
   proxy for arbitrary real construction drawings.
+- Pending suite rows are bookkeeping for fixture intake. They are not
+  scored and must not be presented as successful handling of complex real
+  construction drawings until run artifacts and expected inventories are
+  added as active cases.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 

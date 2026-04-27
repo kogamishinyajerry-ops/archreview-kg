@@ -35,10 +35,38 @@ def run_understanding_benchmark(
     }
 
 
+def run_understanding_benchmark_suite(manifest_path: Path) -> dict[str, Any]:
+    manifest = load_suite_manifest(manifest_path)
+    base_dir = manifest_path.parent
+    suite_cases = [
+        _run_suite_case(base_dir, index=index, raw_case=raw_case)
+        for index, raw_case in enumerate(_list(manifest.get("cases")), start=1)
+    ]
+    pending_count = sum(1 for case in suite_cases if case.get("passed") is None)
+    failed_count = sum(1 for case in suite_cases if case.get("passed") is False)
+    active_count = len(suite_cases) - pending_count
+    return {
+        "schema_version": "understanding_benchmark_suite_result.v1",
+        "suite_id": _str(manifest.get("suite_id")) or manifest_path.stem,
+        "passed": failed_count == 0,
+        "active_count": active_count,
+        "pending_count": pending_count,
+        "failed_count": failed_count,
+        "cases": suite_cases,
+    }
+
+
 def load_expected(path: Path) -> dict[str, Any]:
     raw = json.loads(path.read_text("utf-8"))
     if not isinstance(raw, dict):
         raise ValueError(f"expected benchmark spec must be a JSON object: {path}")
+    return {str(key): value for key, value in raw.items()}
+
+
+def load_suite_manifest(path: Path) -> dict[str, Any]:
+    raw = json.loads(path.read_text("utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(f"benchmark suite manifest must be a JSON object: {path}")
     return {str(key): value for key, value in raw.items()}
 
 
@@ -48,9 +76,19 @@ def write_json_report(result: Mapping[str, Any], path: Path) -> Path:
     return path
 
 
+def write_suite_json_report(result: Mapping[str, Any], path: Path) -> Path:
+    return write_json_report(result, path)
+
+
 def write_markdown_report(result: Mapping[str, Any], path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_markdown_report(result), "utf-8")
+    return path
+
+
+def write_suite_markdown_report(result: Mapping[str, Any], path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_suite_markdown_report(result), "utf-8")
     return path
 
 
@@ -78,6 +116,142 @@ def render_markdown_report(result: Mapping[str, Any]) -> str:
         )
     lines.append("")
     return "\n".join(lines)
+
+
+def render_suite_markdown_report(result: Mapping[str, Any]) -> str:
+    status = "PASS" if result.get("passed") else "FAIL"
+    lines = [
+        f"# Drawing Understanding Benchmark Suite: {_str(result.get('suite_id'))}",
+        "",
+        f"Status: {status}",
+        (
+            "Cases: "
+            f"active={_int(result.get('active_count'))}, "
+            f"pending={_int(result.get('pending_count'))}, "
+            f"failed={_int(result.get('failed_count'))}"
+        ),
+        "",
+        "| Case | Fixture | Status | Score |",
+        "|---|---|---:|---:|",
+    ]
+    for raw_case in _list(result.get("cases")):
+        if not isinstance(raw_case, Mapping):
+            continue
+        score = raw_case.get("score")
+        score_text = f"{_float(score, default=0.0):.2f}" if score is not None else "-"
+        lines.append(
+            "| "
+            f"{_str(raw_case.get('case_id'))} | "
+            f"{_str(raw_case.get('fixture_kind'))} | "
+            f"{_str(raw_case.get('status'))} | "
+            f"{score_text} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _run_suite_case(base_dir: Path, *, index: int, raw_case: object) -> dict[str, Any]:
+    if not isinstance(raw_case, Mapping):
+        return _suite_error_case(
+            case_id=f"case-{index}",
+            fixture_kind="unknown",
+            error="case must be a JSON object",
+        )
+
+    case_id = _str(raw_case.get("case_id")) or f"case-{index}"
+    fixture_kind = _str(raw_case.get("fixture_kind")) or "unknown"
+    manifest_status = _str(raw_case.get("status")) or "active"
+    if manifest_status != "active":
+        return _pending_suite_case(case_id, fixture_kind, manifest_status, raw_case)
+
+    run_dir_raw = _str(raw_case.get("run_dir"))
+    if not run_dir_raw:
+        return _suite_error_case(
+            case_id=case_id,
+            fixture_kind=fixture_kind,
+            error="run_dir missing",
+        )
+    run_dir = _resolve_suite_path(base_dir, run_dir_raw)
+    if not run_dir.exists():
+        return _suite_error_case(
+            case_id=case_id,
+            fixture_kind=fixture_kind,
+            error=f"run_dir not found: {run_dir}",
+        )
+    if not run_dir.is_dir():
+        return _suite_error_case(
+            case_id=case_id,
+            fixture_kind=fixture_kind,
+            error=f"run_dir is not a directory: {run_dir}",
+        )
+
+    expect_raw = _str(raw_case.get("expect"))
+    if not expect_raw:
+        return _suite_error_case(
+            case_id=case_id,
+            fixture_kind=fixture_kind,
+            error="expect missing",
+        )
+    expect_path = _resolve_suite_path(base_dir, expect_raw)
+    if not expect_path.exists():
+        return _suite_error_case(
+            case_id=case_id,
+            fixture_kind=fixture_kind,
+            error=f"expect not found: {expect_path}",
+        )
+
+    try:
+        result = run_understanding_benchmark(run_dir, load_expected(expect_path))
+    except Exception as exc:
+        return _suite_error_case(
+            case_id=case_id,
+            fixture_kind=fixture_kind,
+            error=f"{type(exc).__name__}: {exc}",
+        )
+
+    return {
+        "case_id": case_id,
+        "fixture_kind": fixture_kind,
+        "status": "pass" if result["passed"] else "fail",
+        "passed": result["passed"],
+        "score": result["score"],
+        "benchmark_id": result["benchmark_id"],
+        "min_score": result["min_score"],
+        "checks": result["checks"],
+    }
+
+
+def _pending_suite_case(
+    case_id: str,
+    fixture_kind: str,
+    status: str,
+    raw_case: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "case_id": case_id,
+        "fixture_kind": fixture_kind,
+        "status": status,
+        "passed": None,
+        "source_url": _str(raw_case.get("source_url")),
+        "notes": _str(raw_case.get("notes")),
+    }
+
+
+def _suite_error_case(case_id: str, fixture_kind: str, error: str) -> dict[str, Any]:
+    return {
+        "case_id": case_id,
+        "fixture_kind": fixture_kind,
+        "status": "failed",
+        "passed": False,
+        "error": error,
+    }
+
+
+def _resolve_suite_path(base_dir: Path, raw: str) -> Path:
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path
+    return base_dir / path
 
 
 def _load_understanding_payload(run_dir: Path) -> dict[str, Any]:
@@ -258,8 +432,13 @@ def _float(raw: object, *, default: float) -> float:
 
 __all__ = [
     "load_expected",
+    "load_suite_manifest",
     "render_markdown_report",
+    "render_suite_markdown_report",
     "run_understanding_benchmark",
+    "run_understanding_benchmark_suite",
     "write_json_report",
     "write_markdown_report",
+    "write_suite_json_report",
+    "write_suite_markdown_report",
 ]

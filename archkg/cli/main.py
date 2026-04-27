@@ -498,6 +498,45 @@ def understanding_benchmark(
         raise typer.Exit(code=1)
 
 
+@app.command("understanding-benchmark-suite")
+def understanding_benchmark_suite(
+    manifest: Path = typer.Option(
+        ...,
+        "--manifest",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Benchmark suite manifest JSON with active and pending fixture cases.",
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Write machine-readable suite JSON."),
+    markdown: Path | None = typer.Option(None, "--markdown", help="Write Markdown suite report."),
+) -> None:
+    """Run a drawing-understanding benchmark suite manifest.
+
+    Pending real-drawing fixture rows are tracked but do not fail the
+    suite. Active rows fail when run artifacts are missing or checks fail.
+    """
+    from archkg.viewer.understanding_benchmark import (
+        run_understanding_benchmark_suite,
+        write_suite_json_report,
+        write_suite_markdown_report,
+    )
+
+    result = run_understanding_benchmark_suite(manifest)
+    if out is not None:
+        write_suite_json_report(result, out)
+    if markdown is not None:
+        write_suite_markdown_report(result, markdown)
+    status = "PASS" if result["passed"] else "FAIL"
+    typer.echo(
+        f"{result['suite_id']} {status} "
+        f"active={result['active_count']} pending={result['pending_count']} "
+        f"failed={result['failed_count']}"
+    )
+    if not result["passed"]:
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),
