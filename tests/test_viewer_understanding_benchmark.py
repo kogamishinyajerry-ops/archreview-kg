@@ -129,6 +129,40 @@ def test_understanding_benchmark_reports_missing_semantic_kind(tmp_path: Path) -
     ]
 
 
+def test_understanding_benchmark_scores_text_inventory(tmp_path: Path) -> None:
+    expected = {
+        "benchmark_id": "text-inventory",
+        "min_score": 1.0,
+        "text_inventory": {
+            "room_label_counts": {"bedroom": 2, "linen": 1},
+            "door_or_opening_size_label_counts": {"3068": 1},
+            "major_dimension_texts": ["24'-0\""],
+        },
+    }
+    payload = {
+        "schema_version": "drawing_understanding.v2",
+        "drawing_type": "建筑平面图",
+        "component_counts": {},
+        "component_inventory": [],
+        "drawing_profile": {"evidence_signals": []},
+        "benchmark_signals": {},
+        "text_inventory": {
+            "room_label_counts": {"bedroom": 2, "linen": 1},
+            "door_or_opening_size_label_counts": {"3068": 1},
+            "major_dimension_texts": ["24'-0\"", "150'-0\""],
+        },
+    }
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / "drawing_understanding.json").write_text(json.dumps(payload), "utf-8")
+
+    result = run_understanding_benchmark(run_dir, expected)
+
+    assert result["passed"] is True
+    assert result["score"] == 1.0
+    assert any(check["name"] == "text_inventory:major_dimension_text:24'-0\"" for check in result["checks"])
+
+
 def test_understanding_benchmark_markdown_report(tmp_path: Path) -> None:
     result = {
         "benchmark_id": "demo",

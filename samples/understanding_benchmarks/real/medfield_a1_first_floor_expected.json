@@ -34,6 +34,40 @@
     "has_vertical_circulation": true,
     "has_dimension_evidence": true
   },
+  "text_inventory": {
+    "room_label_counts": {
+      "living": 6,
+      "mech": 4,
+      "bedroom": 11,
+      "walk_in": 5,
+      "closet": 8,
+      "study": 2,
+      "bath": 10,
+      "foyer": 3,
+      "balcony": 4,
+      "linen": 8,
+      "kitchen": 6,
+      "dining": 6,
+      "clt": 5,
+      "common": 1
+    },
+    "door_or_opening_size_label_counts": {
+      "3068": 51,
+      "5068": 8,
+      "6068": 1,
+      "4068": 6,
+      "SLD6068": 3,
+      "2268": 1
+    },
+    "major_dimension_texts": [
+      "150'-0\"",
+      "94'-0\"",
+      "52'-0\"",
+      "48'-0\"",
+      "24'-0\"",
+      "4'-0\""
+    ]
+  },
   "manual_expected_inventory": {
     "project": "Hillside Village, 89 N. Meadows Road, Medfield, MA",
     "sheet": "A-1",

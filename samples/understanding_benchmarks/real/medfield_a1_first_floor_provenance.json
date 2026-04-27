@@ -32,6 +32,19 @@
     "corridors": 1,
     "stairs": 5,
     "dimensions": 181,
+    "text_inventory": {
+      "room_label_total": 79,
+      "door_or_opening_size_label_total": 70,
+      "major_dimension_texts": [
+        "48'-0\"",
+        "24'-0\"",
+        "94'-0\"",
+        "4'-0\"",
+        "150'-0\"",
+        "52'-0\""
+      ],
+      "note": "The text inventory is literal vector-text extraction. Plain 6068 appears once; SLD6068 appears three times and is tracked separately."
+    },
     "interpretation": "The recognizer now passes the manually annotated component-inventory benchmark for this real vector PDF sheet by combining a 3.0 m² polygon noise floor with UP/DN text-hint vertical-circulation evidence. This remains a recognition benchmark, not a GB compliance-accuracy claim."
   }
 }

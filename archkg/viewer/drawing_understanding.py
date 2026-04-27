@@ -52,6 +52,7 @@ def build_drawing_understanding(
     dimensions = _list(graph.get("dimensions"))
     n_lines = sum(len(_list(page.get("lines"))) for page in pages)
     n_texts = sum(len(_list(page.get("texts"))) for page in pages)
+    text_inventory = _text_inventory(pages)
 
     vertical_circulation_count = len(stairs) + len(vertical_hint_rows)
     vertical_sources = vertical_hint_rows if vertical_hint_rows else stairs
@@ -97,6 +98,7 @@ def build_drawing_understanding(
         "likely_design": likely_design,
         "summary": summary,
         "component_counts": component_counts,
+        "text_inventory": text_inventory,
         "drawing_profile": _drawing_profile(
             rooms=rooms,
             doors=doors,
@@ -367,6 +369,94 @@ def _vertical_circulation_kind(text: str) -> str | None:
     if words & {"STAIR", "STAIRS", "STAIRWAY"}:
         return "stair_keyword"
     return None
+
+
+def _text_inventory(pages: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    room_counts: dict[str, int] = {}
+    opening_size_counts: dict[str, int] = {}
+    major_dimension_texts: list[str] = []
+    seen_dimensions: set[str] = set()
+    for text in _text_values(pages):
+        room_kind = _room_text_kind(text)
+        if room_kind is not None:
+            room_counts[room_kind] = room_counts.get(room_kind, 0) + 1
+        opening_size = _opening_size_label(text)
+        if opening_size is not None:
+            opening_size_counts[opening_size] = opening_size_counts.get(opening_size, 0) + 1
+        dimension = _major_dimension_text(text)
+        if dimension is not None and dimension not in seen_dimensions:
+            seen_dimensions.add(dimension)
+            major_dimension_texts.append(dimension)
+    return {
+        "room_label_counts": room_counts,
+        "door_or_opening_size_label_counts": opening_size_counts,
+        "major_dimension_texts": major_dimension_texts,
+    }
+
+
+def _text_values(pages: Sequence[Mapping[str, Any]]) -> list[str]:
+    values: list[str] = []
+    for page in pages:
+        for raw_text in _list(page.get("texts")):
+            if isinstance(raw_text, Mapping):
+                text = _str(raw_text.get("text")).strip()
+                if text:
+                    values.append(text)
+    return values
+
+
+def _clean_label(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip().upper()).strip(" .")
+
+
+def _room_text_kind(text: str) -> str | None:
+    compact = _clean_label(text)
+    if re.fullmatch(r"BEDROOM(?:\s*#\d+)?", compact):
+        return "bedroom"
+    aliases = {
+        "卧室": "bedroom",
+        "LIVING": "living",
+        "客厅": "living",
+        "DINING": "dining",
+        "餐厅": "dining",
+        "KITCHEN": "kitchen",
+        "厨房": "kitchen",
+        "BATH": "bath",
+        "卫生间": "bath",
+        "WALK-IN": "walk_in",
+        "WIC": "walk_in",
+        "CLOSET": "closet",
+        "BALCONY": "balcony",
+        "阳台": "balcony",
+        "FOYER": "foyer",
+        "COMMON": "common",
+        "STUDY": "study",
+        "书房": "study",
+        "MECH": "mech",
+        "CLT": "clt",
+        "LIN": "linen",
+        "LINEN": "linen",
+    }
+    return aliases.get(compact)
+
+
+def _opening_size_label(text: str) -> str | None:
+    compact = _clean_label(text)
+    if re.fullmatch(r"(?:SLD)?\d{4}", compact):
+        return compact
+    return None
+
+
+def _major_dimension_text(text: str) -> str | None:
+    label = text.strip()
+    if "=" in label:
+        return None
+    match = re.fullmatch(r"(\d+)'-\d+\"", label)
+    if match is None:
+        return None
+    if int(match.group(1)) < 4:
+        return None
+    return label
 
 
 def _dimension_row(dim: Mapping[str, Any]) -> dict[str, Any]:

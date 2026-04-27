@@ -79,7 +79,7 @@ def author_expected_benchmark_spec(
     min_score: float = 1.0,
 ) -> dict[str, Any]:
     payload = _load_understanding_payload(run_dir)
-    return {
+    spec = {
         "schema_version": "understanding_benchmark_expected.v1",
         "benchmark_id": benchmark_id or run_dir.name,
         "min_score": min_score,
@@ -96,6 +96,10 @@ def author_expected_benchmark_spec(
             "before promoting a real drawing case to active benchmark status."
         ),
     }
+    text_inventory = _draft_text_inventory(payload)
+    if text_inventory:
+        spec["text_inventory"] = text_inventory
+    return spec
 
 
 def load_expected(path: Path) -> dict[str, Any]:
@@ -371,6 +375,27 @@ def _draft_benchmark_signals(payload: Mapping[str, Any]) -> dict[str, bool]:
     return {key: True for key, value in raw_signals.items() if isinstance(key, str) and value is True}
 
 
+def _draft_text_inventory(payload: Mapping[str, Any]) -> dict[str, Any]:
+    raw = payload.get("text_inventory")
+    if not isinstance(raw, Mapping):
+        return {}
+    out: dict[str, Any] = {}
+    for section in ("room_label_counts", "door_or_opening_size_label_counts"):
+        raw_counts = raw.get(section)
+        if isinstance(raw_counts, Mapping):
+            counts = {
+                str(key): value
+                for key, value in raw_counts.items()
+                if isinstance(key, str) and isinstance(value, int) and value > 0
+            }
+            if counts:
+                out[section] = counts
+    dimensions = _str_list(raw.get("major_dimension_texts"))
+    if dimensions:
+        out["major_dimension_texts"] = dimensions
+    return out
+
+
 def _load_understanding_payload(run_dir: Path) -> dict[str, Any]:
     path = run_dir / "drawing_understanding.json"
     if path.exists():
@@ -400,6 +425,10 @@ def _checks(payload: Mapping[str, Any], expected: Mapping[str, Any]) -> list[dic
         actual = _str(payload.get("likely_design"))
         wanted = _str(expected.get("likely_design_contains"))
         checks.append(_check("likely_design_contains", wanted in actual, wanted, actual))
+
+    text_inventory = expected.get("text_inventory")
+    if isinstance(text_inventory, Mapping):
+        checks.extend(_text_inventory_checks(payload, text_inventory))
 
     count_specs = expected.get("component_counts")
     if isinstance(count_specs, Mapping):
@@ -460,6 +489,47 @@ def _checks(payload: Mapping[str, Any], expected: Mapping[str, Any]) -> list[dic
                     "benchmark signal mismatch",
                 )
             )
+    return checks
+
+
+def _text_inventory_checks(
+    payload: Mapping[str, Any],
+    expected_inventory: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    checks: list[dict[str, Any]] = []
+    actual_inventory = payload.get("text_inventory")
+    if not isinstance(actual_inventory, Mapping):
+        actual_inventory = {}
+    for section in ("room_label_counts", "door_or_opening_size_label_counts"):
+        expected_counts = expected_inventory.get(section)
+        actual_counts = actual_inventory.get(section)
+        if not isinstance(expected_counts, Mapping):
+            continue
+        if not isinstance(actual_counts, Mapping):
+            actual_counts = {}
+        for key, wanted in expected_counts.items():
+            actual = _int(actual_counts.get(key))
+            checks.append(
+                _check(
+                    f"text_inventory:{section}:{key}",
+                    actual == wanted,
+                    wanted,
+                    actual,
+                    "text inventory count mismatch",
+                )
+            )
+
+    actual_dimensions = _str_list(actual_inventory.get("major_dimension_texts"))
+    for text in _str_list(expected_inventory.get("major_dimension_texts")):
+        checks.append(
+            _check(
+                f"text_inventory:major_dimension_text:{text}",
+                text in actual_dimensions,
+                text,
+                actual_dimensions,
+                "missing major dimension text",
+            )
+        )
     return checks
 
 

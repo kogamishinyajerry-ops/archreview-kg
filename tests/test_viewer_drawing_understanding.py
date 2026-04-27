@@ -277,6 +277,43 @@ def test_build_drawing_understanding_infers_stair_hint_from_direction_text() -> 
     assert not any(row["label"] == "SETUP" for row in inventory)
 
 
+def test_build_drawing_understanding_extracts_text_label_inventory() -> None:
+    primitives = {
+        "points_per_meter": 50.0,
+        "pages": [
+            {
+                "lines": [{"p0": [0, 0], "p1": [100, 0]} for _ in range(12)],
+                "texts": [
+                    {"text": "BEDROOM #1", "bbox": [10, 10, 30, 30], "source": "vector"},
+                    {"text": "BEDROOM #2", "bbox": [40, 10, 60, 30], "source": "vector"},
+                    {"text": "LIN.", "bbox": [70, 10, 90, 30], "source": "vector"},
+                    {"text": "WALK-IN", "bbox": [100, 10, 130, 30], "source": "vector"},
+                    {"text": "3068", "bbox": [10, 60, 30, 75], "source": "vector"},
+                    {"text": "SLD6068", "bbox": [40, 60, 80, 75], "source": "vector"},
+                    {"text": "24'-0\"", "bbox": [10, 100, 50, 115], "source": "vector"},
+                    {"text": "2'-0\"", "bbox": [60, 100, 90, 115], "source": "vector"},
+                    {"text": "3/16\" = 1'-0\"", "bbox": [100, 100, 160, 115], "source": "vector"},
+                ],
+            }
+        ],
+    }
+    graph = {
+        "rooms": [],
+        "doors": [],
+        "corridors": [],
+        "stairs": [],
+        "dimensions": [],
+    }
+
+    payload = build_drawing_understanding(primitives, graph, {})
+
+    assert payload["text_inventory"] == {
+        "room_label_counts": {"bedroom": 2, "linen": 1, "walk_in": 1},
+        "door_or_opening_size_label_counts": {"3068": 1, "SLD6068": 1},
+        "major_dimension_texts": ["24'-0\""],
+    }
+
+
 def test_load_or_build_rebuilds_legacy_payload_without_taxonomy(tmp_path) -> None:
     (tmp_path / "drawing_understanding.json").write_text(
         json.dumps({"drawing_type": "建筑平面图"}, ensure_ascii=False),
