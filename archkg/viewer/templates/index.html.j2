@@ -646,6 +646,7 @@
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
 {% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
 {% set sheet_classification = sheet_classification | default({'available': false, 'summary_rows': [], 'pages': [], 'warning_text': 'sheet_classification.json 暂无数据; 缺失分类不代表可直接进入 graph.', 'unavailable_reason': 'missing'}, true) %}
+{% set sheet_routing = sheet_routing | default({'available': false, 'warning_text': 'sheet_routing.json 暂无数据; 缺失路由不代表已按 sheet 类型过滤.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_region_candidates = sheet_region_candidates | default({'available': false, 'candidates': [], 'excluded_texts': [], 'warning_text': '候选区域暂无数据; 缺失 candidate artifact 不代表已裁剪或已确认.', 'unavailable_reason': 'missing'}, true) %}
 
 <header>
@@ -966,6 +967,44 @@
     {% endif %}
     <div class="links">
       <a href="sheet_classification.json" target="_blank">sheet_classification.json</a>
+    </div>
+  {% endif %}
+  <h3>Sheet 路由</h3>
+  {% if not sheet_routing.available %}
+    <div class="alert warn">
+      <strong>sheet_routing.json 暂无数据</strong>：{{ sheet_routing.warning_text }}
+      {{ sheet_routing.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>受保护 graph 路由</strong>：{{ sheet_routing.warning_text }}
+    </div>
+    <div class="table-wrap" style="max-height: 220px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>mode</th>
+            <th>selected pages</th>
+            <th>excluded pages</th>
+            <th>graph pages</th>
+            <th>fallback</th>
+            <th>reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ sheet_routing.mode_label }} <code>{{ sheet_routing.mode }}</code></td>
+            <td>{{ sheet_routing.selected_pages_text }}</td>
+            <td>{{ sheet_routing.excluded_pages_text }}</td>
+            <td>{{ sheet_routing.graph_page_count }} / {{ sheet_routing.original_page_count }}</td>
+            <td>{{ sheet_routing.fallback_label }}</td>
+            <td>{{ sheet_routing.reason }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="links">
+      <a href="sheet_routing.json" target="_blank">sheet_routing.json</a>
     </div>
   {% endif %}
 </section>

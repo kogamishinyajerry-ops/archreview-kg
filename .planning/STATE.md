@@ -20,12 +20,13 @@ Status:
 - P36-01 is complete: `archkg ifc validate` provides an optional IFC/IDS side lane with separate artifacts and clean missing-dependency degradation.
 - P37-01 is complete: `archkg rule-card draft` writes draft-only rule-card authoring artifacts and does not mutate active `rule_cards.yaml`.
 - P38-01 is complete: full CLI and Studio review runs now write `sheet_classification.json`, and Viewer/report render it with explicit missing-artifact degradation.
+- P38-02 is complete: full CLI and Studio review runs now write `sheet_routing.json`, and protected graph routing selects a single confident plan page only when fallback guards pass.
 
 ## Current Phase
 
 P38: Multi-sheet classification.
 
-P38-01 adds an advisory sheet-classification artifact. It classifies each page as plan / schedule / title / legend / detail / elevation / unknown, records confidence and evidence texts, and marks whether the page is graph-eligible. This phase does not yet auto-skip non-plan pages or mutate `entity_graph.json`.
+P38-02 adds protected graph routing. It can route graph input to one confident plan page in title/schedule/detail mixed sets, but falls back to legacy all-page input for single-page runs, missing classification, unknown/low-confidence pages, or multiple plan pages.
 
 ## Key Decisions
 
@@ -43,9 +44,9 @@ P38-01 adds an advisory sheet-classification artifact. It classifies each page a
 - Feedback/report editing can drift if legacy `open` status is not normalized; keep compatibility tests around `open -> candidate`.
 - Real IfcTester JSON shapes can vary by installed version; keep adapter tests around raw-report normalization and issue mapping.
 - Rule-card draft heuristics are intentionally conservative; ambiguous clauses need human review and may require split/branch rules.
-- Sheet classification is heuristic and advisory; do not use it to suppress graph extraction until P38-02 adds protected routing and regression coverage.
+- Sheet routing is still page-level and conservative; multiple plan pages need future multi-graph support before automatic per-sheet graph outputs are trusted.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Enter P38-02 protected graph routing for eligible plan pages only.
+Enter P39 multi-plan graph outputs or P39 issue export/BCF-like packaging depending on next priority.

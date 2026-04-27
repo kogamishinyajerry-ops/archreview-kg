@@ -81,6 +81,22 @@ sheet_classification.json 暂无数据；缺失分类不代表可直接进入 gr
 完整数据见 `sheet_classification.json`。
 {% endif %}
 
+## Sheet 路由
+
+{% if not sheet_routing %}
+sheet_routing.json 暂无数据；缺失路由不代表已按 sheet 类型过滤。
+{% else %}
+> 路由只在高置信单一 plan 页场景启用；unknown、低置信或多个 plan 页会回退 legacy 全页输入。
+
+| mode | selected pages | excluded pages | graph pages | fallback |
+|---|---|---|---:|---|
+| `{{ sheet_routing.mode }}` | {{ sheet_routing.selected_page_indexes | join(', ') }} | {{ sheet_routing.excluded_page_indexes | join(', ') if sheet_routing.excluded_page_indexes else '无' }} | {{ sheet_routing.graph_page_count }} | {{ sheet_routing.fallback_reason or '无' }} |
+
+原因：{{ sheet_routing.reason }}
+
+完整数据见 `sheet_routing.json`。
+{% endif %}
+
 ## Issue 生命周期
 
 `issues.json` 是规则引擎输出的候选观察，默认状态为 `candidate`；人工确认、驳回、补信息、解决或被新 run 替代的状态写入 `review_state.json`，不回写到 `issues.json`。

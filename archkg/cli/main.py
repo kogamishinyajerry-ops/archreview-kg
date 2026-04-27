@@ -107,6 +107,10 @@ def review(
         build_sheet_region_candidates,
         write_sheet_region_candidates,
     )
+    from archkg.ingest.sheet_routing import (
+        route_primitives_for_graph,
+        write_sheet_routing,
+    )
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.knowledge.run_readiness import (
         build_rule_input_readiness,
@@ -171,6 +175,16 @@ def review(
         sheet_candidates,
         out / "sheet_region_candidates_overlay.png",
     )
+    routing = route_primitives_for_graph(
+        primitives,
+        sheet_classification,
+        manual_sheet_region_applied=crop_region is not None,
+    )
+    sheet_routing_path = write_sheet_routing(
+        routing.decision,
+        out / "sheet_routing.json",
+    )
+    primitives = routing.primitives
     if crop_region is not None:
         primitives = crop_primitives_to_region(primitives, crop_region)
     primitives_path = write_prims(primitives, out / "primitives.json")
@@ -303,6 +317,7 @@ def review(
             rule_readiness.model_dump(mode="json")
         ),
         sheet_classification=sheet_classification.model_dump(mode="json"),
+        sheet_routing=routing.decision.model_dump(mode="json"),
         review_state=review_state,
     )
     _print_review_summary(
@@ -319,6 +334,7 @@ def review(
         stair_schedule_apply=stair_schedule_apply,
         drawing_understanding_path=drawing_understanding_path,
         sheet_classification_path=sheet_classification_path,
+        sheet_routing_path=sheet_routing_path,
         readiness_path=readiness_path,
         review_state_path=review_state_path,
         sheet_candidates_path=sheet_candidates_path,
@@ -341,6 +357,7 @@ def _print_review_summary(
     stair_schedule_apply: Any = None,
     drawing_understanding_path: Path | None = None,
     sheet_classification_path: Path | None = None,
+    sheet_routing_path: Path | None = None,
     readiness_path: Path | None = None,
     review_state_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
@@ -468,6 +485,8 @@ def _print_review_summary(
         art.add_row("drawing understanding", str(drawing_understanding_path))
     if sheet_classification_path is not None:
         art.add_row("sheet classification", str(sheet_classification_path))
+    if sheet_routing_path is not None:
+        art.add_row("sheet routing", str(sheet_routing_path))
     if readiness_path is not None:
         art.add_row("rule input readiness", str(readiness_path))
     if review_state_path is not None:

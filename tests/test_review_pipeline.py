@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import fitz
 from typer.testing import CliRunner
 
 from archkg.cli.main import app
@@ -22,6 +23,7 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "entity_graph.json",
         "drawing_understanding.json",
         "sheet_classification.json",
+        "sheet_routing.json",
         "rule_input_readiness.json",
         "sheet_region_candidates.json",
         "sheet_region_candidates_overlay.png",
@@ -46,6 +48,9 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     assert sheet_classification["schema_version"] == "sheet_classification.v1"
     assert sheet_classification["pages"][0]["sheet_type"] == "plan"
     assert sheet_classification["pages"][0]["eligible_for_graph"] is True
+    sheet_routing = json.loads((out_dir / "sheet_routing.json").read_text("utf-8"))
+    assert sheet_routing["schema_version"] == "sheet_routing.v1"
+    assert sheet_routing["mode"] == "legacy_all_pages"
 
     issues = json.loads((out_dir / "issues.json").read_text(encoding="utf-8"))
     review_state = json.loads((out_dir / "review_state.json").read_text(encoding="utf-8"))
@@ -73,6 +78,47 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     assert {item["status"] for item in review_state["items"]} == {"candidate"}
 
 
+def test_review_routes_title_first_multi_sheet_pdf_to_plan_page(
+    sample_pdf: Path,
+    tmp_path: Path,
+) -> None:
+    doc = fitz.open()
+    title = doc.new_page(width=600, height=400)
+    title.insert_text((72, 72), "TITLE SHEET", fontsize=18)
+    title.insert_text((72, 110), "PROJECT DATA", fontsize=12)
+    title.insert_text((72, 135), "REVISION", fontsize=12)
+    src = fitz.open(sample_pdf)
+    try:
+        doc.insert_pdf(src)
+    finally:
+        src.close()
+    multi_sheet = tmp_path / "title-first.pdf"
+    doc.save(multi_sheet)
+    doc.close()
+
+    runner = CliRunner()
+    out_dir = tmp_path / "out"
+    result = runner.invoke(app, ["review", str(multi_sheet), "-o", str(out_dir)])
+    assert result.exit_code == 0, result.output
+
+    routing = json.loads((out_dir / "sheet_routing.json").read_text("utf-8"))
+    assert routing["mode"] == "classified_single_plan_page"
+    assert routing["selected_page_indexes"] == [1]
+    assert routing["excluded_page_indexes"] == [0]
+
+    primitives = json.loads((out_dir / "primitives.json").read_text("utf-8"))
+    assert [page["page_index"] for page in primitives["pages"]] == [1]
+
+    graph = json.loads((out_dir / "entity_graph.json").read_text("utf-8"))
+    assert graph["page_index"] == 1
+    assert len(graph["rooms"]) >= 1
+
+    issues = json.loads((out_dir / "issues.json").read_text("utf-8"))
+    rule_ids = {i["rule_card_id"] for i in issues}
+    assert "RC-CORRIDOR-WIDTH" in rule_ids
+    assert "RC-DOOR-WIDTH" in rule_ids
+
+
 def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> None:
     runner = CliRunner()
     out_dir = tmp_path / "out"
@@ -86,6 +132,8 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "缺输入不等于通过" in md
     assert "Sheet 分类" in md
     assert "sheet_classification.json" in md
+    assert "Sheet 路由" in md
+    assert "sheet_routing.json" in md
     assert "Issue 生命周期" in md
     # Should contain reviewer/status placeholder columns
     assert "reviewer" in md

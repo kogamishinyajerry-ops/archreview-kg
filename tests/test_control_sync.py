@@ -14,12 +14,17 @@ def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> 
         '{"schema_version":"sheet_classification.v1"}',
         encoding="utf-8",
     )
+    (tmp_path / "sheet_routing.json").write_text(
+        '{"schema_version":"sheet_routing.v1"}',
+        encoding="utf-8",
+    )
     (tmp_path / "scratch.txt").write_text("ignore me", encoding="utf-8")
 
     snapshot = control_sync._collect_run_snapshot(tmp_path)
 
     assert snapshot["exists"] is True
     assert "sheet_classification.json" in snapshot["artifacts"]
+    assert "sheet_routing.json" in snapshot["artifacts"]
     assert "scratch.txt" not in snapshot["artifacts"]
 
 

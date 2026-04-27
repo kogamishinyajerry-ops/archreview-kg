@@ -134,6 +134,12 @@ and keeps the no-OCR transparency warning.
   texts, and marks graph eligibility as advisory routing evidence. Viewer
   and `report.md` render the same payload, while old runs without the
   artifact show an explicit missing-classification warning.
+- P38-02 adds protected graph routing with `sheet_routing.json`. Full CLI
+  and Studio runs now route graph input to a single confident plan page
+  only when all other pages are confident non-graph sheets. Unknown,
+  low-confidence, missing-classification, single-page, or multiple-plan
+  runs fall back to legacy all-page graph input, and the decision renders
+  in Viewer/Studio/report surfaces.
 
 ### Still limited
 

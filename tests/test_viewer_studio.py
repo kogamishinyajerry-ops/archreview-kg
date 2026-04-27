@@ -500,15 +500,20 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     body = index_path.read_text("utf-8")
 
     assert "Sheet 分类" in body
+    assert "Sheet 路由" in body
     assert "平面图" in body
     assert "sheet_classification.json" in body
+    assert "sheet_routing.json" in body
 
     (out_dir / "sheet_classification.json").unlink()
+    (out_dir / "sheet_routing.json").unlink()
     index_path = _render_index(out_dir, SAMPLE_PDF)
     body = index_path.read_text("utf-8")
 
     assert "sheet_classification.json 暂无数据" in body
     assert "缺失分类不代表可直接进入 graph" in body
+    assert "sheet_routing.json 暂无数据" in body
+    assert "缺失路由不代表已按 sheet 类型过滤" in body
 
 
 def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:

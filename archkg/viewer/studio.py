@@ -386,6 +386,10 @@ def run_pipeline(
         build_sheet_region_candidates,
         write_sheet_region_candidates,
     )
+    from archkg.ingest.sheet_routing import (
+        route_primitives_for_graph,
+        write_sheet_routing,
+    )
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.knowledge.run_readiness import (
         build_rule_input_readiness,
@@ -450,6 +454,13 @@ def run_pipeline(
         sheet_candidates,
         out_dir / "sheet_region_candidates_overlay.png",
     )
+    routing = route_primitives_for_graph(
+        primitives,
+        sheet_classification,
+        manual_sheet_region_applied=sheet_region is not None,
+    )
+    write_sheet_routing(routing.decision, out_dir / "sheet_routing.json")
+    primitives = routing.primitives
     if sheet_region is not None:
         primitives = crop_primitives_to_region(primitives, sheet_region)
     write_prims(primitives, out_dir / "primitives.json")
@@ -645,6 +656,7 @@ def run_pipeline(
             rule_readiness.model_dump(mode="json")
         ),
         sheet_classification=sheet_classification.model_dump(mode="json"),
+        sheet_routing=routing.decision.model_dump(mode="json"),
         review_state=review_state,
     )
 
@@ -773,6 +785,7 @@ def _render_viewer_index(
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
     from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
+    from archkg.viewer.sheet_routing import load_sheet_routing_view
 
     n_lines = sum(len(p.get("lines", [])) for p in primitives.get("pages", []))
     n_texts = sum(len(p.get("texts", [])) for p in primitives.get("pages", []))
@@ -804,6 +817,7 @@ def _render_viewer_index(
     rule_readiness = load_rule_readiness_view(out_dir)
     review_state = load_review_state_view(out_dir, issues)
     sheet_classification = load_sheet_classification_view(out_dir)
+    sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
 
     html = env.get_template("index.html.j2").render(
@@ -823,6 +837,7 @@ def _render_viewer_index(
         rule_readiness=rule_readiness,
         review_state=review_state,
         sheet_classification=sheet_classification,
+        sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")
