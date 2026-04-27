@@ -82,6 +82,13 @@ and keeps the no-OCR transparency warning.
   counts, door/opening size labels, and major dimensions. The suite now
   supports `known_gap` rows, which are scored but do not fail the suite
   while the recognizer is known not to meet the expected inventory.
+- P32 adds a research-backed product direction document at
+  `docs/research/2026-04-28-intelligent-plan-review-landscape.md`.
+  The development guidance is to borrow mature patterns from BIM model
+  checking, IDS/BCF, permit precheck products, and Chinese BIM review
+  practice: build rule-input readiness, source-classified drawing
+  evidence, reviewable issue lifecycle, and an IFC/IDS side lane before
+  claiming broader real-plan compliance capability.
 
 ### Still limited
 

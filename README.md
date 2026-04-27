@@ -265,6 +265,14 @@ archkg clause readiness
 
 ---
 
+## 研发调研
+
+- [P32 智能审图软件调研与开发指引](docs/research/2026-04-28-intelligent-plan-review-landscape.md) —
+  记录 Solibri / IDS / BCF / CORENET X / Archistar eCheck / 国内 BIM 智能审图等参考,
+  并把后续路线收敛到 rule-input readiness、sheet 区域候选、issue lifecycle 和 IFC/IDS side lane。
+
+---
+
 ## 路线
 
 完整 changelog 见 [CHANGELOG.md](CHANGELOG.md)。
