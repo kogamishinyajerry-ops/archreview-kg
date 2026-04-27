@@ -61,6 +61,14 @@ def review(
             "Use 1-3 m² on noisy real CAD sheets; 0 disables filtering."
         ),
     ),
+    sheet_region: str | None = typer.Option(
+        None,
+        "--sheet-region",
+        help=(
+            "Optional design-region crop in page coordinates: x0,y0,x1,y1. "
+            "Use to exclude title blocks, borders, schedules, or legends."
+        ),
+    ),
     project_meta: Path | None = typer.Option(
         None, "--project-meta", exists=True, dir_okay=False, readable=True,
         help="Optional ProjectMeta YAML (building_type/height_class etc.) to filter inapplicable rules.",
@@ -86,6 +94,10 @@ def review(
     from archkg.graph.builder import write_json as write_graph
     from archkg.ingest.primitive_extractor import extract
     from archkg.ingest.primitive_extractor import write_json as write_prims
+    from archkg.ingest.sheet_region import (
+        crop_primitives_to_region,
+        parse_sheet_region,
+    )
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
@@ -120,7 +132,14 @@ def review(
             encoding="utf-8",
         )
 
+    try:
+        crop_region = parse_sheet_region(sheet_region) if sheet_region else None
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--sheet-region") from exc
+
     primitives = extract(pdf, points_per_meter=points_per_meter)
+    if crop_region is not None:
+        primitives = crop_primitives_to_region(primitives, crop_region)
     primitives_path = write_prims(primitives, out / "primitives.json")
 
     graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
@@ -416,15 +435,30 @@ def build_graph_cmd(
             "Use 1-3 m² on noisy real CAD sheets; 0 disables filtering."
         ),
     ),
+    sheet_region: str | None = typer.Option(
+        None,
+        "--sheet-region",
+        help=(
+            "Optional design-region crop in page coordinates: x0,y0,x1,y1. "
+            "Use to exclude title blocks, borders, schedules, or legends."
+        ),
+    ),
 ) -> None:
     """Build entity_graph.json from primitives.json (and optionally a debug overlay PNG)."""
     import json as _json
 
     from archkg.graph.builder import build_graph, render_overlay, write_json
+    from archkg.ingest.sheet_region import crop_primitives_to_region, parse_sheet_region
     from archkg.schemas import Primitives
 
     raw = _json.loads(primitives.read_text(encoding="utf-8"))
     p = Primitives.model_validate(raw)
+    try:
+        crop_region = parse_sheet_region(sheet_region) if sheet_region else None
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--sheet-region") from exc
+    if crop_region is not None:
+        p = crop_primitives_to_region(p, crop_region)
     graph = build_graph(p, min_room_area_m2=min_room_area_m2)
     written = write_json(graph, out)
     typer.echo(

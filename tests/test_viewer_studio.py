@@ -216,6 +216,32 @@ def test_run_meta_persists_tunable_knobs(studio_client) -> None:
     assert meta["min_room_area_m2"] == 2.5
 
 
+def test_post_review_sheet_region_crops_primitives_and_persists_meta(
+    studio_client,
+) -> None:
+    client, state_dir = studio_client
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(SAMPLE_PDF.read_bytes()), "plan.pdf"),
+            "sheet_region": "0,0,200,400",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    meta = json.loads((run_dir / "run_meta.json").read_text("utf-8"))
+    assert meta["sheet_region"] == [0.0, 0.0, 200.0, 400.0]
+
+    primitives = json.loads((run_dir / "primitives.json").read_text("utf-8"))
+    texts = {text["text"] for text in primitives["pages"][0]["texts"]}
+    assert "BEDROOM" in texts
+    assert "LIVING" not in texts
+    assert "KITCHEN" not in texts
+
+
 def test_post_review_min_room_area_filter_passes_through(studio_client) -> None:
     """Phase 19-D: ``min_room_area_m2`` form field threads from the
     studio form into the builder's room-area noise filter. With a 100

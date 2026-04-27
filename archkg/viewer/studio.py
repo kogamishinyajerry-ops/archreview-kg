@@ -334,6 +334,7 @@ def run_pipeline(
     points_per_meter: float = 50.0,
     inspect_only: bool = False,
     min_room_area_m2: float = 1.0,
+    sheet_region: tuple[float, float, float, float] | None = None,
     use_ocr: bool = False,
 ) -> PipelineResult:
     """End-to-end review on a single PDF.
@@ -374,6 +375,7 @@ def run_pipeline(
     from archkg.ingest.primitive_extractor import write_json as write_prims
     from archkg.ingest.raster_extractor import extract as extract_raster
     from archkg.ingest.raster_extractor import wrap_image_as_pdf
+    from archkg.ingest.sheet_region import crop_primitives_to_region
     from archkg.knowledge.loader import load_rules, load_standards
     from archkg.rules.engine import evaluate
     from archkg.schemas import ProjectMeta
@@ -417,6 +419,8 @@ def run_pipeline(
         pdf_path = wrapped_pdf
     else:
         primitives = extract_pdf(pdf_path, points_per_meter=points_per_meter)
+    if sheet_region is not None:
+        primitives = crop_primitives_to_region(primitives, sheet_region)
     write_prims(primitives, out_dir / "primitives.json")
     graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
 
@@ -518,6 +522,7 @@ def run_pipeline(
         quality_flags=quality_flags,
         points_per_meter=points_per_meter,
         min_room_area_m2=min_room_area_m2,
+        sheet_region=sheet_region,
         use_ocr=use_ocr if is_raster_input else False,
         ocr_text_count=ocr_text_count,
     )
@@ -623,6 +628,7 @@ def _write_run_meta(
     quality_flags: tuple[str, ...] = (),
     points_per_meter: float | None = None,
     min_room_area_m2: float | None = None,
+    sheet_region: tuple[float, float, float, float] | None = None,
     use_ocr: bool | None = None,
     ocr_text_count: int | None = None,
 ) -> Path:
@@ -651,6 +657,8 @@ def _write_run_meta(
         payload["points_per_meter"] = points_per_meter
     if min_room_area_m2 is not None:
         payload["min_room_area_m2"] = min_room_area_m2
+    if sheet_region is not None:
+        payload["sheet_region"] = list(sheet_region)
     if use_ocr is not None:
         payload["use_ocr"] = use_ocr
     if ocr_text_count is not None:
@@ -1234,6 +1242,11 @@ STUDIO_HTML = r"""
             <div style="margin-left:auto; color: var(--muted);">噪声剔除阈值</div>
           </div>
           <input id="noiseInput" class="num" type="number" name="min_room_area_m2" step="0.1" min="0" value="1.0" />
+          <div class="inline" style="margin-top: 10px;">
+            <label style="margin: 0;">sheet_region</label>
+            <div style="margin-left:auto; color: var(--muted);">x0,y0,x1,y1</div>
+          </div>
+          <input class="num" type="text" name="sheet_region" placeholder="留空=整张图；例：0,0,2200,1600" />
           <label style="margin-top: 10px;">
             <input type="checkbox" name="inspect_only" value="1" />
             仅识图模式（先检查 Rooms / Doors / Corridors）
@@ -1443,6 +1456,17 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
             flash("min_room_area_m2 不能为负（设 0 即关闭过滤）。")
             return redirect(url_for("index"))
 
+        raw_sheet_region = request.form.get("sheet_region", "").strip()
+        sheet_region = None
+        if raw_sheet_region:
+            from archkg.ingest.sheet_region import parse_sheet_region
+
+            try:
+                sheet_region = parse_sheet_region(raw_sheet_region)
+            except ValueError as exc:
+                flash(f"sheet_region 无效：{exc}")
+                return redirect(url_for("index"))
+
         # Phase 20-A R1 P0: raster uploads need PIXELS-per-meter, not
         # PDF points-per-meter. Compute from the form's `image_dpi`
         # (default 200) compounded with `points_per_meter` (the
@@ -1472,6 +1496,7 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
                 points_per_meter=ppm,
                 inspect_only=inspect_only,
                 min_room_area_m2=min_room_area,
+                sheet_region=sheet_region,
                 use_ocr=use_ocr,
             )
         except Exception as exc:

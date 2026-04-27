@@ -1,0 +1,23 @@
+{
+  "schema_version": "generated_drawing_fixture_provenance.v1",
+  "case_id": "generated-complex-titleblock",
+  "fixture_kind": "generated_complex_pdf",
+  "generator": "samples/make_complex_sample.py",
+  "source_pdf": "samples/generated_complex_titleblock.pdf",
+  "generation_note": "Deterministic vector PDF generated in-repo for repeatable CI benchmarking. It intentionally includes a dense right-side title block and revision table.",
+  "run_parameters": {
+    "points_per_meter": 50.0,
+    "min_room_area_m2": 1.0,
+    "sheet_region": [0.0, 0.0, 860.0, 660.0]
+  },
+  "current_recognizer_observation": {
+    "lines": 43,
+    "texts": 54,
+    "rooms": 30,
+    "doors": 8,
+    "corridors": 2,
+    "stairs": 3,
+    "dimensions": 16,
+    "interpretation": "The explicit sheet-region crop removes the title block before graphing and text inventory. The fixture verifies complex generated-sheet recognition hygiene; it is not a public real drawing."
+  }
+}

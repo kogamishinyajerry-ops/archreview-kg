@@ -600,6 +600,53 @@ def test_cli_build_graph_writes_file_and_overlay(sample_pdf: Path, tmp_path: Pat
     assert overlay_path.exists()
 
 
+def test_cli_build_graph_applies_sheet_region_before_graphing(tmp_path: Path) -> None:
+    from archkg.schemas import LinePrimitive, PagePrimitives, Primitives
+
+    primitives = Primitives(
+        source_pdf="fixture.pdf",
+        points_per_meter=50.0,
+        pages=[
+            PagePrimitives(
+                page_index=0,
+                width_pt=500.0,
+                height_pt=300.0,
+                lines=[
+                    LinePrimitive(p0=(10.0, 10.0), p1=(110.0, 10.0)),
+                    LinePrimitive(p0=(110.0, 10.0), p1=(110.0, 110.0)),
+                    LinePrimitive(p0=(110.0, 110.0), p1=(10.0, 110.0)),
+                    LinePrimitive(p0=(10.0, 110.0), p1=(10.0, 10.0)),
+                    LinePrimitive(p0=(350.0, 10.0), p1=(450.0, 10.0)),
+                    LinePrimitive(p0=(450.0, 10.0), p1=(450.0, 110.0)),
+                    LinePrimitive(p0=(450.0, 110.0), p1=(350.0, 110.0)),
+                    LinePrimitive(p0=(350.0, 110.0), p1=(350.0, 10.0)),
+                ],
+                texts=[],
+            )
+        ],
+    )
+    primitives_path = tmp_path / "primitives.json"
+    primitives_path.write_text(primitives.model_dump_json(), "utf-8")
+    graph_path = tmp_path / "entity_graph.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "build-graph",
+            str(primitives_path),
+            "-o",
+            str(graph_path),
+            "--sheet-region",
+            "0,0,200,200",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(graph_path.read_text("utf-8"))
+    assert len(payload["rooms"]) == 1
+    assert payload["rooms"][0]["bbox"] == [10.0, 10.0, 110.0, 110.0]
+
+
 def test_render_overlay_works_directly(sample_pdf: Path, tmp_path: Path) -> None:
     p = extract(sample_pdf)
     g = build_graph(p)

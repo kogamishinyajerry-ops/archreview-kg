@@ -191,6 +191,7 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
 
     assert result["passed"] is True
     assert result["pending_count"] == 1
+    assert result["active_count"] == 2
     assert result["known_gap_count"] == 0
     assert result["failed_count"] == 0
     medfield = next(
@@ -199,6 +200,12 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     assert medfield["status"] == "pass"
     assert medfield["passed"] is True
     assert medfield["score"] == 1.0
+    generated = next(
+        case for case in result["cases"] if case["case_id"] == "generated-complex-titleblock"
+    )
+    assert generated["fixture_kind"] == "generated_complex_pdf"
+    assert generated["status"] == "pass"
+    assert generated["score"] == 1.0
 
 
 def test_benchmark_suite_markdown_report() -> None:

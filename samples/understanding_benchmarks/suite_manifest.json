@@ -18,6 +18,15 @@
       "expect": "real/medfield_a1_first_floor_expected.json",
       "provenance": "real/medfield_a1_first_floor_provenance.json",
       "notes": "A-1 First Floor Plan has human-entered expected inventory. Current recognizer passes this case using a 3.0 m² real-CAD noise floor and text-hint vertical circulation evidence; this is recognition benchmarking only, not GB compliance validation."
+    },
+    {
+      "case_id": "generated-complex-titleblock",
+      "fixture_kind": "generated_complex_pdf",
+      "status": "active",
+      "run_dir": "generated/complex_titleblock_run",
+      "expect": "generated/complex_titleblock_expected.json",
+      "provenance": "generated/complex_titleblock_provenance.json",
+      "notes": "Deterministic generated complex sheet with a right-side title block. The committed run uses --sheet-region 0,0,860,660 so benchmark counts exclude non-design title-block geometry and text."
     }
   ]
 }
