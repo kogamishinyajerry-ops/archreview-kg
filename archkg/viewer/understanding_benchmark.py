@@ -23,6 +23,7 @@ DRAFT_COMPONENT_COUNT_KEYS = (
     "dimensions",
     "ocr_texts",
 )
+KNOWN_GAP_STATUS = "known_gap"
 
 
 def run_understanding_benchmark(
@@ -51,15 +52,21 @@ def run_understanding_benchmark_suite(manifest_path: Path) -> dict[str, Any]:
         _run_suite_case(base_dir, index=index, raw_case=raw_case)
         for index, raw_case in enumerate(_list(manifest.get("cases")), start=1)
     ]
-    pending_count = sum(1 for case in suite_cases if case.get("passed") is None)
+    known_gap_count = sum(1 for case in suite_cases if case.get("status") == KNOWN_GAP_STATUS)
+    pending_count = sum(
+        1
+        for case in suite_cases
+        if case.get("passed") is None and case.get("status") != KNOWN_GAP_STATUS
+    )
     failed_count = sum(1 for case in suite_cases if case.get("passed") is False)
-    active_count = len(suite_cases) - pending_count
+    active_count = len(suite_cases) - pending_count - known_gap_count
     return {
         "schema_version": "understanding_benchmark_suite_result.v1",
         "suite_id": _str(manifest.get("suite_id")) or manifest_path.stem,
         "passed": failed_count == 0,
         "active_count": active_count,
         "pending_count": pending_count,
+        "known_gap_count": known_gap_count,
         "failed_count": failed_count,
         "cases": suite_cases,
     }
@@ -167,6 +174,7 @@ def render_suite_markdown_report(result: Mapping[str, Any]) -> str:
             "Cases: "
             f"active={_int(result.get('active_count'))}, "
             f"pending={_int(result.get('pending_count'))}, "
+            f"known_gap={_int(result.get('known_gap_count'))}, "
             f"failed={_int(result.get('failed_count'))}"
         ),
         "",
@@ -200,7 +208,7 @@ def _run_suite_case(base_dir: Path, *, index: int, raw_case: object) -> dict[str
     case_id = _str(raw_case.get("case_id")) or f"case-{index}"
     fixture_kind = _str(raw_case.get("fixture_kind")) or "unknown"
     manifest_status = _str(raw_case.get("status")) or "active"
-    if manifest_status != "active":
+    if manifest_status not in {"active", KNOWN_GAP_STATUS}:
         return _pending_suite_case(case_id, fixture_kind, manifest_status, raw_case)
 
     run_dir_raw = _str(raw_case.get("run_dir"))
@@ -248,6 +256,9 @@ def _run_suite_case(base_dir: Path, *, index: int, raw_case: object) -> dict[str
             error=f"{type(exc).__name__}: {exc}",
         )
 
+    if manifest_status == KNOWN_GAP_STATUS:
+        return _known_gap_suite_case(case_id, fixture_kind, result, raw_case)
+
     return {
         "case_id": case_id,
         "fixture_kind": fixture_kind,
@@ -257,6 +268,39 @@ def _run_suite_case(base_dir: Path, *, index: int, raw_case: object) -> dict[str
         "benchmark_id": result["benchmark_id"],
         "min_score": result["min_score"],
         "checks": result["checks"],
+    }
+
+
+def _known_gap_suite_case(
+    case_id: str,
+    fixture_kind: str,
+    result: Mapping[str, Any],
+    raw_case: Mapping[str, Any],
+) -> dict[str, Any]:
+    benchmark_passed = bool(result.get("passed"))
+    if benchmark_passed:
+        return {
+            "case_id": case_id,
+            "fixture_kind": fixture_kind,
+            "status": "unexpected_pass",
+            "passed": False,
+            "benchmark_passed": True,
+            "score": result.get("score"),
+            "benchmark_id": result.get("benchmark_id"),
+            "checks": result.get("checks"),
+            "notes": _str(raw_case.get("notes")),
+            "detail": "known_gap case now passes; promote it to active or review the expected inventory",
+        }
+    return {
+        "case_id": case_id,
+        "fixture_kind": fixture_kind,
+        "status": KNOWN_GAP_STATUS,
+        "passed": None,
+        "benchmark_passed": False,
+        "score": result.get("score"),
+        "benchmark_id": result.get("benchmark_id"),
+        "checks": result.get("checks"),
+        "notes": _str(raw_case.get("notes")),
     }
 
 

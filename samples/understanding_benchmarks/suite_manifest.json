@@ -10,11 +10,14 @@
       "notes": "Run archkg review samples/sample_clean.pdf -o <run-dir> with demo schedules, then set run_dir in a local manifest. Use archkg understanding-benchmark-author <run-dir> --out <draft.json> when drafting a new expected spec."
     },
     {
-      "case_id": "medfield-public-plans",
+      "case_id": "medfield-a1-first-floor",
       "fixture_kind": "real_public_pdf",
-      "status": "pending_fixture",
+      "status": "known_gap",
       "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
-      "notes": "Public real-drawing intake placeholder; expected component inventory is not annotated yet. Generate a draft with understanding-benchmark-author after a run exists, review it, then promote this case to active."
+      "run_dir": "real/medfield_a1_first_floor_run",
+      "expect": "real/medfield_a1_first_floor_expected.json",
+      "provenance": "real/medfield_a1_first_floor_provenance.json",
+      "notes": "A-1 First Floor Plan has human-entered expected inventory. Current recognizer over-segments this real sheet and misses vertical circulation, so this is scored as known_gap until the recognizer improves."
     }
   ]
 }

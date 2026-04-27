@@ -1,0 +1,33 @@
+{
+  "schema_version": "real_drawing_fixture_provenance.v1",
+  "case_id": "medfield-a1-first-floor",
+  "fixture_kind": "real_public_pdf",
+  "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+  "retrieved_at": "2026-04-27",
+  "source_access_note": "HTTP GET succeeded and produced a 9-page PDF; HTTP HEAD returned 404 for the same CivicPlus document endpoint.",
+  "source_pdf": {
+    "committed": false,
+    "local_path_used_for_annotation": "tmp/p28-real/medfield-floorplans-elevations.pdf",
+    "page_count": 9,
+    "file_size_bytes_at_retrieval": 1297119
+  },
+  "selected_sheet": {
+    "pdf_page_number_1_based": 4,
+    "sheet_number": "A-1",
+    "drawing_name": "First Floor Plan",
+    "project_title": "New Construction: 16 Unit Apartment Building, Hillside Village",
+    "render_used_for_annotation": "tmp/p28-real/page-04.png"
+  },
+  "committed_artifacts": {
+    "current_recognition_payload": "samples/understanding_benchmarks/real/medfield_a1_first_floor_run/drawing_understanding.json",
+    "manual_expected_inventory": "samples/understanding_benchmarks/real/medfield_a1_first_floor_expected.json"
+  },
+  "current_recognizer_observation": {
+    "rooms": 169,
+    "doors": 204,
+    "corridors": 2,
+    "stairs": 0,
+    "dimensions": 181,
+    "interpretation": "The recognizer over-segments this real vector PDF sheet and misses stair/vertical-circulation taxonomy. This is intentionally kept as a known_gap fixture, not a passing capability claim."
+  }
+}

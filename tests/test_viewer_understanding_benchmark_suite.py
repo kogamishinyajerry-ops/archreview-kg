@@ -114,6 +114,93 @@ def test_benchmark_suite_fails_active_case_with_missing_artifacts(tmp_path: Path
     assert result["cases"][0]["error"].startswith("run_dir not found")
 
 
+def test_benchmark_suite_records_known_gap_without_failing_suite(tmp_path: Path) -> None:
+    _write_current_payload(tmp_path / "run")
+    expected_path = tmp_path / "expected.json"
+    expected_path.write_text(
+        json.dumps(
+            {
+                "benchmark_id": "real-known-gap",
+                "component_counts": {"rooms": {"exact": 2}},
+                "required_semantic_kinds": ["residential_room"],
+            }
+        ),
+        "utf-8",
+    )
+    manifest = {
+        "suite_id": "known-gap-suite",
+        "cases": [
+            {
+                "case_id": "real-a1",
+                "fixture_kind": "real_public_pdf",
+                "status": "known_gap",
+                "run_dir": "run",
+                "expect": "expected.json",
+                "notes": "Current recognizer under-counts the manually annotated rooms.",
+            }
+        ],
+    }
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest), "utf-8")
+
+    result = run_understanding_benchmark_suite(manifest_path)
+
+    assert result["passed"] is True
+    assert result["active_count"] == 0
+    assert result["pending_count"] == 0
+    assert result["known_gap_count"] == 1
+    assert result["failed_count"] == 0
+    assert result["cases"][0]["status"] == "known_gap"
+    assert result["cases"][0]["passed"] is None
+    assert result["cases"][0]["benchmark_passed"] is False
+    assert result["cases"][0]["score"] < 1.0
+
+
+def test_benchmark_suite_fails_known_gap_that_unexpectedly_passes(tmp_path: Path) -> None:
+    _write_current_payload(tmp_path / "run")
+    _write_expected(tmp_path / "expected.json")
+    manifest = {
+        "suite_id": "known-gap-unexpected-pass",
+        "cases": [
+            {
+                "case_id": "real-a1",
+                "fixture_kind": "real_public_pdf",
+                "status": "known_gap",
+                "run_dir": "run",
+                "expect": "expected.json",
+            }
+        ],
+    }
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest), "utf-8")
+
+    result = run_understanding_benchmark_suite(manifest_path)
+
+    assert result["passed"] is False
+    assert result["failed_count"] == 1
+    assert result["known_gap_count"] == 0
+    assert result["cases"][0]["status"] == "unexpected_pass"
+    assert result["cases"][0]["benchmark_passed"] is True
+
+
+def test_packaged_suite_manifest_tracks_medfield_known_gap() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    manifest_path = repo_root / "samples/understanding_benchmarks/suite_manifest.json"
+
+    result = run_understanding_benchmark_suite(manifest_path)
+
+    assert result["passed"] is True
+    assert result["pending_count"] == 1
+    assert result["known_gap_count"] == 1
+    assert result["failed_count"] == 0
+    medfield = next(
+        case for case in result["cases"] if case["case_id"] == "medfield-a1-first-floor"
+    )
+    assert medfield["status"] == "known_gap"
+    assert medfield["benchmark_passed"] is False
+    assert medfield["score"] < 1.0
+
+
 def test_benchmark_suite_markdown_report() -> None:
     result = {
         "suite_id": "suite-demo",

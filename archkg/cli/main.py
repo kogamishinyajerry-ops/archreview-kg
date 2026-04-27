@@ -571,7 +571,7 @@ def understanding_benchmark_suite(
     typer.echo(
         f"{result['suite_id']} {status} "
         f"active={result['active_count']} pending={result['pending_count']} "
-        f"failed={result['failed_count']}"
+        f"failed={result['failed_count']} known_gap={result.get('known_gap_count', 0)}"
     )
     if not result["passed"]:
         raise typer.Exit(code=1)

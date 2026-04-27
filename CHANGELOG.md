@@ -75,6 +75,13 @@ and keeps the no-OCR transparency warning.
   positive benchmark flags, and is explicitly marked
   `review_required: true` before any real drawing is promoted to an
   active suite case.
+- P28 adds the first human-entered real-drawing expected inventory:
+  Medfield / Hillside Village sheet A-1 First Floor Plan. The committed
+  fixture includes source provenance, a current `drawing_understanding`
+  snapshot, and a manual expected inventory with unit labels, room-label
+  counts, door/opening size labels, and major dimensions. The suite now
+  supports `known_gap` rows, which are scored but do not fail the suite
+  while the recognizer is known not to meet the expected inventory.
 
 ### Still limited
 
@@ -102,6 +109,10 @@ and keeps the no-OCR transparency warning.
   themselves. They preserve the current recognition output for review;
   a human or later annotation pass must correct the draft before it
   becomes a real benchmark oracle.
+- The Medfield A-1 real fixture is intentionally a `known_gap`: current
+  recognition reports 169 rooms / 204 doors and no stair taxonomy against
+  a manually entered first-floor inventory. It is a regression target for
+  future recognition work, not a passing real-plan capability claim.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 

@@ -148,6 +148,10 @@ archkg studio
   `drawing_understanding.json` 生成 expected inventory 草案，包含图纸类型、部件计数、semantic kinds、
   evidence signals 与 positive benchmark flags。草案带 `review_required: true`，必须人工核对和调整后
   才能把真实图纸 case 从 `pending_fixture` 提升为 `active`。
+- P28 开始接入真实图纸 expected inventory：`suite_manifest.json` 现在包含 Medfield / Hillside Village
+  A-1 First Floor Plan 的人工 expected inventory、来源 provenance 和当前 `drawing_understanding.json`
+  快照。该 case 标为 `known_gap`：suite 会真实跑分并记录 rooms/doors 过分割与 stair/vertical
+  circulation 缺失，但不把这张真实图纸包装成已通过能力。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
