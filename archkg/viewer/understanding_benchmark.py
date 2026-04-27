@@ -15,6 +15,15 @@ from typing import Any
 from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
 from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
 
+DRAFT_COMPONENT_COUNT_KEYS = (
+    "rooms",
+    "doors",
+    "corridors",
+    "stairs",
+    "dimensions",
+    "ocr_texts",
+)
+
 
 def run_understanding_benchmark(
     run_dir: Path,
@@ -56,6 +65,32 @@ def run_understanding_benchmark_suite(manifest_path: Path) -> dict[str, Any]:
     }
 
 
+def author_expected_benchmark_spec(
+    run_dir: Path,
+    *,
+    benchmark_id: str | None = None,
+    min_score: float = 1.0,
+) -> dict[str, Any]:
+    payload = _load_understanding_payload(run_dir)
+    return {
+        "schema_version": "understanding_benchmark_expected.v1",
+        "benchmark_id": benchmark_id or run_dir.name,
+        "min_score": min_score,
+        "review_required": True,
+        "source_schema_version": _str(payload.get("schema_version")),
+        "drawing_type": _str(payload.get("drawing_type")),
+        "likely_design_contains": _str(payload.get("likely_design")),
+        "component_counts": _draft_component_counts(payload),
+        "required_semantic_kinds": _draft_semantic_kinds(payload),
+        "required_evidence_signals": _draft_evidence_signals(payload),
+        "required_benchmark_signals": _draft_benchmark_signals(payload),
+        "authoring_note": (
+            "Draft generated from current recognition output; review and adjust "
+            "before promoting a real drawing case to active benchmark status."
+        ),
+    }
+
+
 def load_expected(path: Path) -> dict[str, Any]:
     raw = json.loads(path.read_text("utf-8"))
     if not isinstance(raw, dict):
@@ -74,6 +109,10 @@ def write_json_report(result: Mapping[str, Any], path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(result, ensure_ascii=False, indent=2), "utf-8")
     return path
+
+
+def write_expected_benchmark_spec(result: Mapping[str, Any], path: Path) -> Path:
+    return write_json_report(result, path)
 
 
 def write_suite_json_report(result: Mapping[str, Any], path: Path) -> Path:
@@ -254,6 +293,40 @@ def _resolve_suite_path(base_dir: Path, raw: str) -> Path:
     return base_dir / path
 
 
+def _draft_component_counts(payload: Mapping[str, Any]) -> dict[str, dict[str, int]]:
+    raw_counts = payload.get("component_counts")
+    if not isinstance(raw_counts, Mapping):
+        return {}
+    counts: dict[str, dict[str, int]] = {}
+    for key in DRAFT_COMPONENT_COUNT_KEYS:
+        value = raw_counts.get(key)
+        if type(value) is int and value > 0:
+            counts[key] = {"exact": value}
+    return counts
+
+
+def _draft_semantic_kinds(payload: Mapping[str, Any]) -> list[str]:
+    kinds: list[str] = []
+    for row in _list(payload.get("component_inventory")):
+        if isinstance(row, Mapping):
+            kinds.append(_str(row.get("semantic_kind")))
+    return _unique_nonempty(kinds)
+
+
+def _draft_evidence_signals(payload: Mapping[str, Any]) -> list[str]:
+    profile = payload.get("drawing_profile")
+    if not isinstance(profile, Mapping):
+        return []
+    return _unique_nonempty(_str_list(profile.get("evidence_signals")))
+
+
+def _draft_benchmark_signals(payload: Mapping[str, Any]) -> dict[str, bool]:
+    raw_signals = payload.get("benchmark_signals")
+    if not isinstance(raw_signals, Mapping):
+        return {}
+    return {key: True for key, value in raw_signals.items() if isinstance(key, str) and value is True}
+
+
 def _load_understanding_payload(run_dir: Path) -> dict[str, Any]:
     path = run_dir / "drawing_understanding.json"
     if path.exists():
@@ -409,6 +482,16 @@ def _str_list(raw: object) -> list[str]:
     return [item for item in raw if isinstance(item, str)]
 
 
+def _unique_nonempty(raw: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in raw:
+        if item and item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
+
+
 def _list(raw: object) -> list[Any]:
     return raw if isinstance(raw, list) else []
 
@@ -431,12 +514,14 @@ def _float(raw: object, *, default: float) -> float:
 
 
 __all__ = [
+    "author_expected_benchmark_spec",
     "load_expected",
     "load_suite_manifest",
     "render_markdown_report",
     "render_suite_markdown_report",
     "run_understanding_benchmark",
     "run_understanding_benchmark_suite",
+    "write_expected_benchmark_spec",
     "write_json_report",
     "write_markdown_report",
     "write_suite_json_report",

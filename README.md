@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-297%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-300%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -121,6 +121,11 @@ archkg understanding-benchmark out/ \
   --out out/understanding_benchmark.json \
   --markdown out/understanding_benchmark.md
 
+# 可选：从当前识别结果生成 expected spec 草案（先人工核对，再把真实图纸升为 active case）
+archkg understanding-benchmark-author out/ \
+  --benchmark-id my-real-plan \
+  --out out/expected_understanding.draft.json
+
 # 可选：跑 benchmark suite intake（pending 真实图纸只登记，不算通过证明）
 archkg understanding-benchmark-suite \
   --manifest samples/understanding_benchmarks/suite_manifest.json \
@@ -219,7 +224,7 @@ samples/
   project_meta_demo.yaml
   room_schedule_demo.yaml
   stair_schedule_demo.yaml
-tests/                   297 pytest
+tests/                   300 pytest
 ```
 
 ---
@@ -244,6 +249,9 @@ archkg control-sync --run-dir tmp/control --github --notion --notion-page-id=<no
 
 # 图纸理解 benchmark（识别证据，不是规范判定）
 archkg understanding-benchmark out/ --expect samples/understanding_benchmarks/sample_clean_full.json
+
+# 图纸理解 expected spec 草案生成（草案必须人工核对后才能作为 active case）
+archkg understanding-benchmark-author out/ --benchmark-id my-plan --out out/expected_understanding.draft.json
 
 # 图纸理解 benchmark suite intake（active case 会跑分，pending_fixture 不会被当作能力证明）
 archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks/suite_manifest.json

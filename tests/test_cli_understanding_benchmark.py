@@ -97,6 +97,57 @@ def test_understanding_benchmark_cli_exits_nonzero_on_fail(tmp_path: Path) -> No
     assert "cli-fail FAIL" in result.output
 
 
+def test_understanding_benchmark_author_cli_writes_expected_draft(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / "drawing_understanding.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "drawing_understanding.v2",
+                "drawing_type": "建筑平面图",
+                "likely_design": "住宅平面图",
+                "component_counts": {"rooms": 1, "doors": 1, "dimensions": 1},
+                "component_inventory": [
+                    {"semantic_kind": "residential_room"},
+                    {"semantic_kind": "door_opening"},
+                    {"semantic_kind": "dimension_annotation"},
+                ],
+                "drawing_profile": {"evidence_signals": ["spatial_layout", "openings"]},
+                "benchmark_signals": {
+                    "has_spatial_layout": True,
+                    "has_openings": True,
+                },
+            }
+        ),
+        "utf-8",
+    )
+    out_json = tmp_path / "expected-draft.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "understanding-benchmark-author",
+            str(run_dir),
+            "--benchmark-id",
+            "cli-authored",
+            "--out",
+            str(out_json),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert "cli-authored draft written" in result.output
+    draft = json.loads(out_json.read_text("utf-8"))
+    assert draft["review_required"] is True
+    assert draft["component_counts"]["rooms"] == {"exact": 1}
+    assert draft["required_semantic_kinds"] == [
+        "residential_room",
+        "door_opening",
+        "dimension_annotation",
+    ]
+
+
 def test_understanding_benchmark_suite_cli_writes_reports(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     run_dir.mkdir()

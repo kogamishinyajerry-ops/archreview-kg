@@ -7,14 +7,14 @@
       "fixture_kind": "toy_vector_pdf",
       "status": "manual_run_required",
       "expect": "sample_clean_full.json",
-      "notes": "Run archkg review samples/sample_clean.pdf -o <run-dir> with demo schedules, then copy this row into a local manifest and set run_dir to that output directory."
+      "notes": "Run archkg review samples/sample_clean.pdf -o <run-dir> with demo schedules, then set run_dir in a local manifest. Use archkg understanding-benchmark-author <run-dir> --out <draft.json> when drafting a new expected spec."
     },
     {
       "case_id": "medfield-public-plans",
       "fixture_kind": "real_public_pdf",
       "status": "pending_fixture",
       "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
-      "notes": "Public real-drawing intake placeholder; expected component inventory is not annotated yet, so this case is tracked but not scored."
+      "notes": "Public real-drawing intake placeholder; expected component inventory is not annotated yet. Generate a draft with understanding-benchmark-author after a run exists, review it, then promote this case to active."
     }
   ]
 }

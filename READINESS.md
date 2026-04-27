@@ -144,6 +144,10 @@ archkg studio
   `manual_run_required` 只登记真实图纸或待生成样例，不计为通过证明。仓库里的
   `samples/understanding_benchmarks/suite_manifest.json` 是 intake 模板，用于后续接入真实公开图纸
   和人工标注的 expected inventory。
+- P27 新增 `archkg understanding-benchmark-author <run-dir> --out <draft.json>`：从当前 run 的
+  `drawing_understanding.json` 生成 expected inventory 草案，包含图纸类型、部件计数、semantic kinds、
+  evidence signals 与 positive benchmark flags。草案带 `review_required: true`，必须人工核对和调整后
+  才能把真实图纸 case 从 `pending_fixture` 提升为 `active`。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 

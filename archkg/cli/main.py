@@ -498,6 +498,46 @@ def understanding_benchmark(
         raise typer.Exit(code=1)
 
 
+@app.command("understanding-benchmark-author")
+def understanding_benchmark_author(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Write expected benchmark draft JSON for review.",
+    ),
+    benchmark_id: str | None = typer.Option(
+        None,
+        "--benchmark-id",
+        help="Benchmark id to write into the draft; defaults to the run directory name.",
+    ),
+    min_score: float = typer.Option(
+        1.0,
+        "--min-score",
+        min=0.0,
+        max=1.0,
+        help="Draft minimum score threshold.",
+    ),
+) -> None:
+    """Draft an expected inventory spec from a drawing-understanding run.
+
+    The draft is an authoring aid: review it before promoting a real
+    drawing fixture to active benchmark status.
+    """
+    from archkg.viewer.understanding_benchmark import (
+        author_expected_benchmark_spec,
+        write_expected_benchmark_spec,
+    )
+
+    draft = author_expected_benchmark_spec(
+        run_dir,
+        benchmark_id=benchmark_id,
+        min_score=min_score,
+    )
+    write_expected_benchmark_spec(draft, out)
+    typer.echo(f"{draft['benchmark_id']} draft written to {out}")
+
+
 @app.command("understanding-benchmark-suite")
 def understanding_benchmark_suite(
     manifest: Path = typer.Option(

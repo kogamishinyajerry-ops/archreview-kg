@@ -68,6 +68,13 @@ and keeps the no-OCR transparency warning.
   intake without counting as recognition proof. The first manifest
   template is
   `samples/understanding_benchmarks/suite_manifest.json`.
+- P27 adds `archkg understanding-benchmark-author`: an expected-inventory
+  authoring helper that drafts a benchmark spec from a run directory's
+  current `drawing_understanding.json`. The draft includes drawing type,
+  exact nonzero component counts, semantic kinds, evidence signals, and
+  positive benchmark flags, and is explicitly marked
+  `review_required: true` before any real drawing is promoted to an
+  active suite case.
 
 ### Still limited
 
@@ -91,6 +98,10 @@ and keeps the no-OCR transparency warning.
   scored and must not be presented as successful handling of complex real
   construction drawings until run artifacts and expected inventories are
   added as active cases.
+- Authored expected specs are draft annotations, not ground truth by
+  themselves. They preserve the current recognition output for review;
+  a human or later annotation pass must correct the draft before it
+  becomes a real benchmark oracle.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 
