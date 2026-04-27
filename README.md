@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-287%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-292%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -114,6 +114,12 @@ archkg review your-plan.pdf -o out/ \
   --stair-schedule stairs.yaml   # 可选：楼梯踏步/踢面/扶手等
 
 archkg viewer -d out/
+
+# 可选：对“识别到了什么”跑 benchmark（不评估规范纠错）
+archkg understanding-benchmark out/ \
+  --expect samples/understanding_benchmarks/sample_clean_full.json \
+  --out out/understanding_benchmark.json \
+  --markdown out/understanding_benchmark.md
 ```
 
 不填 `--project-meta` 也可跑，但只能触发 4 张 AUTODETECTABLE 规则
@@ -207,7 +213,7 @@ samples/
   project_meta_demo.yaml
   room_schedule_demo.yaml
   stair_schedule_demo.yaml
-tests/                   287 pytest
+tests/                   292 pytest
 ```
 
 ---
@@ -229,6 +235,9 @@ archkg control-sync --run-dir tmp/control
 archkg control-sync --run-dir tmp/control --github --notion --notion-page-id=<notion-page-id>
 
 说明: `--notion` 会优先尝试页面字段更新；页面不带可写字段时，自动写入该页内子数据库（如有）或回退为可见子块日志。
+
+# 图纸理解 benchmark（识别证据，不是规范判定）
+archkg understanding-benchmark out/ --expect samples/understanding_benchmarks/sample_clean_full.json
 
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity

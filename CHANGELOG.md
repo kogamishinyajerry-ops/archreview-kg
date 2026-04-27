@@ -54,6 +54,13 @@ and keeps the no-OCR transparency warning.
   output are included in the same component taxonomy as rooms, openings,
   corridors, dimensions, and OCR-bound dimensions. Standalone viewer
   re-rendering rebuilds legacy P23 payloads that lack the v2 taxonomy.
+- P25 adds `archkg understanding-benchmark`: a recognition benchmark
+  harness that compares a run directory's drawing-understanding payload
+  against an expected component inventory spec. It can build the v2
+  payload from `primitives.json` + `entity_graph.json` when missing, and
+  writes machine-readable JSON plus optional Markdown reports. The first
+  packaged spec is
+  `samples/understanding_benchmarks/sample_clean_full.json`.
 
 ### Still limited
 
@@ -70,6 +77,9 @@ and keeps the no-OCR transparency warning.
 - The v2 taxonomy is descriptive. It records evidence categories and
   confidence bands for review/benchmarking, but it does not alter issue
   generation or make schedule-only stairs geometrically located.
+- Understanding benchmark scores measure recognition evidence only. They
+  do not score GB compliance accuracy and do not make the toy fixture a
+  proxy for arbitrary real construction drawings.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 

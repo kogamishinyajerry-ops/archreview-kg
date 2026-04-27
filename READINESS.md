@@ -134,6 +134,11 @@ archkg studio
   `drawing_profile` 与 `benchmark_signals`。楼梯/垂直交通从 stair schedule 或未来 builder 输出进入
   同一部件清单；旧 run 目录里的 P23 摘要会在 standalone viewer 重渲染时自动重建为 v2。
   这些字段服务于"识别到什么"的横向基准，不提升 OCR/CV 准确率，也不扩大规范纠错范围。
+- P25 新增 `archkg understanding-benchmark <run-dir> --expect <spec.json>`：把 run 目录里的
+  `drawing_understanding.json`（或从 `primitives.json + entity_graph.json` 自动构建的 v2 摘要）
+  与期望部件清单、证据信号、benchmark flags 比对，输出 JSON / Markdown 跑分。
+  当前只随仓库提供 `samples/understanding_benchmarks/sample_clean_full.json` 作为 toy fixture 基准；
+  真实复杂图纸需要逐个加入期望清单后才能形成有效 benchmark。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 

@@ -459,6 +459,45 @@ def viewer(
     serve(out, source_pdf, port=port, open_browser=not no_browser)
 
 
+@app.command("understanding-benchmark")
+def understanding_benchmark(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    expect: Path = typer.Option(
+        ...,
+        "--expect",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Expected drawing-understanding benchmark JSON spec.",
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Write machine-readable result JSON."),
+    markdown: Path | None = typer.Option(None, "--markdown", help="Write Markdown score report."),
+) -> None:
+    """Score drawing_understanding.json against an expected component inventory.
+
+    This measures recognition evidence only: drawing type, component
+    taxonomy, evidence signals, and benchmark booleans. It is separate
+    from rule-engine compliance results.
+    """
+    from archkg.viewer.understanding_benchmark import (
+        load_expected,
+        run_understanding_benchmark,
+        write_json_report,
+        write_markdown_report,
+    )
+
+    expected = load_expected(expect)
+    result = run_understanding_benchmark(run_dir, expected)
+    if out is not None:
+        write_json_report(result, out)
+    if markdown is not None:
+        write_markdown_report(result, markdown)
+    status = "PASS" if result["passed"] else "FAIL"
+    typer.echo(f"{result['benchmark_id']} {status} score={result['score']:.2f}")
+    if not result["passed"]:
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

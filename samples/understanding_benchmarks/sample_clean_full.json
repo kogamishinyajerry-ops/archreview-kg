@@ -1,0 +1,35 @@
+{
+  "benchmark_id": "sample-clean-full-understanding",
+  "min_score": 1.0,
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "住宅",
+  "component_counts": {
+    "rooms": {"exact": 4},
+    "doors": {"exact": 6},
+    "corridors": {"exact": 1},
+    "stairs": {"exact": 1},
+    "dimensions": {"min": 3}
+  },
+  "required_semantic_kinds": [
+    "residential_room",
+    "door_opening",
+    "horizontal_circulation",
+    "stair",
+    "dimension_annotation"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "residential_room_labels",
+    "openings",
+    "horizontal_circulation",
+    "vertical_circulation",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_horizontal_circulation": true,
+    "has_vertical_circulation": true,
+    "has_dimension_evidence": true
+  }
+}
