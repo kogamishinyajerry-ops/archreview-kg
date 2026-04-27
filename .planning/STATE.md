@@ -17,13 +17,14 @@ Status:
 - P34-01 is complete: full CLI and Studio review runs now write `sheet_region_candidates.json` and render candidate regions without default auto-cropping.
 - P34-02 is complete: candidate boxes are rendered into `sheet_region_candidates_overlay.png` and shown in the result page.
 - P35-01 is complete: full CLI and Studio review runs now write `review_state.json`, while `issues.json` stays the rule-engine candidate output.
-- P36-01 is implemented in the working tree: `archkg ifc validate` provides an optional IFC/IDS side lane with separate artifacts and clean missing-dependency degradation.
+- P36-01 is complete: `archkg ifc validate` provides an optional IFC/IDS side lane with separate artifacts and clean missing-dependency degradation.
+- P37-01 is implemented in the working tree: `archkg rule-card draft` writes draft-only rule-card authoring artifacts and does not mutate active `rule_cards.yaml`.
 
 ## Current Phase
 
-P36: IFC/IDS side lane.
+P37: Rule-card authoring and citation assistant.
 
-P36-01 now adds an independent openBIM validation lane. It writes `ids_report_raw.json`, `ifc_validation.json`, and `ifc_issues.json` only under the IFC output directory; it does not touch PDF review `issues.json`.
+P37-01 now adds a safe local draft lane. It writes `rule_card_draft.v1` JSON with source clause, extracted threshold, proposed inputs, ambiguity notes, missing evidence, and proposed tests. Status is fixed to `draft`; promotion to active rule cards remains out of scope.
 
 ## Key Decisions
 
@@ -40,8 +41,9 @@ P36-01 now adds an independent openBIM validation lane. It writes `ids_report_ra
 - Sheet-region candidates can cause silent false negatives if automatic cropping becomes default too early.
 - Feedback/report editing can drift if legacy `open` status is not normalized; keep compatibility tests around `open -> candidate`.
 - Real IfcTester JSON shapes can vary by installed version; keep adapter tests around raw-report normalization and issue mapping.
+- Rule-card draft heuristics are intentionally conservative; ambiguous clauses need human review and may require split/branch rules.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Validate and commit P36-01, then enter P37-01 rule-card authoring / citation assistant unless a real IFC dependency integration test is requested.
+Validate and commit P37-01, then decide whether to enter P38 multi-sheet classification or add a P37-02 reviewed-promotion gate design.

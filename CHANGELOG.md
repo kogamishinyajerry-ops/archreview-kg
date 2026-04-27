@@ -122,6 +122,12 @@ and keeps the no-OCR transparency warning.
   `ids_report_raw.json`, `ifc_validation.json`, and `ifc_issues.json`.
   Missing optional dependencies degrade with a clear message and do not
   affect the PDF review pipeline.
+- P37-01 adds draft-only rule-card authoring:
+  `archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json`.
+  The `rule_card_draft.v1` artifact records source clause evidence,
+  extracted threshold, proposed inputs, applicability, ambiguity notes,
+  missing evidence, and proposed tests. Status is fixed to `draft`; active
+  `rule_cards.yaml` is never mutated by this command.
 
 ### Still limited
 

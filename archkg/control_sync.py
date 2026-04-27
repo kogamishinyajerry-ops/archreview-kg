@@ -95,6 +95,7 @@ def _collect_run_snapshot(run_dir: Path) -> dict[str, Any]:
             "ifc_validation.json",
             "ifc_issues.json",
             "ids_report_raw.json",
+            "rule_card_draft.json",
             "run_meta.json",
             "primitives.json",
         }

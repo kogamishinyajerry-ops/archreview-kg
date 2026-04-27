@@ -29,6 +29,7 @@ from archkg.schemas.review_state import (
 )
 from archkg.schemas.room_schedule import RoomLevel, RoomSchedule, RoomScheduleEntry
 from archkg.schemas.rule_card import EntityType, RuleCard, RuleCardTestCase, RuleScope
+from archkg.schemas.rule_draft import DraftSourceClause, DraftThreshold, RuleCardDraft
 from archkg.schemas.rule_readiness import (
     RuleInputReadiness,
     RuleInputReadinessReport,
@@ -51,6 +52,8 @@ __all__ = [
     "Corridor",
     "Dimension",
     "Door",
+    "DraftSourceClause",
+    "DraftThreshold",
     "Entity",
     "EntityType",
     "FireClass",
@@ -72,6 +75,7 @@ __all__ = [
     "RoomSchedule",
     "RoomScheduleEntry",
     "RuleCard",
+    "RuleCardDraft",
     "RuleCardTestCase",
     "RuleInputReadiness",
     "RuleInputReadinessReport",

@@ -750,6 +750,13 @@ clause_app = typer.Typer(
 app.add_typer(clause_app, name="clause")
 
 
+rule_card_app = typer.Typer(
+    help="Draft-only rule-card authoring helpers.",
+    no_args_is_help=True,
+)
+app.add_typer(rule_card_app, name="rule-card")
+
+
 adversarial_app = typer.Typer(
     help="Adversarial training lane: examiner ↔ candidate ↔ adjudicator (Phase 18-D).",
     no_args_is_help=True,
@@ -762,6 +769,44 @@ ifc_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(ifc_app, name="ifc")
+
+
+@rule_card_app.command("draft")
+def rule_card_draft(
+    clause_id: str = typer.Option(..., "--clause-id", help="Source standard clause id."),
+    out: Path = typer.Option(
+        Path("out/rule_card_draft.json"),
+        "-o",
+        "--out",
+        help="Draft JSON artifact path.",
+    ),
+    standards_path: Path | None = typer.Option(
+        None,
+        "--standards-path",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Optional standards.yaml override.",
+    ),
+) -> None:
+    """Write a review-only rule-card draft artifact for one source clause."""
+    from archkg.knowledge.loader import load_standards
+    from archkg.knowledge.rule_authoring import (
+        author_rule_card_draft,
+        write_rule_card_draft,
+    )
+
+    standards = load_standards(standards_path)
+    clause = next((item for item in standards if item.id == clause_id), None)
+    if clause is None:
+        raise typer.BadParameter(
+            f"unknown clause id '{clause_id}'",
+            param_hint="--clause-id",
+        )
+    draft = author_rule_card_draft(clause)
+    written = write_rule_card_draft(draft, out)
+    typer.echo(f"{draft.draft_id} draft written to {written}")
+    typer.echo("status=draft; human review required before promotion to active rule_cards.yaml")
 
 
 @ifc_app.command("validate")
