@@ -1,26 +1,27 @@
-"""Raster-image (PNG/JPEG) primitive extractor (Phase 20-A / v1.3.0).
+"""Raster-image (PNG/JPEG) primitive extractor (Phase 20-A/B).
 
 Produces the same :class:`archkg.schemas.Primitives` shape that the PDF
 extractor does, by running computer-vision on a raster floor-plan
 image. Lines come from probabilistic Hough transform after thresholding
-and morphological thinning; texts are not detected in this version
-(OCR deferred to v1.4).
+and morphological thinning; text extraction is optional because the
+PaddleOCR runtime is a heavy dependency and is not installed by default.
 
 Limitations users should expect:
 - Only orthogonal walls (horizontal / vertical). Diagonal walls are
   classified out and dropped. Most residential plans are orthogonal,
   but Western-style plans with bay windows etc. will lose those walls.
 - Hand-drawn or scanned-with-noise plans → poor wall detection.
-- No OCR ⇒ no labels ⇒ the 5 label-dependent Room rules
+- OCR is opt-in. When disabled or unavailable, raster rooms have no
+  labels and the 5 label-dependent Room rules
   (RC-BEDROOM-AREA / RC-LIVING-BEDROOM-NETHEIGHT-2.4 /
   RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1 /
   RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0 / RC-NO-LIVING-IN-BASEMENT)
-  do not fire on raster input. Geometry-only rules still do
-  (corridor width, door width, accessibility door width). For a
-  complete review, re-upload the matching vector PDF; the
-  ``room_schedule.yaml`` selector keys on existing ``room_id`` /
-  ``label``, neither of which raster rooms have, so the schedule
-  cannot patch raster runs.
+  do not fire. Geometry-only rules still do (corridor width, door
+  width, accessibility door width). For a complete review without OCR,
+  re-upload the matching vector PDF; the ``room_schedule.yaml``
+  selector keys on existing ``room_id`` / ``label``, neither of which
+  raster rooms have, so the schedule cannot patch label-less raster
+  runs.
 
 The output coordinate frame is image PIXELS (not PostScript points),
 so the caller must pass ``points_per_meter`` already converted to
@@ -41,6 +42,7 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
+from archkg.ingest import ocr
 from archkg.schemas import LinePrimitive, PagePrimitives, Primitives
 
 # Codex P20-A R1 P0: every length-like CV constant is expressed in
@@ -90,12 +92,15 @@ def extract(
     image_path: Path,
     *,
     points_per_meter: float = 50.0,
+    use_ocr: bool = False,
 ) -> Primitives:
     """Run the raster ingest pipeline on a single PNG/JPEG file.
 
     ``points_per_meter`` is interpreted in PIXELS for raster inputs.
     The default 50.0 is rarely correct for raster — callers should
-    set it from the source DPI.
+    set it from the source DPI. ``use_ocr`` is best-effort: when the
+    optional PaddleOCR dependency is unavailable, the text list stays
+    empty and the geometry path continues.
     """
     img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
     if img is None:
@@ -106,13 +111,18 @@ def extract(
     height_px, width_px = img.shape[:2]
 
     line_primitives = _detect_walls(img, points_per_meter)
+    text_primitives = (
+        ocr.ocr_page_image(image_path, keep_only_dimensions=False)
+        if use_ocr
+        else []
+    )
 
     page = PagePrimitives(
         page_index=0,
         width_pt=float(width_px),
         height_pt=float(height_px),
         lines=line_primitives,
-        texts=[],  # OCR deferred to v1.4
+        texts=text_primitives,
     )
     return Primitives(
         source_pdf=str(image_path),

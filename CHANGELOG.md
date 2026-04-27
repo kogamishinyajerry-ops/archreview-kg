@@ -4,6 +4,39 @@ All notable changes to ArchReview-KG. Version tags follow `v<major>.<minor>.<pat
 patch releases (`v1.0.x`) are individual ship phases reviewed by Codex GPT-5.4,
 minor releases (`v1.1.0` / `v1.2.0`) are stable milestones rolling up multiple patches.
 
+## Unreleased — 2026-04-27 — Raster OCR label bridge (v1.4 development slice)
+
+Raster uploads can now opt into OCR text extraction without making
+PaddleOCR a required dependency. This is a bridge slice, not a
+production OCR claim: when OCR is unavailable or returns no text,
+the raster path still degrades to the existing partial-review mode
+and keeps the no-OCR transparency warning.
+
+### Added
+
+- `archkg.ingest.raster_extractor.extract(..., use_ocr=True)` calls
+  the optional OCR module with `keep_only_dimensions=False`, so room
+  labels such as `卧室` survive as `TextPrimitive(source="ocr")`
+  instead of being filtered out as non-dimensions.
+- Studio adds a raster-only "栅格 OCR beta" toggle. The route passes
+  it through to the raster extractor and persists `use_ocr` plus
+  `ocr_text_count` in `run_meta.json`.
+- Raster result warnings are now evidence-based: the no-OCR warning
+  appears only when the run produced zero OCR text primitives; runs
+  with OCR text show an OCR beta quality flag instead.
+- Tests cover the OCR bridge without requiring PaddleOCR:
+  `tests/test_ingest_raster_ocr.py` verifies opt-in extraction and
+  OCR label binding, while `tests/test_viewer_studio.py` verifies the
+  Studio toggle, run metadata, and warning behavior.
+
+### Still limited
+
+- OCR accuracy is not claimed. Users must inspect the entity overlay
+  and OCR-bound labels before trusting label-dependent rules.
+- `room_schedule.yaml` still cannot patch label-less raster rooms; it
+  remains a vector-PDF path because it selects existing `room_id` or
+  `label`.
+
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 
 The studio now accepts PNG, JPEG, TIFF, and BMP raster floor plans

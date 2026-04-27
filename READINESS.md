@@ -114,6 +114,14 @@ archkg studio
   落在墙体 centerline 内, 可能让所有 door 邻接判定都失败 → 全被丢弃。
   **症状**: 结果里 door 数量为 0 或明显偏少。**应对**: CAD 里把双线墙合并为单线再导出, 或等 v1.3+ 处理
 
+**v1.4-dev 应对** (raster OCR bridge):
+- PNG/JPEG/TIFF/BMP 上传可选启用 **栅格 OCR beta**。OCR 成功时，文本作为
+  `TextPrimitive(source="ocr")` 写入 `primitives.json`，并参与 room label binding。
+- OCR 不作为默认依赖；本机未安装 PaddleOCR 或 OCR 返回空时，流水线不崩溃，
+  继续按 partial 审图降级，并保留 "栅格图无 OCR" 质量提示。
+- 这不是 production OCR 准确率承诺。OCR-bound room labels 仍需人工核对，
+  噪声扫描图 / 手绘图纸仍可能无法可靠识别。
+
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
 Phase 18-D 起加了 examiner ↔ candidate ↔ adjudicator 对抗 lane (`archkg adversarial`)。

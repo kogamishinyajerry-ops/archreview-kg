@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 
+from archkg.schemas import TextPrimitive
 from archkg.viewer.studio import create_app, run_pipeline
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -538,6 +539,78 @@ def test_post_review_image_dpi_compounds_with_ppm(studio_client) -> None:
         "banner must not approximate rule count when the precise number "
         "is 5 (Codex P20-A R3 P1)"
     )
+
+
+def test_post_review_raster_use_ocr_persists_texts_and_clears_no_ocr_warning(
+    studio_client,
+    monkeypatch,
+) -> None:
+    """Phase 20-B: studio passes the OCR toggle into raster ingest.
+
+    The test monkeypatches PaddleOCR's boundary so it is deterministic
+    and does not require the heavyweight optional dependency in CI.
+    """
+    import fitz
+
+    from archkg.ingest import raster_extractor
+
+    client, state_dir = studio_client
+
+    def fake_ocr_page_image(
+        image_path: Path,
+        *,
+        keep_only_dimensions: bool = True,
+        lang: str = "ch",
+    ) -> list[TextPrimitive]:
+        del image_path, lang
+        assert keep_only_dimensions is False
+        return [
+            TextPrimitive(
+                text="卧室",
+                bbox=(140.0, 140.0, 180.0, 170.0),
+                source="ocr",
+                confidence=0.93,
+            )
+        ]
+
+    monkeypatch.setattr(raster_extractor.ocr, "ocr_page_image", fake_ocr_page_image)
+
+    doc = fitz.open(SAMPLE_PDF)
+    try:
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(200 / 72, 200 / 72), alpha=False)
+        png_bytes = pix.tobytes(output="png")
+    finally:
+        doc.close()
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(png_bytes), "plan.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "200",
+            "min_room_area_m2": "0",
+            "use_ocr": "1",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    primitives = json.loads((run_dir / "primitives.json").read_text("utf-8"))
+    assert primitives["pages"][0]["texts"][0]["text"] == "卧室"
+    assert primitives["pages"][0]["texts"][0]["source"] == "ocr"
+
+    meta = json.loads((run_dir / "run_meta.json").read_text("utf-8"))
+    assert meta["use_ocr"] is True
+    assert meta["ocr_text_count"] == 1
+    assert any("栅格图 OCR beta" in flag for flag in meta["quality_flags"])
+    assert not any("栅格图无 OCR" in flag for flag in meta["quality_flags"])
+
+    follow = client.get(f"/runs/{run_id}/")
+    body = follow.data.decode("utf-8")
+    assert "栅格图 OCR beta" in body
+    assert "栅格图无 OCR" not in body
 
 
 def test_get_index_drop_hint_no_false_room_schedule_remediation(studio_client) -> None:

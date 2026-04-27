@@ -334,6 +334,7 @@ def run_pipeline(
     points_per_meter: float = 50.0,
     inspect_only: bool = False,
     min_room_area_m2: float = 1.0,
+    use_ocr: bool = False,
 ) -> PipelineResult:
     """End-to-end review on a single PDF.
 
@@ -358,6 +359,12 @@ def run_pipeline(
       that would otherwise light up the rule report with spurious
       door-width violations on non-door wall breaks adjacent to those
       noise rooms. Set to 0.0 to disable.
+
+    Phase 20-B:
+    - ``use_ocr`` enables the optional PaddleOCR bridge for raster
+      uploads. It is best-effort and does not change vector-PDF
+      behavior. If OCR is unavailable or returns no texts, the raster
+      warning remains visible.
     """
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
@@ -384,12 +391,16 @@ def run_pipeline(
 
     # Phase 20-A: dispatch on file extension. PDFs go through the
     # vector path (PyMuPDF); PNG/JPEG/TIFF go through the CV pipeline
-    # (raster_extractor) which has no OCR yet, so labels are absent
-    # and rules needing them won't fire.
+    # (raster_extractor). OCR is opt-in because PaddleOCR is not part
+    # of the default install.
     suffix = pdf_path.suffix.lower()
     is_raster_input = suffix in (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp")
     if is_raster_input:
-        primitives = extract_raster(pdf_path, points_per_meter=points_per_meter)
+        primitives = extract_raster(
+            pdf_path,
+            points_per_meter=points_per_meter,
+            use_ocr=use_ocr,
+        )
         # Wrap the image as a 1:1 px:pt PDF so the rest of the
         # pipeline (preview, annotation, overlay) treats it like any
         # other PDF and the pixel-space polygon coords align with
@@ -447,24 +458,37 @@ def run_pipeline(
     n_rooms = len(graph.rooms)
     n_doors = len(graph.doors)
     n_corridors = len(graph.corridors)
+    ocr_text_count = sum(
+        1
+        for page in primitives.pages
+        for text in page.texts
+        if text.source == "ocr"
+    )
 
-    # Codex P20-A R1 P1 / R2 P1: raster ingest produces no OCR text,
-    # so every room ends up label-less and label-dependent rules
-    # silently don't fire. The R2 fix corrects an earlier false
-    # remediation path: ``room_schedule.yaml`` selects rooms by
-    # existing ``room_id`` (a fresh UUID per run) or ``label``
-    # (also missing from raster rooms), so it can't actually patch
-    # raster runs. Honest options are listed in the warning instead.
-    if is_raster_input:
+    # Codex P20-A R1 P1 / R2 P1: label-less raster ingest silently
+    # skips label-dependent Room rules. P20-B keeps that warning unless
+    # OCR actually produced text primitives. OCR being enabled is not
+    # enough; unavailable PaddleOCR or empty results still mean a
+    # partial review. The earlier false remediation path remains
+    # forbidden: ``room_schedule.yaml`` selects existing room_id/label
+    # and cannot patch label-less raster runs.
+    if is_raster_input and ocr_text_count == 0:
         raster_flag = (
-            "ⓘ 栅格图无 OCR：检出的房间均无 label，依赖 label 的 5 张 Room 规则不会触发"
+            "ⓘ 栅格图无 OCR：本次未获得 OCR text primitives，检出的房间均无 label，"
+            "依赖 label 的 5 张 Room 规则不会触发"
             " (RC-BEDROOM-AREA / RC-LIVING-BEDROOM-NETHEIGHT-2.4 /"
             " RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1 /"
             " RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0 / RC-NO-LIVING-IN-BASEMENT)。"
             " 本次违规清单是 partial 审图 (几何规则可触发, 上述 5 张 label-依赖规则不触发)。"
-            " 完整审图请改上传与之对应的矢量 PDF；OCR 自动补 label 在 v1.4 中规划。"
+            " 完整审图请改上传与之对应的矢量 PDF，或安装 OCR 依赖后启用栅格 OCR beta。"
         )
         quality_flags = (raster_flag, *quality_flags)
+    elif is_raster_input and ocr_text_count > 0:
+        quality_flags = (
+            f"ⓘ 栅格图 OCR beta：已获得 {ocr_text_count} 条 OCR text primitives；"
+            "仍需人工核对 OCR 置信度与房间标签绑定结果。",
+            *quality_flags,
+        )
 
     # Codex P19-C R2 P0: persist mode + quality_flags so any downstream
     # renderer (archkg viewer, scripts that re-render index.html, future
@@ -477,6 +501,8 @@ def run_pipeline(
         quality_flags=quality_flags,
         points_per_meter=points_per_meter,
         min_room_area_m2=min_room_area_m2,
+        use_ocr=use_ocr if is_raster_input else False,
+        ocr_text_count=ocr_text_count,
     )
 
     # Mirror what the existing viewer.serve() needs: a copy of the source
@@ -580,6 +606,8 @@ def _write_run_meta(
     quality_flags: tuple[str, ...] = (),
     points_per_meter: float | None = None,
     min_room_area_m2: float | None = None,
+    use_ocr: bool | None = None,
+    ocr_text_count: int | None = None,
 ) -> Path:
     """Persist the inspect-only / full mode + quality flags + tunable
     knobs to a JSON file in the run directory. Read by
@@ -594,6 +622,9 @@ def _write_run_meta(
     Codex P19-D R1 P2: also persist the tunable knobs that materially
     change outputs (ppm + min_room_area_m2) so a user reporting
     unexpected entity counts can be debugged from the run dir alone.
+
+    Phase 20-B persists OCR mode and observed OCR text count so a
+    raster run can be debugged from artifacts alone.
     """
     payload: dict[str, Any] = {
         "mode": mode,
@@ -603,6 +634,10 @@ def _write_run_meta(
         payload["points_per_meter"] = points_per_meter
     if min_room_area_m2 is not None:
         payload["min_room_area_m2"] = min_room_area_m2
+    if use_ocr is not None:
+        payload["use_ocr"] = use_ocr
+    if ocr_text_count is not None:
+        payload["ocr_text_count"] = ocr_text_count
     meta_path = out_dir / "run_meta.json"
     meta_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
@@ -1138,7 +1173,7 @@ STUDIO_HTML = r"""
         <div style="font-size: 31px;">🧭</div>
         <strong style="font-size: 18px;">把 PDF 平面图（或 PNG/JPEG 图片）拖到这里</strong>
         <p class="drop-hint">先看识图结果，再决定规则策略。PDF 与 PNG/JPEG 都支持；
-          栅格图无 OCR，房间标签链路不触发 label-依赖规则。</p>
+          栅格图默认不跑 OCR，可在识图参数里启用 beta。</p>
         <div id="fileChosen"></div>
       </label>
       <div class="note" id="fileHint">已选：等待你拖拽文件</div>
@@ -1162,6 +1197,10 @@ STUDIO_HTML = r"""
             <div style="margin-left:auto; color: var(--muted);">仅栅格图</div>
           </div>
           <input id="dpiInput" class="num" type="number" name="image_dpi" step="1" min="36" value="200" />
+          <label style="margin-top: 10px;">
+            <input type="checkbox" name="use_ocr" value="1" />
+            栅格 OCR beta（需要本机安装 OCR 依赖）
+          </label>
           <div class="inline" style="margin-top: 10px;">
             <label style="margin: 0;">min_room_area_m2</label>
             <div style="margin-left:auto; color: var(--muted);">噪声剔除阈值</div>
@@ -1393,6 +1432,7 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
                 flash("image_dpi 必须 > 0。")
                 return redirect(url_for("index"))
             ppm = ppm * form_dpi / 72.0
+        use_ocr = ext in supported_raster_exts and request.form.get("use_ocr") == "1"
 
         try:
             run_pipeline(
@@ -1404,6 +1444,7 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
                 points_per_meter=ppm,
                 inspect_only=inspect_only,
                 min_room_area_m2=min_room_area,
+                use_ocr=use_ocr,
             )
         except Exception as exc:
             tb = traceback.format_exc()
