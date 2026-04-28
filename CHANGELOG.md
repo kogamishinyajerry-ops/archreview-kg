@@ -255,6 +255,11 @@ and keeps the no-OCR transparency warning.
   including blockers, missing information, next actions, and a boundary warning
   that the signoff is not a compliance certificate. Source run artifacts remain
   untouched.
+- P51-01 adds a static handoff package review view. `archkg handoff-package`
+  now writes package-root `index.html`, and `archkg handoff-check` /
+  `archkg handoff-signoff` refresh it with quality and signoff summaries. The
+  page links to copied artifacts and repeats package boundary warnings for a
+  novice review engineer.
 
 ### Still limited
 
@@ -309,6 +314,9 @@ and keeps the no-OCR transparency warning.
 - `reviewer_signoff.json` is a package-local handoff note only. It records a
   human reviewer's transfer status and follow-up items, but it does not confirm
   candidate issues, mutate the source run, or certify compliance.
+- Handoff package `index.html` is a static navigation surface over copied
+  artifacts. It does not introduce new evidence, mutate source runs, or turn a
+  package-level ready/signoff state into drawing compliance.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan

@@ -40,12 +40,13 @@ Status:
 - P48-01 is complete: `archkg handoff-package` now builds a read-only handoff package with manifest, summary, and copied review artifacts outside the source run.
 - P49-01 is complete: `archkg handoff-check` now validates handoff package schema, copy-only policy, required artifacts, copied files, and boundary warnings into `handoff_package_quality.v1`.
 - P50-01 is complete: `archkg handoff-signoff` now writes package-local reviewer signoff JSON/Markdown notes without mutating the source run.
+- P51-01 is complete: handoff packages now include a package-root static `index.html`, and handoff quality/signoff commands refresh that browser entry.
 
 ## Current Phase
 
-P50: Package reviewer signoff notes.
+P51: Static handoff package review view.
 
-P50 is complete. Handoff packages can now be checked for completeness and annotated by a receiving reviewer as `ready`, `needs_info`, or `blocked` without changing source run artifacts.
+P51 is complete. Handoff packages now have a static browser entry for boundary warnings, quality state, reviewer signoff, and artifact links without running a server or changing source run artifacts.
 
 ## Key Decisions
 
@@ -79,8 +80,9 @@ P50 is complete. Handoff packages can now be checked for completeness and annota
 - P48 handoff packages copy existing artifacts only; a complete package is still not a compliance certificate and missing artifacts must be treated as handoff risk.
 - P49 handoff package quality validates package completeness and boundaries only; it is not a release-readiness or drawing-compliance gate.
 - P50 reviewer signoff notes are package-local handoff notes only; `ready` does not mean the drawing is compliant.
+- P51 static handoff `index.html` is a navigation surface only; it does not create new evidence or replace source-run artifacts.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P50 by making the handoff package easier to consume in a static browser view, or by expanding the real complex benchmark set with another reviewed expected inventory.
+Move beyond P51 by adding a package-level checklist export for review managers, or by expanding the real complex benchmark set with another reviewed expected inventory.

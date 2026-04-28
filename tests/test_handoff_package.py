@@ -81,6 +81,31 @@ def test_handoff_package_cli_writes_package(tmp_path: Path) -> None:
     assert (package_dir / "handoff_summary.md").exists()
 
 
+def test_handoff_package_writes_static_index_for_novice_review(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    original_issues = (run_dir / "issues.json").read_text("utf-8")
+
+    write_handoff_package(run_dir, package_dir)
+
+    index_path = package_dir / "index.html"
+    assert index_path.exists()
+    assert not (run_dir / "index.html").exists()
+    assert (run_dir / "issues.json").read_text("utf-8") == original_issues
+
+    html = index_path.read_text("utf-8")
+    assert "ArchReview-KG Handoff Review" in html
+    assert "handoff_package.v1" in html
+    assert "copy_artifacts_only_no_source_run_mutation" in html
+    assert "href=\"handoff_summary.md\"" in html
+    assert "href=\"artifacts/reviewer_quickstart.md\"" in html
+    assert "href=\"artifacts/issues.json\"" in html
+    assert "preview ids are not primary issue ids" in html
+
+
 def test_handoff_package_quality_gate_accepts_complete_package(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     package_dir = tmp_path / "handoff"
@@ -234,6 +259,52 @@ def test_handoff_reviewer_signoff_cli_writes_notes(tmp_path: Path) -> None:
     assert "status=ready" in result.output
     assert (package_dir / "reviewer_signoff.json").exists()
     assert (package_dir / "reviewer_signoff.md").exists()
+
+
+def test_handoff_static_index_surfaces_quality_and_signoff(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+
+    quality_result = CliRunner().invoke(
+        app,
+        [
+            "handoff-check",
+            str(package_dir),
+            "--out",
+            str(package_dir / "handoff_quality.json"),
+            "--markdown",
+            str(package_dir / "handoff_quality.md"),
+        ],
+    )
+    assert quality_result.exit_code == 0, quality_result.output
+
+    signoff_result = CliRunner().invoke(
+        app,
+        [
+            "handoff-signoff",
+            str(package_dir),
+            "--reviewer",
+            "reviewer-c",
+            "--status",
+            "needs_info",
+            "--note",
+            "Need section height evidence before confirmation.",
+            "--blocker",
+            "missing section height",
+        ],
+    )
+    assert signoff_result.exit_code == 0, signoff_result.output
+
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "handoff_package_quality.v1" in html
+    assert "handoff_ready" in html
+    assert "handoff_reviewer_signoff.v1" in html
+    assert "reviewer-c" in html
+    assert "needs_info" in html
+    assert "missing section height" in html
+    assert "not a compliance certificate" in html
 
 
 def _write_minimal_run(run_dir: Path) -> None:

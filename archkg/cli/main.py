@@ -989,6 +989,7 @@ def handoff_check_cmd(
     """Validate a read-only handoff package."""
     from archkg.viewer.handoff_package import (
         build_handoff_package_quality,
+        write_handoff_index,
         write_handoff_package_quality_json,
         write_handoff_package_quality_markdown,
     )
@@ -998,6 +999,7 @@ def handoff_check_cmd(
         write_handoff_package_quality_json(result, out)
     if markdown is not None:
         write_handoff_package_quality_markdown(result, markdown)
+    write_handoff_index(package_dir, quality=result)
     typer.echo(
         f"handoff-check status={result['status']} "
         f"blockers={len(result['blockers'])} warnings={len(result['warnings'])}"

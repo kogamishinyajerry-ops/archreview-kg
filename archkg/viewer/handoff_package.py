@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import shutil
 from dataclasses import dataclass
@@ -168,6 +169,7 @@ def write_handoff_package(run_dir: Path, package_dir: Path) -> Path:
         render_handoff_summary(manifest),
         encoding="utf-8",
     )
+    _write_handoff_index_from_payloads(package_dir, manifest)
     return manifest_path
 
 
@@ -310,6 +312,144 @@ def render_handoff_package_quality_markdown(result: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def write_handoff_index(
+    package_dir: Path,
+    *,
+    quality: dict[str, Any] | None = None,
+    signoff: dict[str, Any] | None = None,
+) -> Path:
+    package_dir = package_dir.resolve()
+    manifest = _load_manifest(package_dir / "handoff_manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
+    return _write_handoff_index_from_payloads(
+        package_dir,
+        manifest,
+        quality=quality,
+        signoff=signoff,
+    )
+
+
+def render_handoff_index_html(
+    manifest: dict[str, Any],
+    *,
+    quality: dict[str, Any] | None = None,
+    signoff: dict[str, Any] | None = None,
+) -> str:
+    quality = quality if isinstance(quality, dict) else {}
+    signoff = signoff if isinstance(signoff, dict) else {}
+    artifact_rows = _artifact_rows(manifest)
+    available_count = sum(1 for row in artifact_rows if row.get("status") == "available")
+    required_missing = _str_list(manifest.get("missing_required_artifacts"))
+    quality_status = _str(quality.get("status")) or "not_run"
+    signoff_status = _str(signoff.get("status")) or "not_recorded"
+    signoff_schema = _str(signoff.get("schema_version")) or "not_recorded"
+    signoff_note = _str(signoff.get("note")) or "No reviewer signoff note recorded yet."
+
+    lines = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8" />',
+        '<meta name="viewport" content="width=device-width, initial-scale=1" />',
+        "<title>ArchReview-KG Handoff Review</title>",
+        "<style>",
+        "body{margin:0;background:#f7f8fb;color:#18202f;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}",
+        ".page{max-width:1180px;margin:0 auto;padding:24px}",
+        "header{border-bottom:1px solid #d8deea;padding-bottom:18px;margin-bottom:18px}",
+        "h1{font-size:26px;margin:0 0 8px}",
+        "h2{font-size:16px;margin:0 0 12px}",
+        ".muted{color:#5d6b82}",
+        ".grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}",
+        ".panel{border:1px solid #d8deea;background:#fff;border-radius:8px;padding:14px;margin:12px 0}",
+        ".kpi{border:1px solid #d8deea;background:#fff;border-radius:8px;padding:12px}",
+        ".kpi b{display:block;font-size:20px;margin-top:4px}",
+        ".ok{color:#087443}.warn{color:#995a00}.bad{color:#a82424}",
+        "table{width:100%;border-collapse:collapse;background:#fff}",
+        "th,td{border-bottom:1px solid #e5e9f2;text-align:left;padding:8px;vertical-align:top}",
+        "th{font-size:12px;color:#5d6b82;background:#f1f4f9}",
+        "a{color:#174ea6;text-decoration:none}a:hover{text-decoration:underline}",
+        ".pill{display:inline-block;border:1px solid #c8d1e2;border-radius:999px;padding:3px 8px;background:#f6f8fc;font-size:12px}",
+        "ul{margin:8px 0 0;padding-left:18px}",
+        "@media(max-width:820px){.grid{grid-template-columns:1fr 1fr}.page{padding:14px}}",
+        "</style>",
+        "</head>",
+        "<body>",
+        '<main class="page">',
+        "<header>",
+        "<h1>ArchReview-KG Handoff Review</h1>",
+        '<div class="muted">Static read-only entry for a novice review engineer.</div>',
+        "</header>",
+        '<section class="grid">',
+        _kpi("Manifest", _str(manifest.get("schema_version")), "ok"),
+        _kpi("Artifacts", f"{available_count}/{len(artifact_rows)} available", "ok"),
+        _kpi("Quality", quality_status, _status_class(quality_status)),
+        _kpi("Signoff", signoff_status, _status_class(signoff_status)),
+        "</section>",
+        '<section class="panel">',
+        "<h2>Package Boundaries</h2>",
+        f"<p><b>Mutation policy:</b> {_html(_str(manifest.get('mutation_policy')))}</p>",
+        '<p><a href="handoff_summary.md">Open handoff_summary.md</a></p>',
+        "<ul>",
+    ]
+    for warning in _str_list(manifest.get("boundary_warnings")):
+        lines.append(f"<li>{_html(warning)}</li>")
+    lines.extend(["</ul>", "</section>"])
+
+    lines.extend(
+        [
+            '<section class="panel">',
+            "<h2>Quality Gate</h2>",
+            f"<p><b>Schema:</b> {_html(_str(quality.get('schema_version')) or 'not_recorded')}</p>",
+            f"<p><b>Status:</b> <span class=\"pill\">{_html(quality_status)}</span></p>",
+            f"<p>{_html(_str(quality.get('note')) or 'Run archkg handoff-check to record package quality.')}</p>",
+            '<p><a href="handoff_quality.json">handoff_quality.json</a> · <a href="handoff_quality.md">handoff_quality.md</a></p>',
+            "</section>",
+            '<section class="panel">',
+            "<h2>Reviewer Signoff</h2>",
+            f"<p><b>Schema:</b> {_html(signoff_schema)}</p>",
+            f"<p><b>Reviewer:</b> {_html(_str(signoff.get('reviewer')) or 'not_recorded')}</p>",
+            f"<p><b>Status:</b> <span class=\"pill\">{_html(signoff_status)}</span></p>",
+            f"<p>{_html(signoff_note)}</p>",
+            f"<p>{_html(_str(signoff.get('boundary_warning')) or 'Reviewer signoff is not a compliance certificate.')}</p>",
+        ]
+    )
+    blockers = _str_list(signoff.get("blockers"))
+    if blockers:
+        lines.extend(["<ul>", *[f"<li>{_html(item)}</li>" for item in blockers], "</ul>"])
+    lines.extend(
+        [
+            '<p><a href="reviewer_signoff.json">reviewer_signoff.json</a> · <a href="reviewer_signoff.md">reviewer_signoff.md</a></p>',
+            "</section>",
+            '<section class="panel">',
+            "<h2>Artifacts</h2>",
+            "<table>",
+            "<thead><tr><th>Artifact</th><th>Required</th><th>Status</th><th>Tier</th><th>Purpose</th></tr></thead>",
+            "<tbody>",
+        ]
+    )
+    for row in artifact_rows:
+        artifact = _str(row.get("artifact"))
+        rel = _str(row.get("package_path"))
+        label = f'<a href="{_html_attr(rel)}">{_html(artifact)}</a>' if rel else _html(artifact)
+        lines.append(
+            "<tr>"
+            f"<td>{label}</td>"
+            f"<td>{'yes' if row.get('required') else 'no'}</td>"
+            f"<td>{_html(_str(row.get('status')))}</td>"
+            f"<td>{_html(_str(row.get('tier')))}</td>"
+            f"<td>{_html(_str(row.get('purpose')))}</td>"
+            "</tr>"
+        )
+    lines.extend(["</tbody>", "</table>", "</section>"])
+    if required_missing:
+        lines.extend(['<section class="panel">', "<h2>Missing Required Artifacts</h2>", "<ul>"])
+        lines.extend(f"<li>{_html(item)}</li>" for item in required_missing)
+        lines.extend(["</ul>", "</section>"])
+    lines.extend(["</main>", "</body>", "</html>", ""])
+    return "\n".join(lines)
+
+
 def write_handoff_reviewer_signoff(
     package_dir: Path,
     *,
@@ -348,6 +488,7 @@ def write_handoff_reviewer_signoff(
         render_handoff_reviewer_signoff_markdown(payload),
         encoding="utf-8",
     )
+    write_handoff_index(package_dir, signoff=payload)
     return path
 
 
@@ -405,6 +546,37 @@ def _copy_artifact(
         "package_path": package_rel,
         "purpose": spec.purpose,
     }
+
+
+def _write_handoff_index_from_payloads(
+    package_dir: Path,
+    manifest: dict[str, Any],
+    *,
+    quality: dict[str, Any] | None = None,
+    signoff: dict[str, Any] | None = None,
+) -> Path:
+    quality = quality if quality is not None else _load_optional_json(
+        package_dir / "handoff_quality.json"
+    )
+    signoff = signoff if signoff is not None else _load_optional_json(
+        package_dir / "reviewer_signoff.json"
+    )
+    path = package_dir / "index.html"
+    path.write_text(
+        render_handoff_index_html(manifest, quality=quality, signoff=signoff),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _load_optional_json(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text("utf-8"))
+    except json.JSONDecodeError:
+        return None
+    return raw if isinstance(raw, dict) else None
 
 
 def _load_manifest(path: Path) -> dict[str, Any]:
@@ -474,6 +646,26 @@ def _check(severity: str, passed: bool, details: list[str]) -> dict[str, Any]:
     return {"severity": severity, "passed": passed, "details": details}
 
 
+def _kpi(label: str, value: str, class_name: str = "") -> str:
+    class_attr = f" {class_name}" if class_name else ""
+    return (
+        f'<div class="kpi{class_attr}">'
+        f'<span class="muted">{_html(label)}</span>'
+        f"<b>{_html(value)}</b>"
+        "</div>"
+    )
+
+
+def _status_class(status: str) -> str:
+    if status in {"handoff_ready", "ready"}:
+        return "ok"
+    if status in {"not_ready", "blocked"}:
+        return "bad"
+    if status in {"handoff_ready_with_warnings", "needs_info", "not_run"}:
+        return "warn"
+    return ""
+
+
 def _normalize_signoff_status(status: str) -> str:
     value = status.strip().lower()
     allowed = {"ready", "needs_info", "blocked"}
@@ -530,6 +722,14 @@ def _str(raw: object) -> str:
     return raw if isinstance(raw, str) else ""
 
 
+def _html(raw: object) -> str:
+    return html.escape(_str(raw), quote=False)
+
+
+def _html_attr(raw: object) -> str:
+    return html.escape(_str(raw), quote=True)
+
+
 __all__ = [
     "ARTIFACTS",
     "BOUNDARY_WARNINGS",
@@ -538,9 +738,11 @@ __all__ = [
     "SCHEMA_VERSION",
     "SIGNOFF_SCHEMA_VERSION",
     "build_handoff_package_quality",
+    "render_handoff_index_html",
     "render_handoff_package_quality_markdown",
     "render_handoff_reviewer_signoff_markdown",
     "render_handoff_summary",
+    "write_handoff_index",
     "write_handoff_package",
     "write_handoff_package_quality_json",
     "write_handoff_package_quality_markdown",

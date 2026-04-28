@@ -172,6 +172,12 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - P50-01 complete: `archkg handoff-signoff` writes `reviewer_signoff.json` and `reviewer_signoff.md` inside the handoff package.
 - Guardrail: reviewer signoff is a handoff note, not a compliance certificate, and it does not confirm candidate issues.
 
+### P51: Static Handoff Package Review View
+
+- Make a generated handoff package directly consumable in a browser without running Studio or a server.
+- P51-01 complete: `archkg handoff-package` writes package-root `index.html`; `archkg handoff-check` and `archkg handoff-signoff` refresh quality/signoff summaries in that page.
+- Guardrail: the static view is navigation only; it does not create evidence, mutate source runs, or certify compliance.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

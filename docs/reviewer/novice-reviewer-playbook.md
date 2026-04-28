@@ -28,12 +28,14 @@ archkg handoff-signoff out/review-demo-handoff \
   --reviewer reviewer-name \
   --status needs_info \
   --note "缺少剖面净高证据"
+open out/review-demo-handoff/index.html
 ```
 
-交接包包含 `handoff_manifest.json`、`handoff_summary.md` 和 `artifacts/` 复制件；它不修改原 run。
+交接包包含 `index.html`、`handoff_manifest.json`、`handoff_summary.md` 和 `artifacts/` 复制件；它不修改原 run。
 交接前应让 `handoff-check` 输出 `handoff_ready`。
 交接复核人可用 `handoff-signoff` 写入 `reviewer_signoff.json` / `.md`，状态只能是 `ready`、`needs_info` 或
 `blocked`；该记录只是包内交接备注，不确认 issue，也不是合规证书。
+交接包里的 `index.html` 是静态只读入口，优先从这里查看 quality、signoff、artifact 链接和边界提醒。
 
 ## 第一小时流程
 
@@ -100,6 +102,9 @@ archkg handoff-signoff out/review-demo-handoff \
   --blocker "missing section height" \
   --needs-info "door type schedule" \
   --next-action "request section sheet"
+
+# 打开交接包静态入口
+open out/review-demo-handoff/index.html
 ```
 
 ## 交接模板
@@ -119,5 +124,6 @@ commit：
 handoff_package：
 handoff_quality：
 reviewer_signoff：
+handoff_index：
 下一步：
 ```
