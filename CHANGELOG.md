@@ -229,6 +229,11 @@ and keeps the no-OCR transparency warning.
   aggregation. Bundle JSON/Markdown/HTML now summarize checklist open item
   totals, per-package checklist review status, and first open samples without
   mutating package artifacts or changing package readiness semantics.
+- P64-01 adds package-local reviewer checklist updates. `archkg
+  handoff-checklist-update` updates one item in
+  `artifacts/reviewer_task_checklist.json`, regenerates the package-local
+  Markdown checklist, and refreshes package `index.html` without touching the
+  source run or primary review state.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

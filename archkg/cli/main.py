@@ -1133,6 +1133,82 @@ def handoff_signoff_cmd(
     )
 
 
+@app.command("handoff-checklist-update")
+def handoff_checklist_update_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory containing artifacts/reviewer_task_checklist.json.",
+    ),
+    reviewer: str = typer.Option(
+        ...,
+        "--reviewer",
+        help="Reviewer name or initials to record on the checklist item.",
+    ),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Checklist item status: todo, done, blocked, needs_info, or skipped_preview.",
+    ),
+    check_id: str = typer.Option(
+        "",
+        "--check-id",
+        help="Checklist check_id to update. Provide exactly one of --check-id or --ordinal.",
+    ),
+    ordinal: int | None = typer.Option(
+        None,
+        "--ordinal",
+        help="Checklist ordinal to update. Provide exactly one of --check-id or --ordinal.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Package-local reviewer note for this checklist item.",
+    ),
+    evidence_checked: list[str] | None = typer.Option(
+        None,
+        "--evidence-checked",
+        help="Repeatable evidence note checked for this item.",
+    ),
+    completed_at: str = typer.Option(
+        "",
+        "--completed-at",
+        help="Optional completion timestamp. Defaults to current UTC time for done statuses.",
+    ),
+) -> None:
+    """Update one package-local checklist item without mutating the source run."""
+    from archkg.viewer.handoff_package import (
+        write_handoff_reviewer_task_checklist_update,
+    )
+
+    try:
+        checklist_path = write_handoff_reviewer_task_checklist_update(
+            package_dir,
+            reviewer=reviewer,
+            status=status,
+            check_id=check_id,
+            ordinal=ordinal,
+            note=note,
+            evidence_checked=evidence_checked or [],
+            completed_at=completed_at,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(checklist_path.read_text("utf-8"))
+    last_update = payload.get("last_update", {})
+    typer.echo(
+        f"{payload['schema_version']} wrote={checklist_path} "
+        f"check_id={last_update.get('check_id')} "
+        f"reviewer={last_update.get('reviewer')} "
+        f"status={last_update.get('reviewer_status')}"
+    )
+
+
 @app.command("handoff-manager-checklist")
 def handoff_manager_checklist_cmd(
     package_dir: Path = typer.Argument(

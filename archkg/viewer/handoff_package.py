@@ -9,6 +9,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from archkg.viewer.reviewer_task_checklist import (
+    ALLOWED_REVIEWER_STATUSES,
+    render_reviewer_task_checklist_markdown,
+)
+from archkg.viewer.reviewer_task_checklist import (
+    SCHEMA_VERSION as REVIEWER_TASK_CHECKLIST_SCHEMA_VERSION,
+)
+
 SCHEMA_VERSION = "handoff_package.v1"
 QUALITY_SCHEMA_VERSION = "handoff_package_quality.v1"
 SIGNOFF_SCHEMA_VERSION = "handoff_reviewer_signoff.v1"
@@ -381,6 +389,7 @@ def write_handoff_index(
     *,
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
+    reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
@@ -394,6 +403,7 @@ def write_handoff_index(
         manifest,
         quality=quality,
         signoff=signoff,
+        reviewer_task_checklist=reviewer_task_checklist,
         manager_checklist=manager_checklist,
         archive_manifest=archive_manifest,
         archive_verification=archive_verification,
@@ -405,12 +415,16 @@ def render_handoff_index_html(
     *,
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
+    reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
 ) -> str:
     quality = quality if isinstance(quality, dict) else {}
     signoff = signoff if isinstance(signoff, dict) else {}
+    reviewer_task_checklist = (
+        reviewer_task_checklist if isinstance(reviewer_task_checklist, dict) else {}
+    )
     manager_checklist = manager_checklist if isinstance(manager_checklist, dict) else {}
     archive_manifest = archive_manifest if isinstance(archive_manifest, dict) else {}
     archive_verification = (
@@ -423,6 +437,9 @@ def render_handoff_index_html(
     signoff_status = _str(signoff.get("status")) or "not_recorded"
     signoff_schema = _str(signoff.get("schema_version")) or "not_recorded"
     signoff_note = _str(signoff.get("note")) or "No reviewer signoff note recorded yet."
+    checklist_summary = _reviewer_task_checklist_index_summary(
+        reviewer_task_checklist
+    )
     manager_status = _str(manager_checklist.get("status")) or "not_recorded"
     archive_status = _str(archive_manifest.get("status")) or "not_recorded"
     archive_digest = _str(archive_manifest.get("package_digest")) or "not_recorded"
@@ -470,6 +487,11 @@ def render_handoff_index_html(
         _kpi("Artifacts", f"{available_count}/{len(artifact_rows)} available", "ok"),
         _kpi("Quality", quality_status, _status_class(quality_status)),
         _kpi("Signoff", signoff_status, _status_class(signoff_status)),
+        _kpi(
+            "Checklist",
+            _str(checklist_summary.get("review_status")),
+            _status_class(_str(checklist_summary.get("review_status"))),
+        ),
         _kpi("Manager", manager_status, _status_class(manager_status)),
         _kpi("Archive", archive_status, _status_class(archive_status)),
         _kpi(
@@ -512,6 +534,21 @@ def render_handoff_index_html(
     lines.extend(
         [
             '<p><a href="reviewer_signoff.json">reviewer_signoff.json</a> · <a href="reviewer_signoff.md">reviewer_signoff.md</a></p>',
+            "</section>",
+            '<section class="panel">',
+            "<h2>Reviewer Task Checklist</h2>",
+            f"<p><b>Schema:</b> {_html(_str(reviewer_task_checklist.get('schema_version')) or 'not_recorded')}</p>",
+            f"<p><b>Status:</b> <span class=\"pill\">{_html(_str(checklist_summary.get('review_status')))}</span></p>",
+            f"<p><b>Items:</b> {_int(checklist_summary.get('done_item_count'))}/{_int(checklist_summary.get('item_count'))} done, {_int(checklist_summary.get('open_item_count'))} open</p>",
+            f"<p>{_html(_str(reviewer_task_checklist.get('boundary_warning')) or 'Reviewer task checklist is package-local review tracking, not a compliance certificate.')}</p>",
+        ]
+    )
+    checklist_samples = _str_list(checklist_summary.get("open_samples"))
+    if checklist_samples:
+        lines.extend(["<ul>", *[f"<li>{_html(item)}</li>" for item in checklist_samples], "</ul>"])
+    lines.extend(
+        [
+            '<p><a href="artifacts/reviewer_task_checklist.json">reviewer_task_checklist.json</a> · <a href="artifacts/reviewer_task_checklist.md">reviewer_task_checklist.md</a></p>',
             "</section>",
             '<section class="panel">',
             "<h2>Manager Checklist</h2>",
@@ -610,6 +647,87 @@ def write_handoff_reviewer_signoff(
     )
     write_handoff_index(package_dir, signoff=payload)
     return path
+
+
+def write_handoff_reviewer_task_checklist_update(
+    package_dir: Path,
+    *,
+    reviewer: str,
+    status: str,
+    check_id: str = "",
+    ordinal: int | None = None,
+    note: str = "",
+    evidence_checked: list[str] | None = None,
+    completed_at: str = "",
+) -> Path:
+    """Update one package-local reviewer checklist item.
+
+    This intentionally updates only files inside the handoff package. It does
+    not touch the source run, primary issues, or review_state.json.
+    """
+
+    package_dir = package_dir.resolve()
+    manifest = _load_manifest(package_dir / "handoff_manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
+    if bool(check_id) == (ordinal is not None):
+        raise ValueError("provide exactly one of check_id or ordinal")
+
+    checklist_path = package_dir / "artifacts" / "reviewer_task_checklist.json"
+    payload = _load_optional_json(checklist_path)
+    if not payload:
+        raise FileNotFoundError(
+            f"reviewer task checklist not found: {checklist_path}"
+        )
+    if payload.get("schema_version") != REVIEWER_TASK_CHECKLIST_SCHEMA_VERSION:
+        raise ValueError(
+            "reviewer task checklist schema must be "
+            f"{REVIEWER_TASK_CHECKLIST_SCHEMA_VERSION}"
+        )
+
+    normalized_status = _normalize_reviewer_task_status(status)
+    items = _list_of_dicts(payload.get("items"))
+    index = _find_checklist_item_index(items, check_id=check_id, ordinal=ordinal)
+    now = datetime.now(UTC).isoformat()
+    item = dict(items[index])
+    item["reviewer_status"] = normalized_status
+    item["reviewer"] = reviewer
+    item["reviewer_note"] = note
+    item["evidence_checked"] = list(evidence_checked or [])
+    item["updated_at"] = now
+    item["completed_at"] = (
+        completed_at or now
+        if normalized_status in {"done", "skipped_preview"}
+        else completed_at
+    )
+    items[index] = item
+
+    payload["items"] = items
+    payload["updated_at"] = now
+    payload["mutation_policy"] = "package_checklist_update_only_no_source_run_mutation"
+    payload["last_update"] = {
+        "check_id": _str(item.get("check_id")),
+        "ordinal": _int(item.get("ordinal")),
+        "reviewer": reviewer,
+        "reviewer_status": normalized_status,
+        "updated_at": now,
+    }
+    payload["boundary_warning"] = (
+        "Reviewer task checklist updates are package-local review tracking only; "
+        "they do not mutate source run artifacts, confirm candidate issues, or "
+        "certify drawing compliance."
+    )
+
+    checklist_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    (package_dir / "artifacts" / "reviewer_task_checklist.md").write_text(
+        render_reviewer_task_checklist_markdown(payload),
+        encoding="utf-8",
+    )
+    write_handoff_index(package_dir, reviewer_task_checklist=payload)
+    return checklist_path
 
 
 def render_handoff_reviewer_signoff_markdown(payload: dict[str, Any]) -> str:
@@ -1102,6 +1220,7 @@ def _write_handoff_index_from_payloads(
     *,
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
+    reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
@@ -1111,6 +1230,13 @@ def _write_handoff_index_from_payloads(
     )
     signoff = signoff if signoff is not None else _load_optional_json(
         package_dir / "reviewer_signoff.json"
+    )
+    reviewer_task_checklist = (
+        reviewer_task_checklist
+        if reviewer_task_checklist is not None
+        else _load_optional_json(
+            package_dir / "artifacts" / "reviewer_task_checklist.json"
+        )
     )
     manager_checklist = (
         manager_checklist
@@ -1133,6 +1259,7 @@ def _write_handoff_index_from_payloads(
             manifest,
             quality=quality,
             signoff=signoff,
+            reviewer_task_checklist=reviewer_task_checklist,
             manager_checklist=manager_checklist,
             archive_manifest=archive_manifest,
             archive_verification=archive_verification,
@@ -1217,6 +1344,56 @@ def _check_boundary_warnings_present(manifest: dict[str, Any]) -> dict[str, Any]
 
 def _check(severity: str, passed: bool, details: list[str]) -> dict[str, Any]:
     return {"severity": severity, "passed": passed, "details": details}
+
+
+def _reviewer_task_checklist_index_summary(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    if payload.get("schema_version") != REVIEWER_TASK_CHECKLIST_SCHEMA_VERSION:
+        return {
+            "review_status": "not_recorded",
+            "item_count": 0,
+            "done_item_count": 0,
+            "open_item_count": 0,
+            "open_samples": [],
+        }
+    items = _list_of_dicts(payload.get("items"))
+    done_items = [
+        item
+        for item in items
+        if _str(item.get("reviewer_status")) in {"done", "skipped_preview"}
+    ]
+    open_items = [
+        item
+        for item in items
+        if _str(item.get("reviewer_status")) not in {"done", "skipped_preview"}
+    ]
+    blocked_count = sum(
+        1 for item in items if _str(item.get("reviewer_status")) == "blocked"
+    )
+    needs_info_count = sum(
+        1 for item in items if _str(item.get("reviewer_status")) == "needs_info"
+    )
+    if not items:
+        review_status = "checklist_empty"
+    elif blocked_count:
+        review_status = "checklist_blocked"
+    elif needs_info_count:
+        review_status = "checklist_needs_info"
+    elif open_items:
+        review_status = "checklist_open"
+    else:
+        review_status = "checklist_complete"
+    return {
+        "review_status": review_status,
+        "item_count": len(items),
+        "done_item_count": len(done_items),
+        "open_item_count": len(open_items),
+        "open_samples": [
+            _str(item.get("title")) or _str(item.get("check_id"))
+            for item in open_items[:3]
+        ],
+    }
 
 
 def _manager_checklist_items(
@@ -1435,6 +1612,7 @@ def _status_class(status: str) -> str:
         "manager_ready",
         "archive_manifest_ready",
         "archive_verified",
+        "checklist_complete",
     }:
         return "ok"
     if status in {
@@ -1443,6 +1621,7 @@ def _status_class(status: str) -> str:
         "manager_blocked",
         "archive_manifest_empty",
         "archive_drift",
+        "checklist_blocked",
     }:
         return "bad"
     if status in {
@@ -1450,6 +1629,10 @@ def _status_class(status: str) -> str:
         "manager_needs_info",
         "needs_info",
         "not_run",
+        "not_recorded",
+        "checklist_open",
+        "checklist_needs_info",
+        "checklist_empty",
     }:
         return "warn"
     return ""
@@ -1463,6 +1646,31 @@ def _normalize_signoff_status(status: str) -> str:
             "signoff status must be one of: ready, needs_info, blocked"
         )
     return value
+
+
+def _normalize_reviewer_task_status(status: str) -> str:
+    value = status.strip().lower()
+    if value not in ALLOWED_REVIEWER_STATUSES:
+        raise ValueError(
+            "reviewer task status must be one of: "
+            + ", ".join(ALLOWED_REVIEWER_STATUSES)
+        )
+    return value
+
+
+def _find_checklist_item_index(
+    items: list[dict[str, Any]],
+    *,
+    check_id: str,
+    ordinal: int | None,
+) -> int:
+    for index, item in enumerate(items):
+        if check_id and _str(item.get("check_id")) == check_id:
+            return index
+        if ordinal is not None and _int(item.get("ordinal")) == ordinal:
+            return index
+    target = check_id or f"ordinal {ordinal}"
+    raise ValueError(f"reviewer checklist item not found: {target}")
 
 
 def _validate_paths(run_dir: Path, package_dir: Path) -> None:
@@ -1558,4 +1766,5 @@ __all__ = [
     "write_handoff_package_quality_json",
     "write_handoff_package_quality_markdown",
     "write_handoff_reviewer_signoff",
+    "write_handoff_reviewer_task_checklist_update",
 ]

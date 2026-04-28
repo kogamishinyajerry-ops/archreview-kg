@@ -88,6 +88,8 @@ P62 起每次完整 run 还会生成 `reviewer_task_checklist.json` / `.md`，�
 可人工填写的复核清单；它只帮助记录证据和风险，不会自动确认 issue 或写回 review state。
 P63 起 `handoff-bundle-index` 会汇总每个包内 checklist 的 open item 数和
 `checklist_review_status`，方便负责人跨包看复核工作量；它不修改单包，也不改变 package readiness。
+P64 起 reviewer 可用 `archkg handoff-checklist-update` 在交接包内更新单个 checklist item，
+记录 reviewer_status、note 和 evidence_checked；它只写 package-local 文件，不碰源 run。
 
 ---
 
@@ -419,6 +421,9 @@ open handoff-packages/handoff_bundle_index.html
 # P62: 新手复核清单会随完整 review run 自动生成
 open out/reviewer_task_checklist.md
 
+# P64: 在交接包内记录单项 checklist 进度
+archkg handoff-checklist-update out-handoff --ordinal 1 --reviewer reviewer-name --status done --note "已核对边界" --evidence-checked handoff_manifest.json
+
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
 
@@ -470,6 +475,7 @@ archkg clause readiness
 - P61：Reviewer task sequencing。完整审图 run 新增 `reviewer_task_sequence.json` / `.md`，把 readiness blockers、主 `issues.json` open issue、per-sheet preview queue 和 handoff 操作排成有优先级的复核任务；它只排序 evidence，不写 `review_state.json`。
 - P62：Reviewer task checklist。完整审图 run 新增 `reviewer_task_checklist.json` / `.md`，从任务序列派生可人工填写的 reviewer_status、note、evidence_checked 清单；它只做交付留痕种子，不确认 issue、不写 `review_state.json`。
 - P63：Bundle checklist risk aggregation。`archkg handoff-bundle-index` 读取各包的 `artifacts/reviewer_task_checklist.json`，汇总 checklist open item、blocked/needs_info item 和每包 checklist_review_status；它只做负责人 triage，不改变 `package_status`。
+- P64：Package-local checklist update。`archkg handoff-checklist-update` 只更新交接包内 `artifacts/reviewer_task_checklist.json/.md` 并刷新包内 `index.html`，让 reviewer 记录单项完成情况；它不写源 run 或主 `review_state.json`。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
@@ -485,6 +491,7 @@ archkg clause readiness
 - P59：Per-page entity overlay rendering。Viewer/Studio 现在会为每个 graph-backed sheet 生成 entity overlay 页图，并写入 `preview_pages.json`；多页交接包会自动复制这些 overlay 页图。没有 graph 的页仍不是“已识别完成”。
 - P60：Handoff bundle index。`archkg handoff-bundle-index <packages-root>` 扫描多个交接包，生成 `handoff_bundle_index.json` / `.md` / `.html`，按 ready / needs_info / blocked 汇总 quality、signoff、manager checklist、archive verification 和下一步；它只写父目录索引，不改单包或源 run。
 - P63：Bundle checklist risk aggregation。bundle index 现在还汇总 reviewer checklist open item 总数和每包 checklist_review_status，让负责人看到复核清单风险；这不改变 package readiness，也不写单包 artifact。
+- P64：Package-local checklist update。交接包接收方可用命令记录 checklist item 的 reviewer_status / note / evidence_checked，供包内 index 和 bundle index 读取；该状态不是 candidate issue 确认。
 
 ---
 

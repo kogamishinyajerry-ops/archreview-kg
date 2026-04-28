@@ -142,19 +142,25 @@ def render_reviewer_task_checklist_markdown(payload: Mapping[str, Any]) -> str:
         "",
         "## Fillable Checklist",
         "",
-        "| Done | # | Stage | Task | Required Evidence | Completion Prompt | Reviewer Note |",
-        "|---|---:|---|---|---|---|---|",
+        "| Done | # | Stage | Task | Reviewer Status | Required Evidence | Completion Prompt | Evidence Checked | Reviewer Note |",
+        "|---|---:|---|---|---|---|---|---|---|",
     ]
     for item in _list_of_mappings(payload.get("items")):
         evidence = "<br>".join(_str_list(item.get("required_evidence"))) or "-"
+        checked_evidence = "<br>".join(_str_list(item.get("evidence_checked"))) or "-"
+        reviewer_status = _str(item.get("reviewer_status")) or "todo"
+        checked = "[x]" if reviewer_status in {"done", "skipped_preview"} else "[ ]"
+        reviewer_note = _str(item.get("reviewer_note")) or "-"
         lines.append(
-            "| [ ] | "
+            f"| {checked} | "
             f"{_int(item.get('ordinal'))} | "
             f"`{_str(item.get('stage'))}` | "
             f"{_str(item.get('title'))} | "
+            f"`{reviewer_status}` | "
             f"{evidence} | "
             f"{_str(item.get('completion_prompt'))} | "
-            "|"
+            f"{checked_evidence} | "
+            f"{reviewer_note} |"
         )
     lines.append("")
     return "\n".join(lines)

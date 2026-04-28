@@ -18,6 +18,7 @@ from archkg.viewer.handoff_package import (
     write_handoff_package_quality_json,
     write_handoff_package_quality_markdown,
     write_handoff_reviewer_signoff,
+    write_handoff_reviewer_task_checklist_update,
 )
 
 
@@ -378,6 +379,94 @@ def test_handoff_reviewer_signoff_cli_writes_notes(tmp_path: Path) -> None:
     assert "status=ready" in result.output
     assert (package_dir / "reviewer_signoff.json").exists()
     assert (package_dir / "reviewer_signoff.md").exists()
+
+
+def test_handoff_reviewer_task_checklist_update_is_package_local(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    original_run_checklist = (run_dir / "reviewer_task_checklist.json").read_text(
+        "utf-8"
+    )
+
+    checklist_path = write_handoff_reviewer_task_checklist_update(
+        package_dir,
+        ordinal=1,
+        reviewer="reviewer-check",
+        status="done",
+        note="Checked quickstart and package boundary.",
+        evidence_checked=["handoff_manifest.json", "reviewer_quickstart.md"],
+    )
+
+    assert checklist_path == package_dir / "artifacts" / "reviewer_task_checklist.json"
+    assert (run_dir / "reviewer_task_checklist.json").read_text("utf-8") == original_run_checklist
+    payload = json.loads(checklist_path.read_text("utf-8"))
+    item = payload["items"][0]
+    assert payload["mutation_policy"] == "package_checklist_update_only_no_source_run_mutation"
+    assert payload["last_update"]["ordinal"] == 1
+    assert item["reviewer"] == "reviewer-check"
+    assert item["reviewer_status"] == "done"
+    assert item["reviewer_note"] == "Checked quickstart and package boundary."
+    assert item["evidence_checked"] == [
+        "handoff_manifest.json",
+        "reviewer_quickstart.md",
+    ]
+    assert item["completed_at"]
+
+    markdown = (package_dir / "artifacts" / "reviewer_task_checklist.md").read_text(
+        "utf-8"
+    )
+    assert "[x]" in markdown
+    assert "reviewer_quickstart.md" in markdown
+    assert "Checked quickstart and package boundary." in markdown
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "Reviewer Task Checklist" in html
+    assert "1/1 done" in html
+
+
+def test_handoff_reviewer_task_checklist_update_cli_writes_item(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "handoff-checklist-update",
+            str(package_dir),
+            "--ordinal",
+            "1",
+            "--reviewer",
+            "reviewer-cli",
+            "--status",
+            "needs_info",
+            "--note",
+            "Need missing section evidence.",
+            "--evidence-checked",
+            "rule_input_readiness.json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "reviewer_task_checklist.v1" in result.output
+    assert "reviewer=reviewer-cli" in result.output
+    assert "status=needs_info" in result.output
+    payload = json.loads(
+        (package_dir / "artifacts" / "reviewer_task_checklist.json").read_text(
+            "utf-8"
+        )
+    )
+    assert payload["items"][0]["reviewer_status"] == "needs_info"
+    assert payload["items"][0]["completed_at"] == ""
+    assert payload["items"][0]["evidence_checked"] == ["rule_input_readiness.json"]
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "checklist_needs_info" in html
 
 
 def test_handoff_static_index_surfaces_quality_and_signoff(tmp_path: Path) -> None:
@@ -833,7 +922,7 @@ def test_handoff_bundle_index_cli_writes_json_markdown_and_html(
     assert (packages_root / "handoff_bundle_index.html").exists()
     payload = json.loads((packages_root / "handoff_bundle_index.json").read_text("utf-8"))
     assert payload["summary"]["package_count"] == 1
-    assert payload["packages"][0]["checklist_review_status"] == "checklist_empty"
+    assert payload["packages"][0]["checklist_review_status"] == "checklist_open"
     assert payload["packages"][0]["quality_status"] == "not_run"
     markdown = (packages_root / "handoff_bundle_index.md").read_text("utf-8")
     assert "ArchReview-KG Handoff Bundle Index" in markdown
@@ -864,7 +953,14 @@ def _write_minimal_run(run_dir: Path) -> None:
         "reviewer_quickstart.md": "# Quickstart\n",
         "reviewer_task_sequence.json": '{"schema_version":"reviewer_task_sequence.v1"}',
         "reviewer_task_sequence.md": "# Reviewer Task Sequence\n",
-        "reviewer_task_checklist.json": '{"schema_version":"reviewer_task_checklist.v1"}',
+        "reviewer_task_checklist.json": (
+            '{"schema_version":"reviewer_task_checklist.v1",'
+            '"mutation_policy":"checklist_seed_only_no_issue_state_mutation",'
+            '"items":[{"check_id":"check-001","ordinal":1,"stage":"intake",'
+            '"title":"打开工作台并确认运行边界","reviewer_status":"todo",'
+            '"required_evidence":["index.html"],"evidence_checked":[],'
+            '"reviewer":"","completed_at":"","reviewer_note":""}]}'
+        ),
         "reviewer_task_checklist.md": "# Reviewer Task Checklist\n",
         "report.md": "# Report\n",
         "review_workbench.json": '{"schema_version":"review_workbench.v1"}',

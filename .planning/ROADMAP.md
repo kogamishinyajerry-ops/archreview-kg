@@ -258,6 +258,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Keep `package_status` based on package quality/signoff/manager/archive gates; checklist risk is displayed for triage but does not mutate packages or redefine readiness.
 - Guardrail: bundle checklist risk is a read-only manager view only; it does not write package artifacts, confirm candidate issues, or certify compliance.
 
+### P64: Package-Local Checklist Update
+
+- Add `archkg handoff-checklist-update` to update one item in `artifacts/reviewer_task_checklist.json` by `check_id` or ordinal.
+- Record reviewer, reviewer_status, note, evidence_checked, completed_at, updated_at, and last_update in the package-local checklist.
+- Regenerate `artifacts/reviewer_task_checklist.md` and refresh package `index.html` so package and bundle views reflect reviewer progress.
+- Guardrail: checklist updates are handoff-package notes only; they do not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

@@ -48,6 +48,9 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - P63 后 `handoff-bundle-index` 会读取每个包内的 `artifacts/reviewer_task_checklist.json`，
   汇总 checklist open item 总数、每包 checklist_review_status 和 open samples；它只做负责人
   triage，不改变 package readiness。
+- P64 后 reviewer 可用 `archkg handoff-checklist-update <package-dir>` 在交接包内更新单个
+  checklist item 的 reviewer_status、note 和 evidence_checked；该命令只写 package-local
+  checklist 和 package `index.html`。
 
 复现该结论：
 
@@ -347,6 +350,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   确认 issue、写入 `review_state.json`，也不是合规证书。
 - P63 起，bundle checklist risk 只是跨包只读汇总；它不修改单包 artifacts，也不把
   checklist 状态当成图纸合规状态。
+- P64 起，handoff checklist update 只记录交接包内的复核进度；它不写源 run、
+  不写主 `review_state.json`，也不确认 candidate issue。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 
