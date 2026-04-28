@@ -54,12 +54,13 @@ Status:
 - P62-01 is complete: full CLI and Studio runs now derive `reviewer_task_checklist.json` / `.md` from the ordered queue, report and Viewer render the fillable checklist seed, and handoff packages include it as entry evidence.
 - P63-01 is complete: `archkg handoff-bundle-index` now reads package-local reviewer task checklists and summarizes checklist open item totals, per-package review status, and open samples without mutating packages.
 - P64-01 is complete: `archkg handoff-checklist-update` now updates one package-local reviewer checklist item, regenerates package checklist Markdown, and refreshes package `index.html` without touching the source run.
+- P65-01 is complete: `archkg handoff-manager-checklist` now reads package-local reviewer checklist status and requires the checklist to be complete before emitting `manager_ready`.
 
 ## Current Phase
 
-P64: Package-local checklist update.
+P65: Manager checklist reviewer gate.
 
-P64 is complete. Receiving reviewers can now record checklist progress inside the handoff package, while managers can still aggregate open checklist risk through the bundle index.
+P65 is complete. Manager intake now combines package quality, reviewer signoff, required artifacts, boundary warnings, and reviewer checklist completion; open checklist rows hold the package at `manager_needs_info`, while blocked or missing checklist evidence blocks manager intake.
 
 ## Key Decisions
 
@@ -107,8 +108,9 @@ P64 is complete. Receiving reviewers can now record checklist progress inside th
 - P62 reviewer task checklist is a fillable seed only; checked rows are not issue confirmations unless the reviewer separately updates primary `review_state.json`.
 - P63 checklist risk aggregation is read-only bundle triage only; it does not mutate package artifacts and does not change package readiness semantics.
 - P64 checklist updates are package-local progress notes only; they do not mutate source run artifacts, primary `review_state.json`, or candidate issue truth.
+- P65 manager checklist reviewer gate is package-intake governance only; `manager_ready` still does not mean candidate issues are confirmed or the drawing is compliant.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P64 by adding checklist export/import summaries or package-level signoff rules that can require checklist completion before manager intake.
+Move beyond P65 by adding package-level novice reviewer acceptance presets or a compact "ready to review" runbook that guides a new reviewer through checklist closeout before manager intake.

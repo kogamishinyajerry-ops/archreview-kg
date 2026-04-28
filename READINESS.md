@@ -51,6 +51,9 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - P64 后 reviewer 可用 `archkg handoff-checklist-update <package-dir>` 在交接包内更新单个
   checklist item 的 reviewer_status、note 和 evidence_checked；该命令只写 package-local
   checklist 和 package `index.html`。
+- P65 后 `archkg handoff-manager-checklist <package-dir>` 会读取 package-local reviewer
+  checklist 完成度；open / needs_info item 会让 manager intake 保持 `manager_needs_info`，
+  blocked 或缺失 checklist 会阻塞 manager intake。
 
 复现该结论：
 
@@ -352,6 +355,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   checklist 状态当成图纸合规状态。
 - P64 起，handoff checklist update 只记录交接包内的复核进度；它不写源 run、
   不写主 `review_state.json`，也不确认 candidate issue。
+- P65 起，manager checklist 要求 reviewer checklist 完成后才输出 `manager_ready`；
+  该 gate 只说明交接包可进入负责人下一步 intake，不说明图纸合规。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

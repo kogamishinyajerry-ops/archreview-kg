@@ -61,6 +61,7 @@ archkg viewer -o out --source samples/sample_clean.pdf
 archkg handoff-package out/ -o out-handoff
 archkg handoff-check out-handoff --out out-handoff/handoff_quality.json --markdown out-handoff/handoff_quality.md
 archkg handoff-signoff out-handoff --reviewer reviewer-name --status needs_info --note "缺少剖面净高证据"
+archkg handoff-checklist-update out-handoff --ordinal 1 --reviewer reviewer-name --status done --note "已核对交接边界" --evidence-checked handoff_manifest.json
 archkg handoff-manager-checklist out-handoff --manager manager-name --note "等待补齐剖面证据"
 archkg handoff-archive-manifest out-handoff --created-by manager-name --note "移交前固化 checksum"
 archkg handoff-archive-verify out-handoff
@@ -76,7 +77,8 @@ open handoff-packages/handoff_bundle_index.html
 `handoff-check` 会独立检查 manifest schema、只读策略、必需 artifact、复制件存在性和边界提醒。
 `handoff-signoff` 只在交接包内写 `reviewer_signoff.json` / `.md`，用于记录 ready / needs_info / blocked
 状态、阻塞项和下一步；它不是合规证书，也不回写源 run。
-`handoff-manager-checklist` 只在交接包内写 manager checklist，用于负责人快速判断包能否进入下一轮复核。
+`handoff-manager-checklist` 只在交接包内写 manager checklist，用于负责人快速判断包能否进入下一轮复核；
+P65 起它会读取包内 reviewer checklist，只有清单完成时才允许 `manager_ready`。
 `handoff-archive-manifest` 只在交接包内写 checksum 清单，用于移交完整性核对，不是合规证书。
 `handoff-archive-verify` 只对照 checksum 清单检查包内文件是否缺失、变更或多出，发现 drift 时返回非零。
 `index.html` 是静态只读入口，会汇总 package boundary、quality、signoff、manager checklist、archive manifest、verification 和 artifact 链接。
@@ -90,6 +92,8 @@ P63 起 `handoff-bundle-index` 会汇总每个包内 checklist 的 open item 数
 `checklist_review_status`，方便负责人跨包看复核工作量；它不修改单包，也不改变 package readiness。
 P64 起 reviewer 可用 `archkg handoff-checklist-update` 在交接包内更新单个 checklist item，
 记录 reviewer_status、note 和 evidence_checked；它只写 package-local 文件，不碰源 run。
+P65 起 manager checklist 会把 reviewer checklist completion 纳入 intake：open / needs_info 行会让
+manager 状态停在 `manager_needs_info`，blocked 或缺失清单会阻塞；这仍只是交接状态，不是合规结论。
 
 ---
 
@@ -409,6 +413,8 @@ archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks
 archkg handoff-package out/ -o out-handoff
 archkg handoff-check out-handoff
 archkg handoff-signoff out-handoff --reviewer reviewer-name --status ready --note "交接包可进入复核"
+# repeat for each checklist row that has been reviewed; open rows will hold manager intake at needs_info
+archkg handoff-checklist-update out-handoff --ordinal 1 --reviewer reviewer-name --status done --note "已核对边界" --evidence-checked handoff_manifest.json
 archkg handoff-manager-checklist out-handoff --manager manager-name --note "进入复核队列"
 archkg handoff-archive-manifest out-handoff --created-by manager-name --note "移交前固化 checksum"
 archkg handoff-archive-verify out-handoff
@@ -476,6 +482,7 @@ archkg clause readiness
 - P62：Reviewer task checklist。完整审图 run 新增 `reviewer_task_checklist.json` / `.md`，从任务序列派生可人工填写的 reviewer_status、note、evidence_checked 清单；它只做交付留痕种子，不确认 issue、不写 `review_state.json`。
 - P63：Bundle checklist risk aggregation。`archkg handoff-bundle-index` 读取各包的 `artifacts/reviewer_task_checklist.json`，汇总 checklist open item、blocked/needs_info item 和每包 checklist_review_status；它只做负责人 triage，不改变 `package_status`。
 - P64：Package-local checklist update。`archkg handoff-checklist-update` 只更新交接包内 `artifacts/reviewer_task_checklist.json/.md` 并刷新包内 `index.html`，让 reviewer 记录单项完成情况；它不写源 run 或主 `review_state.json`。
+- P65：Manager checklist reviewer gate。`archkg handoff-manager-checklist` 会读取包内 reviewer checklist 完成度；未完成清单让 manager intake 保持 needs_info / blocked，不再把 quality+signoff ready 误当成交接清单已闭环。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
@@ -492,6 +499,7 @@ archkg clause readiness
 - P60：Handoff bundle index。`archkg handoff-bundle-index <packages-root>` 扫描多个交接包，生成 `handoff_bundle_index.json` / `.md` / `.html`，按 ready / needs_info / blocked 汇总 quality、signoff、manager checklist、archive verification 和下一步；它只写父目录索引，不改单包或源 run。
 - P63：Bundle checklist risk aggregation。bundle index 现在还汇总 reviewer checklist open item 总数和每包 checklist_review_status，让负责人看到复核清单风险；这不改变 package readiness，也不写单包 artifact。
 - P64：Package-local checklist update。交接包接收方可用命令记录 checklist item 的 reviewer_status / note / evidence_checked，供包内 index 和 bundle index 读取；该状态不是 candidate issue 确认。
+- P65：Manager checklist reviewer gate。manager checklist 汇总 reviewer checklist status、open/blocked/needs_info item counts，并要求清单完成后才输出 `manager_ready`；这只约束交接包 intake，不确认 issue。
 
 ---
 

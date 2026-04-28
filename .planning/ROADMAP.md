@@ -265,6 +265,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Regenerate `artifacts/reviewer_task_checklist.md` and refresh package `index.html` so package and bundle views reflect reviewer progress.
 - Guardrail: checklist updates are handoff-package notes only; they do not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
 
+### P65: Manager Checklist Reviewer Gate
+
+- Extend `archkg handoff-manager-checklist` to read package-local `artifacts/reviewer_task_checklist.json`.
+- Add reviewer checklist status and open/blocked/needs-info counts to `handoff_manager_checklist.v1` summary and Markdown.
+- Require checklist completion before `manager_ready`; open or needs-info rows keep the package at `manager_needs_info`, while blocked or missing checklist state blocks manager intake.
+- Guardrail: this is package-intake gating only; it does not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

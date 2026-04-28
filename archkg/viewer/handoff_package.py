@@ -793,7 +793,19 @@ def build_handoff_manager_checklist(
         raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
     quality = _load_optional_json(package_dir / "handoff_quality.json") or {}
     signoff = _load_optional_json(package_dir / "reviewer_signoff.json") or {}
-    items = _manager_checklist_items(manifest, quality, signoff)
+    reviewer_task_checklist = (
+        _load_optional_json(package_dir / "artifacts" / "reviewer_task_checklist.json")
+        or {}
+    )
+    reviewer_checklist_summary = _reviewer_task_checklist_index_summary(
+        reviewer_task_checklist
+    )
+    items = _manager_checklist_items(
+        manifest,
+        quality,
+        signoff,
+        reviewer_checklist_summary,
+    )
     open_items = [
         _str(item.get("detail"))
         for item in items
@@ -813,6 +825,21 @@ def build_handoff_manager_checklist(
         "summary": {
             "quality_status": _str(quality.get("status")) or "missing",
             "signoff_status": _str(signoff.get("status")) or "missing",
+            "reviewer_checklist_status": _str(
+                reviewer_checklist_summary.get("review_status")
+            ),
+            "reviewer_checklist_item_count": _int(
+                reviewer_checklist_summary.get("item_count")
+            ),
+            "reviewer_checklist_open_item_count": _int(
+                reviewer_checklist_summary.get("open_item_count")
+            ),
+            "reviewer_checklist_blocked_item_count": _int(
+                reviewer_checklist_summary.get("blocked_item_count")
+            ),
+            "reviewer_checklist_needs_info_item_count": _int(
+                reviewer_checklist_summary.get("needs_info_item_count")
+            ),
             "missing_required_count": len(_str_list(manifest.get("missing_required_artifacts"))),
             "artifact_available_count": sum(
                 1 for row in artifact_rows if row.get("status") == "available"
@@ -847,6 +874,10 @@ def render_handoff_manager_checklist_markdown(payload: dict[str, Any]) -> str:
         [
             f"- Quality: `{_str(summary.get('quality_status'))}`",
             f"- Reviewer signoff: `{_str(summary.get('signoff_status'))}`",
+            "- Reviewer checklist: "
+            f"`{_str(summary.get('reviewer_checklist_status'))}` "
+            f"({_int(summary.get('reviewer_checklist_open_item_count'))}/"
+            f"{_int(summary.get('reviewer_checklist_item_count'))} open)",
             f"- Available artifacts: `{summary.get('artifact_available_count')}/{summary.get('artifact_total_count')}`",
             f"- Missing required artifacts: `{summary.get('missing_required_count')}`",
             "",
@@ -1355,6 +1386,8 @@ def _reviewer_task_checklist_index_summary(
             "item_count": 0,
             "done_item_count": 0,
             "open_item_count": 0,
+            "blocked_item_count": 0,
+            "needs_info_item_count": 0,
             "open_samples": [],
         }
     items = _list_of_dicts(payload.get("items"))
@@ -1389,6 +1422,8 @@ def _reviewer_task_checklist_index_summary(
         "item_count": len(items),
         "done_item_count": len(done_items),
         "open_item_count": len(open_items),
+        "blocked_item_count": blocked_count,
+        "needs_info_item_count": needs_info_count,
         "open_samples": [
             _str(item.get("title")) or _str(item.get("check_id"))
             for item in open_items[:3]
@@ -1400,10 +1435,14 @@ def _manager_checklist_items(
     manifest: dict[str, Any],
     quality: dict[str, Any],
     signoff: dict[str, Any],
+    reviewer_checklist_summary: dict[str, Any],
 ) -> list[dict[str, str]]:
     missing_required = _str_list(manifest.get("missing_required_artifacts"))
     quality_status = _str(quality.get("status")) or "missing"
     signoff_status = _str(signoff.get("status")) or "missing"
+    checklist_status = (
+        _str(reviewer_checklist_summary.get("review_status")) or "not_recorded"
+    )
     boundary_check = _check_boundary_warnings_present(manifest)
     return [
         _manager_item(
@@ -1422,6 +1461,11 @@ def _manager_checklist_items(
             "reviewer_signoff_ready",
             _signoff_manager_item_status(signoff_status),
             f"reviewer signoff {signoff_status}",
+        ),
+        _manager_item(
+            "reviewer_task_checklist_complete",
+            _reviewer_checklist_manager_item_status(checklist_status),
+            _reviewer_checklist_manager_item_detail(reviewer_checklist_summary),
         ),
         _manager_item(
             "boundary_warnings_present",
@@ -1451,6 +1495,26 @@ def _signoff_manager_item_status(status: str) -> str:
     if status == "blocked":
         return "fail"
     return "needs_info"
+
+
+def _reviewer_checklist_manager_item_status(status: str) -> str:
+    if status == "checklist_complete":
+        return "pass"
+    if status in {"checklist_blocked", "not_recorded"}:
+        return "fail"
+    return "needs_info"
+
+
+def _reviewer_checklist_manager_item_detail(summary: dict[str, Any]) -> str:
+    status = _str(summary.get("review_status")) or "not_recorded"
+    item_count = _int(summary.get("item_count"))
+    open_count = _int(summary.get("open_item_count"))
+    blocked_count = _int(summary.get("blocked_item_count"))
+    needs_info_count = _int(summary.get("needs_info_item_count"))
+    return (
+        f"reviewer checklist {status}: open={open_count}/{item_count}, "
+        f"blocked={blocked_count}, needs_info={needs_info_count}"
+    )
 
 
 def _manager_status(items: list[dict[str, str]]) -> str:

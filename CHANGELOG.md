@@ -234,6 +234,12 @@ and keeps the no-OCR transparency warning.
   `artifacts/reviewer_task_checklist.json`, regenerates the package-local
   Markdown checklist, and refreshes package `index.html` without touching the
   source run or primary review state.
+- P65-01 gates manager intake on the package-local reviewer checklist.
+  `archkg handoff-manager-checklist` now reads
+  `artifacts/reviewer_task_checklist.json`, records checklist status and
+  open/blocked/needs-info counts in the manager checklist summary, and keeps
+  manager intake at needs-info or blocked until reviewer checklist rows are
+  completed or explicitly skipped as preview-only.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

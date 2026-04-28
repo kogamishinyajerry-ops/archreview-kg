@@ -532,6 +532,14 @@ def test_handoff_manager_checklist_writes_package_only_export(
         status="ready",
         note="Ready for manager intake.",
     )
+    write_handoff_reviewer_task_checklist_update(
+        package_dir,
+        ordinal=1,
+        reviewer="reviewer-d",
+        status="done",
+        note="Checklist complete.",
+        evidence_checked=["handoff_manifest.json"],
+    )
 
     checklist_path = write_handoff_manager_checklist(
         package_dir,
@@ -556,17 +564,102 @@ def test_handoff_manager_checklist_writes_package_only_export(
     item_statuses = {item["id"]: item["status"] for item in payload["checklist_items"]}
     assert item_statuses["handoff_quality_ready"] == "pass"
     assert item_statuses["reviewer_signoff_ready"] == "pass"
+    assert item_statuses["reviewer_task_checklist_complete"] == "pass"
     assert item_statuses["required_artifacts_present"] == "pass"
+    assert payload["summary"]["reviewer_checklist_status"] == "checklist_complete"
+    assert payload["summary"]["reviewer_checklist_open_item_count"] == 0
 
     markdown = (package_dir / "handoff_manager_checklist.md").read_text("utf-8")
     assert "# Handoff Manager Checklist" in markdown
     assert "manager_ready" in markdown
     assert "handoff_quality_ready" in markdown
+    assert "Reviewer checklist" in markdown
 
     html = (package_dir / "index.html").read_text("utf-8")
     assert "handoff_manager_checklist.v1" in html
     assert "manager_ready" in html
     assert "manager-a" in html
+
+
+def test_handoff_manager_checklist_needs_info_for_open_reviewer_checklist(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-open",
+        status="ready",
+        note="Ready except checklist confirmation.",
+    )
+
+    checklist_path = write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-open",
+        note="Hold until reviewer checklist is closed.",
+    )
+
+    payload = json.loads(checklist_path.read_text("utf-8"))
+    assert payload["status"] == "manager_needs_info"
+    assert payload["summary"]["quality_status"] == "handoff_ready"
+    assert payload["summary"]["signoff_status"] == "ready"
+    assert payload["summary"]["reviewer_checklist_status"] == "checklist_open"
+    assert payload["summary"]["reviewer_checklist_open_item_count"] == 1
+    item_statuses = {item["id"]: item["status"] for item in payload["checklist_items"]}
+    assert item_statuses["handoff_quality_ready"] == "pass"
+    assert item_statuses["reviewer_signoff_ready"] == "pass"
+    assert item_statuses["reviewer_task_checklist_complete"] == "needs_info"
+    assert any("reviewer checklist checklist_open" in item for item in payload["open_items"])
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "manager_needs_info" in html
+    assert "reviewer checklist checklist_open" in html
+
+
+def test_handoff_manager_checklist_blocks_for_blocked_reviewer_checklist(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    _write_package_checklist(
+        package_dir,
+        [
+            {
+                "stage": "evidence",
+                "title": "Need source drawing sheet confirmation",
+                "status": "blocked",
+            }
+        ],
+    )
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-blocked",
+        status="ready",
+        note="Ready except blocked checklist row.",
+    )
+
+    checklist_path = write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-blocked",
+        note="Block until source sheet is attached.",
+    )
+
+    payload = json.loads(checklist_path.read_text("utf-8"))
+    assert payload["status"] == "manager_blocked"
+    assert payload["summary"]["reviewer_checklist_status"] == "checklist_blocked"
+    assert payload["summary"]["reviewer_checklist_blocked_item_count"] == 1
+    item_statuses = {item["id"]: item["status"] for item in payload["checklist_items"]}
+    assert item_statuses["reviewer_task_checklist_complete"] == "fail"
+    assert any("reviewer checklist checklist_blocked" in item for item in payload["open_items"])
 
 
 def test_handoff_manager_checklist_cli_writes_needs_info(tmp_path: Path) -> None:
@@ -606,6 +699,8 @@ def test_handoff_manager_checklist_cli_writes_needs_info(tmp_path: Path) -> None
     payload = json.loads((package_dir / "handoff_manager_checklist.json").read_text("utf-8"))
     assert payload["status"] == "manager_needs_info"
     assert "reviewer signoff needs_info" in payload["open_items"]
+    item_statuses = {item["id"]: item["status"] for item in payload["checklist_items"]}
+    assert item_statuses["reviewer_task_checklist_complete"] == "needs_info"
     html = (package_dir / "index.html").read_text("utf-8")
     assert "manager_needs_info" in html
     assert "manager-b" in html
