@@ -238,6 +238,12 @@ and keeps the no-OCR transparency warning.
   `preview_only_no_primary_write`, forbids `archkg review-state` on preview ids,
   and gives novice reviewers a concrete per-sheet checklist without promoting
   preview rows into primary `issues.json` or `review_state.json`.
+- P48-01 adds read-only handoff packaging. `archkg handoff-package RUN_DIR -o
+  PACKAGE_DIR` copies the quickstart, report, workbench, drawing understanding,
+  rule readiness, primary issues/review state, per-sheet preview queue, optional
+  diff/readiness/visual artifacts, and writes `handoff_manifest.json` plus
+  `handoff_summary.md`. The package is outside the source run by default and
+  uses `copy_artifacts_only_no_source_run_mutation`.
 
 ### Still limited
 
@@ -283,6 +289,9 @@ and keeps the no-OCR transparency warning.
 - `sheet_issue_review_queue.json` is an inspection bridge over per-sheet
   preview issues. Its `preview_id` values are not primary issue ids and must not
   be passed to `archkg review-state`.
+- `handoff_manifest.json` and `handoff_summary.md` are read-only package
+  metadata. They copy existing evidence for external review and do not mutate
+  the source run or confirm candidate issues.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan

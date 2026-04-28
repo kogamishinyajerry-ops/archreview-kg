@@ -54,6 +54,15 @@ archkg viewer -o out --source samples/sample_clean.pdf
 - `sheet_region_candidates_overlay.png` — 候选区域框线预览图，便于复制 region 前人工确认
 - `index.html` — viewer 渲染的查阅页
 
+如需交给另一位审图工程师复核，可生成只读交接包：
+
+```bash
+archkg handoff-package out/ -o out-handoff
+```
+
+`out-handoff/` 会包含 `handoff_manifest.json`、`handoff_summary.md` 和 `artifacts/` 复制件；
+它只复制证据，不写回原 run，不确认 issue，也不把 per-sheet preview 升级为主违规。
+
 ---
 
 ## 真实图纸 — 浏览器路径（推荐）
@@ -365,6 +374,9 @@ archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks
 # P47: 每次完整 review run 生成 sheet_issue_review_queue.json
 # 用于逐页检查 per-sheet preview，不允许直接写入主 review_state.json
 
+# P48: 把已有 run 打成只读交接包
+archkg handoff-package out/ -o out-handoff
+
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
 
@@ -414,6 +426,7 @@ archkg clause readiness
 - P45：Release readiness tightening。`sample_clean_full` toy fixture 从 manual row 固化为 active reproducible fixture；packaged suite 当前 active=5、pending=0、known_gap=0，代表性 run artifacts 完整时可得到 `evidence_ready`，但宣称范围仍限于 benchmarked drawing classes。
 - P46：Novice reviewer onboarding。完整审图 run 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`，报告和 Viewer 显示第一小时流程、常用命令、边界提醒和交接检查，让新手审图工程师按 evidence 顺序上手。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
+- P48：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate 等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。
 
 ---
 

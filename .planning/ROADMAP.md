@@ -154,6 +154,12 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - P47-01 complete: full review runs and Studio runs write `sheet_issue_review_queue.json`; report, Viewer, workbench, control sync, and release readiness all surface the queue as a preview-only bounded bridge.
 - Guardrail: preview queue ids are not primary issue ids and must not be used with `archkg review-state`.
 
+### P48: Real-Project Handoff Export Package
+
+- Package an existing review run into a standalone read-only handoff directory for downstream review.
+- P48-01 complete: `archkg handoff-package` writes `handoff_manifest.json`, `handoff_summary.md`, and copied artifacts under `artifacts/` without mutating the source run.
+- Guardrail: handoff packages are evidence bundles, not compliance certificates.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

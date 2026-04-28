@@ -926,6 +926,41 @@ def release_readiness(
         raise typer.Exit(code=1)
 
 
+@app.command("handoff-package")
+def handoff_package_cmd(
+    run_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Review run directory to package for handoff.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "-o",
+        "--out",
+        help="Package directory. Defaults to a sibling '<run-dir>-handoff'.",
+    ),
+) -> None:
+    """Create a read-only handoff package from an existing review run."""
+    from archkg.viewer.handoff_package import write_handoff_package
+
+    target = out if out is not None else run_dir.parent / f"{run_dir.name}-handoff"
+    try:
+        manifest_path = write_handoff_package(run_dir, target)
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    manifest = _json.loads(manifest_path.read_text("utf-8"))
+    typer.echo(
+        f"{manifest['schema_version']} wrote={manifest_path} "
+        f"included={len(manifest['included_artifacts'])} "
+        f"missing_required={len(manifest['missing_required_artifacts'])}"
+    )
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

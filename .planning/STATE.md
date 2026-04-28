@@ -37,12 +37,13 @@ Status:
 - P45-01 is complete: the remaining `sample_clean_full` manual toy suite row is now a committed active fixture, allowing packaged release-readiness to reach `evidence_ready` when representative run artifacts are complete.
 - P46-01 is complete: full review runs now write reviewer onboarding and quickstart artifacts, and Viewer/report render a first-hour path for novice plan-review engineers.
 - P47-01 is complete: full CLI and Studio review runs now write `sheet_issue_review_queue.json`, a bounded per-sheet preview review bridge that stays separate from primary `issues.json` and `review_state.json`.
+- P48-01 is complete: `archkg handoff-package` now builds a read-only handoff package with manifest, summary, and copied review artifacts outside the source run.
 
 ## Current Phase
 
-P47: Sheet preview review bridge.
+P48: Real-project handoff export package.
 
-P47 is complete. New runs include `sheet_issue_review_queue.json`, so a novice reviewer can inspect per-sheet preview issues through a bounded checklist while the primary review lifecycle remains limited to `issues.json` issue IDs.
+P48 is complete. Existing review runs can now be packaged into a standalone read-only handoff directory for a novice or downstream reviewer without mutating source run artifacts.
 
 ## Key Decisions
 
@@ -73,8 +74,9 @@ P47 is complete. New runs include `sheet_issue_review_queue.json`, so a novice r
 - P43-P45 only gate evidence currently represented in the benchmark suite and run directory. They do not certify arbitrary complex real drawings; `evidence_ready` means constrained pilot readiness for benchmarked drawing classes only.
 - P46 onboarding artifacts are guidance-only; they do not confirm issues, mutate rule output, or certify compliance.
 - P47 preview queue artifacts are guidance-only and preview-only; their `preview_id` values are not valid `archkg review-state` targets.
+- P48 handoff packages copy existing artifacts only; a complete package is still not a compliance certificate and missing artifacts must be treated as handoff risk.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P47 by improving real-project handoff depth: either add another reviewed real complex benchmark with expected inventory, or add a read-only export package that bundles quickstart, readiness, diff, and preview-queue evidence for external review.
+Move beyond P48 by adding package-level quality checks or expanding the real complex benchmark set with another reviewed expected inventory.

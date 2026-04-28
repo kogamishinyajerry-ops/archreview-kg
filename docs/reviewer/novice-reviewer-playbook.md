@@ -19,6 +19,14 @@ archkg viewer -o out/review-demo --source samples/sample_clean.pdf
 - `reviewer_quickstart.md`: 可直接交给审图工程师阅读的上手清单。
 - `sheet_issue_review_queue.json`: per-sheet preview 的有界人工审阅队列，供逐页核对。
 
+如果要把本次 run 交给另一位工程师，只复制只读交接包：
+
+```bash
+archkg handoff-package out/review-demo -o out/review-demo-handoff
+```
+
+交接包包含 `handoff_manifest.json`、`handoff_summary.md` 和 `artifacts/` 复制件；它不修改原 run。
+
 ## 第一小时流程
 
 1. 打开 Viewer，先看“新手上手”和“审图工作台总览”。
@@ -67,6 +75,9 @@ archkg release-readiness \
   --run-dir out/review-demo \
   --out out/review-demo/release_readiness.json \
   --markdown out/review-demo/release_readiness.md
+
+# 生成只读交接包
+archkg handoff-package out/review-demo -o out/review-demo-handoff
 ```
 
 ## 交接模板
@@ -83,5 +94,6 @@ needs_info：
 run_dir：
 commit：
 验证命令：
+handoff_package：
 下一步：
 ```

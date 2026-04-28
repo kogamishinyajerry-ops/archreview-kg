@@ -18,6 +18,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   把新手审图工程师的第一小时复核路径固化为 artifact。
 - P47 后每次完整 review run 会生成 `sheet_issue_review_queue.json`，把 per-sheet preview
   收束成有界人工审阅队列，但 preview id 仍不能进入主 `review_state.json`。
+- P48 后可用 `archkg handoff-package <run-dir> -o <package-dir>` 生成只读交接包，
+  将 quickstart、readiness、diff、preview queue 和边界提醒固化为可移交证据。
 
 复现该结论：
 
@@ -46,7 +48,7 @@ archkg release-readiness \
 release-readiness status=evidence_ready blockers=0 warnings=0 active=5 real_active=2 known_gap=0
 ```
 
-这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列”
+这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列、只读交接包”
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
 P45 清理了最后一个 packaged `manual_run_required` toy row，使 release gate 的技术前提完整。
 但 per-sheet preview issues 还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
@@ -196,6 +198,8 @@ archkg studio
 - P47 新增 `sheet_issue_review_queue.json`：完整 review run 会把 `sheet_issues.json` preview rows
   收束为 `preview-only bounded bridge`，供人工逐页核对；它不创建主 issue id，也不允许
   `archkg review-state` 写入这些 preview rows。
+- P48 新增 `archkg handoff-package`：从已有 run 复制交接所需 artifacts 到独立目录，
+  写出 `handoff_manifest.json` 与 `handoff_summary.md`；该操作不修改源 run，不确认 issue。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
@@ -271,6 +275,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   还要看新手能否按 `reviewer_quickstart.md` 完成复核与交接。
 - P47 起，readiness gate 也要求 `sheet_issue_review_queue.json`；它证明 per-sheet preview 有可执行的人工审阅入口，
   但不代表多页候选问题已经自动聚合为主违规结论。
+- P48 起，交付前建议另跑 `archkg handoff-package` 生成只读包；它是交接完整性证据，
+  不是 release-readiness gate 的替代品。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 
