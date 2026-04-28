@@ -34,6 +34,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   输出 `archive_verified` 或 `archive_drift`；drift 是交接阻塞，不是图纸违规结论。
 - P56/P57 后 Viewer/Studio 的 issue focus 已按图纸页定位，并能基于 `preview_pages.json`
   切换 source / annotated 多页预览：非第一页 issue 可直接切到对应页高亮，避免第一页假定位。
+- P58 后 `archkg handoff-package` 会把多页 preview manifest 及其引用页图复制进交接包；
+  缺少 manifest 引用的页图会成为 handoff quality blocker。
 
 复现该结论：
 
@@ -323,6 +325,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   没有放宽该 guardrail，而是同时补入第二张 Medfield 真实单页 expected inventory。
 - P57 起，source / annotated 静态 PNG 预览已经支持多页切换；但 `entity_overlay.png`
   仍只渲染第一页，且 preview pages 只是导航/复核辅助，不能当成合规结论。
+- P58 起，交接包会保全多页 preview assets；这只提升包内静态 viewer 可用性，
+  不表示 candidate issue 已确认或图纸合规。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

@@ -125,10 +125,28 @@ ARTIFACTS: tuple[HandoffArtifactSpec, ...] = (
         "PDF with issue annotations.",
     ),
     HandoffArtifactSpec(
+        "source.pdf",
+        False,
+        "visual",
+        "Source PDF copy used by the static viewer.",
+    ),
+    HandoffArtifactSpec(
+        "preview_pages.json",
+        False,
+        "visual",
+        "Available source, annotated, and overlay preview pages.",
+    ),
+    HandoffArtifactSpec(
         "source_preview.png",
         False,
         "visual",
         "Rendered source preview.",
+    ),
+    HandoffArtifactSpec(
+        "annotated_preview.png",
+        False,
+        "visual",
+        "Rendered annotated preview.",
     ),
     HandoffArtifactSpec(
         "entity_overlay.png",
@@ -156,6 +174,7 @@ def write_handoff_package(run_dir: Path, package_dir: Path) -> Path:
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
     statuses = [_copy_artifact(run_dir, artifacts_dir, spec) for spec in ARTIFACTS]
+    statuses.extend(_copy_preview_page_artifacts(run_dir, artifacts_dir, statuses))
     missing_required = [
         row["artifact"]
         for row in statuses
@@ -975,6 +994,80 @@ def _copy_artifact(
         "package_path": package_rel,
         "purpose": spec.purpose,
     }
+
+
+def _copy_preview_page_artifacts(
+    run_dir: Path,
+    artifacts_dir: Path,
+    existing_statuses: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    preview_manifest = run_dir / "preview_pages.json"
+    if not preview_manifest.is_file():
+        return []
+    try:
+        payload = json.loads(preview_manifest.read_text("utf-8"))
+    except json.JSONDecodeError:
+        return []
+    layers = payload.get("layers") if isinstance(payload, dict) else None
+    if not isinstance(layers, dict):
+        return []
+
+    existing_by_artifact = {
+        _str(row.get("artifact")): row
+        for row in existing_statuses
+        if _str(row.get("artifact"))
+    }
+    statuses: list[dict[str, Any]] = []
+    for name in _preview_asset_names(layers):
+        existing = existing_by_artifact.get(name)
+        if existing and existing.get("status") == "available":
+            continue
+        if existing:
+            existing["required"] = True
+            existing["purpose"] = "Preview page image referenced by preview_pages.json."
+            continue
+        source = run_dir / name
+        if not source.is_file():
+            statuses.append(
+                {
+                    "artifact": name,
+                    "required": True,
+                    "tier": "visual",
+                    "status": "missing",
+                    "source_path": "",
+                    "package_path": "",
+                    "purpose": "Preview page image referenced by preview_pages.json.",
+                }
+            )
+            continue
+        shutil.copy2(source, artifacts_dir / name)
+        statuses.append(
+            {
+                "artifact": name,
+                "required": True,
+                "tier": "visual",
+                "status": "available",
+                "source_path": str(source),
+                "package_path": f"artifacts/{name}",
+                "purpose": "Preview page image referenced by preview_pages.json.",
+            }
+        )
+    return statuses
+
+
+def _preview_asset_names(layers: dict[str, Any]) -> list[str]:
+    names: set[str] = set()
+    for rows in layers.values():
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            src = _str(row.get("src"))
+            if not src or "/" in src or "\\" in src:
+                continue
+            names.add(src)
+    return sorted(names)
 
 
 def _write_handoff_index_from_payloads(

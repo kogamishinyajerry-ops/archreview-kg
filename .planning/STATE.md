@@ -47,12 +47,13 @@ Status:
 - P55-01 is complete: the active understanding benchmark suite now includes Medfield A-2 Second Floor Plan and a generated complex mixed-sheet set, bringing packaged suite coverage to active=7, real_active=3, generated_active=3.
 - P56-01 is complete: Viewer/Studio issue focus now maps primary issue bboxes by `page_index`; first-page issues still highlight on the preview layer, while non-first-page issues show the correct page and route reviewers to the PDF instead of being projected onto page 0.
 - P57-01 is complete: Viewer/Studio now write `preview_pages.json` plus multi-page source/annotated PNG page sets, render page-switch controls, and focus non-first-page issues directly on their corresponding source/annotated preview page.
+- P58-01 is complete: `archkg handoff-package` now copies `preview_pages.json`, `source.pdf`, annotated/source preview PNGs, and every page image referenced by `preview_pages.json`; missing referenced preview assets become package blockers.
 
 ## Current Phase
 
-P57: Multi-page preview gallery.
+P58: Handoff preview asset completeness.
 
-P57 is complete. The review workbench can now switch source/annotated previews by page and use page-aware issue focus on non-first-page primary issues.
+P58 is complete. Multi-page preview-enabled runs now produce handoff packages whose copied static viewer assets remain complete for novice reviewers.
 
 ## Key Decisions
 
@@ -93,8 +94,9 @@ P57 is complete. The review workbench can now switch source/annotated previews b
 - P55 adds recognition benchmarks only; Medfield A-2 and generated mixed-sheet passing cases do not prove arbitrary real drawing compliance or multi-sheet issue aggregation.
 - P56 page-aware focus is a reviewer navigation aid only; it does not create new issues, change review state, or certify compliance.
 - P57 preview pages are visual navigation artifacts only; they do not create new detection evidence, mutate issue state, or make entity overlays multi-page.
+- P58 strengthens handoff completeness for preview assets only; complete copied visuals still do not certify issue correctness or drawing compliance.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P57 by adding per-page entity overlay rendering, a compact multi-package handoff bundle index, or stronger reviewer task sequencing across multi-sheet runs.
+Move beyond P58 by adding per-page entity overlay rendering, a compact multi-package handoff bundle index, or stronger reviewer task sequencing across multi-sheet runs.

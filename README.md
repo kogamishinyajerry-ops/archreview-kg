@@ -448,7 +448,7 @@ archkg clause readiness
 - P45：Release readiness tightening。`sample_clean_full` toy fixture 从 manual row 固化为 active reproducible fixture；packaged suite 当前 active=5、pending=0、known_gap=0，代表性 run artifacts 完整时可得到 `evidence_ready`，但宣称范围仍限于 benchmarked drawing classes。
 - P46：Novice reviewer onboarding。完整审图 run 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`，报告和 Viewer 显示第一小时流程、常用命令、边界提醒和交接检查，让新手审图工程师按 evidence 顺序上手。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
-- P48：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate 等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。
+- P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、source/annotated 多页 preview assets 等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
 - P50：Package reviewer signoff notes。`archkg handoff-signoff <package-dir>` 在交接包内写 `reviewer_signoff.json` / `.md`，记录 ready / needs_info / blocked、阻塞项、待补信息和下一步；不修改源 run，也不确认合规。
 - P51：Static handoff package review view。`archkg handoff-package` 生成 `index.html`，`handoff-check` 和 `handoff-signoff` 会刷新它；新手 reviewer 可直接打开静态页面查看边界、质量门禁、复核备注和 artifact 链接。
@@ -458,6 +458,7 @@ archkg clause readiness
 - P55：Complex benchmark expansion。Suite 新增 Medfield A-2 Second Floor Plan 真实单页 expected inventory，以及 generated complex mixed-sheet-set；当前 active=7、real_active=3、generated_active=3，继续维持 generated-heavy proof guardrail。
 - P56：Sheet-aware issue focus。Viewer/Studio 不再把 issue focus 限定为第一页；后端按 issue `page_index` 和该页尺寸归一化 bbox，前端只对第一页画预览高亮，非第一页明确显示页码并引导打开 PDF 复核。
 - P57：Multi-page preview gallery。Viewer/Studio 写出 `preview_pages.json`、多页 source PNG 和多页 annotated PNG，结果页提供图纸页切换；非第一页 issue focus 可直接切到对应页预览并高亮。`entity_overlay.png` 仍是第一页。
+- P58：Handoff preview asset completeness。交接包现在复制 `source.pdf`、`preview_pages.json`、legacy preview PNG 和 preview manifest 引用的所有页图，确保新手 reviewer 打开包内静态 viewer 时不缺图；这仍只是证据交接，不是合规证书。
 
 ---
 

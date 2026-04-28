@@ -109,6 +109,106 @@ def test_handoff_package_writes_static_index_for_novice_review(
     assert "preview ids are not primary issue ids" in html
 
 
+def test_handoff_package_copies_multi_page_preview_assets(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    preview_manifest = {
+        "schema_version": "preview_pages.v1",
+        "available": True,
+        "page_count": 2,
+        "layers": {
+            "source": [
+                {"page_index": 0, "src": "source_preview.png"},
+                {"page_index": 1, "src": "source_preview_page_2.png"},
+            ],
+            "annotated": [
+                {"page_index": 0, "src": "annotated_preview.png"},
+                {"page_index": 1, "src": "annotated_preview_page_2.png"},
+            ],
+            "overlay": [{"page_index": 0, "src": "entity_overlay.png"}],
+        },
+    }
+    (run_dir / "preview_pages.json").write_text(
+        json.dumps(preview_manifest, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    (run_dir / "index.html").write_text(
+        (
+            '<a href="preview_pages.json">preview</a>'
+            '<img src="source_preview_page_2.png">'
+            '<img src="annotated_preview_page_2.png">'
+        ),
+        encoding="utf-8",
+    )
+    for name in (
+        "source.pdf",
+        "source_preview.png",
+        "source_preview_page_2.png",
+        "annotated_preview.png",
+        "annotated_preview_page_2.png",
+        "entity_overlay.png",
+    ):
+        (run_dir / name).write_bytes(b"preview")
+
+    write_handoff_package(run_dir, package_dir)
+
+    artifacts_dir = package_dir / "artifacts"
+    for name in (
+        "source.pdf",
+        "preview_pages.json",
+        "source_preview.png",
+        "source_preview_page_2.png",
+        "annotated_preview.png",
+        "annotated_preview_page_2.png",
+        "entity_overlay.png",
+    ):
+        assert (artifacts_dir / name).exists(), f"missing copied visual asset: {name}"
+
+    manifest = json.loads((package_dir / "handoff_manifest.json").read_text("utf-8"))
+    statuses = {row["artifact"]: row for row in manifest["artifact_statuses"]}
+    assert statuses["preview_pages.json"]["status"] == "available"
+    assert statuses["source_preview_page_2.png"]["status"] == "available"
+    assert statuses["annotated_preview_page_2.png"]["status"] == "available"
+    assert "source_preview_page_2.png" in manifest["included_artifacts"]
+
+    quality = build_handoff_package_quality(package_dir)
+    assert quality["status"] == "handoff_ready"
+    assert quality["checks"]["copied_artifacts_exist"]["passed"] is True
+
+
+def test_handoff_package_blocks_missing_manifest_preview_asset(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    preview_manifest = {
+        "schema_version": "preview_pages.v1",
+        "available": True,
+        "page_count": 2,
+        "layers": {
+            "source": [
+                {"page_index": 0, "src": "source_preview.png"},
+                {"page_index": 1, "src": "source_preview_page_2.png"},
+            ],
+            "annotated": [],
+            "overlay": [],
+        },
+    }
+    (run_dir / "preview_pages.json").write_text(
+        json.dumps(preview_manifest),
+        encoding="utf-8",
+    )
+    (run_dir / "source_preview.png").write_bytes(b"preview")
+
+    write_handoff_package(run_dir, package_dir)
+
+    manifest = json.loads((package_dir / "handoff_manifest.json").read_text("utf-8"))
+    assert "source_preview_page_2.png" in manifest["missing_required_artifacts"]
+    quality = build_handoff_package_quality(package_dir)
+    assert quality["status"] == "not_ready"
+    assert "required artifact missing: source_preview_page_2.png" in quality["blockers"]
+
+
 def test_handoff_package_quality_gate_accepts_complete_package(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     package_dir = tmp_path / "handoff"

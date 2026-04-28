@@ -162,6 +162,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 
 - Package an existing review run into a standalone read-only handoff directory for downstream review.
 - P48-01 complete: `archkg handoff-package` writes `handoff_manifest.json`, `handoff_summary.md`, and copied artifacts under `artifacts/` without mutating the source run.
+- P58-01 complete: handoff packages now include source PDF, `preview_pages.json`, source/annotated preview PNGs, and every page image referenced by the preview manifest so static viewer links remain complete.
 - Guardrail: handoff packages are evidence bundles, not compliance certificates.
 
 ### P49: Handoff Package Quality Gate
@@ -213,6 +214,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Write `preview_pages.json` so Viewer/Studio can switch pages and resolve the correct preview image for issue focus.
 - Use the preview manifest to mark non-first-page issue focus as directly preview-supported when source/annotated page images exist.
 - Guardrail: entity overlay remains page-0 only in P57; visual focus still does not create evidence or certify compliance.
+
+### P58: Handoff Preview Asset Completeness
+
+- Treat `preview_pages.json` as a visual asset dependency manifest during handoff packaging.
+- Copy all source/annotated/overlay preview assets referenced by `preview_pages.json` into the package `artifacts/` directory.
+- Fail handoff quality when a preview manifest references a missing page image.
+- Guardrail: copied preview assets support package review only; they do not confirm issues or certify compliance.
 
 ## Explicit Not-Build List
 
