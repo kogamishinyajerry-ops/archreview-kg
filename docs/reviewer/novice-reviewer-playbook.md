@@ -28,6 +28,9 @@ archkg handoff-signoff out/review-demo-handoff \
   --reviewer reviewer-name \
   --status needs_info \
   --note "缺少剖面净高证据"
+archkg handoff-manager-checklist out/review-demo-handoff \
+  --manager manager-name \
+  --note "等待补齐剖面证据"
 open out/review-demo-handoff/index.html
 ```
 
@@ -35,7 +38,9 @@ open out/review-demo-handoff/index.html
 交接前应让 `handoff-check` 输出 `handoff_ready`。
 交接复核人可用 `handoff-signoff` 写入 `reviewer_signoff.json` / `.md`，状态只能是 `ready`、`needs_info` 或
 `blocked`；该记录只是包内交接备注，不确认 issue，也不是合规证书。
-交接包里的 `index.html` 是静态只读入口，优先从这里查看 quality、signoff、artifact 链接和边界提醒。
+负责人可用 `handoff-manager-checklist` 写入 `handoff_manager_checklist.json` / `.md`，把 package quality、
+reviewer signoff 和必需 artifact 汇总成 `manager_ready` / `manager_needs_info` / `manager_blocked`。
+交接包里的 `index.html` 是静态只读入口，优先从这里查看 quality、signoff、manager checklist、artifact 链接和边界提醒。
 
 ## 第一小时流程
 
@@ -103,6 +108,11 @@ archkg handoff-signoff out/review-demo-handoff \
   --needs-info "door type schedule" \
   --next-action "request section sheet"
 
+# 写入负责人交接清单
+archkg handoff-manager-checklist out/review-demo-handoff \
+  --manager manager-name \
+  --note "等待补齐剖面证据"
+
 # 打开交接包静态入口
 open out/review-demo-handoff/index.html
 ```
@@ -124,6 +134,7 @@ commit：
 handoff_package：
 handoff_quality：
 reviewer_signoff：
+manager_checklist：
 handoff_index：
 下一步：
 ```

@@ -260,6 +260,12 @@ and keeps the no-OCR transparency warning.
   `archkg handoff-signoff` refresh it with quality and signoff summaries. The
   page links to copied artifacts and repeats package boundary warnings for a
   novice review engineer.
+- P52-01 adds a manager checklist export. `archkg handoff-manager-checklist
+  PACKAGE_DIR --manager NAME` writes `handoff_manager_checklist.json` and
+  `handoff_manager_checklist.md` inside the handoff package, deriving
+  `manager_ready`, `manager_needs_info`, or `manager_blocked` from the package
+  manifest, handoff quality gate, and reviewer signoff. The static package
+  page is refreshed with the manager checklist summary.
 
 ### Still limited
 
@@ -317,6 +323,9 @@ and keeps the no-OCR transparency warning.
 - Handoff package `index.html` is a static navigation surface over copied
   artifacts. It does not introduce new evidence, mutate source runs, or turn a
   package-level ready/signoff state into drawing compliance.
+- `handoff_manager_checklist.v1` is a package-management acceptance aid only.
+  It summarizes whether the evidence bundle can enter the next review step; it
+  does not confirm candidate issues or certify drawing compliance.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan

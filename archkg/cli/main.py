@@ -1073,6 +1073,47 @@ def handoff_signoff_cmd(
     )
 
 
+@app.command("handoff-manager-checklist")
+def handoff_manager_checklist_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to summarize for manager intake.",
+    ),
+    manager: str = typer.Option(
+        ...,
+        "--manager",
+        help="Manager name or initials to record in the package-local checklist.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Free-form manager note. This is package-local and not a compliance certificate.",
+    ),
+) -> None:
+    """Write package-local manager checklist notes without mutating source run artifacts."""
+    from archkg.viewer.handoff_package import write_handoff_manager_checklist
+
+    try:
+        checklist_path = write_handoff_manager_checklist(
+            package_dir,
+            manager=manager,
+            note=note,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(checklist_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={checklist_path} "
+        f"manager={payload['manager']} status={payload['status']}"
+    )
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

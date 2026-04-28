@@ -8,6 +8,7 @@ from typer.testing import CliRunner
 from archkg.cli.main import app
 from archkg.viewer.handoff_package import (
     build_handoff_package_quality,
+    write_handoff_manager_checklist,
     write_handoff_package,
     write_handoff_package_quality_json,
     write_handoff_package_quality_markdown,
@@ -305,6 +306,102 @@ def test_handoff_static_index_surfaces_quality_and_signoff(tmp_path: Path) -> No
     assert "needs_info" in html
     assert "missing section height" in html
     assert "not a compliance certificate" in html
+
+
+def test_handoff_manager_checklist_writes_package_only_export(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    original_issues = (run_dir / "issues.json").read_text("utf-8")
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-d",
+        status="ready",
+        note="Ready for manager intake.",
+    )
+
+    checklist_path = write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-a",
+        note="Accept package for review queue.",
+    )
+
+    assert checklist_path == package_dir / "handoff_manager_checklist.json"
+    assert (package_dir / "handoff_manager_checklist.md").exists()
+    assert (run_dir / "issues.json").read_text("utf-8") == original_issues
+    assert not (run_dir / "handoff_manager_checklist.json").exists()
+
+    payload = json.loads(checklist_path.read_text("utf-8"))
+    assert payload["schema_version"] == "handoff_manager_checklist.v1"
+    assert payload["mutation_policy"] == "package_checklist_only_no_source_run_mutation"
+    assert payload["manager"] == "manager-a"
+    assert payload["status"] == "manager_ready"
+    assert payload["source_run_dir"] == str(run_dir.resolve())
+    assert payload["summary"]["quality_status"] == "handoff_ready"
+    assert payload["summary"]["signoff_status"] == "ready"
+    assert "not a compliance certificate" in payload["boundary_warning"]
+    item_statuses = {item["id"]: item["status"] for item in payload["checklist_items"]}
+    assert item_statuses["handoff_quality_ready"] == "pass"
+    assert item_statuses["reviewer_signoff_ready"] == "pass"
+    assert item_statuses["required_artifacts_present"] == "pass"
+
+    markdown = (package_dir / "handoff_manager_checklist.md").read_text("utf-8")
+    assert "# Handoff Manager Checklist" in markdown
+    assert "manager_ready" in markdown
+    assert "handoff_quality_ready" in markdown
+
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "handoff_manager_checklist.v1" in html
+    assert "manager_ready" in html
+    assert "manager-a" in html
+
+
+def test_handoff_manager_checklist_cli_writes_needs_info(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-e",
+        status="needs_info",
+        note="Need missing section.",
+        blockers=["missing section"],
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "handoff-manager-checklist",
+            str(package_dir),
+            "--manager",
+            "manager-b",
+            "--note",
+            "Hold until section is attached.",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "handoff_manager_checklist.v1" in result.output
+    assert "status=manager_needs_info" in result.output
+    assert (package_dir / "handoff_manager_checklist.json").exists()
+    assert (package_dir / "handoff_manager_checklist.md").exists()
+
+    payload = json.loads((package_dir / "handoff_manager_checklist.json").read_text("utf-8"))
+    assert payload["status"] == "manager_needs_info"
+    assert "reviewer signoff needs_info" in payload["open_items"]
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "manager_needs_info" in html
+    assert "manager-b" in html
 
 
 def _write_minimal_run(run_dir: Path) -> None:

@@ -11,6 +11,7 @@ from typing import Any
 SCHEMA_VERSION = "handoff_package.v1"
 QUALITY_SCHEMA_VERSION = "handoff_package_quality.v1"
 SIGNOFF_SCHEMA_VERSION = "handoff_reviewer_signoff.v1"
+MANAGER_CHECKLIST_SCHEMA_VERSION = "handoff_manager_checklist.v1"
 
 MUTATION_POLICY = "copy_artifacts_only_no_source_run_mutation"
 
@@ -317,6 +318,7 @@ def write_handoff_index(
     *,
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
+    manager_checklist: dict[str, Any] | None = None,
 ) -> Path:
     package_dir = package_dir.resolve()
     manifest = _load_manifest(package_dir / "handoff_manifest.json")
@@ -327,6 +329,7 @@ def write_handoff_index(
         manifest,
         quality=quality,
         signoff=signoff,
+        manager_checklist=manager_checklist,
     )
 
 
@@ -335,9 +338,11 @@ def render_handoff_index_html(
     *,
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
+    manager_checklist: dict[str, Any] | None = None,
 ) -> str:
     quality = quality if isinstance(quality, dict) else {}
     signoff = signoff if isinstance(signoff, dict) else {}
+    manager_checklist = manager_checklist if isinstance(manager_checklist, dict) else {}
     artifact_rows = _artifact_rows(manifest)
     available_count = sum(1 for row in artifact_rows if row.get("status") == "available")
     required_missing = _str_list(manifest.get("missing_required_artifacts"))
@@ -345,6 +350,7 @@ def render_handoff_index_html(
     signoff_status = _str(signoff.get("status")) or "not_recorded"
     signoff_schema = _str(signoff.get("schema_version")) or "not_recorded"
     signoff_note = _str(signoff.get("note")) or "No reviewer signoff note recorded yet."
+    manager_status = _str(manager_checklist.get("status")) or "not_recorded"
 
     lines = [
         "<!doctype html>",
@@ -360,7 +366,7 @@ def render_handoff_index_html(
         "h1{font-size:26px;margin:0 0 8px}",
         "h2{font-size:16px;margin:0 0 12px}",
         ".muted{color:#5d6b82}",
-        ".grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}",
+        ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0}",
         ".panel{border:1px solid #d8deea;background:#fff;border-radius:8px;padding:14px;margin:12px 0}",
         ".kpi{border:1px solid #d8deea;background:#fff;border-radius:8px;padding:12px}",
         ".kpi b{display:block;font-size:20px;margin-top:4px}",
@@ -371,7 +377,7 @@ def render_handoff_index_html(
         "a{color:#174ea6;text-decoration:none}a:hover{text-decoration:underline}",
         ".pill{display:inline-block;border:1px solid #c8d1e2;border-radius:999px;padding:3px 8px;background:#f6f8fc;font-size:12px}",
         "ul{margin:8px 0 0;padding-left:18px}",
-        "@media(max-width:820px){.grid{grid-template-columns:1fr 1fr}.page{padding:14px}}",
+        "@media(max-width:820px){.page{padding:14px}}",
         "</style>",
         "</head>",
         "<body>",
@@ -385,6 +391,7 @@ def render_handoff_index_html(
         _kpi("Artifacts", f"{available_count}/{len(artifact_rows)} available", "ok"),
         _kpi("Quality", quality_status, _status_class(quality_status)),
         _kpi("Signoff", signoff_status, _status_class(signoff_status)),
+        _kpi("Manager", manager_status, _status_class(manager_status)),
         "</section>",
         '<section class="panel">',
         "<h2>Package Boundaries</h2>",
@@ -420,6 +427,21 @@ def render_handoff_index_html(
     lines.extend(
         [
             '<p><a href="reviewer_signoff.json">reviewer_signoff.json</a> · <a href="reviewer_signoff.md">reviewer_signoff.md</a></p>',
+            "</section>",
+            '<section class="panel">',
+            "<h2>Manager Checklist</h2>",
+            f"<p><b>Schema:</b> {_html(_str(manager_checklist.get('schema_version')) or 'not_recorded')}</p>",
+            f"<p><b>Manager:</b> {_html(_str(manager_checklist.get('manager')) or 'not_recorded')}</p>",
+            f"<p><b>Status:</b> <span class=\"pill\">{_html(manager_status)}</span></p>",
+            f"<p>{_html(_str(manager_checklist.get('boundary_warning')) or 'Manager checklist is not a compliance certificate.')}</p>",
+        ]
+    )
+    open_items = _str_list(manager_checklist.get("open_items"))
+    if open_items:
+        lines.extend(["<ul>", *[f"<li>{_html(item)}</li>" for item in open_items], "</ul>"])
+    lines.extend(
+        [
+            '<p><a href="handoff_manager_checklist.json">handoff_manager_checklist.json</a> · <a href="handoff_manager_checklist.md">handoff_manager_checklist.md</a></p>',
             "</section>",
             '<section class="panel">',
             "<h2>Artifacts</h2>",
@@ -521,6 +543,118 @@ def render_handoff_reviewer_signoff_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def write_handoff_manager_checklist(
+    package_dir: Path,
+    *,
+    manager: str,
+    note: str = "",
+) -> Path:
+    package_dir = package_dir.resolve()
+    payload = build_handoff_manager_checklist(
+        package_dir,
+        manager=manager,
+        note=note,
+    )
+    path = package_dir / "handoff_manager_checklist.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    (package_dir / "handoff_manager_checklist.md").write_text(
+        render_handoff_manager_checklist_markdown(payload),
+        encoding="utf-8",
+    )
+    write_handoff_index(package_dir, manager_checklist=payload)
+    return path
+
+
+def build_handoff_manager_checklist(
+    package_dir: Path,
+    *,
+    manager: str,
+    note: str = "",
+) -> dict[str, Any]:
+    package_dir = package_dir.resolve()
+    manifest = _load_manifest(package_dir / "handoff_manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
+    quality = _load_optional_json(package_dir / "handoff_quality.json") or {}
+    signoff = _load_optional_json(package_dir / "reviewer_signoff.json") or {}
+    items = _manager_checklist_items(manifest, quality, signoff)
+    open_items = [
+        _str(item.get("detail"))
+        for item in items
+        if item.get("status") != "pass" and _str(item.get("detail"))
+    ]
+    status = _manager_status(items)
+    artifact_rows = _artifact_rows(manifest)
+    return {
+        "schema_version": MANAGER_CHECKLIST_SCHEMA_VERSION,
+        "created_at": datetime.now(UTC).isoformat(),
+        "package_dir": str(package_dir),
+        "source_run_dir": _str(manifest.get("source_run_dir")),
+        "mutation_policy": "package_checklist_only_no_source_run_mutation",
+        "manager": manager,
+        "status": status,
+        "note": note,
+        "summary": {
+            "quality_status": _str(quality.get("status")) or "missing",
+            "signoff_status": _str(signoff.get("status")) or "missing",
+            "missing_required_count": len(_str_list(manifest.get("missing_required_artifacts"))),
+            "artifact_available_count": sum(
+                1 for row in artifact_rows if row.get("status") == "available"
+            ),
+            "artifact_total_count": len(artifact_rows),
+        },
+        "checklist_items": items,
+        "open_items": open_items,
+        "boundary_warning": (
+            "Manager checklist is a package acceptance aid, not a compliance certificate; "
+            "it does not mutate source run artifacts or confirm candidate issues."
+        ),
+    }
+
+
+def render_handoff_manager_checklist_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Handoff Manager Checklist",
+        "",
+        f"Manager: `{_str(payload.get('manager'))}`",
+        f"Status: `{_str(payload.get('status'))}`",
+        f"Mutation policy: `{_str(payload.get('mutation_policy'))}`",
+        "",
+        _str(payload.get("boundary_warning")),
+        "",
+        "## Summary",
+        "",
+    ]
+    raw_summary = payload.get("summary")
+    summary: dict[str, Any] = raw_summary if isinstance(raw_summary, dict) else {}
+    lines.extend(
+        [
+            f"- Quality: `{_str(summary.get('quality_status'))}`",
+            f"- Reviewer signoff: `{_str(summary.get('signoff_status'))}`",
+            f"- Available artifacts: `{summary.get('artifact_available_count')}/{summary.get('artifact_total_count')}`",
+            f"- Missing required artifacts: `{summary.get('missing_required_count')}`",
+            "",
+            "## Checklist",
+            "",
+            "| Item | Status | Detail |",
+            "|---|---|---|",
+        ]
+    )
+    for item in _list_of_dicts(payload.get("checklist_items")):
+        lines.append(
+            "| "
+            f"`{_str(item.get('id'))}` | "
+            f"{_str(item.get('status'))} | "
+            f"{_str(item.get('detail'))} |"
+        )
+    open_items = _str_list(payload.get("open_items"))
+    if open_items:
+        lines.extend(["", "## Open Items", ""])
+        lines.extend(f"- {item}" for item in open_items)
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _copy_artifact(
     run_dir: Path,
     artifacts_dir: Path,
@@ -554,6 +688,7 @@ def _write_handoff_index_from_payloads(
     *,
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
+    manager_checklist: dict[str, Any] | None = None,
 ) -> Path:
     quality = quality if quality is not None else _load_optional_json(
         package_dir / "handoff_quality.json"
@@ -561,9 +696,19 @@ def _write_handoff_index_from_payloads(
     signoff = signoff if signoff is not None else _load_optional_json(
         package_dir / "reviewer_signoff.json"
     )
+    manager_checklist = (
+        manager_checklist
+        if manager_checklist is not None
+        else _load_optional_json(package_dir / "handoff_manager_checklist.json")
+    )
     path = package_dir / "index.html"
     path.write_text(
-        render_handoff_index_html(manifest, quality=quality, signoff=signoff),
+        render_handoff_index_html(
+            manifest,
+            quality=quality,
+            signoff=signoff,
+            manager_checklist=manager_checklist,
+        ),
         encoding="utf-8",
     )
     return path
@@ -646,6 +791,72 @@ def _check(severity: str, passed: bool, details: list[str]) -> dict[str, Any]:
     return {"severity": severity, "passed": passed, "details": details}
 
 
+def _manager_checklist_items(
+    manifest: dict[str, Any],
+    quality: dict[str, Any],
+    signoff: dict[str, Any],
+) -> list[dict[str, str]]:
+    missing_required = _str_list(manifest.get("missing_required_artifacts"))
+    quality_status = _str(quality.get("status")) or "missing"
+    signoff_status = _str(signoff.get("status")) or "missing"
+    boundary_check = _check_boundary_warnings_present(manifest)
+    return [
+        _manager_item(
+            "required_artifacts_present",
+            "pass" if not missing_required else "fail",
+            "all required artifacts present"
+            if not missing_required
+            else f"missing required artifacts: {', '.join(missing_required)}",
+        ),
+        _manager_item(
+            "handoff_quality_ready",
+            _quality_manager_item_status(quality_status),
+            f"handoff quality {quality_status}",
+        ),
+        _manager_item(
+            "reviewer_signoff_ready",
+            _signoff_manager_item_status(signoff_status),
+            f"reviewer signoff {signoff_status}",
+        ),
+        _manager_item(
+            "boundary_warnings_present",
+            "pass" if boundary_check["passed"] else "fail",
+            "boundary warnings present"
+            if boundary_check["passed"]
+            else "; ".join(_str_list(boundary_check.get("details"))),
+        ),
+    ]
+
+
+def _manager_item(item_id: str, status: str, detail: str) -> dict[str, str]:
+    return {"id": item_id, "status": status, "detail": detail}
+
+
+def _quality_manager_item_status(status: str) -> str:
+    if status == "handoff_ready":
+        return "pass"
+    if status == "handoff_ready_with_warnings":
+        return "needs_info"
+    return "fail" if status == "not_ready" else "needs_info"
+
+
+def _signoff_manager_item_status(status: str) -> str:
+    if status == "ready":
+        return "pass"
+    if status == "blocked":
+        return "fail"
+    return "needs_info"
+
+
+def _manager_status(items: list[dict[str, str]]) -> str:
+    statuses = {_str(item.get("status")) for item in items}
+    if "fail" in statuses:
+        return "manager_blocked"
+    if "needs_info" in statuses:
+        return "manager_needs_info"
+    return "manager_ready"
+
+
 def _kpi(label: str, value: str, class_name: str = "") -> str:
     class_attr = f" {class_name}" if class_name else ""
     return (
@@ -657,11 +868,16 @@ def _kpi(label: str, value: str, class_name: str = "") -> str:
 
 
 def _status_class(status: str) -> str:
-    if status in {"handoff_ready", "ready"}:
+    if status in {"handoff_ready", "ready", "manager_ready"}:
         return "ok"
-    if status in {"not_ready", "blocked"}:
+    if status in {"not_ready", "blocked", "manager_blocked"}:
         return "bad"
-    if status in {"handoff_ready_with_warnings", "needs_info", "not_run"}:
+    if status in {
+        "handoff_ready_with_warnings",
+        "manager_needs_info",
+        "needs_info",
+        "not_run",
+    }:
         return "warn"
     return ""
 
@@ -712,6 +928,12 @@ def _artifact_rows(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     return [dict(item) for item in raw if isinstance(item, dict)]
 
 
+def _list_of_dicts(raw: object) -> list[dict[str, Any]]:
+    if not isinstance(raw, list):
+        return []
+    return [dict(item) for item in raw if isinstance(item, dict)]
+
+
 def _str_list(raw: object) -> list[str]:
     if not isinstance(raw, list):
         return []
@@ -733,16 +955,20 @@ def _html_attr(raw: object) -> str:
 __all__ = [
     "ARTIFACTS",
     "BOUNDARY_WARNINGS",
+    "MANAGER_CHECKLIST_SCHEMA_VERSION",
     "MUTATION_POLICY",
     "QUALITY_SCHEMA_VERSION",
     "SCHEMA_VERSION",
     "SIGNOFF_SCHEMA_VERSION",
+    "build_handoff_manager_checklist",
     "build_handoff_package_quality",
     "render_handoff_index_html",
+    "render_handoff_manager_checklist_markdown",
     "render_handoff_package_quality_markdown",
     "render_handoff_reviewer_signoff_markdown",
     "render_handoff_summary",
     "write_handoff_index",
+    "write_handoff_manager_checklist",
     "write_handoff_package",
     "write_handoff_package_quality_json",
     "write_handoff_package_quality_markdown",

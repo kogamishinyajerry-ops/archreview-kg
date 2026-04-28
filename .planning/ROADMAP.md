@@ -178,6 +178,12 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - P51-01 complete: `archkg handoff-package` writes package-root `index.html`; `archkg handoff-check` and `archkg handoff-signoff` refresh quality/signoff summaries in that page.
 - Guardrail: the static view is navigation only; it does not create evidence, mutate source runs, or certify compliance.
 
+### P52: Manager Checklist Export
+
+- Give a review manager a package-level intake checklist derived from manifest, handoff quality, and reviewer signoff.
+- P52-01 complete: `archkg handoff-manager-checklist` writes `handoff_manager_checklist.v1` JSON/Markdown and refreshes the static package index.
+- Guardrail: manager status is package-intake status only; it does not confirm candidate issues or certify drawing compliance.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

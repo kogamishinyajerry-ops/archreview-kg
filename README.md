@@ -60,6 +60,7 @@ archkg viewer -o out --source samples/sample_clean.pdf
 archkg handoff-package out/ -o out-handoff
 archkg handoff-check out-handoff --out out-handoff/handoff_quality.json --markdown out-handoff/handoff_quality.md
 archkg handoff-signoff out-handoff --reviewer reviewer-name --status needs_info --note "缺少剖面净高证据"
+archkg handoff-manager-checklist out-handoff --manager manager-name --note "等待补齐剖面证据"
 open out-handoff/index.html
 ```
 
@@ -68,7 +69,8 @@ open out-handoff/index.html
 `handoff-check` 会独立检查 manifest schema、只读策略、必需 artifact、复制件存在性和边界提醒。
 `handoff-signoff` 只在交接包内写 `reviewer_signoff.json` / `.md`，用于记录 ready / needs_info / blocked
 状态、阻塞项和下一步；它不是合规证书，也不回写源 run。
-`index.html` 是静态只读入口，会汇总 package boundary、quality、signoff 和 artifact 链接。
+`handoff-manager-checklist` 只在交接包内写 manager checklist，用于负责人快速判断包能否进入下一轮复核。
+`index.html` 是静态只读入口，会汇总 package boundary、quality、signoff、manager checklist 和 artifact 链接。
 
 ---
 
@@ -385,6 +387,7 @@ archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks
 archkg handoff-package out/ -o out-handoff
 archkg handoff-check out-handoff
 archkg handoff-signoff out-handoff --reviewer reviewer-name --status ready --note "交接包可进入复核"
+archkg handoff-manager-checklist out-handoff --manager manager-name --note "进入复核队列"
 open out-handoff/index.html
 
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
@@ -440,6 +443,7 @@ archkg clause readiness
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
 - P50：Package reviewer signoff notes。`archkg handoff-signoff <package-dir>` 在交接包内写 `reviewer_signoff.json` / `.md`，记录 ready / needs_info / blocked、阻塞项、待补信息和下一步；不修改源 run，也不确认合规。
 - P51：Static handoff package review view。`archkg handoff-package` 生成 `index.html`，`handoff-check` 和 `handoff-signoff` 会刷新它；新手 reviewer 可直接打开静态页面查看边界、质量门禁、复核备注和 artifact 链接。
+- P52：Manager checklist export。`archkg handoff-manager-checklist <package-dir>` 在交接包内写 `handoff_manager_checklist.json` / `.md`，由 manifest、quality 和 signoff 推导 `manager_ready` / `manager_needs_info` / `manager_blocked`；它是交接管理信号，不是合规结论。
 
 ---
 

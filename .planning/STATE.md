@@ -41,12 +41,13 @@ Status:
 - P49-01 is complete: `archkg handoff-check` now validates handoff package schema, copy-only policy, required artifacts, copied files, and boundary warnings into `handoff_package_quality.v1`.
 - P50-01 is complete: `archkg handoff-signoff` now writes package-local reviewer signoff JSON/Markdown notes without mutating the source run.
 - P51-01 is complete: handoff packages now include a package-root static `index.html`, and handoff quality/signoff commands refresh that browser entry.
+- P52-01 is complete: `archkg handoff-manager-checklist` now writes package-local manager checklist JSON/Markdown and refreshes the static package index.
 
 ## Current Phase
 
-P51: Static handoff package review view.
+P52: Manager checklist export.
 
-P51 is complete. Handoff packages now have a static browser entry for boundary warnings, quality state, reviewer signoff, and artifact links without running a server or changing source run artifacts.
+P52 is complete. Handoff packages now have manager-level intake status derived from package manifest, handoff quality, and reviewer signoff without mutating source run artifacts.
 
 ## Key Decisions
 
@@ -81,8 +82,9 @@ P51 is complete. Handoff packages now have a static browser entry for boundary w
 - P49 handoff package quality validates package completeness and boundaries only; it is not a release-readiness or drawing-compliance gate.
 - P50 reviewer signoff notes are package-local handoff notes only; `ready` does not mean the drawing is compliant.
 - P51 static handoff `index.html` is a navigation surface only; it does not create new evidence or replace source-run artifacts.
+- P52 manager checklist status is package-intake status only; `manager_ready` does not mean the drawing is compliant.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P51 by adding a package-level checklist export for review managers, or by expanding the real complex benchmark set with another reviewed expected inventory.
+Move beyond P52 by adding a concise manager-facing package archive manifest, or by expanding the real complex benchmark set with another reviewed expected inventory.
