@@ -31,12 +31,13 @@ Status:
 - P41-03 is complete: `archkg review-state` now performs bounded single-issue review-state updates for primary `issues.json` issues, refreshes `review_workbench.json`, and leaves `issues.json` / per-sheet preview issues / rule output unchanged.
 - P41-04 is complete: Viewer/Studio can focus first-page primary issue bboxes on source, entity overlay, and annotated previews from the issue list without changing rule output or review state.
 - P42-01 is complete: `archkg review-diff` writes read-only `review_diff.json` artifacts comparing two runs' primary `issues.json` candidates as unchanged, changed, new, or resolved without using generated issue/entity IDs.
+- P42-02 is complete: Viewer/Studio now load `review_diff.json` and render diff status in the workbench and issue list while keeping the artifact read-only.
 
 ## Current Phase
 
 P42: Re-run diff and resolution tracking.
 
-P42-01 adds a CLI-level revision diff artifact. It is intentionally limited to primary `issues.json` candidates and does not mutate either run, `review_state.json`, rule output, or per-sheet preview issues.
+P42 is complete. The tool can compare two primary review runs, write `review_diff.json`, and surface unchanged / changed / new / resolved status in Viewer/Studio without mutating review state.
 
 ## Key Decisions
 
@@ -63,8 +64,9 @@ P42-01 adds a CLI-level revision diff artifact. It is intentionally limited to p
 - P41-04 focus is first-page only; multi-page issue focus must wait for multi-page preview rendering to avoid false visual localization.
 - P42-01 duplicate matching is deterministic but still heuristic for multiple same-rule same-page candidates; it uses spatial/evidence ordering because generated entity IDs are not stable across runs.
 - `review_diff.json` is not a compliance proof and does not resolve human review states automatically.
+- P42-02 renders missing diff as "not run yet"; reviewers must still inspect diff rows before marking review_state items resolved or superseded.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move to P42-02: render `review_diff.json` in Viewer/Studio/workbench so revision status is visible next to issue review state. Keep diff read-only, and do not merge per-sheet preview issues into final compliance output until issue IDs, review state linkage, and report grouping are explicitly promoted.
+Move to P43 release readiness gate. Define a readiness rubric based on real benchmark evidence, rule-input readiness, sheet artifacts, issue lifecycle, re-run diff behavior, and known gaps; do not claim broad real-drawing compliance readiness from rule count alone.

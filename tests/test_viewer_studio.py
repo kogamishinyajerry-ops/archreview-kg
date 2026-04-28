@@ -487,6 +487,30 @@ def test_standalone_viewer_renders_review_state_and_missing_state_warning(
     assert "缺失复核状态不代表已确认" in body
 
 
+def test_standalone_viewer_renders_review_diff_status(tmp_path: Path) -> None:
+    from archkg.review_diff import build_review_diff, write_review_diff
+    from archkg.viewer.server import _render_index
+    from archkg.viewer.studio import run_pipeline
+
+    before_dir = tmp_path / "before"
+    after_dir = tmp_path / "after"
+    run_pipeline(SAMPLE_PDF, before_dir)
+    run_pipeline(SAMPLE_PDF, after_dir)
+    write_review_diff(
+        build_review_diff(before_dir, after_dir),
+        after_dir / "review_diff.json",
+    )
+
+    index_path = _render_index(after_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "Re-run Diff" in body
+    assert "review_diff.json" in body
+    assert "未变化" in body
+    assert "Diff 未变化 · unchanged" in body
+    assert "只读 revision tracking" in body
+
+
 def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     tmp_path: Path,
 ) -> None:

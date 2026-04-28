@@ -525,6 +525,10 @@
   .review-needs-info { color: #ffcd75; border-color: rgba(255, 184, 75, .55); background: rgba(255, 184, 75, .12); }
   .review-resolved { color: #8acbff; border-color: rgba(92, 200, 255, .55); background: rgba(92, 200, 255, .12); }
   .review-superseded { color: #b4bfd3; border-color: rgba(154, 168, 188, .55); background: rgba(154, 168, 188, .12); }
+  .diff-unchanged { color: #7fffc1; border-color: rgba(75, 211, 123, .55); background: rgba(75, 211, 123, .12); }
+  .diff-changed { color: #ffcd75; border-color: rgba(255, 184, 75, .55); background: rgba(255, 184, 75, .12); }
+  .diff-new { color: #8acbff; border-color: rgba(92, 200, 255, .55); background: rgba(92, 200, 255, .12); }
+  .diff-resolved { color: #b4bfd3; border-color: rgba(154, 168, 188, .55); background: rgba(154, 168, 188, .12); }
   .issue-message {
     margin: 8px 0 0;
     color: #dbe7fc;
@@ -695,6 +699,7 @@
 {% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
 {% set review_workbench = review_workbench | default({'available': false, 'summary': {}, 'artifact_statuses': [], 'action_links': [], 'review_state_operations': {'available': false, 'commands': [], 'allowed_statuses': [], 'omitted_count': 0, 'note': ''}, 'warnings': ['review_workbench.json 暂无数据；请查看下方单项 evidence 面板。'], 'next_actions': []}, true) %}
+{% set review_diff = review_diff | default({'available': false, 'summary_rows': [], 'issue_statuses': {}, 'items': [], 'resolved_items': [], 'omitted_count': 0, 'warning_text': 'review_diff.json 暂无数据；尚未执行 archkg review-diff。', 'note': ''}, true) %}
 {% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
 {% set issue_focus = issue_focus | default({'available': false, 'items': {}, 'omitted_count': 0, 'warning_text': '图面定位暂无数据'}, true) %}
 {% set sheet_classification = sheet_classification | default({'available': false, 'summary_rows': [], 'pages': [], 'warning_text': 'sheet_classification.json 暂无数据; 缺失分类不代表可直接进入 graph.', 'unavailable_reason': 'missing'}, true) %}
@@ -954,6 +959,43 @@
           {% endif %}
         {% else %}
           <div class="metric-note">暂无可更新的主 issue review-state。</div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>Re-run Diff</h3>
+        {% if review_diff.available %}
+          <div class="metric-note">{{ review_diff.note }}</div>
+          <div class="bar-list" style="margin: 10px 0;">
+            {% for row in review_diff.summary_rows %}
+              <div class="bar-row">
+                <span class="bar-label">{{ row.status_label }} · {{ row.status }}</span>
+                <span class="bar-value">{{ row.count }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          {% if review_diff["items"] %}
+            <table>
+              <thead><tr><th>status</th><th>before</th><th>after</th><th>rule</th><th>changed fields</th></tr></thead>
+              <tbody>
+                {% for row in review_diff["items"] %}
+                  <tr>
+                    <td><span class="status-pill {{ row.status_class }}">{{ row.status_label }}</span></td>
+                    <td><code>{{ row.before_issue_id or '—' }}</code></td>
+                    <td><code>{{ row.after_issue_id or '—' }}</code></td>
+                    <td><code>{{ row.rule_card_id }}</code></td>
+                    <td>{{ row.changed_fields | join(', ') if row.changed_fields else '—' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% if review_diff.omitted_count %}
+              <div class="metric-note">另有 {{ review_diff.omitted_count }} 条 diff item 未展开；完整列表见 <code>review_diff.json</code>。</div>
+            {% endif %}
+          {% endif %}
+          <div class="metric-note">{{ review_diff.warning_text }}</div>
+        {% else %}
+          <div class="metric-note">{{ review_diff.warning_text }}</div>
+          <div class="metric-note">命令：<code>archkg review-diff &lt;before_run&gt; &lt;after_run&gt; -o &lt;after_run&gt;/review_diff.json</code></div>
         {% endif %}
       </div>
       <div class="metric-card">
@@ -1710,6 +1752,14 @@
   <h2>③ Issues ({% if mode is defined and mode == "inspect_only" %}规则未跑{% else %}{{ issues|length }}{% endif %})</h2>
   {% if not (mode is defined and mode == "inspect_only") %}
     <p style="color: {% if review_state.available %}var(--muted){% else %}var(--orange){% endif %};">复核状态：{{ review_state.warning_text }}</p>
+    {% if review_diff.available %}
+      <p style="color: var(--muted);">Re-run diff：{{ review_diff.warning_text }}</p>
+      <div class="bar-list" style="margin-bottom: 14px;">
+        {% for row in review_diff.summary_rows %}
+          <div class="bar-row"><span class="bar-label">{{ row.status_label }} · {{ row.status }}</span><span class="bar-value">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    {% endif %}
     {% if review_state.summary_rows %}
       <div class="bar-list" style="margin-bottom: 14px;">
         {% for row in review_state.summary_rows %}
@@ -1726,6 +1776,7 @@
       {% set issue_tier = issue_tiers.get(i.rule_card_id, "UNKNOWN") %}
       {% set issue_tier_class = issue_tier | lower | replace('_', '-') %}
       {% set issue_review = review_state.issue_states.get(i.issue_id, review_state.default_state) %}
+      {% set issue_diff = review_diff.issue_statuses.get(i.issue_id) %}
       {% set focus_item = issue_focus["items"].get(i.issue_id) %}
         <article class="issue-item tier-{{ issue_tier_class }}" id="issue-{{ i.issue_id }}">
         <div class="line">
@@ -1737,6 +1788,9 @@
             <button class="focus-button" type="button" data-focus-issue="{{ i.issue_id }}">定位图面</button>
           {% endif %}
           <span class="status-pill {{ issue_review.status_class }}">复核状态 {{ issue_review.status_label }} · {{ issue_review.status }}</span>
+          {% if issue_diff %}
+            <span class="status-pill {{ issue_diff.status_class }}">Diff {{ issue_diff.status_label }} · {{ issue_diff.status }}</span>
+          {% endif %}
           <span class="pill">{{ i.rule_card_id }}</span>
           <span class="pill tier-pill tier-{{ issue_tier_class }}">{{ issue_tier }}</span>
           <span class="pill">{{ i.standard_clause_id }}</span>
@@ -1749,6 +1803,9 @@
         {% if issue_review.reviewer or issue_review.note %}
           <p class="issue-message">reviewer {{ issue_review.reviewer or '—' }}{% if issue_review.note %} · {{ issue_review.note }}{% endif %}</p>
         {% endif %}
+        {% if issue_diff and issue_diff.changed_fields %}
+          <p class="issue-message">diff changed_fields: {{ issue_diff.changed_fields | join(', ') }}</p>
+        {% endif %}
       </article>
       {% endfor %}
     </div>
@@ -1760,6 +1817,7 @@
     <a href="entity_graph.json" target="_blank">entity_graph.json</a>
     {% if not (mode is defined and mode == "inspect_only") %}<a href="issues.json" target="_blank">issues.json</a>{% endif %}
     {% if not (mode is defined and mode == "inspect_only") %}<a href="review_state.json" target="_blank">review_state.json</a>{% endif %}
+    {% if review_diff.available %}<a href="review_diff.json" target="_blank">review_diff.json</a>{% endif %}
     <a href="primitives.json" target="_blank">primitives.json</a>
     <a href="report.md" target="_blank">report.md</a>
     {% if not (mode is defined and mode == "inspect_only") %}<a href="feedback.yaml" target="_blank">feedback.yaml</a>{% endif %}

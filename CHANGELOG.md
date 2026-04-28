@@ -199,6 +199,10 @@ and keeps the no-OCR transparency warning.
   of per-run `issue_id` or entity ID values, and marks items as unchanged,
   changed, new, or resolved without mutating either run, `review_state.json`,
   or per-sheet preview issues.
+- P42-02 renders `review_diff.json` in Viewer/Studio. The workbench shows
+  unchanged / changed / new / resolved counts and sample rows, while current
+  issue rows get read-only diff status pills. Missing diff artifacts are
+  explained as "diff not run yet", not as "no changes".
 
 ### Still limited
 

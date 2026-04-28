@@ -126,7 +126,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 
 - Compare two runs and mark issues as unchanged, changed, resolved, or new.
 - P42-01 complete: `archkg review-diff` writes read-only `review_diff.json` over primary `issues.json` candidates without relying on generated issue/entity IDs.
-- Next: surface the diff in Viewer/Studio/workbench without auto-mutating `review_state.json`.
+- P42-02 complete: Viewer/Studio/workbench render diff summaries and per-current-issue status pills without auto-mutating `review_state.json`.
 
 ### P43: Release Readiness Gate
 
