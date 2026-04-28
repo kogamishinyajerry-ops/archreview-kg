@@ -130,6 +130,11 @@ def review(
         build_review_workbench,
         write_review_workbench,
     )
+    from archkg.viewer.reviewer_onboarding import (
+        build_reviewer_onboarding,
+        write_reviewer_onboarding_json,
+        write_reviewer_quickstart_markdown,
+    )
     from archkg.viewer.rule_readiness import build_rule_readiness_view
 
     out.mkdir(parents=True, exist_ok=True)
@@ -341,6 +346,20 @@ def review(
         review_workbench,
         out / "review_workbench.json",
     )
+    reviewer_onboarding = build_reviewer_onboarding(
+        run_dir=out,
+        source_pdf=pdf,
+        review_workbench=review_workbench,
+        mode="full",
+    )
+    reviewer_onboarding_path = write_reviewer_onboarding_json(
+        reviewer_onboarding,
+        out / "reviewer_onboarding.json",
+    )
+    reviewer_quickstart_path = write_reviewer_quickstart_markdown(
+        reviewer_onboarding,
+        out / "reviewer_quickstart.md",
+    )
 
     annotated = annotate_pdf(pdf, result.issues, out / "annotated.pdf")
     report_path = render_report(
@@ -361,6 +380,7 @@ def review(
         sheet_issues=sheet_issues.model_dump(mode="json"),
         review_state=review_state,
         review_workbench=review_workbench,
+        reviewer_onboarding=reviewer_onboarding,
     )
     _print_review_summary(
         out_dir=out,
@@ -382,6 +402,8 @@ def review(
         readiness_path=readiness_path,
         review_state_path=review_state_path,
         review_workbench_path=review_workbench_path,
+        reviewer_onboarding_path=reviewer_onboarding_path,
+        reviewer_quickstart_path=reviewer_quickstart_path,
         sheet_candidates_path=sheet_candidates_path,
         sheet_candidates_overlay_path=sheet_candidates_overlay_path,
     )
@@ -408,6 +430,8 @@ def _print_review_summary(
     readiness_path: Path | None = None,
     review_state_path: Path | None = None,
     review_workbench_path: Path | None = None,
+    reviewer_onboarding_path: Path | None = None,
+    reviewer_quickstart_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
     sheet_candidates_overlay_path: Path | None = None,
 ) -> None:
@@ -545,6 +569,10 @@ def _print_review_summary(
         art.add_row("issue review state", str(review_state_path))
     if review_workbench_path is not None:
         art.add_row("review workbench", str(review_workbench_path))
+    if reviewer_onboarding_path is not None:
+        art.add_row("reviewer onboarding", str(reviewer_onboarding_path))
+    if reviewer_quickstart_path is not None:
+        art.add_row("reviewer quickstart", str(reviewer_quickstart_path))
     if sheet_candidates_path is not None:
         art.add_row("sheet region candidates", str(sheet_candidates_path))
     if sheet_candidates_overlay_path is not None:
@@ -558,6 +586,7 @@ def _print_review_summary(
             f"下一步：\n"
             f"  • 打开 [bold]{annotated_path}[/bold] 看红框标注\n"
             f"  • 打开 [bold]{report_path}[/bold] 看可复核的问题清单\n"
+            f"  • 打开 [bold]{out_dir / 'reviewer_quickstart.md'}[/bold] 按第一小时流程复核\n"
             f"  • 用 [bold]archkg review-state {out_dir} <issue_id> --status confirmed[/bold] 更新复核状态\n"
             f"  • 或编辑 report.md 后跑 [bold]archkg feedback {out_dir} --apply[/bold] 生成反馈用例",
             title="✅ 审图完成",

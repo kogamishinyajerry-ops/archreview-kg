@@ -30,12 +30,13 @@ archkg studio
 
 # 选 2: CLI 一键 demo
 archkg demo --meta --room-schedule --stair-schedule
-archkg viewer -d out
+archkg viewer -o out --source samples/sample_clean.pdf
 ```
 
 `out/` 下会有：
 - `annotated.pdf` — 标注红框 + 文字说明的 PDF
 - `report.md` — 中文复核报告（违规清单 + 人工核对提醒分区）
+- `reviewer_quickstart.md` — 新手审图工程师第一小时上手清单
 - `issues.json` — 结构化问题清单（rule_id / bbox / severity / 证据）
 - `review_state.json` — 人工复核状态层（candidate / confirmed / rejected / needs_info / resolved / superseded），不回写 `issues.json`
 - `review_diff.json` — 两次 run 的主 `issues.json` 差异追踪（unchanged / changed / new / resolved），由 `archkg review-diff` 生成；Viewer/Studio 会显示，但不回写任一 run
@@ -151,6 +152,11 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > 输出只标记 `unchanged`、`changed`、`new`、`resolved`。Viewer/Studio 会在工作台和 issue 行显示这些状态，但不会自动修改
 > `review_state.json` 或把 per-sheet preview issue 升级为主问题。
 >
+> **新手审图上手包**: P46 起完整审图会生成 `reviewer_onboarding.json` 与
+> `reviewer_quickstart.md`，把 source/overlay 核对、component inventory、readiness blockers、
+> sheet scope、candidate issues、review-state 操作和交接检查组织成“第一小时流程”。它只是 reviewer
+> guidance，不确认 issue、不修改规则输出，也不扩大合规宣称。
+>
 > **Release readiness gate**: 对外演示或发布前，可运行
 > `archkg release-readiness --manifest samples/understanding_benchmarks/suite_manifest.json --run-dir out/ --out out/release_readiness.json --markdown out/release_readiness.md`
 > 生成门禁报告。当前门禁把 active benchmark suite、至少一张 active 真实图纸、核心 run artifacts
@@ -179,7 +185,7 @@ archkg review your-plan.pdf -o out/ \
   --room-schedule rooms.yaml \
   --stair-schedule stairs.yaml   # 可选：楼梯踏步/踢面/扶手等
 
-archkg viewer -d out/
+archkg viewer -o out/ --source your-plan.pdf
 
 # 可选：对“识别到了什么”跑 benchmark（不评估规范纠错）
 archkg understanding-benchmark out/ \
@@ -204,6 +210,9 @@ archkg release-readiness \
   --run-dir out/ \
   --out out/release_readiness.json \
   --markdown out/release_readiness.md
+
+# 新手审图工程师第一小时 runbook
+open docs/reviewer/novice-reviewer-playbook.md
 ```
 
 P40 起，expected spec 也可以检查多页套图证据：`sheet_graphs.graph_count`、per-sheet component counts、
@@ -346,6 +355,9 @@ archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks
 # P45: packaged suite 当前 active=5, pending=0, known_gap=0
 # Medfield full-set case 只证明多页识图 evidence 已可追踪，不代表多页合规聚合已完成
 
+# P46: 每次完整 review run 生成 reviewer_onboarding.json / reviewer_quickstart.md
+# 用于新手审图工程师第一小时上手，不确认 issue、不改规则结论
+
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
 
@@ -362,6 +374,9 @@ archkg clause readiness
   并把后续路线收敛到 rule-input readiness、sheet 区域候选、issue lifecycle 和 IFC/IDS side lane。
 - [P32 后重大转向路线图](docs/strategy/2026-04-28-major-pivot-roadmap.md) —
   将项目主线从“扩大规则/识别数量”转为“证据优先的审图可信度平台”。
+- [新手审图工程师第一小时 Playbook](docs/reviewer/novice-reviewer-playbook.md) —
+  面向第一次接触本工具的审图工程师，说明如何从 Viewer / quickstart / readiness / review-state
+  完成首轮复核和交接。
 
 ---
 
@@ -390,6 +405,7 @@ archkg clause readiness
 - P43：Release readiness gate。`archkg release-readiness` 汇总 benchmark suite 与代表性 run artifacts，输出 `not_ready` / `demo_ready_with_known_gaps` / `evidence_ready`，把 known gaps、pending rows 和 generated-heavy proof 从发布宣称里显式剥离。
 - P44：Real drawing benchmark promotion。`drawing_understanding.json` 合并 `sheet_graphs.json` 的多页识图计数，Medfield full-set 从 known_gap 晋升为 active；P44 结束时 release-readiness 只剩 pending row warning。
 - P45：Release readiness tightening。`sample_clean_full` toy fixture 从 manual row 固化为 active reproducible fixture；packaged suite 当前 active=5、pending=0、known_gap=0，代表性 run artifacts 完整时可得到 `evidence_ready`，但宣称范围仍限于 benchmarked drawing classes。
+- P46：Novice reviewer onboarding。完整审图 run 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`，报告和 Viewer 显示第一小时流程、常用命令、边界提醒和交接检查，让新手审图工程师按 evidence 顺序上手。
 
 ---
 

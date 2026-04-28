@@ -78,6 +78,33 @@ review_workbench.json 暂无数据；请查看下方单项 evidence 面板。
 完整数据见 `review_workbench.json`。
 {% endif %}
 
+## 新手审图上手包
+
+{% if not reviewer_onboarding %}
+reviewer_onboarding.json 暂无数据；请先按 `review_workbench.json` 和本报告逐项复核。
+{% else %}
+> {{ reviewer_onboarding.note }}
+
+完整上手文档见 `reviewer_quickstart.md`；机器可读数据见 `reviewer_onboarding.json`。
+
+### 第一小时流程
+
+| # | 步骤 | 入口 | 完成标准 |
+|---:|---|---|---|
+{% for step in reviewer_onboarding.first_hour_steps %}| {{ loop.index }} | {{ step.title }} | `{{ step.artifact }}` / {{ step.target }} | {{ step.done_when }} |
+{% endfor %}
+
+### 不要这样宣称
+
+{% for item in reviewer_onboarding.do_not_claim %}- {{ item }}
+{% endfor %}
+
+### 交接前检查
+
+{% for item in reviewer_onboarding.handoff_checklist %}- {{ item }}
+{% endfor %}
+{% endif %}
+
 ## 规则输入就绪度
 
 {% if not rule_readiness or not rule_readiness.available %}

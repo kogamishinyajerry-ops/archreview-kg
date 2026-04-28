@@ -35,12 +35,13 @@ Status:
 - P43-01 is complete: `archkg release-readiness` evaluates benchmark suite evidence and representative run artifacts into `not_ready`, `demo_ready_with_known_gaps`, or `evidence_ready` without using rule count as the maturity metric.
 - P44-01 is complete: `drawing_understanding.json` can merge `sheet_graphs.json` aggregate counts as multi-sheet recognition evidence, promoting the Medfield full 9-page real public plan/elevation set from known_gap to active benchmark.
 - P45-01 is complete: the remaining `sample_clean_full` manual toy suite row is now a committed active fixture, allowing packaged release-readiness to reach `evidence_ready` when representative run artifacts are complete.
+- P46-01 is complete: full review runs now write reviewer onboarding and quickstart artifacts, and Viewer/report render a first-hour path for novice plan-review engineers.
 
 ## Current Phase
 
-P45: Release readiness tightening.
+P46: Novice reviewer onboarding.
 
-P45 is complete. The packaged understanding suite now reports active=5, pending=0, known_gap=0, failed=0; `archkg release-readiness` reports blockers=0 warnings=0 active=5 real_active=2 known_gap=0 when a representative run includes all core and maturity artifacts.
+P46 is complete. New runs include `reviewer_onboarding.json` and `reviewer_quickstart.md`, so a novice reviewer can follow source/overlay, inventory, readiness, sheet scope, candidate issue, review-state, and handoff steps without reading internal implementation notes first.
 
 ## Key Decisions
 
@@ -69,8 +70,9 @@ P45 is complete. The packaged understanding suite now reports active=5, pending=
 - `review_diff.json` is not a compliance proof and does not resolve human review states automatically.
 - P42-02 renders missing diff as "not run yet"; reviewers must still inspect diff rows before marking review_state items resolved or superseded.
 - P43-P45 only gate evidence currently represented in the benchmark suite and run directory. They do not certify arbitrary complex real drawings; `evidence_ready` means constrained pilot readiness for benchmarked drawing classes only.
+- P46 onboarding artifacts are guidance-only; they do not confirm issues, mutate rule output, or certify compliance.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P45 by improving multi-page reviewer maturity: either promote a bounded per-sheet preview issue lifecycle bridge or add another reviewed real complex drawing benchmark before broadening external claims.
+Move beyond P46 by hardening real-project handoff: either add another reviewed real complex benchmark, or promote a bounded per-sheet preview review bridge that keeps preview issues separate from primary lifecycle.

@@ -14,6 +14,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   review state 和 re-run diff 证据判断能否演示；P45 后当前 packaged suite 可在代表性 run
   artifacts 完整时进入 `evidence_ready`。这个状态仍只适用于已 benchmark 的图纸类别，不是任意复杂
   真实图纸自动审批证明。
+- P46 后每次完整 review run 会生成 `reviewer_onboarding.json` / `reviewer_quickstart.md`，
+  把新手审图工程师的第一小时复核路径固化为 artifact。
 
 复现该结论：
 
@@ -42,7 +44,7 @@ archkg release-readiness \
 release-readiness status=evidence_ready blockers=0 warnings=0 active=5 real_active=2 known_gap=0
 ```
 
-这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff”
+这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包”
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
 P45 清理了最后一个 packaged `manual_run_required` toy row，使 release gate 的技术前提完整。
 但 per-sheet preview issues 还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
@@ -187,6 +189,8 @@ archkg studio
   opening evidence 来自 `sheet_graphs.json` 的多页计数汇总，不代表 per-sheet issue 已自动进入主审图结论。
 - P45 已把 `sample_clean_full` toy row 从 `manual_run_required` 固化为 deterministic active fixture：
   packaged suite 当前 active=5、pending=0、known_gap=0。它只清理可复现门禁，不扩大真实图纸能力宣称。
+- P46 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`：完整 review run 会生成新手第一小时流程、
+  常用命令、不要误宣称的边界和交接清单；该 artifact 是 guidance-only，不确认 issue、不修改规则结论。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
@@ -258,6 +262,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   full-set recognition evidence；该 evidence 不会自动合并 per-sheet issues 到主 `issues.json`。
 - P45 起，packaged release gate 可在代表性 run artifacts 完整时输出 `evidence_ready`；该状态应解释为
   “benchmarked drawing classes 的受限试点证据就绪”，而不是 production certification。
+- P46 起，readiness gate 也把 reviewer onboarding artifacts 视为 maturity evidence；交付前不仅要看模型输出，
+  还要看新手能否按 `reviewer_quickstart.md` 完成复核与交接。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

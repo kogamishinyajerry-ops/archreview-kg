@@ -409,6 +409,11 @@ def run_pipeline(
         build_review_workbench,
         write_review_workbench,
     )
+    from archkg.viewer.reviewer_onboarding import (
+        build_reviewer_onboarding,
+        write_reviewer_onboarding_json,
+        write_reviewer_quickstart_markdown,
+    )
     from archkg.viewer.rule_readiness import build_rule_readiness_view
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -630,6 +635,20 @@ def run_pipeline(
             sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
         )
         write_review_workbench(review_workbench, out_dir / "review_workbench.json")
+        reviewer_onboarding = build_reviewer_onboarding(
+            run_dir=out_dir,
+            source_pdf=pdf_path,
+            review_workbench=review_workbench,
+            mode="inspect_only",
+        )
+        write_reviewer_onboarding_json(
+            reviewer_onboarding,
+            out_dir / "reviewer_onboarding.json",
+        )
+        write_reviewer_quickstart_markdown(
+            reviewer_onboarding,
+            out_dir / "reviewer_quickstart.md",
+        )
         _render_viewer_index(
             out_dir, pdf_path,
             quality_flags=quality_flags,
@@ -688,6 +707,20 @@ def run_pipeline(
         sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
     )
     write_review_workbench(review_workbench, out_dir / "review_workbench.json")
+    reviewer_onboarding = build_reviewer_onboarding(
+        run_dir=out_dir,
+        source_pdf=pdf_path,
+        review_workbench=review_workbench,
+        mode="full",
+    )
+    write_reviewer_onboarding_json(
+        reviewer_onboarding,
+        out_dir / "reviewer_onboarding.json",
+    )
+    write_reviewer_quickstart_markdown(
+        reviewer_onboarding,
+        out_dir / "reviewer_quickstart.md",
+    )
 
     annotated = annotate_pdf(pdf_path, result.issues, out_dir / "annotated.pdf")
     render_report(
@@ -708,6 +741,7 @@ def run_pipeline(
         sheet_issues=sheet_issues.model_dump(mode="json"),
         review_state=review_state,
         review_workbench=review_workbench,
+        reviewer_onboarding=reviewer_onboarding,
     )
 
     if annotated.exists():

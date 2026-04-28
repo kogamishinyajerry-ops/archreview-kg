@@ -32,6 +32,8 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "sheet_region_candidates_overlay.png",
         "issues.json",
         "review_state.json",
+        "reviewer_onboarding.json",
+        "reviewer_quickstart.md",
         "annotated.pdf",
         "report.md",
     ]
@@ -80,6 +82,28 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         for row in workbench["artifact_statuses"]
         if row["status"] == "missing"
     }
+    onboarding = json.loads((out_dir / "reviewer_onboarding.json").read_text("utf-8"))
+    assert onboarding["schema_version"] == "reviewer_onboarding.v1"
+    assert onboarding["audience"] == "novice_review_engineer"
+    assert onboarding["artifact_policy"] == "guidance_only"
+    step_ids = [step["step_id"] for step in onboarding["first_hour_steps"]]
+    assert step_ids[:4] == [
+        "open_workbench",
+        "verify_source_overlay",
+        "check_component_inventory",
+        "resolve_readiness_blockers",
+    ]
+    assert "review_candidate_issues" in step_ids
+    assert "update_review_state" in step_ids
+    assert any("缺输入不等于通过" in item for item in onboarding["do_not_claim"])
+    assert any(
+        command["command"].startswith("archkg viewer")
+        for command in onboarding["commands"]
+    )
+    quickstart = (out_dir / "reviewer_quickstart.md").read_text("utf-8")
+    assert "# 新手审图工程师上手包" in quickstart
+    assert "第一小时流程" in quickstart
+    assert "缺输入不等于通过" in quickstart
 
     issues = json.loads((out_dir / "issues.json").read_text(encoding="utf-8"))
     review_state = json.loads((out_dir / "review_state.json").read_text(encoding="utf-8"))
@@ -203,6 +227,9 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "#panel-readiness" in md
     assert "处理 readiness blockers" in md
     assert "review_workbench.json" in md
+    assert "新手审图上手包" in md
+    assert "第一小时流程" in md
+    assert "reviewer_quickstart.md" in md
     assert "缺输入不等于通过" in md
     assert "Sheet 分类" in md
     assert "sheet_classification.json" in md

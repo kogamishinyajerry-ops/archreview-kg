@@ -527,6 +527,10 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "审图工作台总览" in body
     assert "Action Surface" in body
     assert "Review-State Ops" in body
+    assert "新手上手" in body
+    assert "第一小时流程" in body
+    assert "reviewer_quickstart.md" in body
+    assert "缺输入不等于通过" in body
     assert "archkg review-state &lt;run_dir&gt;" in body
     assert "定位图面" in body
     assert "data-focus-issue=" in body

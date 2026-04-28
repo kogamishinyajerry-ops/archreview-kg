@@ -143,6 +143,11 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Remove remaining packaged suite pending/manual rows without weakening evidence gates.
 - P45-01 complete: `sample_clean_full` is now a committed deterministic active toy fixture; packaged suite reports active=5, pending=0, known_gap=0, and release-readiness can produce `evidence_ready` for benchmarked drawing classes when representative run artifacts are complete.
 
+### P46: Novice Reviewer Onboarding
+
+- Make a generated review run understandable to a first-time plan-review engineer.
+- P46-01 complete: full review runs and Studio runs write `reviewer_onboarding.json` and `reviewer_quickstart.md`; report and Viewer render the first-hour flow, boundary reminders, common commands, and handoff checklist.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

@@ -88,6 +88,8 @@ def _collect_run_snapshot(run_dir: Path) -> dict[str, Any]:
             "entity_graph.json",
             "drawing_understanding.json",
             "review_workbench.json",
+            "reviewer_onboarding.json",
+            "reviewer_quickstart.md",
             "sheet_graphs.json",
             "sheet_issues.json",
             "rule_input_readiness.json",

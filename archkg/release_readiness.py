@@ -27,6 +27,8 @@ EVIDENCE_RUN_ARTIFACTS: tuple[str, ...] = (
     "sheet_graphs.json",
     "sheet_issues.json",
     "sheet_region_candidates.json",
+    "reviewer_onboarding.json",
+    "reviewer_quickstart.md",
     "review_diff.json",
 )
 

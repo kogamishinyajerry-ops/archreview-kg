@@ -224,6 +224,13 @@ and keeps the no-OCR transparency warning.
   `archkg release-readiness` can reach `evidence_ready` when representative run
   artifacts are complete. This removes a reproducibility gap only; it does not
   make toy evidence a proxy for arbitrary real construction drawings.
+- P46-01 adds novice reviewer onboarding artifacts. Full review runs and Studio
+  runs now write `reviewer_onboarding.json` plus `reviewer_quickstart.md`, and
+  render the first-hour review path in `report.md` and Viewer. The pack gives
+  a new plan-review engineer a stable order for checking source/overlay,
+  component inventory, readiness blockers, sheet scope, candidate issues,
+  review-state commands, and handoff notes. It is guidance-only and does not
+  mutate rule output or confirm defects.
 
 ### Still limited
 
@@ -262,6 +269,10 @@ and keeps the no-OCR transparency warning.
   certification. An `evidence_ready` result must still be scoped to the
   benchmarked drawing classes and cannot be marketed as broad automatic
   compliance readiness.
+- `reviewer_onboarding.json` and `reviewer_quickstart.md` are onboarding
+  surfaces, not compliance evidence by themselves. They help reviewers inspect
+  existing evidence in order; they do not validate the drawing or confirm
+  candidate issues.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan

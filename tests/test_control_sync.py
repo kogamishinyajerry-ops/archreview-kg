@@ -30,6 +30,14 @@ def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> 
         '{"schema_version":"review_workbench.v1"}',
         encoding="utf-8",
     )
+    (tmp_path / "reviewer_onboarding.json").write_text(
+        '{"schema_version":"reviewer_onboarding.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "reviewer_quickstart.md").write_text(
+        "# quickstart",
+        encoding="utf-8",
+    )
     (tmp_path / "review_diff.json").write_text(
         '{"schema_version":"review_diff.v1"}',
         encoding="utf-8",
@@ -48,6 +56,8 @@ def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> 
     assert "sheet_graphs.json" in snapshot["artifacts"]
     assert "sheet_issues.json" in snapshot["artifacts"]
     assert "review_workbench.json" in snapshot["artifacts"]
+    assert "reviewer_onboarding.json" in snapshot["artifacts"]
+    assert "reviewer_quickstart.md" in snapshot["artifacts"]
     assert "review_diff.json" in snapshot["artifacts"]
     assert "release_readiness.json" in snapshot["artifacts"]
     assert "scratch.txt" not in snapshot["artifacts"]
