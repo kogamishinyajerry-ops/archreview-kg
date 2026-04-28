@@ -22,6 +22,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from archkg.viewer.preview_pages import PreviewPage
+
 
 def _knowledge_overview() -> dict[str, object]:
     """Small knowledge-base summary for the result dashboard."""
@@ -395,11 +397,12 @@ def serve(
             layer="annotated",
             legacy_name="annotated_preview.png",
         )
+    overlay_pages = _render_overlay_preview_pages(out_dir, source_pdf)
     write_preview_pages_manifest(
         out_dir,
         source_pages=source_pages,
         annotated_pages=annotated_pages,
-        overlay_available=(out_dir / "entity_overlay.png").exists(),
+        overlay_pages=overlay_pages,
     )
     if not (out_dir / "source.pdf").exists() or (
         out_dir / "source.pdf"
@@ -421,3 +424,39 @@ def serve(
             httpd.serve_forever()
         except KeyboardInterrupt:
             print("\nviewer · stopping (Ctrl-C)")
+
+
+def _render_overlay_preview_pages(out_dir: Path, source_pdf: Path) -> list[PreviewPage]:
+    from archkg.graph.builder import EntityGraph
+    from archkg.viewer.preview_pages import render_entity_overlay_preview_pages
+
+    graph_path = out_dir / "entity_graph.json"
+    if not graph_path.exists():
+        return []
+    try:
+        primary_graph = EntityGraph.model_validate(
+            json.loads(graph_path.read_text("utf-8"))
+        )
+    except Exception:
+        return []
+    graphs = [primary_graph]
+    sheet_graphs_path = out_dir / "sheet_graphs.json"
+    if sheet_graphs_path.exists():
+        try:
+            raw_sheet_graphs = json.loads(sheet_graphs_path.read_text("utf-8"))
+        except json.JSONDecodeError:
+            raw_sheet_graphs = {}
+        if isinstance(raw_sheet_graphs, dict):
+            raw_entries = raw_sheet_graphs.get("graphs")
+            if isinstance(raw_entries, list):
+                for entry in raw_entries:
+                    if not isinstance(entry, dict):
+                        continue
+                    raw_graph = entry.get("graph")
+                    if not isinstance(raw_graph, dict):
+                        continue
+                    try:
+                        graphs.append(EntityGraph.model_validate(raw_graph))
+                    except Exception:
+                        continue
+    return render_entity_overlay_preview_pages(source_pdf, out_dir, graphs=graphs)

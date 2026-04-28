@@ -36,6 +36,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   切换 source / annotated 多页预览：非第一页 issue 可直接切到对应页高亮，避免第一页假定位。
 - P58 后 `archkg handoff-package` 会把多页 preview manifest 及其引用页图复制进交接包；
   缺少 manifest 引用的页图会成为 handoff quality blocker。
+- P59 后 Viewer/Studio 会为 graph-backed sheet 生成多页 entity overlay 预览，并把这些页图纳入
+  `preview_pages.json` 和 handoff 复制链路；没有 graph 的页仍需 source/annotated/PDF 人工核对。
 
 复现该结论：
 
@@ -323,8 +325,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不表示任何 candidate issue 已确认或图纸合规。
 - P55 起，release-readiness 仍要求真实图纸证据不少于生成样本证据；新增 generated mixed-sheet-set
   没有放宽该 guardrail，而是同时补入第二张 Medfield 真实单页 expected inventory。
-- P57 起，source / annotated 静态 PNG 预览已经支持多页切换；但 `entity_overlay.png`
-  仍只渲染第一页，且 preview pages 只是导航/复核辅助，不能当成合规结论。
+- P57/P59 起，source / annotated / graph-backed entity overlay 静态 PNG 预览已经支持多页切换；
+  preview pages 只是导航/复核辅助，不能当成合规结论或完整识图证明。
 - P58 起，交接包会保全多页 preview assets；这只提升包内静态 viewer 可用性，
   不表示 candidate issue 已确认或图纸合规。
 

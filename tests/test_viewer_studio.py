@@ -270,6 +270,29 @@ def test_run_pipeline_renders_sheet_region_candidate_panel(tmp_path: Path) -> No
     assert "不自动裁剪" in html
 
 
+def test_run_pipeline_writes_multi_page_entity_overlay_manifest(
+    tmp_path: Path,
+) -> None:
+    out_dir = tmp_path / "out"
+    run_pipeline(
+        REPO_ROOT / "samples" / "generated_complex_sheet_set.pdf",
+        out_dir,
+        project_meta_path=SAMPLE_META,
+        min_room_area_m2=1.0,
+    )
+
+    preview_pages = json.loads((out_dir / "preview_pages.json").read_text("utf-8"))
+    overlay_pages = preview_pages["layers"]["overlay"]
+
+    assert preview_pages["page_count"] == 4
+    assert [page["page_index"] for page in overlay_pages] == [0, 2]
+    assert overlay_pages[0]["src"] == "entity_overlay.png"
+    assert overlay_pages[1]["src"] == "entity_overlay_page_3.png"
+    assert (out_dir / "entity_overlay.png").exists()
+    assert (out_dir / "entity_overlay_page_3.png").exists()
+    assert "entity_overlay_page_3.png" in (out_dir / "index.html").read_text("utf-8")
+
+
 def test_post_review_min_room_area_filter_passes_through(studio_client) -> None:
     """Phase 19-D: ``min_room_area_m2`` form field threads from the
     studio form into the builder's room-area noise filter. With a 100
@@ -656,7 +679,24 @@ def test_standalone_viewer_renders_second_page_issue_focus(
                 "layer": "annotated",
             },
         ],
-        overlay_available=False,
+        overlay_pages=[
+            {
+                "page_index": 0,
+                "page_number": 1,
+                "src": "entity_overlay.png",
+                "width_px": 100,
+                "height_px": 50,
+                "layer": "overlay",
+            },
+            {
+                "page_index": 1,
+                "page_number": 2,
+                "src": "entity_overlay_page_2.png",
+                "width_px": 200,
+                "height_px": 100,
+                "layer": "overlay",
+            },
+        ],
     )
 
     body = _render_index(out_dir, SAMPLE_PDF).read_text("utf-8")
@@ -666,6 +706,7 @@ def test_standalone_viewer_renders_second_page_issue_focus(
     assert 'data-focus-preview-supported="true"' in body
     assert "source_preview_page_2.png" in body
     assert "annotated_preview_page_2.png" in body
+    assert "entity_overlay_page_2.png" in body
     assert "preview_pages.json" in body
 
 

@@ -123,6 +123,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Add first-page issue-to-preview cross-highlighting so reviewers can jump from primary issues to source/overlay/annotated visual evidence.
 - P56-01 complete: issue focus is now sheet-aware. First-page issues still highlight on the preview layer; non-first-page issues keep the correct page number and bbox and route reviewers to PDF page review rather than being projected onto the first-page PNG.
 - P57-01 complete: Viewer/Studio now write `preview_pages.json` and multi-page source/annotated PNG page sets. Reviewers can switch pages, and non-first-page primary issues can focus the corresponding page preview directly.
+- P59-01 complete: entity overlay previews now render per graph-backed sheet, so the page switcher can show overlay imagery beyond the legacy first page when `sheet_graphs.json` has a routed graph.
 
 ### P42: Re-Run Diff and Resolution Tracking
 
@@ -221,6 +222,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Copy all source/annotated/overlay preview assets referenced by `preview_pages.json` into the package `artifacts/` directory.
 - Fail handoff quality when a preview manifest references a missing page image.
 - Guardrail: copied preview assets support package review only; they do not confirm issues or certify compliance.
+
+### P59: Per-Page Entity Overlay Rendering
+
+- Render entity overlay PNGs for every graph-backed sheet while preserving the legacy `entity_overlay.png` filename for the primary graph.
+- Record overlay page entries in `preview_pages.json` so Viewer/Studio can switch overlay images by sheet page and focus non-first-page issue context without broken preview links.
+- Keep handoff packaging manifest-driven so overlay page images referenced by `preview_pages.json` are copied and validated automatically.
+- Guardrail: overlay pages are reviewer orientation aids only. They do not create new detections, certify OCR/component accuracy, or promote per-sheet preview issues into the primary issue lifecycle.
 
 ## Explicit Not-Build List
 

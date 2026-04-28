@@ -172,7 +172,7 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > `archkg review-state` 可受限更新主 `issues.json` 对应的 `review_state.json`，不会修改 `issues.json`、per-sheet preview issues 或规则引擎结论。
 > Viewer/Studio 还会按 `page_index` 映射主 issue bbox，并生成 `preview_pages.json`：
 > source / annotated 预览支持多页切换，非第一页 issue 可直接切到对应页并高亮 bbox；
-> entity overlay 目前仍是第一页预览，非第一页 overlay 证据需看 source/annotated/PDF。
+> entity overlay 也会为 graph-backed 图纸页生成多页预览；没有 graph 的页仍需看 source/annotated/PDF。
 >
 > **Re-run diff**: 修图后重跑审图，可用
 > `archkg review-diff out/run-before out/run-after -o out/run-after/review_diff.json`
@@ -441,14 +441,14 @@ archkg clause readiness
 - P38：multi-sheet classification。`sheet_classification.json` 先把多页套图中的 plan / schedule / title / legend / detail / elevation / unknown 作为路由证据展示；`sheet_routing.json` 再以保守条件把单一高置信 plan 页送入 graph，否则回退 legacy 全页输入。
 - P39：multi-plan graph outputs。`sheet_graphs.json` 为每个高置信 plan sheet 生成独立 graph 证据；`sheet_issues.json` 生成 per-sheet candidate issue preview。主 `entity_graph.json`、`issues.json` 和 `review_state.json` 暂不自动聚合多 plan 页。
 - P40：benchmark expansion。Understanding benchmark suite 现在能校验 multi-plan artifacts，并新增 `generated-multi-plan-sheets` active case；真实 Medfield full plan set 先以 `known_gap` 登记，暴露 full-set opening evidence 尚未进入 primary drawing-understanding 的缺口。
-- P41/P56/P57：Studio readiness workbench。`review_workbench.json` 与结果页“审图工作台总览”把分散 evidence 汇总成 reviewer 入口，提供 action links 跳到对应面板，提供 `archkg review-state` 本地复核状态操作模板，并支持按页 issue bbox 定位；source/annotated 预览可多页切换，非第一页 primary issue 可切到对应页高亮。主规则结论不变。
+- P41/P56/P57/P59：Studio readiness workbench。`review_workbench.json` 与结果页“审图工作台总览”把分散 evidence 汇总成 reviewer 入口，提供 action links 跳到对应面板，提供 `archkg review-state` 本地复核状态操作模板，并支持按页 issue bbox 定位；source/annotated 预览可多页切换，graph-backed entity overlay 也可按页切换，非第一页 primary issue 可切到对应页高亮。主规则结论不变。
 - P42：Re-run diff / resolution tracking。`archkg review-diff` 比较两个 run 的主 `issues.json`，写出 `review_diff.json`，不用随机 issue/entity IDs，改用稳定指纹标记 unchanged / changed / new / resolved；Viewer/Studio 只读显示 diff，不回写规则输出或人工复核状态。
 - P43：Release readiness gate。`archkg release-readiness` 汇总 benchmark suite 与代表性 run artifacts，输出 `not_ready` / `demo_ready_with_known_gaps` / `evidence_ready`，把 known gaps、pending rows 和 generated-heavy proof 从发布宣称里显式剥离。
 - P44：Real drawing benchmark promotion。`drawing_understanding.json` 合并 `sheet_graphs.json` 的多页识图计数，Medfield full-set 从 known_gap 晋升为 active；P44 结束时 release-readiness 只剩 pending row warning。
 - P45：Release readiness tightening。`sample_clean_full` toy fixture 从 manual row 固化为 active reproducible fixture；packaged suite 当前 active=5、pending=0、known_gap=0，代表性 run artifacts 完整时可得到 `evidence_ready`，但宣称范围仍限于 benchmarked drawing classes。
 - P46：Novice reviewer onboarding。完整审图 run 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`，报告和 Viewer 显示第一小时流程、常用命令、边界提醒和交接检查，让新手审图工程师按 evidence 顺序上手。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
-- P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、source/annotated 多页 preview assets 等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
+- P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
 - P50：Package reviewer signoff notes。`archkg handoff-signoff <package-dir>` 在交接包内写 `reviewer_signoff.json` / `.md`，记录 ready / needs_info / blocked、阻塞项、待补信息和下一步；不修改源 run，也不确认合规。
 - P51：Static handoff package review view。`archkg handoff-package` 生成 `index.html`，`handoff-check` 和 `handoff-signoff` 会刷新它；新手 reviewer 可直接打开静态页面查看边界、质量门禁、复核备注和 artifact 链接。
@@ -457,8 +457,9 @@ archkg clause readiness
 - P54：Archive verification/import check。`archkg handoff-archive-verify <package-dir>` 重算稳定包文件 checksum 并写 `handoff_archive_verification.json` / `.md`，输出 `archive_verified` 或 `archive_drift`；它用于收到包后的完整性验收，不是合规结论。
 - P55：Complex benchmark expansion。Suite 新增 Medfield A-2 Second Floor Plan 真实单页 expected inventory，以及 generated complex mixed-sheet-set；当前 active=7、real_active=3、generated_active=3，继续维持 generated-heavy proof guardrail。
 - P56：Sheet-aware issue focus。Viewer/Studio 不再把 issue focus 限定为第一页；后端按 issue `page_index` 和该页尺寸归一化 bbox，前端只对第一页画预览高亮，非第一页明确显示页码并引导打开 PDF 复核。
-- P57：Multi-page preview gallery。Viewer/Studio 写出 `preview_pages.json`、多页 source PNG 和多页 annotated PNG，结果页提供图纸页切换；非第一页 issue focus 可直接切到对应页预览并高亮。`entity_overlay.png` 仍是第一页。
+- P57：Multi-page preview gallery。Viewer/Studio 写出 `preview_pages.json`、多页 source PNG 和多页 annotated PNG，结果页提供图纸页切换；非第一页 issue focus 可直接切到对应页预览并高亮。
 - P58：Handoff preview asset completeness。交接包现在复制 `source.pdf`、`preview_pages.json`、legacy preview PNG 和 preview manifest 引用的所有页图，确保新手 reviewer 打开包内静态 viewer 时不缺图；这仍只是证据交接，不是合规证书。
+- P59：Per-page entity overlay rendering。Viewer/Studio 现在会为每个 graph-backed sheet 生成 entity overlay 页图，并写入 `preview_pages.json`；多页交接包会自动复制这些 overlay 页图。没有 graph 的页仍不是“已识别完成”。
 
 ---
 

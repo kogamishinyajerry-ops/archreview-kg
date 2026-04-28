@@ -207,6 +207,10 @@ and keeps the no-OCR transparency warning.
   `archkg handoff-package` now copies `source.pdf`, `preview_pages.json`,
   legacy preview PNGs, and every preview image referenced by the preview
   manifest; missing referenced preview images become handoff quality blockers.
+- P59-01 adds per-page entity overlay rendering for graph-backed sheets.
+  Viewer/Studio now write overlay page entries into `preview_pages.json`,
+  preserve the legacy `entity_overlay.png` for the primary graph, and rely on
+  manifest-driven handoff copying so overlay page images survive package export.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

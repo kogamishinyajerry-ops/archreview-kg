@@ -371,7 +371,7 @@ def run_pipeline(
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
     from archkg.annotate.sheet_region_overlay import render_sheet_region_candidate_overlay
-    from archkg.graph.builder import build_graph, render_overlay
+    from archkg.graph.builder import build_graph
     from archkg.graph.builder import write_json as write_graph
     from archkg.graph.sheet_graphs import build_sheet_graphs, write_sheet_graphs
     from archkg.ingest.primitive_extractor import extract as extract_pdf
@@ -528,7 +528,13 @@ def run_pipeline(
         graph = stair_schedule_apply.graph
 
     graph_path = write_graph(graph, out_dir / "entity_graph.json")
-    render_overlay(graph, pdf_path, out_dir / "entity_overlay.png")
+    from archkg.viewer.preview_pages import render_entity_overlay_preview_pages
+
+    overlay_pages = render_entity_overlay_preview_pages(
+        pdf_path,
+        out_dir,
+        graphs=[graph, *(entry.graph for entry in sheet_graphs.graphs)],
+    )
     primitives_payload = primitives.model_dump(mode="json")
     graph_payload = graph.model_dump(mode="json")
     ocr_diagnostics = build_ocr_diagnostics(primitives_payload, graph_payload)
@@ -630,7 +636,7 @@ def run_pipeline(
             out_dir,
             source_pages=source_pages,
             annotated_pages=annotated_pages,
-            overlay_available=(out_dir / "entity_overlay.png").exists(),
+            overlay_pages=overlay_pages,
         )
         report_lines = [
             "# 仅识图模式 — ArchReview-KG",
@@ -791,7 +797,7 @@ def run_pipeline(
         out_dir,
         source_pages=source_pages,
         annotated_pages=annotated_pages,
-        overlay_available=(out_dir / "entity_overlay.png").exists(),
+        overlay_pages=overlay_pages,
     )
 
     # Pre-render the existing viewer index so the redirect lands on a

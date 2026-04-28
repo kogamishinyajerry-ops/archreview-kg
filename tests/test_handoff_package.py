@@ -126,7 +126,10 @@ def test_handoff_package_copies_multi_page_preview_assets(tmp_path: Path) -> Non
                 {"page_index": 0, "src": "annotated_preview.png"},
                 {"page_index": 1, "src": "annotated_preview_page_2.png"},
             ],
-            "overlay": [{"page_index": 0, "src": "entity_overlay.png"}],
+            "overlay": [
+                {"page_index": 0, "src": "entity_overlay.png"},
+                {"page_index": 1, "src": "entity_overlay_page_2.png"},
+            ],
         },
     }
     (run_dir / "preview_pages.json").write_text(
@@ -138,6 +141,7 @@ def test_handoff_package_copies_multi_page_preview_assets(tmp_path: Path) -> Non
             '<a href="preview_pages.json">preview</a>'
             '<img src="source_preview_page_2.png">'
             '<img src="annotated_preview_page_2.png">'
+            '<img src="entity_overlay_page_2.png">'
         ),
         encoding="utf-8",
     )
@@ -148,6 +152,7 @@ def test_handoff_package_copies_multi_page_preview_assets(tmp_path: Path) -> Non
         "annotated_preview.png",
         "annotated_preview_page_2.png",
         "entity_overlay.png",
+        "entity_overlay_page_2.png",
     ):
         (run_dir / name).write_bytes(b"preview")
 
@@ -162,6 +167,7 @@ def test_handoff_package_copies_multi_page_preview_assets(tmp_path: Path) -> Non
         "annotated_preview.png",
         "annotated_preview_page_2.png",
         "entity_overlay.png",
+        "entity_overlay_page_2.png",
     ):
         assert (artifacts_dir / name).exists(), f"missing copied visual asset: {name}"
 
@@ -170,7 +176,9 @@ def test_handoff_package_copies_multi_page_preview_assets(tmp_path: Path) -> Non
     assert statuses["preview_pages.json"]["status"] == "available"
     assert statuses["source_preview_page_2.png"]["status"] == "available"
     assert statuses["annotated_preview_page_2.png"]["status"] == "available"
+    assert statuses["entity_overlay_page_2.png"]["status"] == "available"
     assert "source_preview_page_2.png" in manifest["included_artifacts"]
+    assert "entity_overlay_page_2.png" in manifest["included_artifacts"]
 
     quality = build_handoff_package_quality(package_dir)
     assert quality["status"] == "handoff_ready"

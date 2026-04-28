@@ -5,6 +5,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, TypedDict
 
+from archkg.graph.builder import EntityGraph
+
 
 class PreviewPage(TypedDict):
     page_index: int
@@ -58,16 +60,68 @@ def render_pdf_preview_pages(
     return pages
 
 
+def render_entity_overlay_preview_pages(
+    pdf: Path,
+    out_dir: Path,
+    *,
+    graphs: Sequence[EntityGraph],
+    legacy_name: str = "entity_overlay.png",
+    dpi: int = 144,
+) -> list[PreviewPage]:
+    """Render one entity overlay image per graph page.
+
+    The first graph keeps the historical ``entity_overlay.png`` filename.
+    Additional graph pages use page-indexed names so ``preview_pages.json``
+    can switch overlay images without breaking old links.
+    """
+
+    from PIL import Image
+
+    from archkg.graph.builder import render_overlay
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    unique_graphs: list[EntityGraph] = []
+    seen: set[int] = set()
+    for graph in graphs:
+        if graph.page_index in seen:
+            continue
+        unique_graphs.append(graph)
+        seen.add(graph.page_index)
+
+    pages: list[PreviewPage] = []
+    for order, graph in enumerate(unique_graphs):
+        filename = (
+            legacy_name
+            if order == 0
+            else _indexed_preview_name(legacy_name, graph.page_index)
+        )
+        out_png = render_overlay(graph, pdf, out_dir / filename, dpi=dpi)
+        with Image.open(out_png) as image:
+            width, height = image.size
+        pages.append(
+            {
+                "page_index": graph.page_index,
+                "page_number": graph.page_index + 1,
+                "src": filename,
+                "width_px": width,
+                "height_px": height,
+                "layer": "overlay",
+            }
+        )
+    return pages
+
+
 def write_preview_pages_manifest(
     out_dir: Path,
     *,
     source_pages: Sequence[PreviewPage],
     annotated_pages: Sequence[PreviewPage],
-    overlay_available: bool,
+    overlay_available: bool = False,
+    overlay_pages: Sequence[PreviewPage] | None = None,
 ) -> Path:
     source_layer = list(source_pages)
     annotated_layer = list(annotated_pages)
-    overlay_layer: list[PreviewPage] = (
+    overlay_layer: list[PreviewPage] = list(overlay_pages) if overlay_pages is not None else (
         [
             {
                 "page_index": 0,
@@ -100,7 +154,7 @@ def write_preview_pages_manifest(
         "warning_text": _warning_text(
             source_count=len(source_layer),
             annotated_count=len(annotated_layer),
-            overlay_available=overlay_available,
+            overlay_count=len(overlay_layer),
         ),
     }
     path = out_dir / "preview_pages.json"
@@ -176,16 +230,30 @@ def _warning_text(
     *,
     source_count: int,
     annotated_count: int,
-    overlay_available: bool,
+    overlay_count: int,
 ) -> str:
     if source_count and annotated_count:
-        overlay_note = "entity overlay 仍仅第一页" if overlay_available else "entity overlay 暂无预览"
+        if overlay_count > 1:
+            overlay_note = "entity overlay 多页可用"
+        elif overlay_count == 1:
+            overlay_note = "entity overlay 仍仅第一页"
+        else:
+            overlay_note = "entity overlay 暂无预览"
         return f"多页 source / annotated preview 可用; {overlay_note}。"
     if source_count:
         return "多页 source preview 可用; annotated preview 暂无多页页集。"
     if annotated_count:
         return "多页 annotated preview 可用; source preview 暂无多页页集。"
+    if overlay_count > 1:
+        return "多页 entity overlay preview 可用。"
+    if overlay_count == 1:
+        return "entity overlay preview 可用。"
     return "多页 preview 暂无数据。"
+
+
+def _indexed_preview_name(legacy_name: str, page_index: int) -> str:
+    legacy_path = Path(legacy_name)
+    return f"{legacy_path.stem}_page_{page_index + 1}{legacy_path.suffix}"
 
 
 def _str(raw: object) -> str:
@@ -199,6 +267,7 @@ def _int(raw: object) -> int:
 __all__ = [
     "PreviewPage",
     "load_preview_pages_view",
+    "render_entity_overlay_preview_pages",
     "render_pdf_preview_pages",
     "write_preview_pages_manifest",
 ]

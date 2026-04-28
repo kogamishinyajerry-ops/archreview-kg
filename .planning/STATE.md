@@ -48,12 +48,13 @@ Status:
 - P56-01 is complete: Viewer/Studio issue focus now maps primary issue bboxes by `page_index`; first-page issues still highlight on the preview layer, while non-first-page issues show the correct page and route reviewers to the PDF instead of being projected onto page 0.
 - P57-01 is complete: Viewer/Studio now write `preview_pages.json` plus multi-page source/annotated PNG page sets, render page-switch controls, and focus non-first-page issues directly on their corresponding source/annotated preview page.
 - P58-01 is complete: `archkg handoff-package` now copies `preview_pages.json`, `source.pdf`, annotated/source preview PNGs, and every page image referenced by `preview_pages.json`; missing referenced preview assets become package blockers.
+- P59-01 is complete: Viewer/Studio now render entity overlay preview pages for each graph-backed sheet, record them in `preview_pages.json`, and preserve those overlay page assets through handoff packaging.
 
 ## Current Phase
 
-P58: Handoff preview asset completeness.
+P59: Per-page entity overlay rendering.
 
-P58 is complete. Multi-page preview-enabled runs now produce handoff packages whose copied static viewer assets remain complete for novice reviewers.
+P59 is complete. Multi-page preview-enabled runs now provide source, annotated, and graph-backed entity overlay page images for static review, with handoff packages preserving all manifest-referenced preview assets.
 
 ## Key Decisions
 
@@ -77,7 +78,7 @@ P58 is complete. Multi-page preview-enabled runs now produce handoff packages wh
 - P44-01 promotes one real full-set recognition benchmark, but aggregation is count-level evidence; per-sheet candidate issues still do not enter primary `issues.json` or `review_state.json`.
 - P41-01 workbench summary is derived from current artifacts; if future artifacts are added, the summary must be extended or it can drift.
 - P41-03 direct review-state operations can still leave pre-rendered HTML stale until the viewer is re-rendered; the command refreshes `review_workbench.json`, but static `index.html` regeneration remains a separate user/viewer step.
-- P57 adds multi-page source/annotated previews, but `entity_overlay.png` is still page-0 only; overlay evidence for non-first-page issues must remain source/annotated/PDF based until per-page entity overlay rendering lands.
+- P59 renders entity overlay pages only for graph-backed sheets; pages without a routed graph still rely on source/annotated/PDF review and must not be described as fully recognized.
 - P42-01 duplicate matching is deterministic but still heuristic for multiple same-rule same-page candidates; it uses spatial/evidence ordering because generated entity IDs are not stable across runs.
 - `review_diff.json` is not a compliance proof and does not resolve human review states automatically.
 - P42-02 renders missing diff as "not run yet"; reviewers must still inspect diff rows before marking review_state items resolved or superseded.
@@ -93,10 +94,11 @@ P58 is complete. Multi-page preview-enabled runs now produce handoff packages wh
 - P54 archive verification status is checksum alignment only; `archive_verified` does not mean any issue is confirmed or the drawing is compliant.
 - P55 adds recognition benchmarks only; Medfield A-2 and generated mixed-sheet passing cases do not prove arbitrary real drawing compliance or multi-sheet issue aggregation.
 - P56 page-aware focus is a reviewer navigation aid only; it does not create new issues, change review state, or certify compliance.
-- P57 preview pages are visual navigation artifacts only; they do not create new detection evidence, mutate issue state, or make entity overlays multi-page.
+- P57/P59 preview pages are visual navigation artifacts only; they do not create new detection evidence, mutate issue state, or certify entity recognition accuracy.
 - P58 strengthens handoff completeness for preview assets only; complete copied visuals still do not certify issue correctness or drawing compliance.
+- P59 multi-page entity overlays improve reviewer orientation only; they do not promote per-sheet preview issues into primary `issues.json`.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P58 by adding per-page entity overlay rendering, a compact multi-package handoff bundle index, or stronger reviewer task sequencing across multi-sheet runs.
+Move beyond P59 by adding a compact multi-package handoff bundle index or stronger reviewer task sequencing across multi-sheet runs.
