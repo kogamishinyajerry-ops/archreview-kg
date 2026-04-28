@@ -237,6 +237,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Reject a single package directory as the bundle root so the command does not overwrite or mutate package-local review artifacts.
 - Guardrail: bundle index is manager triage only; it is not a compliance certificate, release-readiness gate, or source-run mutation path.
 
+### P61: Reviewer Task Sequencing
+
+- Generate `reviewer_task_sequence.json` and `reviewer_task_sequence.md` for full CLI and Studio runs.
+- Order reviewer work from run boundary and recognition quality, through sheet scope, readiness blockers, open primary issues, per-sheet preview review, and handoff package actions.
+- Render the ordered sequence in report and Viewer, and include it in handoff packages as entry evidence.
+- Guardrail: task sequencing is guidance only; it does not write review state, confirm issues, promote preview issues, or certify compliance.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

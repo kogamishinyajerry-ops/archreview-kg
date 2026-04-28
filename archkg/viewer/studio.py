@@ -414,6 +414,11 @@ def run_pipeline(
         write_reviewer_onboarding_json,
         write_reviewer_quickstart_markdown,
     )
+    from archkg.viewer.reviewer_task_sequence import (
+        build_reviewer_task_sequence,
+        write_reviewer_task_sequence_json,
+        write_reviewer_task_sequence_markdown,
+    )
     from archkg.viewer.rule_readiness import build_rule_readiness_view
     from archkg.viewer.sheet_issue_review_queue import (
         build_sheet_issue_review_queue,
@@ -680,6 +685,22 @@ def run_pipeline(
             reviewer_onboarding,
             out_dir / "reviewer_quickstart.md",
         )
+        reviewer_task_sequence = build_reviewer_task_sequence(
+            run_dir=out_dir,
+            source_pdf=pdf_path,
+            mode="inspect_only",
+            review_workbench=review_workbench,
+            issues=[],
+            quality_flags=quality_flags,
+        )
+        write_reviewer_task_sequence_json(
+            reviewer_task_sequence,
+            out_dir / "reviewer_task_sequence.json",
+        )
+        write_reviewer_task_sequence_markdown(
+            reviewer_task_sequence,
+            out_dir / "reviewer_task_sequence.md",
+        )
         _render_viewer_index(
             out_dir, pdf_path,
             quality_flags=quality_flags,
@@ -760,6 +781,25 @@ def run_pipeline(
         reviewer_onboarding,
         out_dir / "reviewer_quickstart.md",
     )
+    reviewer_task_sequence = build_reviewer_task_sequence(
+        run_dir=out_dir,
+        source_pdf=pdf_path,
+        mode="full",
+        review_workbench=review_workbench,
+        rule_readiness=rule_readiness.model_dump(mode="json"),
+        issues=[issue.model_dump(mode="json") for issue in result.issues],
+        review_state=review_state.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
+        quality_flags=quality_flags,
+    )
+    write_reviewer_task_sequence_json(
+        reviewer_task_sequence,
+        out_dir / "reviewer_task_sequence.json",
+    )
+    write_reviewer_task_sequence_markdown(
+        reviewer_task_sequence,
+        out_dir / "reviewer_task_sequence.md",
+    )
 
     annotated = annotate_pdf(pdf_path, result.issues, out_dir / "annotated.pdf")
     render_report(
@@ -782,6 +822,7 @@ def run_pipeline(
         review_state=review_state,
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_sequence=reviewer_task_sequence,
     )
 
     if annotated.exists():
@@ -923,6 +964,8 @@ def _render_viewer_index(
     from archkg.viewer.review_diff import load_review_diff_view
     from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.review_workbench import load_review_workbench_view
+    from archkg.viewer.reviewer_onboarding import load_reviewer_onboarding_view
+    from archkg.viewer.reviewer_task_sequence import load_reviewer_task_sequence_view
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
     from archkg.viewer.sheet_graphs import load_sheet_graphs_view
@@ -960,6 +1003,8 @@ def _render_viewer_index(
     )
     rule_readiness = load_rule_readiness_view(out_dir)
     review_workbench = load_review_workbench_view(out_dir)
+    reviewer_onboarding = load_reviewer_onboarding_view(out_dir)
+    reviewer_task_sequence = load_reviewer_task_sequence_view(out_dir)
     review_diff = load_review_diff_view(out_dir)
     review_state = load_review_state_view(out_dir, issues)
     sheet_classification = load_sheet_classification_view(out_dir)
@@ -991,6 +1036,8 @@ def _render_viewer_index(
         drawing_understanding=drawing_understanding,
         rule_readiness=rule_readiness,
         review_workbench=review_workbench,
+        reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_sequence=reviewer_task_sequence,
         review_diff=review_diff,
         review_state=review_state,
         sheet_classification=sheet_classification,

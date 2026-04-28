@@ -105,6 +105,21 @@ reviewer_onboarding.json 暂无数据；请先按 `review_workbench.json` 和本
 {% endfor %}
 {% endif %}
 
+## 复核任务序列
+
+{% if not reviewer_task_sequence %}
+reviewer_task_sequence.json 暂无数据；请先按 `reviewer_quickstart.md` 和 `review_workbench.json` 复核。
+{% else %}
+> {{ reviewer_task_sequence.boundary_warning }}
+
+完整任务队列见 `reviewer_task_sequence.md`；机器可读数据见 `reviewer_task_sequence.json`。
+
+| # | stage | priority | task | artifact | target |
+|---:|---|---:|---|---|---|
+{% for task in reviewer_task_sequence.tasks %}| {{ task.ordinal }} | `{{ task.stage }}` | {{ task.priority }} | {{ task.title }} | `{{ task.artifact }}` | {{ task.target }} |
+{% endfor %}
+{% endif %}
+
 ## 规则输入就绪度
 
 {% if not rule_readiness or not rule_readiness.available %}

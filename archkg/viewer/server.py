@@ -204,6 +204,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.review_workbench import load_review_workbench_view
     from archkg.viewer.reviewer_onboarding import load_reviewer_onboarding_view
+    from archkg.viewer.reviewer_task_sequence import load_reviewer_task_sequence_view
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
     from archkg.viewer.sheet_graphs import load_sheet_graphs_view
@@ -249,6 +250,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     rule_readiness = load_rule_readiness_view(out_dir)
     review_workbench = load_review_workbench_view(out_dir)
     reviewer_onboarding = load_reviewer_onboarding_view(out_dir)
+    reviewer_task_sequence = load_reviewer_task_sequence_view(out_dir)
     review_diff = load_review_diff_view(out_dir)
     review_state = load_review_state_view(out_dir, issues)
     sheet_classification = load_sheet_classification_view(out_dir)
@@ -288,6 +290,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         rule_readiness=rule_readiness,
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_sequence=reviewer_task_sequence,
         review_diff=review_diff,
         review_state=review_state,
         sheet_classification=sheet_classification,

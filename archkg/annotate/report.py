@@ -44,6 +44,7 @@ def render(
     review_state: IssueReviewState | dict[str, Any] | None = None,
     review_workbench: dict[str, Any] | None = None,
     reviewer_onboarding: dict[str, Any] | None = None,
+    reviewer_task_sequence: dict[str, Any] | None = None,
 ) -> Path:
     used_ids = {i.standard_clause_id for i in issues}
     clauses_used = [c for c in clauses if c.id in used_ids]
@@ -88,6 +89,7 @@ def render(
         review_state=review_state_model.model_dump(mode="json"),
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_sequence=reviewer_task_sequence,
     )
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_md.write_text(rendered, encoding="utf-8")

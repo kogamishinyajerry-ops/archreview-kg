@@ -59,6 +59,18 @@ ARTIFACTS: tuple[HandoffArtifactSpec, ...] = (
         "First-hour checklist for a novice reviewer.",
     ),
     HandoffArtifactSpec(
+        "reviewer_task_sequence.json",
+        True,
+        "entry",
+        "Machine-readable ordered review task sequence.",
+    ),
+    HandoffArtifactSpec(
+        "reviewer_task_sequence.md",
+        True,
+        "entry",
+        "Human-readable ordered review task sequence.",
+    ),
+    HandoffArtifactSpec(
         "report.md",
         True,
         "entry",

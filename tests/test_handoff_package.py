@@ -44,6 +44,8 @@ def test_handoff_package_copies_review_artifacts_without_mutating_run(
     assert "archkg review-state" in " ".join(manifest["boundary_warnings"])
     assert (package_dir / "handoff_summary.md").exists()
     assert (package_dir / "artifacts" / "reviewer_quickstart.md").exists()
+    assert (package_dir / "artifacts" / "reviewer_task_sequence.json").exists()
+    assert (package_dir / "artifacts" / "reviewer_task_sequence.md").exists()
     assert (package_dir / "artifacts" / "sheet_issue_review_queue.json").exists()
     assert (package_dir / "artifacts" / "review_diff.json").exists()
 
@@ -819,6 +821,8 @@ def _write_minimal_run(run_dir: Path) -> None:
     run_dir.mkdir()
     files = {
         "reviewer_quickstart.md": "# Quickstart\n",
+        "reviewer_task_sequence.json": '{"schema_version":"reviewer_task_sequence.v1"}',
+        "reviewer_task_sequence.md": "# Reviewer Task Sequence\n",
         "report.md": "# Report\n",
         "review_workbench.json": '{"schema_version":"review_workbench.v1"}',
         "drawing_understanding.json": '{"schema_version":"drawing_understanding.v2"}',

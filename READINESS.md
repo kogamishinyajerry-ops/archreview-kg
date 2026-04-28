@@ -40,6 +40,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   `preview_pages.json` 和 handoff 复制链路；没有 graph 的页仍需 source/annotated/PDF 人工核对。
 - P60 后负责人可对多个交接包运行 `archkg handoff-bundle-index <packages-root>`，生成批量
   `handoff_bundle_index` JSON/Markdown/HTML，用于筛出 ready / needs_info / blocked 包。
+- P61 后完整 run 会生成 `reviewer_task_sequence.json` / `.md`，按 readiness blockers、
+  主 issue、per-sheet preview、handoff 动作排序新手 reviewer 的下一步。
 
 复现该结论：
 
@@ -333,6 +335,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不表示 candidate issue 已确认或图纸合规。
 - P60 起，bundle index 只汇总多个 package 的交接状态，不写入单包或源 run；
   `bundle_ready` 不是图纸合规，也不是 release-readiness 的替代品。
+- P61 起，reviewer task sequence 只是复核顺序，不会自动确认 issue、不会写
+  `review_state.json`，也不会把 preview issue 提升为主 issue。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

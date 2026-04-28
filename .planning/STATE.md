@@ -50,12 +50,13 @@ Status:
 - P58-01 is complete: `archkg handoff-package` now copies `preview_pages.json`, `source.pdf`, annotated/source preview PNGs, and every page image referenced by `preview_pages.json`; missing referenced preview assets become package blockers.
 - P59-01 is complete: Viewer/Studio now render entity overlay preview pages for each graph-backed sheet, record them in `preview_pages.json`, and preserve those overlay page assets through handoff packaging.
 - P60-01 is complete: `archkg handoff-bundle-index` now scans a directory of handoff packages and writes bundle-level JSON/Markdown/HTML summaries without mutating individual packages or source runs.
+- P61-01 is complete: full CLI and Studio runs now write `reviewer_task_sequence.json` / `.md`, report and Viewer render the ordered review queue, and handoff packages include the sequence as entry evidence.
 
 ## Current Phase
 
-P60: Handoff bundle index.
+P61: Reviewer task sequencing.
 
-P60 is complete. Review managers can now triage multiple package directories through a compact bundle index before assigning novice reviewers or requesting missing handoff steps.
+P61 is complete. Novice reviewers now get an ordered task queue that starts with readiness blockers, continues through open primary issues and per-sheet preview review, and ends with handoff packaging steps.
 
 ## Key Decisions
 
@@ -99,8 +100,9 @@ P60 is complete. Review managers can now triage multiple package directories thr
 - P58 strengthens handoff completeness for preview assets only; complete copied visuals still do not certify issue correctness or drawing compliance.
 - P59 multi-page entity overlays improve reviewer orientation only; they do not promote per-sheet preview issues into primary `issues.json`.
 - P60 bundle indexes summarize package-local handoff state only; `bundle_ready` is not a compliance certificate, and bundle generation must not mutate single-package artifacts.
+- P61 reviewer task sequencing is order guidance only; it does not confirm issues, mutate `review_state.json`, or promote preview issues into primary lifecycle.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P60 by adding stronger reviewer task sequencing across multi-sheet runs or a package-bundle intake checklist.
+Move beyond P61 by adding a package-bundle intake checklist or a richer static manager view for task-sequence completion tracking.

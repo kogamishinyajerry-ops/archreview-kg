@@ -216,6 +216,10 @@ and keeps the no-OCR transparency warning.
   JSON, Markdown, and static HTML summaries without mutating package contents.
   The index groups packages as ready, needs-info, or blocked across quality,
   reviewer signoff, manager checklist, and archive verification state.
+- P61-01 adds reviewer task sequencing for novice review execution. Full CLI
+  and Studio runs now write `reviewer_task_sequence.json` and
+  `reviewer_task_sequence.md`, report/Viewer render the ordered queue, and
+  handoff packages copy the sequence as entry evidence.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

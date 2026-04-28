@@ -135,6 +135,11 @@ def review(
         write_reviewer_onboarding_json,
         write_reviewer_quickstart_markdown,
     )
+    from archkg.viewer.reviewer_task_sequence import (
+        build_reviewer_task_sequence,
+        write_reviewer_task_sequence_json,
+        write_reviewer_task_sequence_markdown,
+    )
     from archkg.viewer.rule_readiness import build_rule_readiness_view
     from archkg.viewer.sheet_issue_review_queue import (
         build_sheet_issue_review_queue,
@@ -372,6 +377,24 @@ def review(
         reviewer_onboarding,
         out / "reviewer_quickstart.md",
     )
+    reviewer_task_sequence = build_reviewer_task_sequence(
+        run_dir=out,
+        source_pdf=pdf,
+        mode="full",
+        review_workbench=review_workbench,
+        rule_readiness=rule_readiness.model_dump(mode="json"),
+        issues=[issue.model_dump(mode="json") for issue in result.issues],
+        review_state=review_state.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
+    )
+    reviewer_task_sequence_path = write_reviewer_task_sequence_json(
+        reviewer_task_sequence,
+        out / "reviewer_task_sequence.json",
+    )
+    reviewer_task_sequence_md_path = write_reviewer_task_sequence_markdown(
+        reviewer_task_sequence,
+        out / "reviewer_task_sequence.md",
+    )
 
     annotated = annotate_pdf(pdf, result.issues, out / "annotated.pdf")
     report_path = render_report(
@@ -394,6 +417,7 @@ def review(
         review_state=review_state,
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_sequence=reviewer_task_sequence,
     )
     _print_review_summary(
         out_dir=out,
@@ -418,6 +442,8 @@ def review(
         review_workbench_path=review_workbench_path,
         reviewer_onboarding_path=reviewer_onboarding_path,
         reviewer_quickstart_path=reviewer_quickstart_path,
+        reviewer_task_sequence_path=reviewer_task_sequence_path,
+        reviewer_task_sequence_md_path=reviewer_task_sequence_md_path,
         sheet_candidates_path=sheet_candidates_path,
         sheet_candidates_overlay_path=sheet_candidates_overlay_path,
     )
@@ -447,6 +473,8 @@ def _print_review_summary(
     review_workbench_path: Path | None = None,
     reviewer_onboarding_path: Path | None = None,
     reviewer_quickstart_path: Path | None = None,
+    reviewer_task_sequence_path: Path | None = None,
+    reviewer_task_sequence_md_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
     sheet_candidates_overlay_path: Path | None = None,
 ) -> None:
@@ -590,6 +618,10 @@ def _print_review_summary(
         art.add_row("reviewer onboarding", str(reviewer_onboarding_path))
     if reviewer_quickstart_path is not None:
         art.add_row("reviewer quickstart", str(reviewer_quickstart_path))
+    if reviewer_task_sequence_path is not None:
+        art.add_row("reviewer task sequence", str(reviewer_task_sequence_path))
+    if reviewer_task_sequence_md_path is not None:
+        art.add_row("reviewer task sequence MD", str(reviewer_task_sequence_md_path))
     if sheet_candidates_path is not None:
         art.add_row("sheet region candidates", str(sheet_candidates_path))
     if sheet_candidates_overlay_path is not None:
