@@ -56,12 +56,13 @@ Status:
 - P64-01 is complete: `archkg handoff-checklist-update` now updates one package-local reviewer checklist item, regenerates package checklist Markdown, and refreshes package `index.html` without touching the source run.
 - P65-01 is complete: `archkg handoff-manager-checklist` now reads package-local reviewer checklist status and requires the checklist to be complete before emitting `manager_ready`.
 - P66-01 is complete: handoff packages now include a ready-to-review runbook, and `archkg handoff-ready-runbook` refreshes novice next actions from package-local quality, signoff, checklist, and manager-intake state.
+- P67-01 is complete: `archkg handoff-bundle-index` now exposes per-package `next_actor` / `next_action_*` fields plus a structured `next_action_queue` for cross-package reviewer/manager/archive routing.
 
 ## Current Phase
 
-P66: Ready-to-review runbook.
+P67: Bundle next-actor queue.
 
-P66 is complete. New reviewers can open the package runbook or refresh it by CLI to see the exact remaining commands before manager intake; the runbook remains package-local guidance and does not change issue truth.
+P67 is complete. Bundle owners can scan one index to see whether each package needs reviewer work, manager intake, archive transfer/verification, or no action.
 
 ## Key Decisions
 
@@ -111,8 +112,9 @@ P66 is complete. New reviewers can open the package runbook or refresh it by CLI
 - P64 checklist updates are package-local progress notes only; they do not mutate source run artifacts, primary `review_state.json`, or candidate issue truth.
 - P65 manager checklist reviewer gate is package-intake governance only; `manager_ready` still does not mean candidate issues are confirmed or the drawing is compliant.
 - P66 ready-to-review runbook is generated navigation guidance only; it is excluded from archive checksums because it refreshes as package-local state changes.
+- P67 bundle next-actor queue is a read-only dispatch surface; it does not mutate packages, source runs, issue states, or package readiness semantics.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P66 by adding an optional bundle-level "who should act next" queue or by tightening the static handoff index around the runbook-first reviewer flow.
+Move beyond P67 by tightening the static handoff index around a runbook-first reviewer flow or adding a compact reviewer dashboard for primary issue state closeout.

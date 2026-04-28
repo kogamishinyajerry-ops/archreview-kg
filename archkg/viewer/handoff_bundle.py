@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import json
+import shlex
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -53,6 +54,7 @@ def build_handoff_bundle_index(packages_root: Path) -> dict[str, Any]:
         "summary": summary,
         "packages": packages,
         "boundary_warning": BOUNDARY_WARNING,
+        "next_action_queue": _bundle_next_action_queue(packages),
         "next_actions": _bundle_next_actions(packages),
     }
 
@@ -112,11 +114,14 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
         f"- Checklist open items: `{_int(summary.get('checklist_open_item_total'))}`",
         f"- Packages with open checklist: `{_int(summary.get('checklist_open_package_count'))}`",
         f"- Packages missing checklist: `{_int(summary.get('checklist_missing_count'))}`",
+        f"- Reviewer next: `{_int(summary.get('next_actor_reviewer_count'))}`",
+        f"- Manager next: `{_int(summary.get('next_actor_manager_count'))}`",
+        f"- Archive next: `{_int(summary.get('next_actor_archive_count'))}`",
         "",
         "## Packages",
         "",
-        "| Package | Status | Quality | Signoff | Manager | Archive | Checklist | Missing | Open Items |",
-        "|---|---|---|---|---|---|---|---:|---|",
+        "| Package | Status | Next Actor | Next Action | Quality | Signoff | Manager | Archive | Checklist | Missing | Open Items |",
+        "|---|---|---|---|---|---|---|---|---|---:|---|",
     ]
     for row in _list_of_dicts(payload.get("packages")):
         open_items = "<br>".join(_str_list(row.get("open_items"))) or "-"
@@ -129,6 +134,8 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
             "| "
             f"`{_str(row.get('package_name'))}` | "
             f"{_str(row.get('package_status'))} | "
+            f"{_str(row.get('next_actor'))} | "
+            f"{_str(row.get('next_action_title'))} | "
             f"{_str(row.get('quality_status'))} | "
             f"{_str(row.get('signoff_status'))} | "
             f"{_str(row.get('manager_status'))} | "
@@ -189,6 +196,9 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
         _kpi("Needs Info", str(_int(summary.get("needs_info_count"))), "warn"),
         _kpi("Blocked", str(_int(summary.get("blocked_count"))), "bad"),
         _kpi("Missing Required", str(_int(summary.get("missing_required_total"))), "bad"),
+        _kpi("Reviewer Next", str(_int(summary.get("next_actor_reviewer_count"))), "warn"),
+        _kpi("Manager Next", str(_int(summary.get("next_actor_manager_count"))), "warn"),
+        _kpi("Archive Next", str(_int(summary.get("next_actor_archive_count"))), "warn"),
         _kpi(
             "Checklist Open",
             str(_int(summary.get("checklist_open_item_total"))),
@@ -203,7 +213,7 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
         '<section class="panel">',
         "<h2>Packages</h2>",
         "<table>",
-        "<thead><tr><th>Package</th><th>Status</th><th>Quality</th><th>Signoff</th><th>Manager</th><th>Archive Check</th><th>Checklist</th><th>Open Items</th></tr></thead>",
+        "<thead><tr><th>Package</th><th>Status</th><th>Next Actor</th><th>Next Action</th><th>Quality</th><th>Signoff</th><th>Manager</th><th>Archive Check</th><th>Checklist</th><th>Open Items</th></tr></thead>",
         "<tbody>",
     ]
     for row in packages:
@@ -219,6 +229,8 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
             "<tr>"
             f"<td>{label}</td>"
             f"<td><span class=\"pill\">{_html(_str(row.get('package_status')))}</span></td>"
+            f"<td>{_html(_str(row.get('next_actor')))}</td>"
+            f"<td>{_html(_str(row.get('next_action_title')))}</td>"
             f"<td>{_html(_str(row.get('quality_status')))}</td>"
             f"<td>{_html(_str(row.get('signoff_status')))}</td>"
             f"<td>{_html(_str(row.get('manager_status')))}</td>"
@@ -254,9 +266,10 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
     manager = _load_json(package_dir / "handoff_manager_checklist.json")
     archive_manifest = _load_json(package_dir / "handoff_archive_manifest.json")
     archive_verification = _load_json(package_dir / "handoff_archive_verification.json")
-    checklist = _checklist_summary(
-        _load_json(package_dir / "artifacts" / "reviewer_task_checklist.json")
+    checklist_payload = _load_json(
+        package_dir / "artifacts" / "reviewer_task_checklist.json"
     )
+    checklist = _checklist_summary(checklist_payload)
     artifact_rows = _list_of_dicts(manifest.get("artifact_statuses"))
     available_count = sum(1 for row in artifact_rows if row.get("status") == "available")
     missing_required = _str_list(manifest.get("missing_required_artifacts"))
@@ -275,6 +288,17 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
         archive_manifest=archive_manifest,
         archive_verification=archive_verification,
     )
+    next_action = _package_next_action(
+        package_dir=package_dir,
+        manifest=manifest,
+        quality=quality,
+        signoff=signoff,
+        manager=manager,
+        archive_manifest=archive_manifest,
+        archive_verification=archive_verification,
+        checklist=checklist,
+        checklist_payload=checklist_payload,
+    )
     relative_dir = package_dir.relative_to(packages_root).as_posix()
     index_rel = f"{relative_dir}/index.html" if (package_dir / "index.html").is_file() else ""
     return {
@@ -286,6 +310,11 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
         "created_at": _str(manifest.get("created_at")),
         "manifest_schema": _str(manifest.get("schema_version")) or "missing",
         "package_status": package_status,
+        "next_actor": _str(next_action.get("actor")),
+        "next_action_id": _str(next_action.get("id")),
+        "next_action_title": _str(next_action.get("title")),
+        "next_action_reason": _str(next_action.get("reason")),
+        "next_action_command": _str(next_action.get("command")),
         "quality_status": _payload_status(
             quality,
             expected_schema=QUALITY_SCHEMA_VERSION,
@@ -446,6 +475,198 @@ def _package_open_items(
     return _dedupe(items)
 
 
+def _package_next_action(
+    *,
+    package_dir: Path,
+    manifest: dict[str, Any],
+    quality: dict[str, Any],
+    signoff: dict[str, Any],
+    manager: dict[str, Any],
+    archive_manifest: dict[str, Any],
+    archive_verification: dict[str, Any],
+    checklist: dict[str, Any],
+    checklist_payload: dict[str, Any],
+) -> dict[str, str]:
+    package_arg = _shell_path(package_dir)
+    if manifest.get("schema_version") != PACKAGE_SCHEMA_VERSION:
+        return _next_action(
+            "reviewer",
+            "restore_manifest",
+            "Restore handoff manifest.",
+            "handoff_manifest.json is missing or invalid.",
+            "",
+        )
+    missing_required = _str_list(manifest.get("missing_required_artifacts"))
+    if missing_required:
+        return _next_action(
+            "reviewer",
+            "restore_required_artifacts",
+            "Restore missing required artifacts.",
+            f"Missing required artifact: {missing_required[0]}.",
+            "",
+        )
+
+    quality_status = _payload_status(
+        quality,
+        expected_schema=QUALITY_SCHEMA_VERSION,
+        missing="not_run",
+    )
+    if quality_status != "handoff_ready":
+        return _next_action(
+            "reviewer",
+            "run_handoff_quality",
+            "Run handoff package quality gate.",
+            f"Current handoff quality status is {quality_status}.",
+            (
+                f"archkg handoff-check {package_arg} "
+                f"--out {package_arg}/handoff_quality.json "
+                f"--markdown {package_arg}/handoff_quality.md"
+            ),
+        )
+
+    signoff_status = _payload_status(
+        signoff,
+        expected_schema=SIGNOFF_SCHEMA_VERSION,
+        missing="not_recorded",
+    )
+    if signoff_status != "ready":
+        return _next_action(
+            "reviewer",
+            "record_reviewer_signoff",
+            "Record reviewer signoff.",
+            f"Current reviewer signoff status is {signoff_status}.",
+            (
+                f"archkg handoff-signoff {package_arg} --reviewer <reviewer> "
+                '--status ready --note "<handoff note>"'
+            ),
+        )
+
+    checklist_review_status = _str(checklist.get("review_status"))
+    if checklist_review_status != "checklist_complete":
+        return _next_checklist_action(package_dir, checklist, checklist_payload)
+
+    manager_status = _payload_status(
+        manager,
+        expected_schema=MANAGER_CHECKLIST_SCHEMA_VERSION,
+        missing="not_recorded",
+    )
+    if manager_status != "manager_ready":
+        return _next_action(
+            "manager",
+            "run_manager_checklist",
+            "Run manager checklist for intake.",
+            f"Current manager checklist status is {manager_status}.",
+            (
+                f"archkg handoff-manager-checklist {package_arg} "
+                '--manager <manager> --note "<manager intake note>"'
+            ),
+        )
+
+    archive_status = _payload_status(
+        archive_manifest,
+        expected_schema=ARCHIVE_MANIFEST_SCHEMA_VERSION,
+        missing="not_recorded",
+    )
+    if archive_status != "archive_manifest_ready":
+        return _next_action(
+            "archive",
+            "write_archive_manifest",
+            "Write archive manifest before transfer.",
+            f"Current archive manifest status is {archive_status}.",
+            (
+                f"archkg handoff-archive-manifest {package_arg} "
+                '--created-by <name> --note "<transfer note>"'
+            ),
+        )
+
+    archive_verification_status = _payload_status(
+        archive_verification,
+        expected_schema=ARCHIVE_VERIFICATION_SCHEMA_VERSION,
+        missing="not_recorded",
+    )
+    if archive_verification_status != "archive_verified":
+        return _next_action(
+            "archive",
+            "verify_archive",
+            "Verify archive after transfer.",
+            f"Current archive verification status is {archive_verification_status}.",
+            f"archkg handoff-archive-verify {package_arg}",
+        )
+
+    return _next_action(
+        "done",
+        "ready",
+        "No action required.",
+        "Package is ready.",
+        "",
+    )
+
+
+def _next_checklist_action(
+    package_dir: Path,
+    checklist: dict[str, Any],
+    checklist_payload: dict[str, Any],
+) -> dict[str, str]:
+    package_arg = _shell_path(package_dir)
+    if not checklist.get("available"):
+        return _next_action(
+            "reviewer",
+            "restore_reviewer_task_checklist",
+            "Restore reviewer task checklist artifact.",
+            f"Reviewer checklist status is {_str(checklist.get('review_status'))}.",
+            "",
+        )
+    for item in _list_of_dicts(checklist_payload.get("items")):
+        reviewer_status = _str(item.get("reviewer_status"))
+        if reviewer_status in {"done", "skipped_preview"}:
+            continue
+        ordinal = _int(item.get("ordinal"))
+        check_id = _str(item.get("check_id"))
+        selector = (
+            f"--ordinal {ordinal}"
+            if ordinal
+            else f"--check-id {shlex.quote(check_id)}"
+        )
+        evidence = _str_list(item.get("required_evidence"))
+        evidence_flags = "".join(
+            f" --evidence-checked {shlex.quote(value)}" for value in evidence
+        )
+        return _next_action(
+            "reviewer",
+            f"close_checklist_{ordinal or check_id}",
+            _str(item.get("title")) or "Close reviewer checklist item.",
+            f"Checklist item is currently {reviewer_status or 'todo'}.",
+            (
+                f"archkg handoff-checklist-update {package_arg} {selector} "
+                f"--reviewer <reviewer> --status done "
+                f'--note "<evidence reviewed>"{evidence_flags}'
+            ),
+        )
+    return _next_action(
+        "reviewer",
+        "review_reviewer_task_checklist",
+        "Review reviewer task checklist.",
+        f"Reviewer checklist status is {_str(checklist.get('review_status'))}.",
+        "",
+    )
+
+
+def _next_action(
+    actor: str,
+    action_id: str,
+    title: str,
+    reason: str,
+    command: str,
+) -> dict[str, str]:
+    return {
+        "actor": actor,
+        "id": action_id,
+        "title": title,
+        "reason": reason,
+        "command": command,
+    }
+
+
 def _payload_status(
     payload: dict[str, Any],
     *,
@@ -490,6 +711,10 @@ def _bundle_summary(packages: list[dict[str, Any]]) -> dict[str, int]:
         "checklist_missing_count": sum(
             1 for row in packages if row.get("checklist_review_status") == "checklist_missing"
         ),
+        "next_actor_reviewer_count": _next_actor_count(packages, "reviewer"),
+        "next_actor_manager_count": _next_actor_count(packages, "manager"),
+        "next_actor_archive_count": _next_actor_count(packages, "archive"),
+        "next_actor_done_count": _next_actor_count(packages, "done"),
     }
 
 
@@ -506,16 +731,13 @@ def _bundle_status(summary: dict[str, int]) -> str:
 def _bundle_next_actions(packages: list[dict[str, Any]]) -> list[str]:
     actions: list[str] = []
     for package in packages:
-        status = _str(package.get("package_status"))
-        if status == "package_ready":
+        actor = _str(package.get("next_actor"))
+        if actor == "done":
             continue
-        open_items = _str_list(package.get("open_items"))
-        if open_items:
-            actions.append(
-                f"{_str(package.get('package_name'))}: {open_items[0]}"
-            )
-        else:
-            actions.append(f"{_str(package.get('package_name'))}: review package status")
+        actions.append(
+            f"{_str(package.get('package_name'))}: "
+            f"{actor} -> {_str(package.get('next_action_title'))}"
+        )
     for package in packages:
         if _int(package.get("checklist_open_item_count")) <= 0:
             continue
@@ -524,6 +746,30 @@ def _bundle_next_actions(packages: list[dict[str, Any]]) -> list[str]:
             f"{_int(package.get('checklist_open_item_count'))} reviewer checklist items"
         )
     return actions
+
+
+def _bundle_next_action_queue(packages: list[dict[str, Any]]) -> list[dict[str, str]]:
+    queue: list[dict[str, str]] = []
+    for package in packages:
+        actor = _str(package.get("next_actor"))
+        if actor == "done":
+            continue
+        queue.append(
+            {
+                "package_name": _str(package.get("package_name")),
+                "relative_package_dir": _str(package.get("relative_package_dir")),
+                "actor": actor,
+                "action_id": _str(package.get("next_action_id")),
+                "title": _str(package.get("next_action_title")),
+                "reason": _str(package.get("next_action_reason")),
+                "command": _str(package.get("next_action_command")),
+            }
+        )
+    return queue
+
+
+def _next_actor_count(packages: list[dict[str, Any]], actor: str) -> int:
+    return sum(1 for row in packages if row.get("next_actor") == actor)
 
 
 def _checklist_summary(payload: dict[str, Any]) -> dict[str, Any]:
@@ -689,6 +935,10 @@ def _html(raw: object) -> str:
 
 def _html_attr(raw: object) -> str:
     return html.escape(_str(raw), quote=True)
+
+
+def _shell_path(path: Path) -> str:
+    return shlex.quote(str(path))
 
 
 __all__ = [

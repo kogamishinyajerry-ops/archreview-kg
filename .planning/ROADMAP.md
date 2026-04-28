@@ -279,6 +279,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Surface the runbook in package `index.html`; open checklist rows produce concrete `handoff-checklist-update` commands, complete prerequisites produce the manager checklist command, and manager-ready packages show no remaining actions.
 - Guardrail: runbook is navigation guidance only, excluded from archive checksums, and does not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
 
+### P67: Bundle Next-Actor Queue
+
+- Extend `archkg handoff-bundle-index` with per-package `next_actor`, `next_action_id`, `next_action_title`, `next_action_reason`, and `next_action_command`.
+- Add bundle summary counts for reviewer, manager, archive, and done actors.
+- Add a structured `next_action_queue` plus Markdown/HTML columns so managers can route work without opening every package.
+- Guardrail: the queue is read-only dispatch guidance; it does not mutate packages, source runs, primary `review_state.json`, candidate issues, package readiness, or compliance status.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

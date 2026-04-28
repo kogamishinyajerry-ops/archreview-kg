@@ -56,6 +56,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   blocked 或缺失 checklist 会阻塞 manager intake。
 - P66 后交接包会写 `handoff_ready_runbook.json` / `.md`；`archkg handoff-ready-runbook`
   可刷新新手 reviewer 的下一步命令清单，直到 checklist 和 manager intake 闭环。
+- P67 后 `archkg handoff-bundle-index <packages-root>` 会输出 `next_action_queue`，
+  并为每个包标出 next_actor / next_action_command，支持跨包分派 reviewer、manager、archive 下一步。
 
 复现该结论：
 
@@ -361,6 +363,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   该 gate 只说明交接包可进入负责人下一步 intake，不说明图纸合规。
 - P66 起，ready-to-review runbook 是包内导航面和命令提示；它不纳入 archive checksum，
   不确认 candidate issue，也不替代人工复核或经理 intake。
+- P67 起，bundle next-actor queue 是只读调度提示；它不修改单包、不替代包内 runbook，
+  也不改变 package readiness 或合规状态。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

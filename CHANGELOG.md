@@ -246,6 +246,10 @@ and keeps the no-OCR transparency warning.
   runbook with quality, signoff, checklist, and manager-intake next actions.
   The runbook is navigation guidance only and is excluded from archive
   checksums because it refreshes with package-local state.
+- P67-01 adds a bundle-level next-actor queue. `archkg handoff-bundle-index`
+  now records `next_actor`, `next_action_*`, and a structured
+  `next_action_queue` so managers can see whether reviewer, manager, archive,
+  or no one should act next without opening every package.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

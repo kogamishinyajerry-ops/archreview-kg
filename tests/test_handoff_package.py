@@ -1085,13 +1085,18 @@ def test_handoff_bundle_index_summarizes_multiple_packages_without_mutation(
     assert payload["summary"]["checklist_open_package_count"] == 1
     assert payload["summary"]["checklist_open_item_total"] == 2
     assert payload["summary"]["checklist_needs_info_item_total"] == 1
+    assert payload["summary"]["next_actor_reviewer_count"] == 1
+    assert payload["summary"]["next_actor_done_count"] == 1
     packages = {row["package_name"]: row for row in payload["packages"]}
     assert packages["pkg-ready"]["package_status"] == "package_ready"
+    assert packages["pkg-ready"]["next_actor"] == "done"
     assert packages["pkg-ready"]["checklist_review_status"] == "checklist_complete"
     assert packages["pkg-ready"]["checklist_open_item_count"] == 0
     assert packages["pkg-ready"]["archive_verification_status"] == "archive_verified"
     assert packages["pkg-ready"]["index_path"] == "pkg-ready/index.html"
     assert packages["pkg-blocked"]["package_status"] == "package_blocked"
+    assert packages["pkg-blocked"]["next_actor"] == "reviewer"
+    assert packages["pkg-blocked"]["next_action_id"] == "restore_required_artifacts"
     assert packages["pkg-blocked"]["checklist_review_status"] == "checklist_needs_info"
     assert packages["pkg-blocked"]["checklist_open_item_count"] == 2
     assert "补齐规则输入" in packages["pkg-blocked"]["checklist_open_samples"][0]
@@ -1100,8 +1105,87 @@ def test_handoff_bundle_index_summarizes_multiple_packages_without_mutation(
     ]
     assert "required artifact missing" in " ".join(packages["pkg-blocked"]["open_items"])
     assert "complete 2 reviewer checklist items" in " ".join(payload["next_actions"])
+    assert payload["next_action_queue"][0]["actor"] == "reviewer"
+    assert payload["next_action_queue"][0]["action_id"] == "restore_required_artifacts"
     assert not (package_ready / "handoff_bundle_index.json").exists()
     assert not (package_blocked / "handoff_bundle_index.json").exists()
+
+
+def test_handoff_bundle_index_routes_next_actor_to_manager_and_archive(
+    tmp_path: Path,
+) -> None:
+    runs_root = tmp_path / "runs"
+    packages_root = tmp_path / "packages"
+    runs_root.mkdir()
+    packages_root.mkdir()
+
+    run_manager = runs_root / "manager"
+    package_manager = packages_root / "pkg-manager"
+    _write_minimal_run(run_manager)
+    write_handoff_package(run_manager, package_manager)
+    _write_package_checklist(
+        package_manager,
+        [{"title": "all reviewer checks closed", "stage": "handoff", "status": "done"}],
+    )
+    manager_quality = build_handoff_package_quality(package_manager)
+    write_handoff_package_quality_json(
+        manager_quality,
+        package_manager / "handoff_quality.json",
+    )
+    write_handoff_package_quality_markdown(
+        manager_quality,
+        package_manager / "handoff_quality.md",
+    )
+    write_handoff_reviewer_signoff(
+        package_manager,
+        reviewer="reviewer-manager",
+        status="ready",
+        note="Ready for manager checklist.",
+    )
+
+    run_archive = runs_root / "archive"
+    package_archive = packages_root / "pkg-archive"
+    _write_minimal_run(run_archive)
+    write_handoff_package(run_archive, package_archive)
+    _write_package_checklist(
+        package_archive,
+        [{"title": "all reviewer checks closed", "stage": "handoff", "status": "done"}],
+    )
+    archive_quality = build_handoff_package_quality(package_archive)
+    write_handoff_package_quality_json(
+        archive_quality,
+        package_archive / "handoff_quality.json",
+    )
+    write_handoff_package_quality_markdown(
+        archive_quality,
+        package_archive / "handoff_quality.md",
+    )
+    write_handoff_reviewer_signoff(
+        package_archive,
+        reviewer="reviewer-archive",
+        status="ready",
+        note="Ready for archive.",
+    )
+    write_handoff_manager_checklist(
+        package_archive,
+        manager="manager-archive",
+        note="Ready for transfer.",
+    )
+
+    payload = build_handoff_bundle_index(packages_root)
+
+    assert payload["summary"]["next_actor_manager_count"] == 1
+    assert payload["summary"]["next_actor_archive_count"] == 1
+    packages = {row["package_name"]: row for row in payload["packages"]}
+    assert packages["pkg-manager"]["next_actor"] == "manager"
+    assert packages["pkg-manager"]["next_action_id"] == "run_manager_checklist"
+    assert "handoff-manager-checklist" in packages["pkg-manager"]["next_action_command"]
+    assert packages["pkg-archive"]["next_actor"] == "archive"
+    assert packages["pkg-archive"]["next_action_id"] == "write_archive_manifest"
+    assert "handoff-archive-manifest" in packages["pkg-archive"]["next_action_command"]
+    queue = {(item["package_name"], item["actor"]) for item in payload["next_action_queue"]}
+    assert ("pkg-manager", "manager") in queue
+    assert ("pkg-archive", "archive") in queue
 
 
 def test_handoff_bundle_index_cli_writes_json_markdown_and_html(
@@ -1124,14 +1208,19 @@ def test_handoff_bundle_index_cli_writes_json_markdown_and_html(
     payload = json.loads((packages_root / "handoff_bundle_index.json").read_text("utf-8"))
     assert payload["summary"]["package_count"] == 1
     assert payload["packages"][0]["checklist_review_status"] == "checklist_open"
+    assert payload["packages"][0]["next_actor"] == "reviewer"
+    assert payload["packages"][0]["next_action_id"] == "run_handoff_quality"
     assert payload["packages"][0]["quality_status"] == "not_run"
+    assert payload["summary"]["next_actor_reviewer_count"] == 1
     markdown = (packages_root / "handoff_bundle_index.md").read_text("utf-8")
     assert "ArchReview-KG Handoff Bundle Index" in markdown
+    assert "Next Actor" in markdown
     assert "Checklist open items" in markdown
     assert "run handoff-check" in markdown
     html = (packages_root / "handoff_bundle_index.html").read_text("utf-8")
     assert "ArchReview-KG Handoff Bundle" in html
     assert "pkg-a/index.html" in html
+    assert "Next Actor" in html
     assert "Checklist Open" in html
     assert "not a drawing-compliance certificate" in html
 
