@@ -14,15 +14,23 @@ QUALITY_SCHEMA_VERSION = "handoff_package_quality.v1"
 SIGNOFF_SCHEMA_VERSION = "handoff_reviewer_signoff.v1"
 MANAGER_CHECKLIST_SCHEMA_VERSION = "handoff_manager_checklist.v1"
 ARCHIVE_MANIFEST_SCHEMA_VERSION = "handoff_archive_manifest.v1"
+ARCHIVE_VERIFICATION_SCHEMA_VERSION = "handoff_archive_verification.v1"
 
 MUTATION_POLICY = "copy_artifacts_only_no_source_run_mutation"
 ARCHIVE_MANIFEST_MUTATION_POLICY = (
     "package_integrity_manifest_only_no_source_run_mutation"
 )
+ARCHIVE_VERIFICATION_MUTATION_POLICY = (
+    "package_archive_verification_only_no_source_run_mutation"
+)
 ARCHIVE_MANIFEST_EXCLUDED_PATHS: tuple[str, ...] = (
     "handoff_archive_manifest.json",
     "handoff_archive_manifest.md",
     "index.html",
+)
+ARCHIVE_VERIFICATION_EXCLUDED_PATHS: tuple[str, ...] = (
+    "handoff_archive_verification.json",
+    "handoff_archive_verification.md",
 )
 
 BOUNDARY_WARNINGS: tuple[str, ...] = (
@@ -330,6 +338,7 @@ def write_handoff_index(
     signoff: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
+    archive_verification: dict[str, Any] | None = None,
 ) -> Path:
     package_dir = package_dir.resolve()
     manifest = _load_manifest(package_dir / "handoff_manifest.json")
@@ -342,6 +351,7 @@ def write_handoff_index(
         signoff=signoff,
         manager_checklist=manager_checklist,
         archive_manifest=archive_manifest,
+        archive_verification=archive_verification,
     )
 
 
@@ -352,11 +362,15 @@ def render_handoff_index_html(
     signoff: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
+    archive_verification: dict[str, Any] | None = None,
 ) -> str:
     quality = quality if isinstance(quality, dict) else {}
     signoff = signoff if isinstance(signoff, dict) else {}
     manager_checklist = manager_checklist if isinstance(manager_checklist, dict) else {}
     archive_manifest = archive_manifest if isinstance(archive_manifest, dict) else {}
+    archive_verification = (
+        archive_verification if isinstance(archive_verification, dict) else {}
+    )
     artifact_rows = _artifact_rows(manifest)
     available_count = sum(1 for row in artifact_rows if row.get("status") == "available")
     required_missing = _str_list(manifest.get("missing_required_artifacts"))
@@ -368,6 +382,9 @@ def render_handoff_index_html(
     archive_status = _str(archive_manifest.get("status")) or "not_recorded"
     archive_digest = _str(archive_manifest.get("package_digest")) or "not_recorded"
     archive_file_count = archive_manifest.get("file_count")
+    archive_verification_status = (
+        _str(archive_verification.get("status")) or "not_recorded"
+    )
 
     lines = [
         "<!doctype html>",
@@ -410,6 +427,11 @@ def render_handoff_index_html(
         _kpi("Signoff", signoff_status, _status_class(signoff_status)),
         _kpi("Manager", manager_status, _status_class(manager_status)),
         _kpi("Archive", archive_status, _status_class(archive_status)),
+        _kpi(
+            "Archive Check",
+            archive_verification_status,
+            _status_class(archive_verification_status),
+        ),
         "</section>",
         '<section class="panel">',
         "<h2>Package Boundaries</h2>",
@@ -470,6 +492,9 @@ def render_handoff_index_html(
             f"<p><b>package_digest:</b> <code>{_html(archive_digest)}</code></p>",
             f"<p>{_html(_str(archive_manifest.get('boundary_warning')) or 'Archive manifest is not a compliance certificate.')}</p>",
             '<p><a href="handoff_archive_manifest.json">handoff_archive_manifest.json</a> · <a href="handoff_archive_manifest.md">handoff_archive_manifest.md</a></p>',
+            f"<p><b>Verification schema:</b> {_html(_str(archive_verification.get('schema_version')) or 'not_recorded')}</p>",
+            f"<p><b>Verification status:</b> <span class=\"pill\">{_html(archive_verification_status)}</span></p>",
+            '<p><a href="handoff_archive_verification.json">handoff_archive_verification.json</a> · <a href="handoff_archive_verification.md">handoff_archive_verification.md</a></p>',
             "</section>",
             '<section class="panel">',
             "<h2>Artifacts</h2>",
@@ -781,6 +806,150 @@ def render_handoff_archive_manifest_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def write_handoff_archive_verification(package_dir: Path) -> Path:
+    """Verify package files against a previously written archive manifest."""
+
+    package_dir = package_dir.resolve()
+    payload = build_handoff_archive_verification(package_dir)
+    path = package_dir / "handoff_archive_verification.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    (package_dir / "handoff_archive_verification.md").write_text(
+        render_handoff_archive_verification_markdown(payload),
+        encoding="utf-8",
+    )
+    write_handoff_index(package_dir, archive_verification=payload)
+    return path
+
+
+def build_handoff_archive_verification(package_dir: Path) -> dict[str, Any]:
+    package_dir = package_dir.resolve()
+    manifest = _load_manifest(package_dir / "handoff_manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
+    archive_manifest_path = package_dir / "handoff_archive_manifest.json"
+    archive_manifest = _load_optional_json(archive_manifest_path)
+    if not archive_manifest:
+        raise FileNotFoundError(
+            f"handoff archive manifest not found: {archive_manifest_path}"
+        )
+    if archive_manifest.get("schema_version") != ARCHIVE_MANIFEST_SCHEMA_VERSION:
+        raise ValueError(
+            "handoff archive manifest schema must be "
+            f"{ARCHIVE_MANIFEST_SCHEMA_VERSION}"
+        )
+
+    excluded_paths = _archive_verification_excluded_paths(archive_manifest)
+    actual_files = _archive_file_entries(package_dir, excluded_paths=excluded_paths)
+    expected_files = _list_of_dicts(archive_manifest.get("files"))
+    actual_by_path = {_str(row.get("path")): row for row in actual_files}
+    expected_by_path = {_str(row.get("path")): row for row in expected_files}
+    missing_files = [
+        path for path in sorted(expected_by_path) if path not in actual_by_path
+    ]
+    unexpected_files = [
+        path for path in sorted(actual_by_path) if path not in expected_by_path
+    ]
+    changed_files = _archive_changed_files(expected_by_path, actual_by_path)
+    actual_digest = _archive_package_digest(actual_files)
+    expected_digest = _str(archive_manifest.get("package_digest"))
+    digest_match = expected_digest == actual_digest
+    checks = {
+        "manifest_schema": _check("blocker", True, []),
+        "files_present": _check(
+            "blocker",
+            not missing_files,
+            [f"missing package file: {item}" for item in missing_files],
+        ),
+        "file_checksums_match": _check(
+            "blocker",
+            not changed_files,
+            [f"changed package file: {_str(item.get('path'))}" for item in changed_files],
+        ),
+        "no_unexpected_files": _check(
+            "warning",
+            not unexpected_files,
+            [f"unexpected package file: {item}" for item in unexpected_files],
+        ),
+        "package_digest_match": _check(
+            "blocker",
+            digest_match,
+            [] if digest_match else ["package digest differs from archive manifest"],
+        ),
+    }
+    blockers = [
+        detail
+        for check in checks.values()
+        if check["severity"] == "blocker" and check["passed"] is False
+        for detail in _str_list(check.get("details"))
+    ]
+    warnings = [
+        detail
+        for check in checks.values()
+        if check["severity"] == "warning" and check["passed"] is False
+        for detail in _str_list(check.get("details"))
+    ]
+    return {
+        "schema_version": ARCHIVE_VERIFICATION_SCHEMA_VERSION,
+        "created_at": datetime.now(UTC).isoformat(),
+        "package_dir": str(package_dir),
+        "source_run_dir": _str(manifest.get("source_run_dir")),
+        "archive_manifest_path": str(archive_manifest_path),
+        "mutation_policy": ARCHIVE_VERIFICATION_MUTATION_POLICY,
+        "status": "archive_drift" if blockers or warnings else "archive_verified",
+        "checks": checks,
+        "blockers": blockers,
+        "warnings": warnings,
+        "expected_file_count": len(expected_files),
+        "actual_file_count": len(actual_files),
+        "checked_file_count": len(expected_files) - len(missing_files),
+        "excluded_paths": excluded_paths,
+        "missing_files": missing_files,
+        "changed_files": changed_files,
+        "unexpected_files": unexpected_files,
+        "package_digest_expected": expected_digest,
+        "package_digest_actual": actual_digest,
+        "boundary_warning": (
+            "Archive verification checks transfer integrity only; it is not a "
+            "compliance certificate and does not mutate source run artifacts."
+        ),
+    }
+
+
+def render_handoff_archive_verification_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Handoff Archive Verification",
+        "",
+        f"Status: `{_str(payload.get('status'))}`",
+        f"Mutation policy: `{_str(payload.get('mutation_policy'))}`",
+        f"Expected digest: `{_str(payload.get('package_digest_expected'))}`",
+        f"Actual digest: `{_str(payload.get('package_digest_actual'))}`",
+        "",
+        _str(payload.get("boundary_warning")),
+        "",
+        "## Checks",
+        "",
+        "| Check | Severity | Status | Details |",
+        "|---|---|---:|---|",
+    ]
+    checks = payload.get("checks")
+    if isinstance(checks, dict):
+        for check_id, raw in checks.items():
+            check = raw if isinstance(raw, dict) else {}
+            details = "; ".join(_str_list(check.get("details"))) or "-"
+            lines.append(
+                "| "
+                f"{check_id} | "
+                f"{_str(check.get('severity'))} | "
+                f"{'PASS' if check.get('passed') else 'FAIL'} | "
+                f"{details} |"
+            )
+    _extend_simple_section(lines, "Missing Files", _str_list(payload.get("missing_files")))
+    _extend_changed_file_section(lines, _list_of_dicts(payload.get("changed_files")))
+    _extend_simple_section(lines, "Unexpected Files", _str_list(payload.get("unexpected_files")))
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _copy_artifact(
     run_dir: Path,
     artifacts_dir: Path,
@@ -816,6 +985,7 @@ def _write_handoff_index_from_payloads(
     signoff: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
+    archive_verification: dict[str, Any] | None = None,
 ) -> Path:
     quality = quality if quality is not None else _load_optional_json(
         package_dir / "handoff_quality.json"
@@ -833,6 +1003,11 @@ def _write_handoff_index_from_payloads(
         if archive_manifest is not None
         else _load_optional_json(package_dir / "handoff_archive_manifest.json")
     )
+    archive_verification = (
+        archive_verification
+        if archive_verification is not None
+        else _load_optional_json(package_dir / "handoff_archive_verification.json")
+    )
     path = package_dir / "index.html"
     path.write_text(
         render_handoff_index_html(
@@ -841,6 +1016,7 @@ def _write_handoff_index_from_payloads(
             signoff=signoff,
             manager_checklist=manager_checklist,
             archive_manifest=archive_manifest,
+            archive_verification=archive_verification,
         ),
         encoding="utf-8",
     )
@@ -990,9 +1166,13 @@ def _manager_status(items: list[dict[str, str]]) -> str:
     return "manager_ready"
 
 
-def _archive_file_entries(package_dir: Path) -> list[dict[str, Any]]:
+def _archive_file_entries(
+    package_dir: Path,
+    *,
+    excluded_paths: list[str] | None = None,
+) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
-    excluded = set(ARCHIVE_MANIFEST_EXCLUDED_PATHS)
+    excluded = set(excluded_paths or ARCHIVE_MANIFEST_EXCLUDED_PATHS)
     for path in sorted(package_dir.rglob("*")):
         if not path.is_file():
             continue
@@ -1009,6 +1189,41 @@ def _archive_file_entries(package_dir: Path) -> list[dict[str, Any]]:
             }
         )
     return entries
+
+
+def _archive_verification_excluded_paths(
+    archive_manifest: dict[str, Any],
+) -> list[str]:
+    excluded = set(_str_list(archive_manifest.get("excluded_paths")))
+    excluded.update(ARCHIVE_MANIFEST_EXCLUDED_PATHS)
+    excluded.update(ARCHIVE_VERIFICATION_EXCLUDED_PATHS)
+    return sorted(excluded)
+
+
+def _archive_changed_files(
+    expected_by_path: dict[str, dict[str, Any]],
+    actual_by_path: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    changed: list[dict[str, Any]] = []
+    for path in sorted(set(expected_by_path).intersection(actual_by_path)):
+        expected = expected_by_path[path]
+        actual = actual_by_path[path]
+        expected_sha = _str(expected.get("sha256"))
+        actual_sha = _str(actual.get("sha256"))
+        expected_size = _int(expected.get("size_bytes"))
+        actual_size = _int(actual.get("size_bytes"))
+        if expected_sha == actual_sha and expected_size == actual_size:
+            continue
+        changed.append(
+            {
+                "path": path,
+                "expected_sha256": expected_sha,
+                "actual_sha256": actual_sha,
+                "expected_size_bytes": expected_size,
+                "actual_size_bytes": actual_size,
+            }
+        )
+    return changed
 
 
 def _archive_file_role(rel_path: str) -> str:
@@ -1051,6 +1266,39 @@ def _archive_package_digest(files: list[dict[str, Any]]) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _extend_simple_section(lines: list[str], title: str, items: list[str]) -> None:
+    if not items:
+        return
+    lines.extend(["", f"## {title}", ""])
+    lines.extend(f"- `{item}`" for item in items)
+
+
+def _extend_changed_file_section(
+    lines: list[str],
+    changed_files: list[dict[str, Any]],
+) -> None:
+    if not changed_files:
+        return
+    lines.extend(
+        [
+            "",
+            "## Changed Files",
+            "",
+            "| Path | Expected SHA-256 | Actual SHA-256 | Expected Bytes | Actual Bytes |",
+            "|---|---|---|---:|---:|",
+        ]
+    )
+    for item in changed_files:
+        lines.append(
+            "| "
+            f"`{_str(item.get('path'))}` | "
+            f"`{_str(item.get('expected_sha256'))}` | "
+            f"`{_str(item.get('actual_sha256'))}` | "
+            f"{_int(item.get('expected_size_bytes'))} | "
+            f"{_int(item.get('actual_size_bytes'))} |"
+        )
+
+
 def _kpi(label: str, value: str, class_name: str = "") -> str:
     class_attr = f" {class_name}" if class_name else ""
     return (
@@ -1067,9 +1315,16 @@ def _status_class(status: str) -> str:
         "ready",
         "manager_ready",
         "archive_manifest_ready",
+        "archive_verified",
     }:
         return "ok"
-    if status in {"not_ready", "blocked", "manager_blocked", "archive_manifest_empty"}:
+    if status in {
+        "not_ready",
+        "blocked",
+        "manager_blocked",
+        "archive_manifest_empty",
+        "archive_drift",
+    }:
         return "bad"
     if status in {
         "handoff_ready_with_warnings",
@@ -1157,6 +1412,7 @@ def _html_attr(raw: object) -> str:
 
 __all__ = [
     "ARCHIVE_MANIFEST_SCHEMA_VERSION",
+    "ARCHIVE_VERIFICATION_SCHEMA_VERSION",
     "ARTIFACTS",
     "BOUNDARY_WARNINGS",
     "MANAGER_CHECKLIST_SCHEMA_VERSION",
@@ -1165,15 +1421,18 @@ __all__ = [
     "SCHEMA_VERSION",
     "SIGNOFF_SCHEMA_VERSION",
     "build_handoff_archive_manifest",
+    "build_handoff_archive_verification",
     "build_handoff_manager_checklist",
     "build_handoff_package_quality",
     "render_handoff_archive_manifest_markdown",
+    "render_handoff_archive_verification_markdown",
     "render_handoff_index_html",
     "render_handoff_manager_checklist_markdown",
     "render_handoff_package_quality_markdown",
     "render_handoff_reviewer_signoff_markdown",
     "render_handoff_summary",
     "write_handoff_archive_manifest",
+    "write_handoff_archive_verification",
     "write_handoff_index",
     "write_handoff_manager_checklist",
     "write_handoff_package",

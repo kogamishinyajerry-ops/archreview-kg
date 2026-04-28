@@ -62,6 +62,7 @@ archkg handoff-check out-handoff --out out-handoff/handoff_quality.json --markdo
 archkg handoff-signoff out-handoff --reviewer reviewer-name --status needs_info --note "缺少剖面净高证据"
 archkg handoff-manager-checklist out-handoff --manager manager-name --note "等待补齐剖面证据"
 archkg handoff-archive-manifest out-handoff --created-by manager-name --note "移交前固化 checksum"
+archkg handoff-archive-verify out-handoff
 open out-handoff/index.html
 ```
 
@@ -72,7 +73,8 @@ open out-handoff/index.html
 状态、阻塞项和下一步；它不是合规证书，也不回写源 run。
 `handoff-manager-checklist` 只在交接包内写 manager checklist，用于负责人快速判断包能否进入下一轮复核。
 `handoff-archive-manifest` 只在交接包内写 checksum 清单，用于移交完整性核对，不是合规证书。
-`index.html` 是静态只读入口，会汇总 package boundary、quality、signoff、manager checklist、archive manifest 和 artifact 链接。
+`handoff-archive-verify` 只对照 checksum 清单检查包内文件是否缺失、变更或多出，发现 drift 时返回非零。
+`index.html` 是静态只读入口，会汇总 package boundary、quality、signoff、manager checklist、archive manifest、verification 和 artifact 链接。
 
 ---
 
@@ -391,6 +393,7 @@ archkg handoff-check out-handoff
 archkg handoff-signoff out-handoff --reviewer reviewer-name --status ready --note "交接包可进入复核"
 archkg handoff-manager-checklist out-handoff --manager manager-name --note "进入复核队列"
 archkg handoff-archive-manifest out-handoff --created-by manager-name --note "移交前固化 checksum"
+archkg handoff-archive-verify out-handoff
 open out-handoff/index.html
 
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
@@ -448,6 +451,7 @@ archkg clause readiness
 - P51：Static handoff package review view。`archkg handoff-package` 生成 `index.html`，`handoff-check` 和 `handoff-signoff` 会刷新它；新手 reviewer 可直接打开静态页面查看边界、质量门禁、复核备注和 artifact 链接。
 - P52：Manager checklist export。`archkg handoff-manager-checklist <package-dir>` 在交接包内写 `handoff_manager_checklist.json` / `.md`，由 manifest、quality 和 signoff 推导 `manager_ready` / `manager_needs_info` / `manager_blocked`；它是交接管理信号，不是合规结论。
 - P53：Archive manifest checksums。`archkg handoff-archive-manifest <package-dir>` 在交接包内写 `handoff_archive_manifest.json` / `.md`，对稳定包文件记录 SHA-256 和 package digest；它用于移交完整性核对，不写回源 run，也不是合规结论。
+- P54：Archive verification/import check。`archkg handoff-archive-verify <package-dir>` 重算稳定包文件 checksum 并写 `handoff_archive_verification.json` / `.md`，输出 `archive_verified` 或 `archive_drift`；它用于收到包后的完整性验收，不是合规结论。
 
 ---
 

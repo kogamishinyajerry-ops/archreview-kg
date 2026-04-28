@@ -190,6 +190,12 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - P53-01 complete: `archkg handoff-archive-manifest` writes `handoff_archive_manifest.v1` JSON/Markdown, SHA-256 file entries, and a deterministic package digest while excluding generated self/index files.
 - Guardrail: archive manifest status is transfer-integrity evidence only; it does not certify drawing compliance or replace source-run artifacts.
 
+### P54: Archive Verification Import Check
+
+- Let receiving reviewers verify a handoff package against its archive manifest before trusting the package contents.
+- P54-01 complete: `archkg handoff-archive-verify` writes `handoff_archive_verification.v1` JSON/Markdown, reports missing/changed/unexpected package files, refreshes the static package index, and exits non-zero on `archive_drift`.
+- Guardrail: archive verification is checksum alignment only; it does not confirm candidate issues or certify drawing compliance.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

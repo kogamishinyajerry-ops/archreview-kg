@@ -43,12 +43,13 @@ Status:
 - P51-01 is complete: handoff packages now include a package-root static `index.html`, and handoff quality/signoff commands refresh that browser entry.
 - P52-01 is complete: `archkg handoff-manager-checklist` now writes package-local manager checklist JSON/Markdown and refreshes the static package index.
 - P53-01 is complete: `archkg handoff-archive-manifest` now writes package-local archive manifest JSON/Markdown with SHA-256 file entries and a deterministic package digest.
+- P54-01 is complete: `archkg handoff-archive-verify` now verifies received packages against archive manifests and reports `archive_verified` or `archive_drift`.
 
 ## Current Phase
 
-P53: Archive manifest checksums.
+P54: Archive verification import check.
 
-P53 is complete. Handoff packages now have transfer-integrity checksums for stable package files, while generated self/index files are excluded to avoid checksum loops.
+P54 is complete. Receiving reviewers can now verify a handoff package for missing, changed, or unexpected stable files before using the package.
 
 ## Key Decisions
 
@@ -85,8 +86,9 @@ P53 is complete. Handoff packages now have transfer-integrity checksums for stab
 - P51 static handoff `index.html` is a navigation surface only; it does not create new evidence or replace source-run artifacts.
 - P52 manager checklist status is package-intake status only; `manager_ready` does not mean the drawing is compliant.
 - P53 archive manifest status is transfer-integrity evidence only; `archive_manifest_ready` does not mean the drawing is compliant.
+- P54 archive verification status is checksum alignment only; `archive_verified` does not mean any issue is confirmed or the drawing is compliant.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P53 by adding archive verification/import checks for received packages, or by expanding the real complex benchmark set with another reviewed expected inventory.
+Move beyond P54 by expanding the real complex benchmark set with another reviewed expected inventory, or by adding a compact handoff bundle index for multiple packages.

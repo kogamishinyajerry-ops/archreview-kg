@@ -9,6 +9,7 @@ from archkg.cli.main import app
 from archkg.viewer.handoff_package import (
     build_handoff_package_quality,
     write_handoff_archive_manifest,
+    write_handoff_archive_verification,
     write_handoff_manager_checklist,
     write_handoff_package,
     write_handoff_package_quality_json,
@@ -515,6 +516,84 @@ def test_handoff_archive_manifest_cli_writes_manifest(tmp_path: Path) -> None:
     payload = json.loads((package_dir / "handoff_archive_manifest.json").read_text("utf-8"))
     assert payload["created_by"] == "manager-d"
     assert payload["note"] == "Transfer package."
+
+
+def test_handoff_archive_verification_accepts_unchanged_package(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-h",
+        status="ready",
+        note="Ready.",
+    )
+    write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-e",
+        note="Queue transfer.",
+    )
+    write_handoff_archive_manifest(package_dir, created_by="manager-e")
+    original_issues = (run_dir / "issues.json").read_text("utf-8")
+
+    verification_path = write_handoff_archive_verification(package_dir)
+
+    assert verification_path == package_dir / "handoff_archive_verification.json"
+    assert (package_dir / "handoff_archive_verification.md").exists()
+    assert (run_dir / "issues.json").read_text("utf-8") == original_issues
+    assert not (run_dir / "handoff_archive_verification.json").exists()
+
+    payload = json.loads(verification_path.read_text("utf-8"))
+    assert payload["schema_version"] == "handoff_archive_verification.v1"
+    assert payload["status"] == "archive_verified"
+    assert payload["missing_files"] == []
+    assert payload["changed_files"] == []
+    assert payload["unexpected_files"] == []
+    assert payload["checks"]["package_digest_match"]["passed"] is True
+    assert payload["package_digest_expected"] == payload["package_digest_actual"]
+    assert "not a compliance certificate" in payload["boundary_warning"]
+
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "handoff_archive_verification.v1" in html
+    assert "archive_verified" in html
+    assert "handoff_archive_verification.json" in html
+
+
+def test_handoff_archive_verification_reports_checksum_drift(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    write_handoff_archive_manifest(package_dir, created_by="manager-f")
+    (package_dir / "artifacts" / "issues.json").write_text(
+        '[{"id":"mutated-after-archive"}]',
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        ["handoff-archive-verify", str(package_dir)],
+    )
+
+    assert result.exit_code == 1
+    assert "archive_drift" in result.output
+    payload = json.loads(
+        (package_dir / "handoff_archive_verification.json").read_text("utf-8")
+    )
+    assert payload["status"] == "archive_drift"
+    assert payload["missing_files"] == []
+    changed = {item["path"]: item for item in payload["changed_files"]}
+    assert "artifacts/issues.json" in changed
+    assert changed["artifacts/issues.json"]["expected_sha256"] != changed[
+        "artifacts/issues.json"
+    ]["actual_sha256"]
+    assert payload["checks"]["file_checksums_match"]["passed"] is False
 
 
 def _write_minimal_run(run_dir: Path) -> None:

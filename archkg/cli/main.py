@@ -1155,6 +1155,43 @@ def handoff_archive_manifest_cmd(
     )
 
 
+@app.command("handoff-archive-verify")
+def handoff_archive_verify_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to verify against its archive manifest.",
+    ),
+    fail_on_drift: bool = typer.Option(
+        True,
+        "--fail-on-drift/--no-fail-on-drift",
+        help="Exit non-zero when archive verification detects file drift.",
+    ),
+) -> None:
+    """Verify package-local file checksums against handoff_archive_manifest.json."""
+    from archkg.viewer.handoff_package import write_handoff_archive_verification
+
+    try:
+        verification_path = write_handoff_archive_verification(package_dir)
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(verification_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={verification_path} "
+        f"status={payload['status']} "
+        f"missing={len(payload['missing_files'])} "
+        f"changed={len(payload['changed_files'])} "
+        f"unexpected={len(payload['unexpected_files'])}"
+    )
+    if fail_on_drift and payload["status"] == "archive_drift":
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

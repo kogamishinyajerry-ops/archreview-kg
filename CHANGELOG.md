@@ -272,6 +272,11 @@ and keeps the no-OCR transparency warning.
   checksums, byte sizes, excluded generated files, and a deterministic package
   digest for transfer integrity. The source run remains untouched and the
   static package page is refreshed with the archive manifest summary.
+- P54-01 adds archive verification for received handoff packages. `archkg
+  handoff-archive-verify PACKAGE_DIR` recomputes stable package file checksums,
+  compares them with `handoff_archive_manifest.json`, writes
+  `handoff_archive_verification.json` and `.md`, and exits non-zero on
+  `archive_drift`.
 
 ### Still limited
 
@@ -335,6 +340,9 @@ and keeps the no-OCR transparency warning.
 - `handoff_archive_manifest.v1` is a transfer-integrity manifest only. It
   fingerprints copied package files but does not certify drawing compliance,
   replace release-readiness, or mutate the source run.
+- `handoff_archive_verification.v1` is a transfer-integrity verification only.
+  It detects missing, changed, or unexpected package files, but it does not
+  confirm candidate issues or certify drawing compliance.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan
