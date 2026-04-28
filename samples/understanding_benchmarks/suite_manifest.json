@@ -22,8 +22,10 @@
     {
       "case_id": "medfield-full-plan-set-multi-plan-intake",
       "fixture_kind": "real_public_multi_plan_pdf",
-      "status": "pending_fixture",
+      "status": "known_gap",
       "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_full_plan_set_run",
+      "expect": "real/medfield_full_plan_set_expected.json",
       "provenance": "real/medfield_full_plan_set_intake_provenance.json",
       "required_artifacts": [
         "source_pdf_or_private_pointer",
@@ -34,8 +36,8 @@
         "sheet_issues.json",
         "human_expected_inventory.json"
       ],
-      "promotion_rule": "do not promote to active until full-run artifacts exist and a reviewed expected inventory covers all selected plan sheets",
-      "notes": "Real public 9-page plan/elevation PDF intake for future full multi-sheet benchmark coverage. This row records the artifact gate only; it is not recognition proof."
+      "promotion_rule": "do not promote to active until full-set drawing_understanding exposes openings and the reviewed expected inventory passes all selected plan-sheet checks",
+      "notes": "Real public 9-page plan/elevation PDF known_gap. Full-set run artifacts are committed, but current primary drawing_understanding reports doors=0 / has_openings=false even though plan sheets contain door/opening evidence."
     },
     {
       "case_id": "generated-complex-titleblock",

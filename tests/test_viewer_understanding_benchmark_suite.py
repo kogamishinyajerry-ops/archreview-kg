@@ -150,6 +150,8 @@ def test_benchmark_suite_records_known_gap_without_failing_suite(tmp_path: Path)
                 "status": "known_gap",
                 "run_dir": "run",
                 "expect": "expected.json",
+                "provenance": "real/real_a1_provenance.json",
+                "promotion_rule": "promote only after expected inventory passes",
                 "notes": "Current recognizer under-counts the manually annotated rooms.",
             }
         ],
@@ -167,6 +169,8 @@ def test_benchmark_suite_records_known_gap_without_failing_suite(tmp_path: Path)
     assert result["cases"][0]["status"] == "known_gap"
     assert result["cases"][0]["passed"] is None
     assert result["cases"][0]["benchmark_passed"] is False
+    assert result["cases"][0]["provenance"] == "real/real_a1_provenance.json"
+    assert result["cases"][0]["promotion_rule"] == "promote only after expected inventory passes"
     assert result["cases"][0]["score"] < 1.0
 
 
@@ -204,9 +208,9 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     result = run_understanding_benchmark_suite(manifest_path)
 
     assert result["passed"] is True
-    assert result["pending_count"] == 2
+    assert result["pending_count"] == 1
     assert result["active_count"] == 3
-    assert result["known_gap_count"] == 0
+    assert result["known_gap_count"] == 1
     assert result["failed_count"] == 0
     medfield = next(
         case for case in result["cases"] if case["case_id"] == "medfield-a1-first-floor"
@@ -235,8 +239,10 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
         if case["case_id"] == "medfield-full-plan-set-multi-plan-intake"
     )
     assert real_multi_plan["fixture_kind"] == "real_public_multi_plan_pdf"
-    assert real_multi_plan["status"] == "pending_fixture"
+    assert real_multi_plan["status"] == "known_gap"
     assert real_multi_plan["passed"] is None
+    assert real_multi_plan["benchmark_passed"] is False
+    assert real_multi_plan["score"] < 1.0
     assert real_multi_plan["provenance"] == "real/medfield_full_plan_set_intake_provenance.json"
     assert real_multi_plan["required_artifacts"] == [
         "source_pdf_or_private_pointer",
@@ -248,6 +254,11 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
         "human_expected_inventory.json",
     ]
     assert "do not promote to active" in real_multi_plan["promotion_rule"]
+    failed_checks = {
+        check["name"] for check in real_multi_plan["checks"] if check["passed"] is False
+    }
+    assert "component_counts:doors" in failed_checks
+    assert "benchmark_signal:has_openings" in failed_checks
 
 
 def test_benchmark_suite_markdown_report() -> None:

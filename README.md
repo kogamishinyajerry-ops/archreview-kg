@@ -179,8 +179,8 @@ archkg understanding-benchmark-suite \
 P40 起，expected spec 也可以检查多页套图证据：`sheet_graphs.graph_count`、per-sheet component counts、
 `sheet_issues.sheet_count`、per-sheet required rule ids。Packaged suite 已包含 deterministic
 `generated-multi-plan-sheets` active case，用来锁定 `sheet_graphs.json` 与 `sheet_issues.json`。
-同时 suite 里登记了 `medfield-full-plan-set-multi-plan-intake` pending gate，机器可读地列出
-provenance、promotion rule 和补齐真实 multi-plan expected inventory 前必须存在的 artifacts；它不是通过样本。
+真实 Medfield 9 页 plan/elevation set 也已作为 `known_gap` 接入：suite 会真实跑分并记录
+primary full-set understanding 的 openings 缺口，但不会把它算作通过样本。
 
 不填 `--project-meta` 也可跑，但只能触发 4 张 AUTODETECTABLE 规则
 （户门净宽 / 走廊净宽 / 卧室面积 / 无障碍走廊）；其它项目级规则会被
@@ -308,7 +308,7 @@ archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks
 
 # P40: benchmark suite 也会校验 sheet_graphs.json / sheet_issues.json
 # packaged suite 当前包含 generated-multi-plan-sheets active case
-# medfield-full-plan-set-multi-plan-intake 是 pending gate，不代表真实复杂套图已通过
+# medfield-full-plan-set-multi-plan-intake 是 known_gap，不代表真实复杂套图已通过
 
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
@@ -348,7 +348,7 @@ archkg clause readiness
 - P37：rule-card authoring / citation assistant。`archkg rule-card draft` 只产 `rule_card_draft.v1` 草稿，人工确认前不进入 active rule_cards。
 - P38：multi-sheet classification。`sheet_classification.json` 先把多页套图中的 plan / schedule / title / legend / detail / elevation / unknown 作为路由证据展示；`sheet_routing.json` 再以保守条件把单一高置信 plan 页送入 graph，否则回退 legacy 全页输入。
 - P39：multi-plan graph outputs。`sheet_graphs.json` 为每个高置信 plan sheet 生成独立 graph 证据；`sheet_issues.json` 生成 per-sheet candidate issue preview。主 `entity_graph.json`、`issues.json` 和 `review_state.json` 暂不自动聚合多 plan 页。
-- P40：benchmark expansion。Understanding benchmark suite 现在能校验 multi-plan artifacts，并新增 `generated-multi-plan-sheets` active case；真实 Medfield full plan set 先以 `pending_fixture` intake gate 登记 artifact 缺口和 promotion rule。
+- P40：benchmark expansion。Understanding benchmark suite 现在能校验 multi-plan artifacts，并新增 `generated-multi-plan-sheets` active case；真实 Medfield full plan set 以 `known_gap` 登记，暴露 full-set opening evidence 尚未进入 primary drawing-understanding 的缺口。
 
 ---
 

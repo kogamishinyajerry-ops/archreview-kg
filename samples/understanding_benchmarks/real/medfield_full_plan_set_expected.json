@@ -1,0 +1,119 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "medfield-full-plan-set-known-gap-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_full_set_intake.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "住宅",
+  "component_counts": {
+    "rooms": {
+      "min": 40
+    },
+    "doors": {
+      "min": 1
+    },
+    "corridors": {
+      "min": 1
+    },
+    "stairs": {
+      "min": 1
+    },
+    "dimensions": {
+      "min": 50
+    }
+  },
+  "required_semantic_kinds": [
+    "residential_room",
+    "door_opening",
+    "horizontal_circulation",
+    "dimension_annotation",
+    "stair"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "residential_room_labels",
+    "openings",
+    "horizontal_circulation",
+    "vertical_circulation",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_horizontal_circulation": true,
+    "has_vertical_circulation": true,
+    "has_dimension_evidence": true
+  },
+  "sheet_graphs": {
+    "graph_count": {
+      "min": 5
+    },
+    "required_page_indexes": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      8
+    ],
+    "component_counts": {
+      "rooms": {
+        "min": 10
+      },
+      "dimensions": {
+        "min": 40
+      }
+    }
+  },
+  "sheet_issues": {
+    "sheet_count": {
+      "min": 5
+    },
+    "required_page_indexes": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      8
+    ],
+    "required_rule_ids_by_page": {
+      "3": [
+        "RC-DOOR-WIDTH"
+      ]
+    }
+  },
+  "manual_expected_inventory": {
+    "project": "Hillside Village, 89 N. Meadows Road, Medfield, MA",
+    "scope": "Full 9-page public plan/elevation set intake.",
+    "expected_plan_page_indexes": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      8
+    ],
+    "expected_non_plan_page_indexes": [
+      1,
+      6,
+      7
+    ],
+    "minimum_expected_evidence": [
+      "The full set contains multiple residential floor plan sheets.",
+      "The full set contains door/opening evidence on the selected plan sheets.",
+      "The full set contains horizontal circulation, vertical circulation, and dimension text evidence."
+    ],
+    "known_current_gap": [
+      "Current primary drawing_understanding for the full set reports doors=0 and has_openings=false.",
+      "Per-sheet artifacts are present, but primary full-set understanding does not yet aggregate openings across selected plan sheets."
+    ],
+    "annotation_basis": [
+      "Public Medfield plan/elevation PDF previously retrieved as a 9-page source.",
+      "P40-03 full-set run artifact inspection.",
+      "This expected spec is a minimal known-gap oracle, not a complete permit-review inventory."
+    ]
+  },
+  "authoring_note": "Known-gap expected inventory for the real Medfield full plan set. It intentionally requires full-set opening evidence that current primary drawing_understanding does not expose, while preserving passing checks for the newly committed per-sheet artifacts."
+}

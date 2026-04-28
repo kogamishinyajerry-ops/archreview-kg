@@ -164,6 +164,13 @@ and keeps the no-OCR transparency warning.
   `medfield-full-plan-set-multi-plan-intake` with explicit artifact
   gaps before it can become `known_gap` or `active`. The packaged suite
   now reports active=3, pending=2, failed=0.
+- P40-03 promotes the Medfield full 9-page plan/elevation set from
+  pending intake to `known_gap`. A reduced full-run artifact snapshot is
+  committed with `drawing_understanding.json`, `sheet_classification.json`,
+  `sheet_routing.json`, `sheet_graphs.json`, and `sheet_issues.json`;
+  the expected inventory intentionally requires full-set opening evidence
+  that current primary `drawing_understanding` misses. The packaged suite
+  now reports active=3, pending=1, known_gap=1, failed=0.
 
 ### Still limited
 
@@ -192,9 +199,9 @@ and keeps the no-OCR transparency warning.
   a human or later annotation pass must correct the draft before it
   becomes a real benchmark oracle.
 - The Medfield A-1 single-sheet fixture is a recognition benchmark only.
-  It does not prove full construction-set understanding, and the Medfield
-  full 9-page multi-plan intake remains `pending_fixture` until full-run
-  artifacts and reviewed expected inventory exist.
+  It does not prove full construction-set understanding. The Medfield
+  full 9-page multi-plan case is now a `known_gap`: per-sheet artifacts
+  exist, but primary full-set understanding still misses opening evidence.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 

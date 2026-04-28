@@ -284,7 +284,7 @@ def _known_gap_suite_case(
 ) -> dict[str, Any]:
     benchmark_passed = bool(result.get("passed"))
     if benchmark_passed:
-        return {
+        out = {
             "case_id": case_id,
             "fixture_kind": fixture_kind,
             "status": "unexpected_pass",
@@ -296,7 +296,9 @@ def _known_gap_suite_case(
             "notes": _str(raw_case.get("notes")),
             "detail": "known_gap case now passes; promote it to active or review the expected inventory",
         }
-    return {
+        out.update(_suite_case_metadata(raw_case))
+        return out
+    out = {
         "case_id": case_id,
         "fixture_kind": fixture_kind,
         "status": KNOWN_GAP_STATUS,
@@ -307,6 +309,8 @@ def _known_gap_suite_case(
         "checks": result.get("checks"),
         "notes": _str(raw_case.get("notes")),
     }
+    out.update(_suite_case_metadata(raw_case))
+    return out
 
 
 def _pending_suite_case(
@@ -323,6 +327,12 @@ def _pending_suite_case(
         "source_url": _str(raw_case.get("source_url")),
         "notes": _str(raw_case.get("notes")),
     }
+    out.update(_suite_case_metadata(raw_case))
+    return out
+
+
+def _suite_case_metadata(raw_case: Mapping[str, Any]) -> dict[str, Any]:
+    out: dict[str, Any] = {}
     provenance = _str(raw_case.get("provenance"))
     if provenance:
         out["provenance"] = provenance

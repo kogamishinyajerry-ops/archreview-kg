@@ -1,0 +1,147 @@
+{
+  "schema_version": "sheet_classification.v1",
+  "source_pdf": "tmp/p28-real/medfield-floorplans-elevations.pdf",
+  "summary": {
+    "plan": 6,
+    "schedule": 1,
+    "title": 2
+  },
+  "pages": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 5 keyword signal(s)",
+      "evidence_texts": [
+        "BASEMENT PLAN",
+        "FIRST FLOOR PLAN",
+        "SECOND FLOOR PLAN",
+        "THIRD FLOOR PLAN",
+        "ROOF PLAN",
+        "DRAWINGS WITH APPROVED SITE PLAN. ANY INCONSISTENCIES DISCREPANCIES OR AMBIGUITIES SHALL BE REPORTED TO THE"
+      ],
+      "line_count": 1861,
+      "text_count": 235
+    },
+    {
+      "page_index": 1,
+      "sheet_type": "schedule",
+      "confidence": 0.67,
+      "eligible_for_graph": false,
+      "reason": "classified from 1 keyword signal(s)",
+      "evidence_texts": [
+        "& TABLES"
+      ],
+      "line_count": 321,
+      "text_count": 187
+    },
+    {
+      "page_index": 2,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 4 keyword signal(s)",
+      "evidence_texts": [
+        "FLOOR PLAN",
+        "BASEMENT FLOOR PLAN",
+        "FIRST FLOOR",
+        "SECOND FLOOR"
+      ],
+      "line_count": 8179,
+      "text_count": 93
+    },
+    {
+      "page_index": 3,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 6 keyword signal(s)",
+      "evidence_texts": [
+        "FLOOR PLAN",
+        "FIRST FLOOR PLAN",
+        "LIVING",
+        "ROOM",
+        "LIVING",
+        "ROOM"
+      ],
+      "line_count": 12609,
+      "text_count": 374
+    },
+    {
+      "page_index": 4,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 6 keyword signal(s)",
+      "evidence_texts": [
+        "FLOOR PLAN",
+        "SECOND FLOOR PLAN",
+        "BEDROOM #1",
+        "BEDROOM",
+        "LIVING",
+        "ROOM"
+      ],
+      "line_count": 13886,
+      "text_count": 391
+    },
+    {
+      "page_index": 5,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 5 keyword signal(s)",
+      "evidence_texts": [
+        "FLOOR PLAN",
+        "THIRD FLOOR PLAN",
+        "BEDROOM",
+        "LIVING",
+        "ROOM",
+        "ROOM"
+      ],
+      "line_count": 6604,
+      "text_count": 207
+    },
+    {
+      "page_index": 6,
+      "sheet_type": "title",
+      "confidence": 0.67,
+      "eligible_for_graph": false,
+      "reason": "classified from 1 keyword signal(s)",
+      "evidence_texts": [
+        "REVISION:"
+      ],
+      "line_count": 2272,
+      "text_count": 98
+    },
+    {
+      "page_index": 7,
+      "sheet_type": "title",
+      "confidence": 0.67,
+      "eligible_for_graph": false,
+      "reason": "classified from 1 keyword signal(s)",
+      "evidence_texts": [
+        "REVISION:"
+      ],
+      "line_count": 8581,
+      "text_count": 45
+    },
+    {
+      "page_index": 8,
+      "sheet_type": "plan",
+      "confidence": 0.91,
+      "eligible_for_graph": true,
+      "reason": "classified from 3 keyword signal(s)",
+      "evidence_texts": [
+        "BEDROOM",
+        "BEDROOM",
+        "BEDROOM",
+        "BEDROOM",
+        "BEDROOM",
+        "BEDROOM"
+      ],
+      "line_count": 10608,
+      "text_count": 236
+    }
+  ]
+}
