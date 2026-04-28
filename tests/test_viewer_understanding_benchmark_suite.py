@@ -64,6 +64,13 @@ def test_benchmark_suite_runs_active_cases_and_tracks_real_pending(tmp_path: Pat
                 "fixture_kind": "real_public_pdf",
                 "status": "pending_fixture",
                 "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+                "provenance": "real/medfield_public_plans_provenance.json",
+                "required_artifacts": [
+                    "drawing_understanding.json",
+                    "sheet_graphs.json",
+                    "expected_inventory.json",
+                ],
+                "promotion_rule": "promote only after human expected inventory review",
                 "notes": "public real drawing intake placeholder; expected inventory not annotated yet",
             },
         ],
@@ -86,6 +93,13 @@ def test_benchmark_suite_runs_active_cases_and_tracks_real_pending(tmp_path: Pat
         "status": "pending_fixture",
         "passed": None,
         "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+        "provenance": "real/medfield_public_plans_provenance.json",
+        "required_artifacts": [
+            "drawing_understanding.json",
+            "sheet_graphs.json",
+            "expected_inventory.json",
+        ],
+        "promotion_rule": "promote only after human expected inventory review",
         "notes": "public real drawing intake placeholder; expected inventory not annotated yet",
     }
 
@@ -190,7 +204,7 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     result = run_understanding_benchmark_suite(manifest_path)
 
     assert result["passed"] is True
-    assert result["pending_count"] == 1
+    assert result["pending_count"] == 2
     assert result["active_count"] == 3
     assert result["known_gap_count"] == 0
     assert result["failed_count"] == 0
@@ -215,6 +229,25 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     check_names = {check["name"] for check in multi_plan["checks"]}
     assert "sheet_graphs:graph_count" in check_names
     assert "sheet_issues:rule_ids:0" in check_names
+    real_multi_plan = next(
+        case
+        for case in result["cases"]
+        if case["case_id"] == "medfield-full-plan-set-multi-plan-intake"
+    )
+    assert real_multi_plan["fixture_kind"] == "real_public_multi_plan_pdf"
+    assert real_multi_plan["status"] == "pending_fixture"
+    assert real_multi_plan["passed"] is None
+    assert real_multi_plan["provenance"] == "real/medfield_full_plan_set_intake_provenance.json"
+    assert real_multi_plan["required_artifacts"] == [
+        "source_pdf_or_private_pointer",
+        "full_review_run_dir",
+        "drawing_understanding.json",
+        "sheet_classification.json",
+        "sheet_graphs.json",
+        "sheet_issues.json",
+        "human_expected_inventory.json",
+    ]
+    assert "do not promote to active" in real_multi_plan["promotion_rule"]
 
 
 def test_benchmark_suite_markdown_report() -> None:

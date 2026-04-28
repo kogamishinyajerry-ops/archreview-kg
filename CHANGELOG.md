@@ -157,6 +157,13 @@ and keeps the no-OCR transparency warning.
   counts, per-sheet issue groups, and required rule IDs by page. The
   packaged suite adds deterministic active case `generated-multi-plan-sheets`
   and now reports active=3, pending=1, failed=0.
+- P40-02 adds a real multi-plan intake gate to the packaged benchmark
+  suite. Pending suite rows can now expose `provenance`,
+  `required_artifacts`, and `promotion_rule`, and the Medfield full
+  9-page plan/elevation set is registered as
+  `medfield-full-plan-set-multi-plan-intake` with explicit artifact
+  gaps before it can become `known_gap` or `active`. The packaged suite
+  now reports active=3, pending=2, failed=0.
 
 ### Still limited
 
@@ -184,10 +191,10 @@ and keeps the no-OCR transparency warning.
   themselves. They preserve the current recognition output for review;
   a human or later annotation pass must correct the draft before it
   becomes a real benchmark oracle.
-- The Medfield A-1 real fixture is intentionally a `known_gap`: current
-  recognition reports 169 rooms / 204 doors and no stair taxonomy against
-  a manually entered first-floor inventory. It is a regression target for
-  future recognition work, not a passing real-plan capability claim.
+- The Medfield A-1 single-sheet fixture is a recognition benchmark only.
+  It does not prove full construction-set understanding, and the Medfield
+  full 9-page multi-plan intake remains `pending_fixture` until full-run
+  artifacts and reviewed expected inventory exist.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 

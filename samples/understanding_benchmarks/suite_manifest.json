@@ -20,6 +20,24 @@
       "notes": "A-1 First Floor Plan has human-entered expected inventory. Current recognizer passes this case using a 3.0 m² real-CAD noise floor and text-hint vertical circulation evidence; this is recognition benchmarking only, not GB compliance validation."
     },
     {
+      "case_id": "medfield-full-plan-set-multi-plan-intake",
+      "fixture_kind": "real_public_multi_plan_pdf",
+      "status": "pending_fixture",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "provenance": "real/medfield_full_plan_set_intake_provenance.json",
+      "required_artifacts": [
+        "source_pdf_or_private_pointer",
+        "full_review_run_dir",
+        "drawing_understanding.json",
+        "sheet_classification.json",
+        "sheet_graphs.json",
+        "sheet_issues.json",
+        "human_expected_inventory.json"
+      ],
+      "promotion_rule": "do not promote to active until full-run artifacts exist and a reviewed expected inventory covers all selected plan sheets",
+      "notes": "Real public 9-page plan/elevation PDF intake for future full multi-sheet benchmark coverage. This row records the artifact gate only; it is not recognition proof."
+    },
+    {
       "case_id": "generated-complex-titleblock",
       "fixture_kind": "generated_complex_pdf",
       "status": "active",

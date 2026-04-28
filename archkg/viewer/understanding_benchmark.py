@@ -315,7 +315,7 @@ def _pending_suite_case(
     status: str,
     raw_case: Mapping[str, Any],
 ) -> dict[str, Any]:
-    return {
+    out: dict[str, Any] = {
         "case_id": case_id,
         "fixture_kind": fixture_kind,
         "status": status,
@@ -323,6 +323,16 @@ def _pending_suite_case(
         "source_url": _str(raw_case.get("source_url")),
         "notes": _str(raw_case.get("notes")),
     }
+    provenance = _str(raw_case.get("provenance"))
+    if provenance:
+        out["provenance"] = provenance
+    required_artifacts = _str_list(raw_case.get("required_artifacts"))
+    if required_artifacts:
+        out["required_artifacts"] = required_artifacts
+    promotion_rule = _str(raw_case.get("promotion_rule"))
+    if promotion_rule:
+        out["promotion_rule"] = promotion_rule
+    return out
 
 
 def _suite_error_case(case_id: str, fixture_kind: str, error: str) -> dict[str, Any]:

@@ -1,0 +1,36 @@
+{
+  "schema_version": "real_multi_plan_intake_provenance.v1",
+  "case_id": "medfield-full-plan-set-multi-plan-intake",
+  "fixture_kind": "real_public_multi_plan_pdf",
+  "status": "pending_fixture",
+  "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+  "source_access_note": "Same public Medfield / Hillside Village PDF used for the active A-1 single-sheet case. P40-02 tracks the full 9-page plan/elevation set as a multi-plan intake gate, not as an active benchmark.",
+  "source_pdf": {
+    "committed": false,
+    "previous_local_path_used_for_single_sheet_annotation": "tmp/p28-real/medfield-floorplans-elevations.pdf",
+    "known_page_count_from_prior_retrieval": 9,
+    "file_size_bytes_at_prior_retrieval": 1297119
+  },
+  "intended_scope": {
+    "goal": "Capture a real multi-sheet plan/elevation set for future expected-inventory authoring and multi-plan artifact benchmarking.",
+    "selected_sheet_strategy": "Review all pages first, then promote only plan sheets with human-reviewed expected inventory for drawing_understanding, sheet_graphs, and sheet_issues checks.",
+    "non_goal": "This intake row does not claim current recognition success on the full real plan set."
+  },
+  "required_artifacts_before_promotion": [
+    "source_pdf_or_private_pointer",
+    "full_review_run_dir",
+    "drawing_understanding.json",
+    "sheet_classification.json",
+    "sheet_routing.json",
+    "sheet_graphs.json",
+    "sheet_issues.json",
+    "human_expected_inventory.json"
+  ],
+  "promotion_rule": "Promote from pending_fixture only after full-run artifacts are committed or privately reproducible, and a human-reviewed expected inventory covers every selected plan sheet. If artifacts exist but current recognition misses the expected inventory, promote first as known_gap rather than active.",
+  "expected_inventory_authoring_notes": [
+    "Annotate sheet type and page index for each selected plan sheet.",
+    "Record coarse room/opening/corridor/stair/dimension counts with evidence notes.",
+    "Record required sheet_graphs page indexes and per-sheet component count ranges.",
+    "Record sheet_issues preview expectations separately from primary issues.json because P39 keeps per-sheet issues as candidate preview only."
+  ]
+}

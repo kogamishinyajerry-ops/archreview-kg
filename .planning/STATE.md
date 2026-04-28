@@ -24,12 +24,13 @@ Status:
 - P39-01 is complete: full CLI and Studio review runs now write `sheet_graphs.json`, with one independent graph per high-confidence plan sheet.
 - P39-02 is complete: full CLI and Studio review runs now write `sheet_issues.json`, a per-sheet candidate issue preview decoupled from primary `issues.json` and `review_state.json`.
 - P40-01 is complete: understanding benchmark expected specs can now check `sheet_graphs.json` and `sheet_issues.json`, and the packaged suite includes deterministic active case `generated-multi-plan-sheets`.
+- P40-02 is complete: pending benchmark suite rows now expose provenance, required artifacts, and promotion rules; the Medfield full 9-page plan/elevation set is registered as a real multi-plan intake gate, not as a passing benchmark.
 
 ## Current Phase
 
 P40: Real drawing benchmark expansion.
 
-P40-01 expands benchmark coverage from drawing-understanding payloads into multi-plan artifacts. The suite now checks graph_count, page indexes, per-sheet component counts, sheet issue groups, and required rule IDs for generated multi-plan fixtures.
+P40-02 adds a real multi-plan intake gate. The packaged suite now has active=3, pending=2, known_gap=0, failed=0. The new pending real-public row records the artifact and expected-inventory gaps required before promotion to known_gap or active.
 
 ## Key Decisions
 
@@ -50,8 +51,9 @@ P40-01 expands benchmark coverage from drawing-understanding payloads into multi
 - Sheet routing is still page-level and conservative; multiple plan pages need future multi-graph support before automatic per-sheet graph outputs are trusted.
 - Per-sheet issues are preview-only in P39-02; do not claim multi-plan compliance aggregation until issue IDs, review state linkage, and report grouping are explicitly promoted.
 - P40-01 uses a deterministic generated multi-plan fixture; it does not replace real public/private multi-plan expected inventory intake.
+- P40-02 registers a real full-set intake gate but does not include a full-run expected inventory yet; it is bookkeeping for annotation work, not recognition proof.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Add a real public or user-private multi-plan known_gap/active case.
+Run the real Medfield full plan set or a user-private multi-plan drawing through full review, then author human expected inventory and promote it first to `known_gap` unless all multi-plan artifact checks pass.
