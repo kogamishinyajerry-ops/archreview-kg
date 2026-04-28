@@ -28,6 +28,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   方便新手审图工程师直接打开复核。
 - P52 后可用 `archkg handoff-manager-checklist <package-dir>` 生成负责人交接清单，
   把 package quality、reviewer signoff 和必需 artifact 汇总为 manager-level intake 状态。
+- P53 后可用 `archkg handoff-archive-manifest <package-dir>` 生成移交完整性清单，
+  对交接包内稳定文件记录 SHA-256 和 package digest；它只证明包文件未漂移，不证明图纸合规。
 
 复现该结论：
 
@@ -217,6 +219,8 @@ archkg studio
   刷新 quality/signoff 摘要；该页面只是浏览入口，不产生新 evidence。
 - P52 新增 `archkg handoff-manager-checklist`：读取包内 manifest、handoff quality 和 reviewer signoff，
   写出 `handoff_manager_checklist.v1` JSON/Markdown，并刷新静态入口；该清单只判断交接包是否可进入下一步复核。
+- P53 新增 `archkg handoff-archive-manifest`：读取交接包并写出 `handoff_archive_manifest.v1` JSON/Markdown，
+  对 `artifacts/*` 和包根 metadata 记录 SHA-256、size 和 package digest；该命令不修改源 run，不是合规证书。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
@@ -301,6 +305,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
 - P51 起，交接包可直接打开 `index.html` 给新手 reviewer 使用；页面上的状态来自既有 artifacts，
   不替代源 run、benchmark 或人工复核。
 - P52 起，负责人可用 manager checklist 做 intake；`manager_ready` 不是图纸合规，只表示交接包本身满足进入下一轮复核的条件。
+- P53 起，移交前可用 archive manifest 做 checksum 固化；`archive_manifest_ready` 只表示包内文件有完整性清单，
+  不替代 source run、benchmark、release-readiness 或人工复核。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

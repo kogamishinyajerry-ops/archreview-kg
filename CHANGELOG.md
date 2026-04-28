@@ -266,6 +266,12 @@ and keeps the no-OCR transparency warning.
   `manager_ready`, `manager_needs_info`, or `manager_blocked` from the package
   manifest, handoff quality gate, and reviewer signoff. The static package
   page is refreshed with the manager checklist summary.
+- P53-01 adds a handoff archive manifest. `archkg handoff-archive-manifest
+  PACKAGE_DIR --created-by NAME` writes `handoff_archive_manifest.json` and
+  `handoff_archive_manifest.md` inside the handoff package, recording SHA-256
+  checksums, byte sizes, excluded generated files, and a deterministic package
+  digest for transfer integrity. The source run remains untouched and the
+  static package page is refreshed with the archive manifest summary.
 
 ### Still limited
 
@@ -326,6 +332,9 @@ and keeps the no-OCR transparency warning.
 - `handoff_manager_checklist.v1` is a package-management acceptance aid only.
   It summarizes whether the evidence bundle can enter the next review step; it
   does not confirm candidate issues or certify drawing compliance.
+- `handoff_archive_manifest.v1` is a transfer-integrity manifest only. It
+  fingerprints copied package files but does not certify drawing compliance,
+  replace release-readiness, or mutate the source run.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan

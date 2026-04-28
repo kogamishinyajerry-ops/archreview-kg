@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import shutil
@@ -12,8 +13,17 @@ SCHEMA_VERSION = "handoff_package.v1"
 QUALITY_SCHEMA_VERSION = "handoff_package_quality.v1"
 SIGNOFF_SCHEMA_VERSION = "handoff_reviewer_signoff.v1"
 MANAGER_CHECKLIST_SCHEMA_VERSION = "handoff_manager_checklist.v1"
+ARCHIVE_MANIFEST_SCHEMA_VERSION = "handoff_archive_manifest.v1"
 
 MUTATION_POLICY = "copy_artifacts_only_no_source_run_mutation"
+ARCHIVE_MANIFEST_MUTATION_POLICY = (
+    "package_integrity_manifest_only_no_source_run_mutation"
+)
+ARCHIVE_MANIFEST_EXCLUDED_PATHS: tuple[str, ...] = (
+    "handoff_archive_manifest.json",
+    "handoff_archive_manifest.md",
+    "index.html",
+)
 
 BOUNDARY_WARNINGS: tuple[str, ...] = (
     "This package is read-only evidence for human handoff; it does not certify compliance.",
@@ -319,6 +329,7 @@ def write_handoff_index(
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
+    archive_manifest: dict[str, Any] | None = None,
 ) -> Path:
     package_dir = package_dir.resolve()
     manifest = _load_manifest(package_dir / "handoff_manifest.json")
@@ -330,6 +341,7 @@ def write_handoff_index(
         quality=quality,
         signoff=signoff,
         manager_checklist=manager_checklist,
+        archive_manifest=archive_manifest,
     )
 
 
@@ -339,10 +351,12 @@ def render_handoff_index_html(
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
+    archive_manifest: dict[str, Any] | None = None,
 ) -> str:
     quality = quality if isinstance(quality, dict) else {}
     signoff = signoff if isinstance(signoff, dict) else {}
     manager_checklist = manager_checklist if isinstance(manager_checklist, dict) else {}
+    archive_manifest = archive_manifest if isinstance(archive_manifest, dict) else {}
     artifact_rows = _artifact_rows(manifest)
     available_count = sum(1 for row in artifact_rows if row.get("status") == "available")
     required_missing = _str_list(manifest.get("missing_required_artifacts"))
@@ -351,6 +365,9 @@ def render_handoff_index_html(
     signoff_schema = _str(signoff.get("schema_version")) or "not_recorded"
     signoff_note = _str(signoff.get("note")) or "No reviewer signoff note recorded yet."
     manager_status = _str(manager_checklist.get("status")) or "not_recorded"
+    archive_status = _str(archive_manifest.get("status")) or "not_recorded"
+    archive_digest = _str(archive_manifest.get("package_digest")) or "not_recorded"
+    archive_file_count = archive_manifest.get("file_count")
 
     lines = [
         "<!doctype html>",
@@ -392,6 +409,7 @@ def render_handoff_index_html(
         _kpi("Quality", quality_status, _status_class(quality_status)),
         _kpi("Signoff", signoff_status, _status_class(signoff_status)),
         _kpi("Manager", manager_status, _status_class(manager_status)),
+        _kpi("Archive", archive_status, _status_class(archive_status)),
         "</section>",
         '<section class="panel">',
         "<h2>Package Boundaries</h2>",
@@ -442,6 +460,16 @@ def render_handoff_index_html(
     lines.extend(
         [
             '<p><a href="handoff_manager_checklist.json">handoff_manager_checklist.json</a> · <a href="handoff_manager_checklist.md">handoff_manager_checklist.md</a></p>',
+            "</section>",
+            '<section class="panel">',
+            "<h2>Archive Manifest</h2>",
+            f"<p><b>Schema:</b> {_html(_str(archive_manifest.get('schema_version')) or 'not_recorded')}</p>",
+            f"<p><b>Created by:</b> {_html(_str(archive_manifest.get('created_by')) or 'not_recorded')}</p>",
+            f"<p><b>Status:</b> <span class=\"pill\">{_html(archive_status)}</span></p>",
+            f"<p><b>Files:</b> {_html(str(archive_file_count) if isinstance(archive_file_count, int) else 'not_recorded')}</p>",
+            f"<p><b>package_digest:</b> <code>{_html(archive_digest)}</code></p>",
+            f"<p>{_html(_str(archive_manifest.get('boundary_warning')) or 'Archive manifest is not a compliance certificate.')}</p>",
+            '<p><a href="handoff_archive_manifest.json">handoff_archive_manifest.json</a> · <a href="handoff_archive_manifest.md">handoff_archive_manifest.md</a></p>',
             "</section>",
             '<section class="panel">',
             "<h2>Artifacts</h2>",
@@ -655,6 +683,104 @@ def render_handoff_manager_checklist_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def write_handoff_archive_manifest(
+    package_dir: Path,
+    *,
+    created_by: str = "",
+    note: str = "",
+) -> Path:
+    """Write a package-local integrity manifest with stable file checksums."""
+
+    package_dir = package_dir.resolve()
+    payload = build_handoff_archive_manifest(
+        package_dir,
+        created_by=created_by,
+        note=note,
+    )
+    path = package_dir / "handoff_archive_manifest.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    (package_dir / "handoff_archive_manifest.md").write_text(
+        render_handoff_archive_manifest_markdown(payload),
+        encoding="utf-8",
+    )
+    write_handoff_index(package_dir, archive_manifest=payload)
+    return path
+
+
+def build_handoff_archive_manifest(
+    package_dir: Path,
+    *,
+    created_by: str = "",
+    note: str = "",
+) -> dict[str, Any]:
+    package_dir = package_dir.resolve()
+    manifest = _load_manifest(package_dir / "handoff_manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
+    files = _archive_file_entries(package_dir)
+    return {
+        "schema_version": ARCHIVE_MANIFEST_SCHEMA_VERSION,
+        "created_at": datetime.now(UTC).isoformat(),
+        "package_dir": str(package_dir),
+        "source_run_dir": _str(manifest.get("source_run_dir")),
+        "mutation_policy": ARCHIVE_MANIFEST_MUTATION_POLICY,
+        "created_by": created_by,
+        "status": "archive_manifest_ready" if files else "archive_manifest_empty",
+        "note": note,
+        "excluded_paths": list(ARCHIVE_MANIFEST_EXCLUDED_PATHS),
+        "file_count": len(files),
+        "total_size_bytes": sum(_int(item.get("size_bytes")) for item in files),
+        "files": files,
+        "package_digest": _archive_package_digest(files),
+        "boundary_warning": (
+            "Archive manifest records transfer integrity checksums only; it is not a "
+            "compliance certificate and does not mutate source run artifacts."
+        ),
+    }
+
+
+def render_handoff_archive_manifest_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Handoff Archive Manifest",
+        "",
+        f"Status: `{_str(payload.get('status'))}`",
+        f"Created by: `{_str(payload.get('created_by')) or 'not_recorded'}`",
+        f"Mutation policy: `{_str(payload.get('mutation_policy'))}`",
+        f"package_digest: `{_str(payload.get('package_digest'))}`",
+        f"File count: `{payload.get('file_count')}`",
+        f"Total size bytes: `{payload.get('total_size_bytes')}`",
+        "",
+        _str(payload.get("boundary_warning")),
+        "",
+        "## Excluded Paths",
+        "",
+    ]
+    excluded_paths = _str_list(payload.get("excluded_paths"))
+    lines.extend(f"- `{item}`" for item in excluded_paths) if excluded_paths else lines.append("- None")
+    note = _str(payload.get("note"))
+    if note:
+        lines.extend(["", "## Note", "", note])
+    lines.extend(
+        [
+            "",
+            "## Files",
+            "",
+            "| Path | Role | Size Bytes | SHA-256 |",
+            "|---|---|---:|---|",
+        ]
+    )
+    for row in _list_of_dicts(payload.get("files")):
+        lines.append(
+            "| "
+            f"`{_str(row.get('path'))}` | "
+            f"{_str(row.get('role'))} | "
+            f"{_int(row.get('size_bytes'))} | "
+            f"`{_str(row.get('sha256'))}` |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _copy_artifact(
     run_dir: Path,
     artifacts_dir: Path,
@@ -689,6 +815,7 @@ def _write_handoff_index_from_payloads(
     quality: dict[str, Any] | None = None,
     signoff: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
+    archive_manifest: dict[str, Any] | None = None,
 ) -> Path:
     quality = quality if quality is not None else _load_optional_json(
         package_dir / "handoff_quality.json"
@@ -701,6 +828,11 @@ def _write_handoff_index_from_payloads(
         if manager_checklist is not None
         else _load_optional_json(package_dir / "handoff_manager_checklist.json")
     )
+    archive_manifest = (
+        archive_manifest
+        if archive_manifest is not None
+        else _load_optional_json(package_dir / "handoff_archive_manifest.json")
+    )
     path = package_dir / "index.html"
     path.write_text(
         render_handoff_index_html(
@@ -708,6 +840,7 @@ def _write_handoff_index_from_payloads(
             quality=quality,
             signoff=signoff,
             manager_checklist=manager_checklist,
+            archive_manifest=archive_manifest,
         ),
         encoding="utf-8",
     )
@@ -857,6 +990,67 @@ def _manager_status(items: list[dict[str, str]]) -> str:
     return "manager_ready"
 
 
+def _archive_file_entries(package_dir: Path) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    excluded = set(ARCHIVE_MANIFEST_EXCLUDED_PATHS)
+    for path in sorted(package_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(package_dir).as_posix()
+        if rel in excluded:
+            continue
+        size_bytes = path.stat().st_size
+        entries.append(
+            {
+                "path": rel,
+                "role": _archive_file_role(rel),
+                "size_bytes": size_bytes,
+                "sha256": _sha256_file(path),
+            }
+        )
+    return entries
+
+
+def _archive_file_role(rel_path: str) -> str:
+    if rel_path.startswith("artifacts/"):
+        return "copied_artifact"
+    if rel_path in {"handoff_manifest.json", "handoff_summary.md"}:
+        return "package_manifest"
+    if rel_path.startswith("handoff_quality"):
+        return "quality"
+    if rel_path.startswith("reviewer_signoff"):
+        return "signoff"
+    if rel_path.startswith("handoff_manager_checklist"):
+        return "manager_checklist"
+    return "package_file"
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _archive_package_digest(files: list[dict[str, Any]]) -> str:
+    stable = [
+        {
+            "path": _str(row.get("path")),
+            "size_bytes": _int(row.get("size_bytes")),
+            "sha256": _str(row.get("sha256")),
+        }
+        for row in sorted(files, key=lambda item: _str(item.get("path")))
+    ]
+    raw = json.dumps(
+        stable,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
 def _kpi(label: str, value: str, class_name: str = "") -> str:
     class_attr = f" {class_name}" if class_name else ""
     return (
@@ -868,9 +1062,14 @@ def _kpi(label: str, value: str, class_name: str = "") -> str:
 
 
 def _status_class(status: str) -> str:
-    if status in {"handoff_ready", "ready", "manager_ready"}:
+    if status in {
+        "handoff_ready",
+        "ready",
+        "manager_ready",
+        "archive_manifest_ready",
+    }:
         return "ok"
-    if status in {"not_ready", "blocked", "manager_blocked"}:
+    if status in {"not_ready", "blocked", "manager_blocked", "archive_manifest_empty"}:
         return "bad"
     if status in {
         "handoff_ready_with_warnings",
@@ -940,6 +1139,10 @@ def _str_list(raw: object) -> list[str]:
     return [item for item in raw if isinstance(item, str)]
 
 
+def _int(raw: object) -> int:
+    return raw if isinstance(raw, int) else 0
+
+
 def _str(raw: object) -> str:
     return raw if isinstance(raw, str) else ""
 
@@ -953,6 +1156,7 @@ def _html_attr(raw: object) -> str:
 
 
 __all__ = [
+    "ARCHIVE_MANIFEST_SCHEMA_VERSION",
     "ARTIFACTS",
     "BOUNDARY_WARNINGS",
     "MANAGER_CHECKLIST_SCHEMA_VERSION",
@@ -960,13 +1164,16 @@ __all__ = [
     "QUALITY_SCHEMA_VERSION",
     "SCHEMA_VERSION",
     "SIGNOFF_SCHEMA_VERSION",
+    "build_handoff_archive_manifest",
     "build_handoff_manager_checklist",
     "build_handoff_package_quality",
+    "render_handoff_archive_manifest_markdown",
     "render_handoff_index_html",
     "render_handoff_manager_checklist_markdown",
     "render_handoff_package_quality_markdown",
     "render_handoff_reviewer_signoff_markdown",
     "render_handoff_summary",
+    "write_handoff_archive_manifest",
     "write_handoff_index",
     "write_handoff_manager_checklist",
     "write_handoff_package",

@@ -8,6 +8,7 @@ from typer.testing import CliRunner
 from archkg.cli.main import app
 from archkg.viewer.handoff_package import (
     build_handoff_package_quality,
+    write_handoff_archive_manifest,
     write_handoff_manager_checklist,
     write_handoff_package,
     write_handoff_package_quality_json,
@@ -402,6 +403,118 @@ def test_handoff_manager_checklist_cli_writes_needs_info(tmp_path: Path) -> None
     html = (package_dir / "index.html").read_text("utf-8")
     assert "manager_needs_info" in html
     assert "manager-b" in html
+
+
+def test_handoff_archive_manifest_writes_checksums_without_source_mutation(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    original_issues = (run_dir / "issues.json").read_text("utf-8")
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-f",
+        status="ready",
+        note="Ready for manager intake.",
+    )
+    write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-c",
+        note="Queue it.",
+    )
+
+    archive_path = write_handoff_archive_manifest(
+        package_dir,
+        created_by="manager-c",
+    )
+
+    assert archive_path == package_dir / "handoff_archive_manifest.json"
+    assert (package_dir / "handoff_archive_manifest.md").exists()
+    assert (run_dir / "issues.json").read_text("utf-8") == original_issues
+    assert not (run_dir / "handoff_archive_manifest.json").exists()
+
+    payload = json.loads(archive_path.read_text("utf-8"))
+    assert payload["schema_version"] == "handoff_archive_manifest.v1"
+    assert (
+        payload["mutation_policy"]
+        == "package_integrity_manifest_only_no_source_run_mutation"
+    )
+    assert payload["created_by"] == "manager-c"
+    assert payload["status"] == "archive_manifest_ready"
+    assert payload["excluded_paths"] == [
+        "handoff_archive_manifest.json",
+        "handoff_archive_manifest.md",
+        "index.html",
+    ]
+    paths = {entry["path"]: entry for entry in payload["files"]}
+    assert "artifacts/issues.json" in paths
+    assert "handoff_manifest.json" in paths
+    assert "handoff_quality.json" in paths
+    assert "reviewer_signoff.json" in paths
+    assert "handoff_manager_checklist.json" in paths
+    assert "index.html" not in paths
+    assert "handoff_archive_manifest.json" not in paths
+    assert len(paths["artifacts/issues.json"]["sha256"]) == 64
+    assert paths["artifacts/issues.json"]["size_bytes"] >= 2
+    assert len(payload["package_digest"]) == 64
+    assert "not a compliance certificate" in payload["boundary_warning"]
+
+    markdown = (package_dir / "handoff_archive_manifest.md").read_text("utf-8")
+    assert "# Handoff Archive Manifest" in markdown
+    assert "artifacts/issues.json" in markdown
+    assert "package_digest" in markdown
+
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "handoff_archive_manifest.v1" in html
+    assert "archive_manifest_ready" in html
+    assert "handoff_archive_manifest.json" in html
+
+
+def test_handoff_archive_manifest_cli_writes_manifest(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-g",
+        status="ready",
+        note="Ready for transfer.",
+    )
+    write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-d",
+        note="Queue transfer.",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "handoff-archive-manifest",
+            str(package_dir),
+            "--created-by",
+            "manager-d",
+            "--note",
+            "Transfer package.",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "handoff_archive_manifest.v1" in result.output
+    assert "files=" in result.output
+    assert (package_dir / "handoff_archive_manifest.json").exists()
+    assert (package_dir / "handoff_archive_manifest.md").exists()
+    payload = json.loads((package_dir / "handoff_archive_manifest.json").read_text("utf-8"))
+    assert payload["created_by"] == "manager-d"
+    assert payload["note"] == "Transfer package."
 
 
 def _write_minimal_run(run_dir: Path) -> None:

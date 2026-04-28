@@ -1114,6 +1114,47 @@ def handoff_manager_checklist_cmd(
     )
 
 
+@app.command("handoff-archive-manifest")
+def handoff_archive_manifest_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to fingerprint for transfer integrity.",
+    ),
+    created_by: str = typer.Option(
+        "",
+        "--created-by",
+        help="Name or initials to record as the archive manifest author.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Free-form archive note. This is package-local and not a compliance certificate.",
+    ),
+) -> None:
+    """Write package-local file checksums without mutating source run artifacts."""
+    from archkg.viewer.handoff_package import write_handoff_archive_manifest
+
+    try:
+        manifest_path = write_handoff_archive_manifest(
+            package_dir,
+            created_by=created_by,
+            note=note,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(manifest_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={manifest_path} "
+        f"files={payload['file_count']} digest={payload['package_digest']}"
+    )
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

@@ -31,6 +31,9 @@ archkg handoff-signoff out/review-demo-handoff \
 archkg handoff-manager-checklist out/review-demo-handoff \
   --manager manager-name \
   --note "等待补齐剖面证据"
+archkg handoff-archive-manifest out/review-demo-handoff \
+  --created-by manager-name \
+  --note "移交前固化 checksum"
 open out/review-demo-handoff/index.html
 ```
 
@@ -40,7 +43,10 @@ open out/review-demo-handoff/index.html
 `blocked`；该记录只是包内交接备注，不确认 issue，也不是合规证书。
 负责人可用 `handoff-manager-checklist` 写入 `handoff_manager_checklist.json` / `.md`，把 package quality、
 reviewer signoff 和必需 artifact 汇总成 `manager_ready` / `manager_needs_info` / `manager_blocked`。
-交接包里的 `index.html` 是静态只读入口，优先从这里查看 quality、signoff、manager checklist、artifact 链接和边界提醒。
+移交前可用 `handoff-archive-manifest` 写入 `handoff_archive_manifest.json` / `.md`，记录稳定包文件的 SHA-256
+和 package digest；它只用于完整性核对，不是合规证书。
+交接包里的 `index.html` 是静态只读入口，优先从这里查看 quality、signoff、manager checklist、archive manifest、
+artifact 链接和边界提醒。
 
 ## 第一小时流程
 
@@ -113,6 +119,11 @@ archkg handoff-manager-checklist out/review-demo-handoff \
   --manager manager-name \
   --note "等待补齐剖面证据"
 
+# 写入移交 checksum 清单
+archkg handoff-archive-manifest out/review-demo-handoff \
+  --created-by manager-name \
+  --note "移交前固化 checksum"
+
 # 打开交接包静态入口
 open out/review-demo-handoff/index.html
 ```
@@ -135,6 +146,7 @@ handoff_package：
 handoff_quality：
 reviewer_signoff：
 manager_checklist：
+archive_manifest：
 handoff_index：
 下一步：
 ```

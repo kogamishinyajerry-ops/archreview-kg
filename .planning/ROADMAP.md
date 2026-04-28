@@ -184,6 +184,12 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - P52-01 complete: `archkg handoff-manager-checklist` writes `handoff_manager_checklist.v1` JSON/Markdown and refreshes the static package index.
 - Guardrail: manager status is package-intake status only; it does not confirm candidate issues or certify drawing compliance.
 
+### P53: Archive Manifest Checksums
+
+- Give transferred handoff packages a stable file integrity manifest for downstream intake.
+- P53-01 complete: `archkg handoff-archive-manifest` writes `handoff_archive_manifest.v1` JSON/Markdown, SHA-256 file entries, and a deterministic package digest while excluding generated self/index files.
+- Guardrail: archive manifest status is transfer-integrity evidence only; it does not certify drawing compliance or replace source-run artifacts.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

@@ -42,12 +42,13 @@ Status:
 - P50-01 is complete: `archkg handoff-signoff` now writes package-local reviewer signoff JSON/Markdown notes without mutating the source run.
 - P51-01 is complete: handoff packages now include a package-root static `index.html`, and handoff quality/signoff commands refresh that browser entry.
 - P52-01 is complete: `archkg handoff-manager-checklist` now writes package-local manager checklist JSON/Markdown and refreshes the static package index.
+- P53-01 is complete: `archkg handoff-archive-manifest` now writes package-local archive manifest JSON/Markdown with SHA-256 file entries and a deterministic package digest.
 
 ## Current Phase
 
-P52: Manager checklist export.
+P53: Archive manifest checksums.
 
-P52 is complete. Handoff packages now have manager-level intake status derived from package manifest, handoff quality, and reviewer signoff without mutating source run artifacts.
+P53 is complete. Handoff packages now have transfer-integrity checksums for stable package files, while generated self/index files are excluded to avoid checksum loops.
 
 ## Key Decisions
 
@@ -83,8 +84,9 @@ P52 is complete. Handoff packages now have manager-level intake status derived f
 - P50 reviewer signoff notes are package-local handoff notes only; `ready` does not mean the drawing is compliant.
 - P51 static handoff `index.html` is a navigation surface only; it does not create new evidence or replace source-run artifacts.
 - P52 manager checklist status is package-intake status only; `manager_ready` does not mean the drawing is compliant.
+- P53 archive manifest status is transfer-integrity evidence only; `archive_manifest_ready` does not mean the drawing is compliant.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P52 by adding a concise manager-facing package archive manifest, or by expanding the real complex benchmark set with another reviewed expected inventory.
+Move beyond P53 by adding archive verification/import checks for received packages, or by expanding the real complex benchmark set with another reviewed expected inventory.
