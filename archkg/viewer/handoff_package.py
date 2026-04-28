@@ -71,6 +71,18 @@ ARTIFACTS: tuple[HandoffArtifactSpec, ...] = (
         "Human-readable ordered review task sequence.",
     ),
     HandoffArtifactSpec(
+        "reviewer_task_checklist.json",
+        True,
+        "entry",
+        "Machine-readable fillable reviewer checklist seed.",
+    ),
+    HandoffArtifactSpec(
+        "reviewer_task_checklist.md",
+        True,
+        "entry",
+        "Human-readable fillable reviewer checklist.",
+    ),
+    HandoffArtifactSpec(
         "report.md",
         True,
         "entry",
@@ -263,6 +275,8 @@ def render_handoff_summary(manifest: dict[str, Any]) -> str:
         )
     lines.extend(["", "## Next Review Actions", ""])
     lines.append("- Open `artifacts/reviewer_quickstart.md` first.")
+    lines.append("- Follow `artifacts/reviewer_task_sequence.md` for priority order.")
+    lines.append("- Fill `artifacts/reviewer_task_checklist.md` while reviewing evidence.")
     lines.append("- Check `artifacts/rule_input_readiness.json` before trusting issue counts.")
     lines.append("- Use `archkg review-state` only with primary issue ids from `artifacts/issues.json`.")
     lines.append("- Treat `artifacts/sheet_issue_review_queue.json` as preview evidence only.")

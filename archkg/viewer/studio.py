@@ -414,6 +414,11 @@ def run_pipeline(
         write_reviewer_onboarding_json,
         write_reviewer_quickstart_markdown,
     )
+    from archkg.viewer.reviewer_task_checklist import (
+        build_reviewer_task_checklist,
+        write_reviewer_task_checklist_json,
+        write_reviewer_task_checklist_markdown,
+    )
     from archkg.viewer.reviewer_task_sequence import (
         build_reviewer_task_sequence,
         write_reviewer_task_sequence_json,
@@ -701,6 +706,19 @@ def run_pipeline(
             reviewer_task_sequence,
             out_dir / "reviewer_task_sequence.md",
         )
+        reviewer_task_checklist = build_reviewer_task_checklist(
+            run_dir=out_dir,
+            source_pdf=pdf_path,
+            reviewer_task_sequence=reviewer_task_sequence,
+        )
+        write_reviewer_task_checklist_json(
+            reviewer_task_checklist,
+            out_dir / "reviewer_task_checklist.json",
+        )
+        write_reviewer_task_checklist_markdown(
+            reviewer_task_checklist,
+            out_dir / "reviewer_task_checklist.md",
+        )
         _render_viewer_index(
             out_dir, pdf_path,
             quality_flags=quality_flags,
@@ -800,6 +818,19 @@ def run_pipeline(
         reviewer_task_sequence,
         out_dir / "reviewer_task_sequence.md",
     )
+    reviewer_task_checklist = build_reviewer_task_checklist(
+        run_dir=out_dir,
+        source_pdf=pdf_path,
+        reviewer_task_sequence=reviewer_task_sequence,
+    )
+    write_reviewer_task_checklist_json(
+        reviewer_task_checklist,
+        out_dir / "reviewer_task_checklist.json",
+    )
+    write_reviewer_task_checklist_markdown(
+        reviewer_task_checklist,
+        out_dir / "reviewer_task_checklist.md",
+    )
 
     annotated = annotate_pdf(pdf_path, result.issues, out_dir / "annotated.pdf")
     render_report(
@@ -823,6 +854,7 @@ def run_pipeline(
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
         reviewer_task_sequence=reviewer_task_sequence,
+        reviewer_task_checklist=reviewer_task_checklist,
     )
 
     if annotated.exists():
@@ -965,6 +997,7 @@ def _render_viewer_index(
     from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.review_workbench import load_review_workbench_view
     from archkg.viewer.reviewer_onboarding import load_reviewer_onboarding_view
+    from archkg.viewer.reviewer_task_checklist import load_reviewer_task_checklist_view
     from archkg.viewer.reviewer_task_sequence import load_reviewer_task_sequence_view
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
@@ -1004,6 +1037,7 @@ def _render_viewer_index(
     rule_readiness = load_rule_readiness_view(out_dir)
     review_workbench = load_review_workbench_view(out_dir)
     reviewer_onboarding = load_reviewer_onboarding_view(out_dir)
+    reviewer_task_checklist = load_reviewer_task_checklist_view(out_dir)
     reviewer_task_sequence = load_reviewer_task_sequence_view(out_dir)
     review_diff = load_review_diff_view(out_dir)
     review_state = load_review_state_view(out_dir, issues)
@@ -1037,6 +1071,7 @@ def _render_viewer_index(
         rule_readiness=rule_readiness,
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_checklist=reviewer_task_checklist,
         reviewer_task_sequence=reviewer_task_sequence,
         review_diff=review_diff,
         review_state=review_state,

@@ -244,6 +244,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Render the ordered sequence in report and Viewer, and include it in handoff packages as entry evidence.
 - Guardrail: task sequencing is guidance only; it does not write review state, confirm issues, promote preview issues, or certify compliance.
 
+### P62: Reviewer Task Checklist Seed
+
+- Generate `reviewer_task_checklist.json` and `reviewer_task_checklist.md` from `reviewer_task_sequence.json` for full CLI and Studio runs.
+- Include reviewer_status, reviewer note, evidence_checked placeholders, required evidence, completion prompts, and per-stage mutation warnings for each ordered task.
+- Render the checklist seed in report and Viewer, and include it in handoff packages as entry evidence.
+- Guardrail: checklist rows are fillable human work aids only; they do not mutate source run artifacts, confirm candidate issues, or certify compliance.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

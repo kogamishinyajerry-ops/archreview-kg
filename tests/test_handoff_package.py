@@ -46,6 +46,8 @@ def test_handoff_package_copies_review_artifacts_without_mutating_run(
     assert (package_dir / "artifacts" / "reviewer_quickstart.md").exists()
     assert (package_dir / "artifacts" / "reviewer_task_sequence.json").exists()
     assert (package_dir / "artifacts" / "reviewer_task_sequence.md").exists()
+    assert (package_dir / "artifacts" / "reviewer_task_checklist.json").exists()
+    assert (package_dir / "artifacts" / "reviewer_task_checklist.md").exists()
     assert (package_dir / "artifacts" / "sheet_issue_review_queue.json").exists()
     assert (package_dir / "artifacts" / "review_diff.json").exists()
 
@@ -54,6 +56,7 @@ def test_handoff_package_copies_review_artifacts_without_mutating_run(
     assert "Missing Required Artifacts" in summary
     assert "None" in summary
     assert "sheet_issue_review_queue.json" in summary
+    assert "reviewer_task_checklist.md" in summary
     assert "preview ids are not primary issue ids" in summary
 
 
@@ -823,6 +826,8 @@ def _write_minimal_run(run_dir: Path) -> None:
         "reviewer_quickstart.md": "# Quickstart\n",
         "reviewer_task_sequence.json": '{"schema_version":"reviewer_task_sequence.v1"}',
         "reviewer_task_sequence.md": "# Reviewer Task Sequence\n",
+        "reviewer_task_checklist.json": '{"schema_version":"reviewer_task_checklist.v1"}',
+        "reviewer_task_checklist.md": "# Reviewer Task Checklist\n",
         "report.md": "# Report\n",
         "review_workbench.json": '{"schema_version":"review_workbench.v1"}',
         "drawing_understanding.json": '{"schema_version":"drawing_understanding.v2"}',

@@ -220,6 +220,11 @@ and keeps the no-OCR transparency warning.
   and Studio runs now write `reviewer_task_sequence.json` and
   `reviewer_task_sequence.md`, report/Viewer render the ordered queue, and
   handoff packages copy the sequence as entry evidence.
+- P62-01 adds a fillable reviewer task checklist seed. Full CLI and Studio
+  runs now derive `reviewer_task_checklist.json` and
+  `reviewer_task_checklist.md` from the ordered sequence, report/Viewer render
+  the checklist, and handoff packages copy it as entry evidence without
+  mutating issue state.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

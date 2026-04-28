@@ -42,6 +42,9 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   `handoff_bundle_index` JSON/Markdown/HTML，用于筛出 ready / needs_info / blocked 包。
 - P61 后完整 run 会生成 `reviewer_task_sequence.json` / `.md`，按 readiness blockers、
   主 issue、per-sheet preview、handoff 动作排序新手 reviewer 的下一步。
+- P62 后完整 run 会从任务序列派生 `reviewer_task_checklist.json` / `.md`，供新手
+  reviewer 逐项勾选证据、记录 reviewer_status 与未解决风险；该清单不写回
+  `issues.json` 或 `review_state.json`。
 
 复现该结论：
 
@@ -337,6 +340,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   `bundle_ready` 不是图纸合规，也不是 release-readiness 的替代品。
 - P61 起，reviewer task sequence 只是复核顺序，不会自动确认 issue、不会写
   `review_state.json`，也不会把 preview issue 提升为主 issue。
+- P62 起，reviewer task checklist 只是人工填写的清单种子，不会自动完成任务、
+  确认 issue、写入 `review_state.json`，也不是合规证书。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

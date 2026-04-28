@@ -84,6 +84,8 @@ open handoff-packages/handoff_bundle_index.html
 用于负责人快速筛选 ready / needs_info / blocked 包；它不写入任何单包目录，也不是合规证书。
 P61 起交接包也会携带 `reviewer_task_sequence.json` / `.md`，让接手 reviewer 先处理
 readiness blockers，再看主 issue，最后看 per-sheet preview 和 handoff 动作。
+P62 起每次完整 run 还会生成 `reviewer_task_checklist.json` / `.md`，把任务序列转成
+可人工填写的复核清单；它只帮助记录证据和风险，不会自动确认 issue 或写回 review state。
 
 ---
 
@@ -412,6 +414,9 @@ open out-handoff/index.html
 archkg handoff-bundle-index handoff-packages/
 open handoff-packages/handoff_bundle_index.html
 
+# P62: 新手复核清单会随完整 review run 自动生成
+open out/reviewer_task_checklist.md
+
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
 
@@ -461,6 +466,7 @@ archkg clause readiness
 - P45：Release readiness tightening。`sample_clean_full` toy fixture 从 manual row 固化为 active reproducible fixture；packaged suite 当前 active=5、pending=0、known_gap=0，代表性 run artifacts 完整时可得到 `evidence_ready`，但宣称范围仍限于 benchmarked drawing classes。
 - P46：Novice reviewer onboarding。完整审图 run 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`，报告和 Viewer 显示第一小时流程、常用命令、边界提醒和交接检查，让新手审图工程师按 evidence 顺序上手。
 - P61：Reviewer task sequencing。完整审图 run 新增 `reviewer_task_sequence.json` / `.md`，把 readiness blockers、主 `issues.json` open issue、per-sheet preview queue 和 handoff 操作排成有优先级的复核任务；它只排序 evidence，不写 `review_state.json`。
+- P62：Reviewer task checklist。完整审图 run 新增 `reviewer_task_checklist.json` / `.md`，从任务序列派生可人工填写的 reviewer_status、note、evidence_checked 清单；它只做交付留痕种子，不确认 issue、不写 `review_state.json`。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。

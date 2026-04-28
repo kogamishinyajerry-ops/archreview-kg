@@ -556,6 +556,9 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "复核任务序列" in body
     assert "reviewer_task_sequence.json" in body
     assert "reviewer_task_sequence.md" in body
+    assert "复核任务清单" in body
+    assert "reviewer_task_checklist.json" in body
+    assert "reviewer_task_checklist.md" in body
     assert "缺输入不等于通过" in body
     assert "archkg review-state &lt;run_dir&gt;" in body
     assert "定位图面" in body
@@ -767,6 +770,8 @@ def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
         "report.md",
         "reviewer_task_sequence.json",
         "reviewer_task_sequence.md",
+        "reviewer_task_checklist.json",
+        "reviewer_task_checklist.md",
         "rule_input_readiness.json",
         "sheet_region_candidates.json",
         "sheet_region_candidates_overlay.png",

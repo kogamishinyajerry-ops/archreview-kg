@@ -135,6 +135,11 @@ def review(
         write_reviewer_onboarding_json,
         write_reviewer_quickstart_markdown,
     )
+    from archkg.viewer.reviewer_task_checklist import (
+        build_reviewer_task_checklist,
+        write_reviewer_task_checklist_json,
+        write_reviewer_task_checklist_markdown,
+    )
     from archkg.viewer.reviewer_task_sequence import (
         build_reviewer_task_sequence,
         write_reviewer_task_sequence_json,
@@ -395,6 +400,19 @@ def review(
         reviewer_task_sequence,
         out / "reviewer_task_sequence.md",
     )
+    reviewer_task_checklist = build_reviewer_task_checklist(
+        run_dir=out,
+        source_pdf=pdf,
+        reviewer_task_sequence=reviewer_task_sequence,
+    )
+    reviewer_task_checklist_path = write_reviewer_task_checklist_json(
+        reviewer_task_checklist,
+        out / "reviewer_task_checklist.json",
+    )
+    reviewer_task_checklist_md_path = write_reviewer_task_checklist_markdown(
+        reviewer_task_checklist,
+        out / "reviewer_task_checklist.md",
+    )
 
     annotated = annotate_pdf(pdf, result.issues, out / "annotated.pdf")
     report_path = render_report(
@@ -418,6 +436,7 @@ def review(
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
         reviewer_task_sequence=reviewer_task_sequence,
+        reviewer_task_checklist=reviewer_task_checklist,
     )
     _print_review_summary(
         out_dir=out,
@@ -444,6 +463,8 @@ def review(
         reviewer_quickstart_path=reviewer_quickstart_path,
         reviewer_task_sequence_path=reviewer_task_sequence_path,
         reviewer_task_sequence_md_path=reviewer_task_sequence_md_path,
+        reviewer_task_checklist_path=reviewer_task_checklist_path,
+        reviewer_task_checklist_md_path=reviewer_task_checklist_md_path,
         sheet_candidates_path=sheet_candidates_path,
         sheet_candidates_overlay_path=sheet_candidates_overlay_path,
     )
@@ -475,6 +496,8 @@ def _print_review_summary(
     reviewer_quickstart_path: Path | None = None,
     reviewer_task_sequence_path: Path | None = None,
     reviewer_task_sequence_md_path: Path | None = None,
+    reviewer_task_checklist_path: Path | None = None,
+    reviewer_task_checklist_md_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
     sheet_candidates_overlay_path: Path | None = None,
 ) -> None:
@@ -622,6 +645,10 @@ def _print_review_summary(
         art.add_row("reviewer task sequence", str(reviewer_task_sequence_path))
     if reviewer_task_sequence_md_path is not None:
         art.add_row("reviewer task sequence MD", str(reviewer_task_sequence_md_path))
+    if reviewer_task_checklist_path is not None:
+        art.add_row("reviewer task checklist", str(reviewer_task_checklist_path))
+    if reviewer_task_checklist_md_path is not None:
+        art.add_row("reviewer task checklist MD", str(reviewer_task_checklist_md_path))
     if sheet_candidates_path is not None:
         art.add_row("sheet region candidates", str(sheet_candidates_path))
     if sheet_candidates_overlay_path is not None:
@@ -636,6 +663,7 @@ def _print_review_summary(
             f"  • 打开 [bold]{annotated_path}[/bold] 看红框标注\n"
             f"  • 打开 [bold]{report_path}[/bold] 看可复核的问题清单\n"
             f"  • 打开 [bold]{out_dir / 'reviewer_quickstart.md'}[/bold] 按第一小时流程复核\n"
+            f"  • 打开 [bold]{out_dir / 'reviewer_task_checklist.md'}[/bold] 逐项勾选证据\n"
             f"  • 用 [bold]archkg review-state {out_dir} <issue_id> --status confirmed[/bold] 更新复核状态\n"
             f"  • 或编辑 report.md 后跑 [bold]archkg feedback {out_dir} --apply[/bold] 生成反馈用例",
             title="✅ 审图完成",

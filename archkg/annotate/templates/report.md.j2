@@ -120,6 +120,21 @@ reviewer_task_sequence.json 暂无数据；请先按 `reviewer_quickstart.md` �
 {% endfor %}
 {% endif %}
 
+## 复核任务清单
+
+{% if not reviewer_task_checklist %}
+reviewer_task_checklist.json 暂无数据；请先按 `reviewer_task_sequence.md` 人工复核。
+{% else %}
+> {{ reviewer_task_checklist.boundary_warning }}
+
+可填写清单见 `reviewer_task_checklist.md`；机器可读种子见 `reviewer_task_checklist.json`。
+
+| # | stage | task | reviewer_status | required_evidence |
+|---:|---|---|---|---|
+{% for item in reviewer_task_checklist['items'] %}| {{ item.ordinal }} | `{{ item.stage }}` | {{ item.title }} | `{{ item.reviewer_status }}` | {{ item.required_evidence|join(', ') }} |
+{% endfor %}
+{% endif %}
+
 ## 规则输入就绪度
 
 {% if not rule_readiness or not rule_readiness.available %}

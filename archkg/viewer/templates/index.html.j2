@@ -714,6 +714,7 @@
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
 {% set review_workbench = review_workbench | default({'available': false, 'summary': {}, 'artifact_statuses': [], 'action_links': [], 'review_state_operations': {'available': false, 'commands': [], 'allowed_statuses': [], 'omitted_count': 0, 'note': ''}, 'warnings': ['review_workbench.json 暂无数据；请查看下方单项 evidence 面板。'], 'next_actions': []}, true) %}
 {% set reviewer_onboarding = reviewer_onboarding | default({'available': false, 'first_hour_steps': [], 'commands': [], 'do_not_claim': ['reviewer_onboarding.json 暂无数据；请先查看 review_workbench.json。'], 'handoff_checklist': [], 'note': ''}, true) %}
+{% set reviewer_task_checklist = reviewer_task_checklist | default({'available': false, 'status': 'missing', 'summary': {}, 'items': [], 'omitted_item_count': 0, 'boundary_warning': 'reviewer_task_checklist.json 暂无数据；请先查看 reviewer_task_sequence.md。'}, true) %}
 {% set reviewer_task_sequence = reviewer_task_sequence | default({'available': false, 'status': 'missing', 'summary': {}, 'tasks': [], 'omitted_task_count': 0, 'boundary_warning': 'reviewer_task_sequence.json 暂无数据；请先查看 reviewer_quickstart.md。'}, true) %}
 {% set review_diff = review_diff | default({'available': false, 'summary_rows': [], 'issue_statuses': {}, 'items': [], 'resolved_items': [], 'omitted_count': 0, 'warning_text': 'review_diff.json 暂无数据；尚未执行 archkg review-diff。', 'note': ''}, true) %}
 {% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
@@ -784,24 +785,28 @@
       <span class="qk">04 任务序列</span>
       <div class="qv">按优先级逐项复核</div>
     </a>
+    <a class="quick-chip" href="#panel-task-checklist">
+      <span class="qk">05 任务清单</span>
+      <div class="qv">逐项勾选、记录证据和风险</div>
+    </a>
     <a class="quick-chip" href="#panel-issues">
-      <span class="qk">05 问题面板</span>
+      <span class="qk">06 问题面板</span>
       <div class="qv">高风险与热点规则先看图</div>
     </a>
     <a class="quick-chip" href="#panel-readiness">
-      <span class="qk">06 就绪度</span>
+      <span class="qk">07 就绪度</span>
       <div class="qv">缺输入、不适用、人工核对分清楚</div>
     </a>
     <a class="quick-chip" href="#panel-sheet-classification">
-      <span class="qk">07 Sheet 分类</span>
+      <span class="qk">08 Sheet 分类</span>
       <div class="qv">平面、排表、标题页先分流</div>
     </a>
     <a class="quick-chip" href="#panel-sheet-regions">
-      <span class="qk">08 候选区域</span>
+      <span class="qk">09 候选区域</span>
       <div class="qv">设计区、标题栏、排表先确认</div>
     </a>
     <a class="quick-chip" href="#panel-report">
-      <span class="qk">09 报告与条文</span>
+      <span class="qk">10 报告与条文</span>
       <div class="qv">快速打开报告与条文触达</div>
     </a>
   </div>
@@ -1155,6 +1160,52 @@
     <p class="actions">
       <a href="reviewer_task_sequence.md" target="_blank">reviewer_task_sequence.md</a>
       <a href="reviewer_task_sequence.json" target="_blank">reviewer_task_sequence.json</a>
+    </p>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-task-checklist">
+  <h2>复核任务清单</h2>
+  {% if not reviewer_task_checklist.available %}
+    <div class="alert warn">
+      <strong>reviewer_task_checklist.json 暂无数据</strong>：{{ reviewer_task_checklist.boundary_warning }}
+      {{ reviewer_task_checklist.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert soft">
+      <strong>{{ reviewer_task_checklist.status }}</strong>：{{ reviewer_task_checklist.boundary_warning }}
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi"><div class="k">Items</div><div class="v">{{ reviewer_task_checklist.summary.item_count }}</div></div>
+      <div class="kpi warn"><div class="k">Readiness</div><div class="v">{{ reviewer_task_checklist.summary.readiness_item_count }}</div></div>
+      <div class="kpi {% if reviewer_task_checklist.summary.primary_issue_item_count %}bad{% endif %}"><div class="k">Issues</div><div class="v">{{ reviewer_task_checklist.summary.primary_issue_item_count }}</div></div>
+      <div class="kpi"><div class="k">Preview</div><div class="v">{{ reviewer_task_checklist.summary.preview_item_count }}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>stage</th><th>task</th><th>reviewer_status</th><th>required evidence</th><th>prompt</th></tr></thead>
+      <tbody>
+        {% for item in reviewer_task_checklist['items'] %}
+          <tr>
+            <td>{{ item.ordinal }}</td>
+            <td><code>{{ item.stage }}</code></td>
+            <td>{{ item.title }}<br><span class="muted">{{ item.handoff_risk_if_open }}</span></td>
+            <td><code>{{ item.reviewer_status }}</code></td>
+            <td>
+              {% for evidence in item.required_evidence %}
+                <div>{{ evidence }}</div>
+              {% endfor %}
+            </td>
+            <td>{{ item.completion_prompt }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if reviewer_task_checklist.omitted_item_count %}
+      <div class="metric-note">另有 {{ reviewer_task_checklist.omitted_item_count }} 条 checklist item 未展开；完整列表见 <code>reviewer_task_checklist.json</code>。</div>
+    {% endif %}
+    <p class="actions">
+      <a href="reviewer_task_checklist.md" target="_blank">reviewer_task_checklist.md</a>
+      <a href="reviewer_task_checklist.json" target="_blank">reviewer_task_checklist.json</a>
     </p>
   {% endif %}
 </section>
