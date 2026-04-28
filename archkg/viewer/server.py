@@ -225,11 +225,21 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     issue_payload = _issue_metrics_payload(issues)
     issue_summary = issue_payload["summary"]
     ocr_diagnostics = build_ocr_diagnostics(primitives, graph)
+    sheet_graphs_payload: dict[str, object] | None = None
+    sheet_graphs_path = out_dir / "sheet_graphs.json"
+    if sheet_graphs_path.exists():
+        try:
+            raw_sheet_graphs = json.loads(sheet_graphs_path.read_text("utf-8"))
+        except json.JSONDecodeError:
+            raw_sheet_graphs = None
+        if isinstance(raw_sheet_graphs, dict):
+            sheet_graphs_payload = raw_sheet_graphs
     drawing_understanding = load_or_build_drawing_understanding(
         out_dir,
         primitives,
         graph,
         ocr_diagnostics,
+        sheet_graphs=sheet_graphs_payload,
     )
     rule_readiness = load_rule_readiness_view(out_dir)
     review_workbench = load_review_workbench_view(out_dir)

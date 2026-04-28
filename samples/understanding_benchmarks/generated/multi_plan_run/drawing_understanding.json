@@ -2,15 +2,15 @@
   "schema_version": "drawing_understanding.v2",
   "drawing_type": "建筑平面图",
   "likely_design": "住宅平面图",
-  "summary": "住宅平面图。识别到 4 个空间、6 个门/洞口、1 条走廊、0 个楼梯/垂直交通对象、3 条尺寸证据。",
+  "summary": "住宅平面图。识别到 4 个空间、6 个门/洞口、1 条走廊、0 个楼梯/垂直交通对象、3 条尺寸证据。 多页 sheet graph 证据汇总: 8 个空间、12 个门/洞口、2 条走廊、6 条尺寸证据。 多页 sheet graph 证据汇总: 8 个空间、12 个门/洞口、2 条走廊、6 条尺寸证据。",
   "component_counts": {
     "lines": 28,
     "texts": 14,
-    "rooms": 4,
-    "doors": 6,
-    "corridors": 1,
+    "rooms": 8,
+    "doors": 12,
+    "corridors": 2,
     "stairs": 0,
-    "dimensions": 3,
+    "dimensions": 6,
     "ocr_texts": 0
   },
   "text_inventory": {
@@ -23,13 +23,14 @@
     "major_dimension_texts": []
   },
   "drawing_profile": {
-    "understanding_level": "layout_with_dimensions",
+    "understanding_level": "multi_sheet_layout_with_openings",
     "evidence_signals": [
       "spatial_layout",
       "residential_room_labels",
       "openings",
       "horizontal_circulation",
-      "dimension_evidence"
+      "dimension_evidence",
+      "per_sheet_graphs"
     ],
     "review_note": "识别档案用于衡量图纸内容理解, 不是规范判定。"
   },
@@ -437,5 +438,24 @@
     "ocr_dimension_count": 0,
     "ocr_bound_count": 0
   },
-  "uncertainty_flags": []
+  "uncertainty_flags": [
+    "主 graph 可能未覆盖全部 plan sheet; 已从 sheet_graphs.json 汇总门/洞口证据, 但逐个门洞位置仍需在 per-sheet graph 中复核。",
+    "主 graph 可能未覆盖全部 plan sheet; 已从 sheet_graphs.json 汇总门/洞口证据, 但逐个门洞位置仍需在 per-sheet graph 中复核。"
+  ],
+  "sheet_graph_summary": {
+    "source": "sheet_graphs.json",
+    "graph_count": 2,
+    "plan_page_indexes": [
+      0,
+      1
+    ],
+    "component_counts": {
+      "rooms": 8,
+      "doors": 12,
+      "corridors": 2,
+      "stairs": 0,
+      "dimensions": 6
+    },
+    "review_note": "Counts are aggregated from per-plan-sheet graph evidence. They are recognition evidence and are not merged into primary issues.json."
+  }
 }

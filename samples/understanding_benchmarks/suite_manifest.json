@@ -22,7 +22,7 @@
     {
       "case_id": "medfield-full-plan-set-multi-plan-intake",
       "fixture_kind": "real_public_multi_plan_pdf",
-      "status": "known_gap",
+      "status": "active",
       "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
       "run_dir": "real/medfield_full_plan_set_run",
       "expect": "real/medfield_full_plan_set_expected.json",
@@ -36,8 +36,8 @@
         "sheet_issues.json",
         "human_expected_inventory.json"
       ],
-      "promotion_rule": "do not promote to active until full-set drawing_understanding exposes openings and the reviewed expected inventory passes all selected plan-sheet checks",
-      "notes": "Real public 9-page plan/elevation PDF known_gap. Full-set run artifacts are committed, but current primary drawing_understanding reports doors=0 / has_openings=false even though plan sheets contain door/opening evidence."
+      "promotion_rule": "promoted active in P44 after drawing_understanding began merging sheet_graphs.json counts into multi-sheet recognition evidence; per-sheet preview issues still stay out of primary issues.json",
+      "notes": "Real public 9-page plan/elevation PDF active recognition benchmark. Full-set drawing_understanding now exposes opening evidence from sheet_graphs.json aggregate counts; this remains recognition benchmarking, not final multi-plan compliance aggregation."
     },
     {
       "case_id": "generated-complex-titleblock",

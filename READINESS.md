@@ -38,11 +38,13 @@ archkg release-readiness \
 当前 packaged suite 的门禁烟测结果：
 
 ```text
-release-readiness status=demo_ready_with_known_gaps blockers=0 warnings=3 active=3 real_active=1 known_gap=1
+release-readiness status=demo_ready_with_known_gaps blockers=0 warnings=1 active=4 real_active=2 known_gap=0
 ```
 
 这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff”
-组成的闭环；不能宣称“已能处理任意复杂真实设计图并自动精准纠错”。
+组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
+但因为 suite 仍有 pending row，且 per-sheet preview issues 还没有进入主 lifecycle，仍不能宣称
+“已能处理任意复杂真实设计图并自动精准纠错”。
 
 ## 32 张规则的就绪度分布
 
@@ -179,6 +181,8 @@ archkg studio
   A-1 First Floor Plan 的人工 expected inventory、来源 provenance 和当前 `drawing_understanding.json`
   快照。该 case 标为 `known_gap`：suite 会真实跑分并记录 rooms/doors 过分割与 stair/vertical
   circulation 缺失，但不把这张真实图纸包装成已通过能力。
+- P44 已把 Medfield 9 页 full plan/elevation set 从 known_gap 晋升为 active recognition benchmark：
+  opening evidence 来自 `sheet_graphs.json` 的多页计数汇总，不代表 per-sheet issue 已自动进入主审图结论。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
@@ -246,6 +250,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
 - P43 起，发布/演示宣称必须经过 `archkg release-readiness`，并把输出状态和 warnings
   一起展示；`generated_*` fixture 只能做回归锁定，不能替代真实图纸成熟度证明。生成样本数量多于
   active 真实图纸证据时，门禁会继续阻止 `evidence_ready`。
+- P44 起，`drawing_understanding.json` 可把 `sheet_graphs.json` 的多页 plan graph 计数合并为
+  full-set recognition evidence；该 evidence 不会自动合并 per-sheet issues 到主 `issues.json`。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

@@ -3,6 +3,7 @@ import json
 from archkg.viewer.drawing_understanding import (
     build_drawing_understanding,
     load_or_build_drawing_understanding,
+    merge_sheet_graph_evidence,
 )
 
 
@@ -312,6 +313,52 @@ def test_build_drawing_understanding_extracts_text_label_inventory() -> None:
         "door_or_opening_size_label_counts": {"3068": 1, "SLD6068": 1},
         "major_dimension_texts": ["24'-0\""],
     }
+
+
+def test_merge_sheet_graph_evidence_exposes_multi_sheet_openings() -> None:
+    payload = {
+        "schema_version": "drawing_understanding.v2",
+        "drawing_type": "建筑平面图",
+        "summary": "识别到 10 个空间、0 个门/洞口、1 条走廊。",
+        "component_counts": {"rooms": 10, "doors": 0, "corridors": 1, "dimensions": 5},
+        "component_inventory": [{"semantic_kind": "residential_room"}],
+        "drawing_profile": {"evidence_signals": ["spatial_layout"]},
+        "benchmark_signals": {
+            "has_spatial_layout": True,
+            "has_openings": False,
+            "has_horizontal_circulation": True,
+            "has_vertical_circulation": False,
+            "has_dimension_evidence": True,
+            "has_ocr_text": False,
+        },
+        "uncertainty_flags": ["识别到空间但没有门/洞口, 可能漏检门洞或输入图纸不完整。"],
+    }
+    sheet_graphs = {
+        "schema_version": "sheet_graphs.v1",
+        "graph_count": 2,
+        "graphs": [
+            {"page_index": 0, "component_counts": {"rooms": 10, "doors": 0, "corridors": 1}},
+            {"page_index": 2, "component_counts": {"rooms": 40, "doors": 12, "dimensions": 90}},
+        ],
+    }
+
+    merged = merge_sheet_graph_evidence(payload, sheet_graphs)
+
+    assert merged["component_counts"]["rooms"] == 50
+    assert merged["component_counts"]["doors"] == 12
+    assert merged["benchmark_signals"]["has_openings"] is True
+    assert "openings" in merged["drawing_profile"]["evidence_signals"]
+    assert "per_sheet_graphs" in merged["drawing_profile"]["evidence_signals"]
+    assert merged["sheet_graph_summary"]["plan_page_indexes"] == [0, 2]
+    inventory = merged["component_inventory"]
+    opening_row = next(row for row in inventory if row["semantic_kind"] == "door_opening")
+    assert opening_row["evidence_source"] == "sheet_graphs_count"
+    assert opening_row["metric_text"] == "p2: 12"
+    assert not any("没有门/洞口" in flag for flag in merged["uncertainty_flags"])
+
+    merged_again = merge_sheet_graph_evidence(merged, sheet_graphs)
+    assert merged_again["summary"].count("多页 sheet graph 证据汇总") == 1
+    assert merged_again["uncertainty_flags"].count(merged["uncertainty_flags"][-1]) == 1
 
 
 def test_load_or_build_rebuilds_legacy_payload_without_taxonomy(tmp_path) -> None:

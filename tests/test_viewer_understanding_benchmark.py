@@ -211,6 +211,17 @@ def test_understanding_benchmark_scores_sheet_graphs_and_sheet_issues(tmp_path: 
     (run_dir / "sheet_issues.json").write_text(json.dumps(sheet_issues), "utf-8")
     expected = {
         "benchmark_id": "multi-plan-artifacts",
+        "component_counts": {
+            "rooms": {"min": 8},
+            "doors": {"min": 12},
+            "corridors": {"min": 2},
+        },
+        "required_semantic_kinds": ["door_opening", "horizontal_circulation"],
+        "required_evidence_signals": ["openings", "horizontal_circulation"],
+        "required_benchmark_signals": {
+            "has_openings": True,
+            "has_horizontal_circulation": True,
+        },
         "sheet_graphs": {
             "graph_count": {"exact": 2},
             "required_page_indexes": [0, 1],

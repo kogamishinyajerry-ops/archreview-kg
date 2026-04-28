@@ -33,12 +33,13 @@ Status:
 - P42-01 is complete: `archkg review-diff` writes read-only `review_diff.json` artifacts comparing two runs' primary `issues.json` candidates as unchanged, changed, new, or resolved without using generated issue/entity IDs.
 - P42-02 is complete: Viewer/Studio now load `review_diff.json` and render diff status in the workbench and issue list while keeping the artifact read-only.
 - P43-01 is complete: `archkg release-readiness` evaluates benchmark suite evidence and representative run artifacts into `not_ready`, `demo_ready_with_known_gaps`, or `evidence_ready` without using rule count as the maturity metric.
+- P44-01 is complete: `drawing_understanding.json` can merge `sheet_graphs.json` aggregate counts as multi-sheet recognition evidence, promoting the Medfield full 9-page real public plan/elevation set from known_gap to active benchmark.
 
 ## Current Phase
 
-P43: Release readiness gate.
+P44: Real drawing benchmark promotion.
 
-P43 is complete. The tool now has a machine-readable release/demo gate over benchmark suite evidence, real drawing coverage, core run artifacts, optional maturity artifacts, known gaps, pending rows, and generated-heavy proof limits.
+P44 is complete. The packaged understanding suite now reports active=4, pending=1, known_gap=0, failed=0; `archkg release-readiness` reports blockers=0 warnings=1 active=4 real_active=2 known_gap=0.
 
 ## Key Decisions
 
@@ -59,16 +60,16 @@ P43 is complete. The tool now has a machine-readable release/demo gate over benc
 - Sheet routing is still page-level and conservative; multiple plan pages need future multi-graph support before automatic per-sheet graph outputs are trusted.
 - Per-sheet issues are preview-only in P39-02; do not claim multi-plan compliance aggregation until issue IDs, review state linkage, and report grouping are explicitly promoted.
 - P40-01 uses a deterministic generated multi-plan fixture; it does not replace real public/private multi-plan expected inventory intake.
-- P40-03 registers a real full-set known_gap, not a passing real-complex-drawing capability claim.
+- P44-01 promotes one real full-set recognition benchmark, but aggregation is count-level evidence; per-sheet candidate issues still do not enter primary `issues.json` or `review_state.json`.
 - P41-01 workbench summary is derived from current artifacts; if future artifacts are added, the summary must be extended or it can drift.
 - P41-03 direct review-state operations can still leave pre-rendered HTML stale until the viewer is re-rendered; the command refreshes `review_workbench.json`, but static `index.html` regeneration remains a separate user/viewer step.
 - P41-04 focus is first-page only; multi-page issue focus must wait for multi-page preview rendering to avoid false visual localization.
 - P42-01 duplicate matching is deterministic but still heuristic for multiple same-rule same-page candidates; it uses spatial/evidence ordering because generated entity IDs are not stable across runs.
 - `review_diff.json` is not a compliance proof and does not resolve human review states automatically.
 - P42-02 renders missing diff as "not run yet"; reviewers must still inspect diff rows before marking review_state items resolved or superseded.
-- P43-01 only gates evidence currently represented in the benchmark suite and run directory. It does not certify arbitrary complex real drawings and should report `demo_ready_with_known_gaps` while known_gap/pending rows remain.
+- P43/P44 only gate evidence currently represented in the benchmark suite and run directory. They do not certify arbitrary complex real drawings and should report `demo_ready_with_known_gaps` while pending rows remain.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P43 by promoting additional real drawing expected inventories from known_gap/pending into active cases, then rerun `archkg release-readiness` before any external demo or release claim.
+Move beyond P44 by resolving the remaining pending suite row or replacing it with an active toy/real benchmark, then rerun `archkg release-readiness` before any external demo or release claim.

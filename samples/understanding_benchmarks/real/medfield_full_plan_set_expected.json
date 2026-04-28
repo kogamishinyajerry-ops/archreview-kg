@@ -1,6 +1,6 @@
 {
   "schema_version": "understanding_benchmark_expected.v1",
-  "benchmark_id": "medfield-full-plan-set-known-gap-v1",
+  "benchmark_id": "medfield-full-plan-set-active-v1",
   "min_score": 1.0,
   "review_required": false,
   "source_schema_version": "manual_full_set_intake.v1",

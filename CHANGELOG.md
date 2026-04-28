@@ -210,6 +210,14 @@ and keeps the no-OCR transparency warning.
   blocks on failed active suites / missing active real drawings / missing core
   artifacts, and warns on known gaps, pending fixtures, generated-heavy proof,
   and missing maturity artifacts.
+- P44-01 merges `sheet_graphs.json` count evidence into
+  `drawing_understanding.json` for multi-plan/full-set recognition. The merge
+  adds a `sheet_graph_summary`, updates component counts and benchmark signals,
+  and inserts aggregate inventory rows marked `sheet_graphs_count` instead of
+  pretending per-sheet entities belong to the primary graph. The Medfield
+  9-page public plan/elevation set is promoted from known_gap to active
+  recognition benchmark; the packaged suite now reports active=4, pending=1,
+  known_gap=0, failed=0.
 
 ### Still limited
 
@@ -237,16 +245,20 @@ and keeps the no-OCR transparency warning.
   themselves. They preserve the current recognition output for review;
   a human or later annotation pass must correct the draft before it
   becomes a real benchmark oracle.
-- The Medfield A-1 single-sheet fixture is a recognition benchmark only.
-  It does not prove full construction-set understanding. The Medfield
-  full 9-page multi-plan case is now a `known_gap`: per-sheet artifacts
-  exist, but primary full-set understanding still misses opening evidence.
+- The Medfield A-1 single-sheet fixture and Medfield full 9-page fixture are
+  recognition benchmarks only. The full-set case now exposes openings through
+  count-level `sheet_graphs.json` aggregation; it still does not prove final
+  full construction-set compliance aggregation.
 - `review_diff.json` is a local tracking artifact over primary `issues.json`;
   it does not prove a fix is code-compliant, does not update human review
   status, and does not aggregate `sheet_issues.json` preview rows.
 - `release_readiness.json` is a release/demo evidence gate, not a production
   certification. A `demo_ready_with_known_gaps` result must be presented with
   its warnings and cannot be marketed as broad automatic compliance readiness.
+- Multi-sheet drawing-understanding aggregation is count-level evidence. It
+  does not merge per-sheet candidate issues into primary `issues.json`, does
+  not update `review_state.json`, and does not prove final multi-plan
+  compliance aggregation.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 

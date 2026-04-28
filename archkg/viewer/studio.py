@@ -527,6 +527,7 @@ def run_pipeline(
         primitives_payload,
         graph_payload,
         ocr_diagnostics,
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
     )
     write_drawing_understanding(
         drawing_understanding,

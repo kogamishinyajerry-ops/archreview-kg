@@ -287,6 +287,7 @@ def review(
         primitives_payload,
         graph_payload,
         ocr_diagnostics,
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
     )
     drawing_understanding_path = write_drawing_understanding(
         drawing_understanding,

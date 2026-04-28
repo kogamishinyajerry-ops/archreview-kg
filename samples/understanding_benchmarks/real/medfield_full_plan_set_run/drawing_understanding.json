@@ -2,15 +2,15 @@
   "schema_version": "drawing_understanding.v2",
   "drawing_type": "建筑平面图",
   "likely_design": "住宅平面图",
-  "summary": "住宅平面图。识别到 10 个空间、0 个门/洞口、9 条走廊、10 个楼梯/垂直交通对象、108 条尺寸证据。",
+  "summary": "住宅平面图。识别到 10 个空间、0 个门/洞口、9 条走廊、10 个楼梯/垂直交通对象、108 条尺寸证据。 多页 sheet graph 证据汇总: 151 个空间、224 个门/洞口、21 条走廊、720 条尺寸证据。 多页 sheet graph 证据汇总: 151 个空间、224 个门/洞口、21 条走廊、720 条尺寸证据。",
   "component_counts": {
     "lines": 64921,
     "texts": 1866,
-    "rooms": 10,
-    "doors": 0,
-    "corridors": 9,
+    "rooms": 151,
+    "doors": 224,
+    "corridors": 21,
     "stairs": 10,
-    "dimensions": 108,
+    "dimensions": 720,
     "ocr_texts": 0
   },
   "text_inventory": {
@@ -59,19 +59,21 @@
     ]
   },
   "drawing_profile": {
-    "understanding_level": "component_inventory",
+    "understanding_level": "multi_sheet_layout_with_openings",
     "evidence_signals": [
       "spatial_layout",
       "residential_room_labels",
       "horizontal_circulation",
       "vertical_circulation",
-      "dimension_evidence"
+      "dimension_evidence",
+      "openings",
+      "per_sheet_graphs"
     ],
     "review_note": "识别档案用于衡量图纸内容理解, 不是规范判定。"
   },
   "benchmark_signals": {
     "has_spatial_layout": true,
-    "has_openings": false,
+    "has_openings": true,
     "has_horizontal_circulation": true,
     "has_vertical_circulation": true,
     "has_dimension_evidence": true,
@@ -509,6 +511,18 @@
       "evidence_source": "graph",
       "bbox_text": "1855.5, 511.9, 2211.4, 553.1",
       "uncertain": false
+    },
+    {
+      "id": "sheet-graphs-doors",
+      "category": "opening",
+      "semantic_kind": "door_opening",
+      "label": "per-sheet doors",
+      "label_zh": "门/洞口",
+      "metric_text": "p2: 9, p3: 89, p4: 88, p5: 36, p8: 2",
+      "confidence_band": "medium",
+      "evidence_source": "sheet_graphs_count",
+      "bbox_text": "-",
+      "uncertain": true
     }
   ],
   "components": {
@@ -1133,7 +1147,28 @@
   },
   "uncertainty_flags": [
     "存在未分类房间: 9 个, 需要人工核对用途。",
-    "识别到空间但没有门/洞口, 可能漏检门洞或输入图纸不完整。",
-    "楼梯/垂直交通缺少可靠几何锚点, 位置与构造细节需人工核对。"
-  ]
+    "楼梯/垂直交通缺少可靠几何锚点, 位置与构造细节需人工核对。",
+    "主 graph 可能未覆盖全部 plan sheet; 已从 sheet_graphs.json 汇总门/洞口证据, 但逐个门洞位置仍需在 per-sheet graph 中复核。",
+    "主 graph 可能未覆盖全部 plan sheet; 已从 sheet_graphs.json 汇总门/洞口证据, 但逐个门洞位置仍需在 per-sheet graph 中复核。"
+  ],
+  "sheet_graph_summary": {
+    "source": "sheet_graphs.json",
+    "graph_count": 6,
+    "plan_page_indexes": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      8
+    ],
+    "component_counts": {
+      "rooms": 151,
+      "doors": 224,
+      "corridors": 21,
+      "stairs": 0,
+      "dimensions": 720
+    },
+    "review_note": "Counts are aggregated from per-plan-sheet graph evidence. They are recognition evidence and are not merged into primary issues.json."
+  }
 }

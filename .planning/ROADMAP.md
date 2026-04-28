@@ -133,6 +133,11 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Publish a readiness rubric based on real benchmark evidence, not rule count.
 - P43-01 complete: `archkg release-readiness` evaluates suite status, active real benchmark coverage, representative run artifacts, known gaps, pending rows, and generated-heavy proof limits into `not_ready`, `demo_ready_with_known_gaps`, or `evidence_ready`.
 
+### P44: Real Drawing Benchmark Promotion
+
+- Reduce release-readiness warnings by promoting real drawing cases only when reviewed expected inventory passes.
+- P44-01 complete: multi-sheet `drawing_understanding.json` merges count-level `sheet_graphs.json` evidence, promoting Medfield full-set from known_gap to active while keeping per-sheet preview issues out of primary lifecycle.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

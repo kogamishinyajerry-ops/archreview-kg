@@ -12,7 +12,10 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
+from archkg.viewer.drawing_understanding import (
+    load_or_build_drawing_understanding,
+    merge_sheet_graph_evidence,
+)
 from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
 
 DRAFT_COMPONENT_COUNT_KEYS = (
@@ -30,8 +33,8 @@ def run_understanding_benchmark(
     run_dir: Path,
     expected: Mapping[str, Any],
 ) -> dict[str, Any]:
-    payload = _load_understanding_payload(run_dir)
     artifacts = _load_optional_run_artifacts(run_dir)
+    payload = _load_understanding_payload(run_dir, sheet_graphs=artifacts.get("sheet_graphs"))
     checks = _checks(payload, expected, artifacts)
     passed_count = sum(1 for check in checks if check["passed"])
     score = passed_count / len(checks) if checks else 1.0
@@ -417,12 +420,17 @@ def _draft_text_inventory(payload: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
-def _load_understanding_payload(run_dir: Path) -> dict[str, Any]:
+def _load_understanding_payload(
+    run_dir: Path,
+    *,
+    sheet_graphs: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     path = run_dir / "drawing_understanding.json"
     if path.exists():
         raw = json.loads(path.read_text("utf-8"))
         if isinstance(raw, dict) and _is_current_payload(raw):
-            return {str(key): value for key, value in raw.items()}
+            payload = {str(key): value for key, value in raw.items()}
+            return merge_sheet_graph_evidence(payload, sheet_graphs)
 
     primitives_path = run_dir / "primitives.json"
     graph_path = run_dir / "entity_graph.json"
@@ -433,7 +441,13 @@ def _load_understanding_payload(run_dir: Path) -> dict[str, Any]:
     primitives = _json_object(primitives_path)
     graph = _json_object(graph_path)
     ocr_diagnostics = build_ocr_diagnostics(primitives, graph)
-    return load_or_build_drawing_understanding(run_dir, primitives, graph, ocr_diagnostics)
+    return load_or_build_drawing_understanding(
+        run_dir,
+        primitives,
+        graph,
+        ocr_diagnostics,
+        sheet_graphs=sheet_graphs,
+    )
 
 
 def _load_optional_run_artifacts(run_dir: Path) -> dict[str, Mapping[str, Any] | None]:

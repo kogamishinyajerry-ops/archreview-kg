@@ -35,6 +35,7 @@ def build_drawing_understanding(
     graph: Mapping[str, Any],
     ocr_diagnostics: Mapping[str, Any] | None = None,
     *,
+    sheet_graphs: Mapping[str, Any] | None = None,
     limit: int = MAX_ROWS,
 ) -> dict[str, Any]:
     """Return a compact drawing-content inventory.
@@ -92,7 +93,7 @@ def build_drawing_understanding(
         f"{len(corridors)} 条走廊、{vertical_circulation_count} 个楼梯/垂直交通对象、"
         f"{len(dimensions) + len(ocr_dimensions)} 条尺寸证据。"
     )
-    return {
+    payload = {
         "schema_version": SCHEMA_VERSION,
         "drawing_type": drawing_type,
         "likely_design": likely_design,
@@ -140,6 +141,7 @@ def build_drawing_understanding(
             ocr_diagnostics=ocr_diagnostics,
         ),
     }
+    return merge_sheet_graph_evidence(payload, sheet_graphs)
 
 
 def write_drawing_understanding(
@@ -155,6 +157,7 @@ def load_or_build_drawing_understanding(
     primitives: Mapping[str, Any],
     graph: Mapping[str, Any],
     ocr_diagnostics: Mapping[str, Any],
+    sheet_graphs: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     path = out_dir / "drawing_understanding.json"
     if path.exists():
@@ -162,8 +165,13 @@ def load_or_build_drawing_understanding(
         if isinstance(raw, dict):
             payload = {str(key): value for key, value in raw.items()}
             if _is_current_payload(payload):
-                return payload
-    payload = build_drawing_understanding(primitives, graph, ocr_diagnostics)
+                return merge_sheet_graph_evidence(payload, sheet_graphs)
+    payload = build_drawing_understanding(
+        primitives,
+        graph,
+        ocr_diagnostics,
+        sheet_graphs=sheet_graphs,
+    )
     write_drawing_understanding(payload, path)
     return payload
 
@@ -175,6 +183,249 @@ def _is_current_payload(payload: Mapping[str, Any]) -> bool:
         and isinstance(payload.get("drawing_profile"), Mapping)
         and isinstance(payload.get("benchmark_signals"), Mapping)
     )
+
+
+def merge_sheet_graph_evidence(
+    payload: Mapping[str, Any],
+    sheet_graphs: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Merge per-plan-sheet graph counts into the understanding payload.
+
+    Per-sheet graph evidence is a recognition summary, not a primary rule
+    graph. The merge therefore adds aggregate count rows marked as
+    `sheet_graphs_count` instead of pretending each entity has a precise
+    bbox in the primary graph.
+    """
+    raw_out = json.loads(json.dumps(dict(payload), ensure_ascii=False))
+    if not isinstance(raw_out, dict):
+        return {str(key): value for key, value in payload.items()}
+    out: dict[str, Any] = {str(key): value for key, value in raw_out.items()}
+    if not isinstance(sheet_graphs, Mapping):
+        return out
+    graph_rows = [row for row in _list(sheet_graphs.get("graphs")) if isinstance(row, Mapping)]
+    if not graph_rows:
+        return out
+
+    sheet_counts = _sheet_graph_component_counts(graph_rows)
+    if not any(sheet_counts.values()):
+        return out
+
+    raw_counts = out.get("component_counts")
+    component_counts = dict(raw_counts) if isinstance(raw_counts, Mapping) else {}
+    primary_counts = {
+        key: _int(component_counts.get(key))
+        for key in ("rooms", "doors", "corridors", "stairs", "dimensions")
+    }
+    for key in ("rooms", "doors", "corridors", "stairs", "dimensions"):
+        component_counts[key] = max(_int(component_counts.get(key)), sheet_counts.get(key, 0))
+    out["component_counts"] = component_counts
+    out["sheet_graph_summary"] = _sheet_graph_summary(sheet_graphs, graph_rows, sheet_counts)
+
+    inventory = [
+        dict(row)
+        for row in _list(out.get("component_inventory"))
+        if isinstance(row, Mapping)
+    ]
+    existing_kinds = {
+        kind
+        for row in inventory
+        if isinstance((kind := row.get("semantic_kind")), str) and kind
+    }
+    aggregate_rows = _sheet_graph_inventory_rows(
+        graph_rows,
+        sheet_counts,
+        primary_counts=primary_counts,
+        existing_kinds=existing_kinds,
+    )
+    if aggregate_rows:
+        inventory.extend(aggregate_rows)
+        out["component_inventory"] = inventory
+
+    _merge_sheet_graph_profile(out, sheet_counts)
+    _merge_sheet_graph_benchmark_signals(out, sheet_counts)
+    _merge_sheet_graph_uncertainty_flags(out, sheet_counts)
+    out["summary"] = _sheet_graph_summary_text(out, sheet_counts)
+    return out
+
+
+def _sheet_graph_component_counts(
+    graph_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, int]:
+    counts = {"rooms": 0, "doors": 0, "corridors": 0, "stairs": 0, "dimensions": 0}
+    for row in graph_rows:
+        raw_counts = row.get("component_counts")
+        if not isinstance(raw_counts, Mapping):
+            continue
+        for key in counts:
+            counts[key] += _int(raw_counts.get(key))
+    return counts
+
+
+def _sheet_graph_summary(
+    sheet_graphs: Mapping[str, Any],
+    graph_rows: Sequence[Mapping[str, Any]],
+    sheet_counts: Mapping[str, int],
+) -> dict[str, Any]:
+    page_indexes = [_int(row.get("page_index")) for row in graph_rows]
+    return {
+        "source": "sheet_graphs.json",
+        "graph_count": _int(sheet_graphs.get("graph_count")) or len(graph_rows),
+        "plan_page_indexes": sorted(page_indexes),
+        "component_counts": dict(sheet_counts),
+        "review_note": (
+            "Counts are aggregated from per-plan-sheet graph evidence. "
+            "They are recognition evidence and are not merged into primary issues.json."
+        ),
+    }
+
+
+def _sheet_graph_inventory_rows(
+    graph_rows: Sequence[Mapping[str, Any]],
+    sheet_counts: Mapping[str, int],
+    *,
+    primary_counts: Mapping[str, int],
+    existing_kinds: set[str],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    row_specs = [
+        ("doors", "opening", "door_opening", "门/洞口"),
+        ("corridors", "horizontal_circulation", "horizontal_circulation", "走廊/交通空间"),
+        ("stairs", "vertical_circulation", "stair", "楼梯/垂直交通"),
+        ("dimensions", "dimension", "dimension_annotation", "尺寸标注"),
+    ]
+    for count_key, category, semantic_kind, label_zh in row_specs:
+        count = _int(sheet_counts.get(count_key))
+        if count <= 0:
+            continue
+        if semantic_kind in existing_kinds and count <= _int(primary_counts.get(count_key)):
+            continue
+        rows.append(
+            {
+                "id": f"sheet-graphs-{count_key}",
+                "category": category,
+                "semantic_kind": semantic_kind,
+                "label": f"per-sheet {count_key}",
+                "label_zh": label_zh,
+                "metric_text": _sheet_graph_count_text(graph_rows, count_key),
+                "confidence_band": "medium",
+                "evidence_source": "sheet_graphs_count",
+                "bbox_text": "-",
+                "uncertain": True,
+            }
+        )
+    return rows
+
+
+def _sheet_graph_count_text(
+    graph_rows: Sequence[Mapping[str, Any]],
+    count_key: str,
+) -> str:
+    parts: list[str] = []
+    for row in graph_rows:
+        raw_counts = row.get("component_counts")
+        counts = raw_counts if isinstance(raw_counts, Mapping) else {}
+        count = _int(counts.get(count_key))
+        if count > 0:
+            parts.append(f"p{_int(row.get('page_index'))}: {count}")
+    return ", ".join(parts) if parts else "0"
+
+
+def _merge_sheet_graph_profile(out: dict[str, Any], sheet_counts: Mapping[str, int]) -> None:
+    profile = out.get("drawing_profile")
+    if not isinstance(profile, dict):
+        profile = {}
+    signals = _unique_strings(profile.get("evidence_signals"))
+    signal_by_count = {
+        "rooms": "spatial_layout",
+        "doors": "openings",
+        "corridors": "horizontal_circulation",
+        "stairs": "vertical_circulation",
+        "dimensions": "dimension_evidence",
+    }
+    for count_key, signal in signal_by_count.items():
+        if _int(sheet_counts.get(count_key)) > 0 and signal not in signals:
+            signals.append(signal)
+    if any(_int(sheet_counts.get(key)) > 0 for key in signal_by_count):
+        if "per_sheet_graphs" not in signals:
+            signals.append("per_sheet_graphs")
+    if _int(sheet_counts.get("rooms")) and _int(sheet_counts.get("doors")):
+        profile["understanding_level"] = "multi_sheet_layout_with_openings"
+    elif _int(sheet_counts.get("rooms")):
+        profile["understanding_level"] = "multi_sheet_component_inventory"
+    profile["evidence_signals"] = signals
+    out["drawing_profile"] = profile
+
+
+def _merge_sheet_graph_benchmark_signals(
+    out: dict[str, Any],
+    sheet_counts: Mapping[str, int],
+) -> None:
+    raw_signals = out.get("benchmark_signals")
+    signals = dict(raw_signals) if isinstance(raw_signals, Mapping) else {}
+    signals["has_spatial_layout"] = bool(
+        signals.get("has_spatial_layout") or _int(sheet_counts.get("rooms"))
+    )
+    signals["has_openings"] = bool(
+        signals.get("has_openings") or _int(sheet_counts.get("doors"))
+    )
+    signals["has_horizontal_circulation"] = bool(
+        signals.get("has_horizontal_circulation") or _int(sheet_counts.get("corridors"))
+    )
+    signals["has_vertical_circulation"] = bool(
+        signals.get("has_vertical_circulation") or _int(sheet_counts.get("stairs"))
+    )
+    signals["has_dimension_evidence"] = bool(
+        signals.get("has_dimension_evidence") or _int(sheet_counts.get("dimensions"))
+    )
+    out["benchmark_signals"] = signals
+
+
+def _merge_sheet_graph_uncertainty_flags(
+    out: dict[str, Any],
+    sheet_counts: Mapping[str, int],
+) -> None:
+    raw_flags = out.get("uncertainty_flags")
+    flags = [flag for flag in _list(raw_flags) if isinstance(flag, str)]
+    if _int(sheet_counts.get("doors")) > 0:
+        flags = [
+            flag
+            for flag in flags
+            if "没有门/洞口" not in flag and "可能漏检门洞" not in flag
+        ]
+        merge_flag = (
+            "主 graph 可能未覆盖全部 plan sheet; 已从 sheet_graphs.json 汇总门/洞口证据, "
+            "但逐个门洞位置仍需在 per-sheet graph 中复核。"
+        )
+        if merge_flag not in flags:
+            flags.append(merge_flag)
+    out["uncertainty_flags"] = flags
+
+
+def _sheet_graph_summary_text(
+    out: Mapping[str, Any],
+    sheet_counts: Mapping[str, int],
+) -> str:
+    base = _str(out.get("summary"))
+    if not any(_int(sheet_counts.get(key)) for key in ("rooms", "doors", "corridors")):
+        return base
+    if "多页 sheet graph 证据汇总" in base:
+        return base
+    suffix = (
+        "多页 sheet graph 证据汇总: "
+        f"{_int(sheet_counts.get('rooms'))} 个空间、"
+        f"{_int(sheet_counts.get('doors'))} 个门/洞口、"
+        f"{_int(sheet_counts.get('corridors'))} 条走廊、"
+        f"{_int(sheet_counts.get('dimensions'))} 条尺寸证据。"
+    )
+    return f"{base} {suffix}" if base else suffix
+
+
+def _unique_strings(raw: object) -> list[str]:
+    out: list[str] = []
+    for item in _list(raw):
+        if isinstance(item, str) and item and item not in out:
+            out.append(item)
+    return out
 
 
 def _drawing_type(
@@ -685,5 +936,6 @@ def _format_bbox(raw: object) -> str:
 __all__ = [
     "build_drawing_understanding",
     "load_or_build_drawing_understanding",
+    "merge_sheet_graph_evidence",
     "write_drawing_understanding",
 ]

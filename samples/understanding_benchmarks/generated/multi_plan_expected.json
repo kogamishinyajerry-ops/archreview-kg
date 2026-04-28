@@ -7,16 +7,16 @@
   "likely_design_contains": "住宅",
   "component_counts": {
     "rooms": {
-      "exact": 4
+      "exact": 8
     },
     "doors": {
-      "exact": 6
+      "exact": 12
     },
     "corridors": {
-      "exact": 1
+      "exact": 2
     },
     "dimensions": {
-      "exact": 3
+      "exact": 6
     }
   },
   "required_semantic_kinds": [

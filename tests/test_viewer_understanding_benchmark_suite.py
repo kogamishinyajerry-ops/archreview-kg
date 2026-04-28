@@ -209,8 +209,8 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
 
     assert result["passed"] is True
     assert result["pending_count"] == 1
-    assert result["active_count"] == 3
-    assert result["known_gap_count"] == 1
+    assert result["active_count"] == 4
+    assert result["known_gap_count"] == 0
     assert result["failed_count"] == 0
     medfield = next(
         case for case in result["cases"] if case["case_id"] == "medfield-a1-first-floor"
@@ -239,26 +239,12 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
         if case["case_id"] == "medfield-full-plan-set-multi-plan-intake"
     )
     assert real_multi_plan["fixture_kind"] == "real_public_multi_plan_pdf"
-    assert real_multi_plan["status"] == "known_gap"
-    assert real_multi_plan["passed"] is None
-    assert real_multi_plan["benchmark_passed"] is False
-    assert real_multi_plan["score"] < 1.0
-    assert real_multi_plan["provenance"] == "real/medfield_full_plan_set_intake_provenance.json"
-    assert real_multi_plan["required_artifacts"] == [
-        "source_pdf_or_private_pointer",
-        "full_review_run_dir",
-        "drawing_understanding.json",
-        "sheet_classification.json",
-        "sheet_graphs.json",
-        "sheet_issues.json",
-        "human_expected_inventory.json",
-    ]
-    assert "do not promote to active" in real_multi_plan["promotion_rule"]
-    failed_checks = {
-        check["name"] for check in real_multi_plan["checks"] if check["passed"] is False
-    }
-    assert "component_counts:doors" in failed_checks
-    assert "benchmark_signal:has_openings" in failed_checks
+    assert real_multi_plan["status"] == "pass"
+    assert real_multi_plan["passed"] is True
+    assert real_multi_plan["score"] == 1.0
+    check_names = {check["name"] for check in real_multi_plan["checks"]}
+    assert "component_counts:doors" in check_names
+    assert "benchmark_signal:has_openings" in check_names
 
 
 def test_benchmark_suite_markdown_report() -> None:
