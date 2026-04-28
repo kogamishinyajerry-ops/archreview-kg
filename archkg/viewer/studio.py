@@ -602,7 +602,17 @@ def run_pipeline(
     # inspect_only runs render correctly.
     if not (out_dir / "source.pdf").exists():
         shutil.copy(pdf_path, out_dir / "source.pdf")
-    _render_preview(pdf_path, out_dir / "source_preview.png")
+    from archkg.viewer.preview_pages import (
+        render_pdf_preview_pages,
+        write_preview_pages_manifest,
+    )
+
+    source_pages = render_pdf_preview_pages(
+        pdf_path,
+        out_dir,
+        layer="source",
+        legacy_name="source_preview.png",
+    )
 
     if inspect_only:
         # Skip rule evaluation; write empty issues + a minimal report so
@@ -610,7 +620,18 @@ def run_pipeline(
         # copy of the source with no markup.
         (out_dir / "issues.json").write_text("[]", encoding="utf-8")
         shutil.copy(pdf_path, out_dir / "annotated.pdf")
-        _render_preview(out_dir / "annotated.pdf", out_dir / "annotated_preview.png")
+        annotated_pages = render_pdf_preview_pages(
+            out_dir / "annotated.pdf",
+            out_dir,
+            layer="annotated",
+            legacy_name="annotated_preview.png",
+        )
+        write_preview_pages_manifest(
+            out_dir,
+            source_pages=source_pages,
+            annotated_pages=annotated_pages,
+            overlay_available=(out_dir / "entity_overlay.png").exists(),
+        )
         report_lines = [
             "# 仅识图模式 — ArchReview-KG",
             "",
@@ -758,7 +779,20 @@ def run_pipeline(
     )
 
     if annotated.exists():
-        _render_preview(annotated, out_dir / "annotated_preview.png")
+        annotated_pages = render_pdf_preview_pages(
+            annotated,
+            out_dir,
+            layer="annotated",
+            legacy_name="annotated_preview.png",
+        )
+    else:
+        annotated_pages = []
+    write_preview_pages_manifest(
+        out_dir,
+        source_pages=source_pages,
+        annotated_pages=annotated_pages,
+        overlay_available=(out_dir / "entity_overlay.png").exists(),
+    )
 
     # Pre-render the existing viewer index so the redirect lands on a
     # ready-to-display page.
@@ -879,6 +913,7 @@ def _render_viewer_index(
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.issue_focus import build_issue_focus_view
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.preview_pages import load_preview_pages_view
     from archkg.viewer.review_diff import load_review_diff_view
     from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.review_workbench import load_review_workbench_view
@@ -927,7 +962,12 @@ def _render_viewer_index(
     sheet_issue_review_queue = load_sheet_issue_review_queue_view(out_dir)
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
-    issue_focus = build_issue_focus_view(issues, primitives)
+    preview_pages = load_preview_pages_view(out_dir)
+    issue_focus = build_issue_focus_view(
+        issues,
+        primitives,
+        preview_pages=preview_pages,
+    )
 
     html = env.get_template("index.html.j2").render(
         source_pdf=str(source_pdf),
@@ -953,6 +993,7 @@ def _render_viewer_index(
         sheet_issue_review_queue=sheet_issue_review_queue,
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
+        preview_pages=preview_pages,
         issue_focus=issue_focus,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")

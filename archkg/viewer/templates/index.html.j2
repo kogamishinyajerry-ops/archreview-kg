@@ -717,6 +717,7 @@
 {% set review_diff = review_diff | default({'available': false, 'summary_rows': [], 'issue_statuses': {}, 'items': [], 'resolved_items': [], 'omitted_count': 0, 'warning_text': 'review_diff.json 暂无数据；尚未执行 archkg review-diff。', 'note': ''}, true) %}
 {% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
 {% set issue_focus = issue_focus | default({'available': false, 'items': {}, 'omitted_count': 0, 'warning_text': '图面定位暂无数据'}, true) %}
+{% set preview_pages = preview_pages | default({'available': false, 'page_count': 1, 'layers': {'source': [], 'overlay': [], 'annotated': []}, 'warning_text': 'preview_pages.json 暂无数据'}, true) %}
 {% set sheet_classification = sheet_classification | default({'available': false, 'summary_rows': [], 'pages': [], 'warning_text': 'sheet_classification.json 暂无数据; 缺失分类不代表可直接进入 graph.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_graphs = sheet_graphs | default({'available': false, 'graphs': [], 'skipped_pages': [], 'warning_text': 'sheet_graphs.json 暂无数据; 缺失多页 graph 不代表没有其他 plan sheet.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_issues = sheet_issues | default({'available': false, 'sheets': [], 'warning_text': 'sheet_issues.json 暂无数据; 缺失 per-sheet issue preview 不代表多页无候选问题.', 'unavailable_reason': 'missing'}, true) %}
@@ -1859,6 +1860,13 @@
     <button class="chip {% if not layer_available.overlay %}is-disabled{% endif %}" data-layer="overlay" {% if not layer_available.overlay %}disabled{% endif %}>entity overlay</button>
     <button class="chip {% if not layer_available.annotated %}is-disabled{% endif %}" data-layer="annotated" {% if not layer_available.annotated %}disabled{% endif %}>annotated</button>
   </div>
+  {% if preview_pages.page_count and preview_pages.page_count > 1 %}
+  <div class="layer-switch page-switch" role="tablist" aria-label="图纸页切换">
+    {% for page in preview_pages.layers.source %}
+      <button class="chip page-chip" type="button" data-preview-page-index="{{ page.page_index }}">第 {{ page.page_number }} 页</button>
+    {% endfor %}
+  </div>
+  {% endif %}
   <div class="gallery">
     <div class="img-card">
       <div class="img-head">图层对照 <span class="muted" id="layerState">source</span></div>
@@ -1881,6 +1889,9 @@
           <div class="bar-row"><span class="bar-label">entity overlay</span><span class="bar-value"><a href="entity_overlay.png" target="_blank">entity_overlay.png</a></span></div>
           <div class="bar-row"><span class="bar-label">annotated</span><span class="bar-value"><a href="annotated_preview.png" target="_blank">annotated_preview.png</a></span></div>
           <div class="bar-row"><span class="bar-label">annotated PDF</span><span class="bar-value"><a href="annotated.pdf" target="_blank">annotated.pdf</a></span></div>
+          {% if preview_pages.available %}
+          <div class="bar-row"><span class="bar-label">preview pages</span><span class="bar-value"><a href="preview_pages.json" target="_blank">preview_pages.json</a></span></div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -1930,7 +1941,7 @@
               data-focus-issue="{{ i.issue_id }}"
               data-focus-page-index="{{ focus_item.page_index }}"
               data-focus-preview-supported="{{ 'true' if focus_item.preview_layer_supported else 'false' }}"
-            >{% if focus_item.preview_layer_supported %}定位图面{% else %}定位第 {{ focus_item.page_number }} 页{% endif %}</button>
+            >{% if focus_item.page_index == 0 %}定位图面{% else %}定位第 {{ focus_item.page_number }} 页{% endif %}</button>
           {% endif %}
           <span class="status-pill {{ issue_review.status_class }}">复核状态 {{ issue_review.status_label }} · {{ issue_review.status }}</span>
           {% if issue_diff %}
@@ -2050,6 +2061,7 @@
     return;
   }
   const issueFocus = {{ issue_focus["items"] | tojson }};
+  const previewPages = {{ preview_pages | tojson }};
   const layerSources = {
     source: "source_preview.png",
     overlay: "entity_overlay.png",
@@ -2060,18 +2072,50 @@
     overlay: "entity overlay",
     annotated: "annotated",
   };
+  let currentLayer = "source";
+  let currentPageIndex = 0;
+  let activeIssueId = "";
 
-  function applyLayer(next) {
-    const src = layerSources[next];
+  function pageRows(layer) {
+    const layers = previewPages && previewPages.layers;
+    const rows = layers && layers[layer];
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  function layerSourceForPage(layer, pageIndex) {
+    const rows = pageRows(layer);
+    const found = rows.find((row) => Number(row.page_index) === Number(pageIndex) && row.src);
+    if (found) {
+      return found.src;
+    }
+    if (Number(pageIndex) === 0) {
+      return layerSources[layer] || "";
+    }
+    return "";
+  }
+
+  function applyLayer(next, pageIndex = currentPageIndex) {
+    const src = layerSourceForPage(next, pageIndex);
     if (!src) {
+      if (focusStatus) {
+        focusStatus.textContent = `${layerLabels[next] || next} 暂无第 ${Number(pageIndex) + 1} 页预览；请打开 source.pdf 或 annotated.pdf 复核。`;
+        focusStatus.classList.add("is-active");
+      }
       return;
     }
+    currentLayer = next;
+    currentPageIndex = Number(pageIndex);
     layerImage.src = src;
-    layerImage.alt = `review layer ${layerLabels[next] || next}`;
-    layerState.textContent = layerLabels[next] || next;
+    layerImage.alt = `review layer ${layerLabels[next] || next} page ${currentPageIndex + 1}`;
+    layerState.textContent = `${layerLabels[next] || next} · 第 ${currentPageIndex + 1} 页`;
     chips.forEach((chip) => {
       chip.classList.toggle("active", chip.dataset.layer === next);
       chip.setAttribute("aria-pressed", chip.dataset.layer === next ? "true" : "false");
+    });
+    document.querySelectorAll("[data-preview-page-index]").forEach((button) => {
+      const isActive = Number(button.getAttribute("data-preview-page-index")) === currentPageIndex;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
     });
   }
 
@@ -2087,7 +2131,10 @@
     if (card) {
       card.classList.add("is-focused");
     }
+    activeIssueId = issueId;
     const pageNumber = focus.page_number || ((focus.page_index || 0) + 1);
+    const focusPageIndex = Number(focus.page_index || 0);
+    const previewLayers = Array.isArray(focus.preview_layers) ? focus.preview_layers : [];
     const previewSupported = focus.preview_layer_supported !== false;
     if (!previewSupported) {
       focusBox.classList.remove("is-active");
@@ -2102,8 +2149,10 @@
       }
       return;
     }
-    const preferredChip = chips.find((chip) => chip.dataset.layer === "annotated" && !chip.disabled);
-    applyLayer((preferredChip && preferredChip.dataset.layer) || "source");
+    const preferredLayer = previewLayers.includes("annotated")
+      ? "annotated"
+      : (previewLayers.includes("source") ? "source" : "overlay");
+    applyLayer(preferredLayer, focusPageIndex);
     focusBox.style.left = `${focus.x_pct}%`;
     focusBox.style.top = `${focus.y_pct}%`;
     focusBox.style.width = `${focus.w_pct}%`;
@@ -2124,7 +2173,22 @@
     chip.type = "button";
     chip.setAttribute("aria-pressed", chip.classList.contains("active") ? "true" : "false");
     chip.addEventListener("click", () => {
-      applyLayer(chip.dataset.layer);
+      applyLayer(chip.dataset.layer, currentPageIndex);
+    });
+  });
+
+  document.querySelectorAll("[data-preview-page-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeIssueId = "";
+      focusBox.classList.remove("is-active");
+      focusBox.setAttribute("aria-hidden", "true");
+      focusLabel.textContent = "";
+      const nextPage = Number(button.getAttribute("data-preview-page-index"));
+      applyLayer(currentLayer, nextPage);
+      if (focusStatus) {
+        focusStatus.textContent = `已切换到第 ${nextPage + 1} 页预览。`;
+        focusStatus.classList.add("is-active");
+      }
     });
   });
 
@@ -2135,7 +2199,7 @@
   });
 
   const active = chips.find((c) => c.classList.contains("active") && !c.disabled);
-  applyLayer((active && active.dataset.layer) || (chips.find((c) => !c.disabled) || chips[0]).dataset.layer);
+  applyLayer((active && active.dataset.layer) || (chips.find((c) => !c.disabled) || chips[0]).dataset.layer, 0);
 })();
 </script>
 </body>

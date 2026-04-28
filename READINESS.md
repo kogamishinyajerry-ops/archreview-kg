@@ -32,8 +32,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   对交接包内稳定文件记录 SHA-256 和 package digest；它只证明包文件未漂移，不证明图纸合规。
 - P54 后可用 `archkg handoff-archive-verify <package-dir>` 在收到包后重算 checksum，
   输出 `archive_verified` 或 `archive_drift`；drift 是交接阻塞，不是图纸违规结论。
-- P56 后 Viewer/Studio 的 issue focus 已按图纸页定位：第一页 issue 可高亮预览层，
-  非第一页 issue 会显示页码并引导打开 PDF 对应页复核，避免第一页假定位。
+- P56/P57 后 Viewer/Studio 的 issue focus 已按图纸页定位，并能基于 `preview_pages.json`
+  切换 source / annotated 多页预览：非第一页 issue 可直接切到对应页高亮，避免第一页假定位。
 
 复现该结论：
 
@@ -321,8 +321,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不表示任何 candidate issue 已确认或图纸合规。
 - P55 起，release-readiness 仍要求真实图纸证据不少于生成样本证据；新增 generated mixed-sheet-set
   没有放宽该 guardrail，而是同时补入第二张 Medfield 真实单页 expected inventory。
-- P56 起，issue focus 已经 page-aware，但静态 PNG 预览仍只渲染第一页；非第一页问题要打开
-  `source.pdf` / `annotated.pdf` 对应页人工复核，不能把页码提示当成合规结论。
+- P57 起，source / annotated 静态 PNG 预览已经支持多页切换；但 `entity_overlay.png`
+  仍只渲染第一页，且 preview pages 只是导航/复核辅助，不能当成合规结论。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

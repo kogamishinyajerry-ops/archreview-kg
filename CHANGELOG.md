@@ -198,6 +198,11 @@ and keeps the no-OCR transparency warning.
   the static preview layer, while non-page-0 issues keep the correct page label
   and route reviewers to `source.pdf` / `annotated.pdf` page review instead of
   being projected onto the first-page PNG.
+- P57-01 adds multi-page preview galleries for Viewer/Studio. Source and
+  annotated PDFs are rendered into page-indexed PNG sets, `preview_pages.json`
+  records the available preview pages, the result page gains page-switch
+  controls, and non-first-page primary issues can focus the corresponding
+  source/annotated page directly. `entity_overlay.png` remains page-0 only.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

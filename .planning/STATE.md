@@ -46,12 +46,13 @@ Status:
 - P54-01 is complete: `archkg handoff-archive-verify` now verifies received packages against archive manifests and reports `archive_verified` or `archive_drift`.
 - P55-01 is complete: the active understanding benchmark suite now includes Medfield A-2 Second Floor Plan and a generated complex mixed-sheet set, bringing packaged suite coverage to active=7, real_active=3, generated_active=3.
 - P56-01 is complete: Viewer/Studio issue focus now maps primary issue bboxes by `page_index`; first-page issues still highlight on the preview layer, while non-first-page issues show the correct page and route reviewers to the PDF instead of being projected onto page 0.
+- P57-01 is complete: Viewer/Studio now write `preview_pages.json` plus multi-page source/annotated PNG page sets, render page-switch controls, and focus non-first-page issues directly on their corresponding source/annotated preview page.
 
 ## Current Phase
 
-P56: Sheet-aware issue focus.
+P57: Multi-page preview gallery.
 
-P56 is complete. The review workbench can now focus issues without false first-page localization. Multi-page PNG preview galleries remain a future enhancement.
+P57 is complete. The review workbench can now switch source/annotated previews by page and use page-aware issue focus on non-first-page primary issues.
 
 ## Key Decisions
 
@@ -75,7 +76,7 @@ P56 is complete. The review workbench can now focus issues without false first-p
 - P44-01 promotes one real full-set recognition benchmark, but aggregation is count-level evidence; per-sheet candidate issues still do not enter primary `issues.json` or `review_state.json`.
 - P41-01 workbench summary is derived from current artifacts; if future artifacts are added, the summary must be extended or it can drift.
 - P41-03 direct review-state operations can still leave pre-rendered HTML stale until the viewer is re-rendered; the command refreshes `review_workbench.json`, but static `index.html` regeneration remains a separate user/viewer step.
-- P56 makes issue focus page-aware and prevents non-first-page false highlighting, but the static preview PNGs still render page 0 only; non-first-page visual inspection must use `source.pdf` / `annotated.pdf` until multi-page preview galleries land.
+- P57 adds multi-page source/annotated previews, but `entity_overlay.png` is still page-0 only; overlay evidence for non-first-page issues must remain source/annotated/PDF based until per-page entity overlay rendering lands.
 - P42-01 duplicate matching is deterministic but still heuristic for multiple same-rule same-page candidates; it uses spatial/evidence ordering because generated entity IDs are not stable across runs.
 - `review_diff.json` is not a compliance proof and does not resolve human review states automatically.
 - P42-02 renders missing diff as "not run yet"; reviewers must still inspect diff rows before marking review_state items resolved or superseded.
@@ -91,8 +92,9 @@ P56 is complete. The review workbench can now focus issues without false first-p
 - P54 archive verification status is checksum alignment only; `archive_verified` does not mean any issue is confirmed or the drawing is compliant.
 - P55 adds recognition benchmarks only; Medfield A-2 and generated mixed-sheet passing cases do not prove arbitrary real drawing compliance or multi-sheet issue aggregation.
 - P56 page-aware focus is a reviewer navigation aid only; it does not create new issues, change review state, or certify compliance.
+- P57 preview pages are visual navigation artifacts only; they do not create new detection evidence, mutate issue state, or make entity overlays multi-page.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P56 by adding multi-page preview galleries, a compact multi-package handoff bundle index, or stronger reviewer task sequencing across multi-sheet runs.
+Move beyond P57 by adding per-page entity overlay rendering, a compact multi-package handoff bundle index, or stronger reviewer task sequencing across multi-sheet runs.

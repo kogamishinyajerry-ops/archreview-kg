@@ -122,6 +122,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Add bounded local review-state operations that update only `review_state.json` for primary `issues.json` issue IDs and never mutate rule output or per-sheet preview issues.
 - Add first-page issue-to-preview cross-highlighting so reviewers can jump from primary issues to source/overlay/annotated visual evidence.
 - P56-01 complete: issue focus is now sheet-aware. First-page issues still highlight on the preview layer; non-first-page issues keep the correct page number and bbox and route reviewers to PDF page review rather than being projected onto the first-page PNG.
+- P57-01 complete: Viewer/Studio now write `preview_pages.json` and multi-page source/annotated PNG page sets. Reviewers can switch pages, and non-first-page primary issues can focus the corresponding page preview directly.
 
 ### P42: Re-Run Diff and Resolution Tracking
 
@@ -205,6 +206,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Preserve page-aware bbox normalization for primary issues on any page with known dimensions.
 - Keep first-page preview highlighting for page 0, and route non-first-page issues to `source.pdf` / `annotated.pdf` review with explicit page labels.
 - Guardrail: page-aware focus is navigation evidence only; it does not create or confirm issues and does not imply multi-page PNG preview support.
+
+### P57: Multi-Page Preview Gallery
+
+- Render source and annotated PDFs into page-indexed PNG preview sets while preserving legacy `source_preview.png` and `annotated_preview.png`.
+- Write `preview_pages.json` so Viewer/Studio can switch pages and resolve the correct preview image for issue focus.
+- Use the preview manifest to mark non-first-page issue focus as directly preview-supported when source/annotated page images exist.
+- Guardrail: entity overlay remains page-0 only in P57; visual focus still does not create evidence or certify compliance.
 
 ## Explicit Not-Build List
 

@@ -6,7 +6,7 @@
     "notion"
   ],
   "current_milestone": "M4 review workbench",
-  "current_phase": "P56 sheet-aware issue focus",
+  "current_phase": "P57 multi-page preview gallery",
   "planning_updated_at": "2026-04-28",
   "agent_contract": {
     "gpt-5.5-xhigh": "architecture, roadmap, risk gates, acceptance criteria, scope arbitration",

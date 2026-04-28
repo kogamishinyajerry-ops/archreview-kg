@@ -572,6 +572,103 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "缺失 per-sheet issue preview 不代表多页无候选问题" in body
 
 
+def test_standalone_viewer_renders_second_page_issue_focus(
+    tmp_path: Path,
+) -> None:
+    from archkg.viewer.preview_pages import write_preview_pages_manifest
+    from archkg.viewer.server import _render_index
+
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    (out_dir / "primitives.json").write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {"page_index": 0, "width_pt": 1000.0, "height_pt": 500.0},
+                    {"page_index": 1, "width_pt": 2000.0, "height_pt": 1000.0},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (out_dir / "entity_graph.json").write_text("{}", encoding="utf-8")
+    (out_dir / "report.md").write_text("# report", encoding="utf-8")
+    (out_dir / "issues.json").write_text(
+        json.dumps(
+            [
+                {
+                    "issue_id": "ISS-P2",
+                    "rule_card_id": "RC-DOOR-WIDTH",
+                    "standard_clause_id": "GB50096-5.8.5",
+                    "entity_ids": ["D-2"],
+                    "bbox": [200.0, 100.0, 600.0, 300.0],
+                    "page_index": 1,
+                    "severity": "warning",
+                    "message": "second page issue",
+                    "evidence": {
+                        "snippet": "door width",
+                        "page_index": 1,
+                        "measured_value": 0.8,
+                        "threshold_value": 0.9,
+                        "unit": "m",
+                    },
+                }
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    write_preview_pages_manifest(
+        out_dir,
+        source_pages=[
+            {
+                "page_index": 0,
+                "page_number": 1,
+                "src": "source_preview.png",
+                "width_px": 100,
+                "height_px": 50,
+                "layer": "source",
+            },
+            {
+                "page_index": 1,
+                "page_number": 2,
+                "src": "source_preview_page_2.png",
+                "width_px": 200,
+                "height_px": 100,
+                "layer": "source",
+            },
+        ],
+        annotated_pages=[
+            {
+                "page_index": 0,
+                "page_number": 1,
+                "src": "annotated_preview.png",
+                "width_px": 100,
+                "height_px": 50,
+                "layer": "annotated",
+            },
+            {
+                "page_index": 1,
+                "page_number": 2,
+                "src": "annotated_preview_page_2.png",
+                "width_px": 200,
+                "height_px": 100,
+                "layer": "annotated",
+            },
+        ],
+        overlay_available=False,
+    )
+
+    body = _render_index(out_dir, SAMPLE_PDF).read_text("utf-8")
+
+    assert "定位第 2 页" in body
+    assert 'data-focus-page-index="1"' in body
+    assert 'data-focus-preview-supported="true"' in body
+    assert "source_preview_page_2.png" in body
+    assert "annotated_preview_page_2.png" in body
+    assert "preview_pages.json" in body
+
+
 def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
     """Phase 20-A: a 200-DPI raster render of the demo PDF should
     produce roughly the same entity counts (4 rooms / 1 corridor /
@@ -629,6 +726,7 @@ def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
         "sheet_region_candidates_overlay.png",
         "source.pdf",
         "source_preview.png",
+        "preview_pages.json",
     ):
         assert (out / fname).exists(), f"missing artifact for raster run: {fname}"
 
@@ -1244,6 +1342,7 @@ def test_run_pipeline_smoke(tmp_path: Path) -> None:
         "index.html",
         "issues.json",
         "primitives.json",
+        "preview_pages.json",
         "report.md",
         "source.pdf",
         "source_preview.png",

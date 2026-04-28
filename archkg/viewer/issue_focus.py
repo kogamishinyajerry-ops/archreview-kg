@@ -14,6 +14,8 @@ class _PageDimensions(TypedDict):
 def build_issue_focus_view(
     issues: Sequence[Mapping[str, Any]],
     primitives: Mapping[str, Any],
+    *,
+    preview_pages: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build sheet-aware issue focus rectangles for the static viewer.
 
@@ -69,6 +71,7 @@ def build_issue_focus_view(
                 reason="invalid_bbox",
             )
             continue
+        preview_layers = _preview_layers_for_page(preview_pages, page_index=page_index)
         items[issue_id] = {
             "issue_id": issue_id,
             "page_index": page_index,
@@ -76,7 +79,8 @@ def build_issue_focus_view(
             "page_label": f"第 {page['page_number']} 页",
             "page_width_pt": width,
             "page_height_pt": height,
-            "preview_layer_supported": page_index == 0,
+            "preview_layer_supported": bool(preview_layers),
+            "preview_layers": preview_layers,
             "bbox": list(bbox),
             "x_pct": normalized[0],
             "y_pct": normalized[1],
@@ -87,6 +91,12 @@ def build_issue_focus_view(
         }
     non_preview_page_count = sum(
         1 for item in items.values() if not bool(item.get("preview_layer_supported"))
+    )
+    multi_page_preview_count = sum(
+        1
+        for item in items.values()
+        if _int(item.get("page_index"), default=0) > 0
+        and bool(item.get("preview_layer_supported"))
     )
     return {
         "available": bool(items),
@@ -104,6 +114,7 @@ def build_issue_focus_view(
             mapped_count=len(items),
             omitted_count=omitted,
             non_preview_page_count=non_preview_page_count,
+            multi_page_preview_count=multi_page_preview_count,
         ),
     }
 
@@ -159,17 +170,44 @@ def _omitted_item(issue_id: str, *, page_index: int, reason: str) -> dict[str, A
     }
 
 
+def _preview_layers_for_page(
+    preview_pages: Mapping[str, Any] | None,
+    *,
+    page_index: int,
+) -> list[str]:
+    if preview_pages is None:
+        return ["source", "overlay", "annotated"] if page_index == 0 else []
+    layers = preview_pages.get("layers")
+    if not isinstance(layers, Mapping):
+        return ["source", "overlay", "annotated"] if page_index == 0 else []
+    available_layers: list[str] = []
+    for layer in ("source", "overlay", "annotated"):
+        rows = layers.get(layer)
+        if not isinstance(rows, list):
+            continue
+        if any(
+            isinstance(row, Mapping)
+            and _int(row.get("page_index"), default=-1) == page_index
+            for row in rows
+        ):
+            available_layers.append(layer)
+    return available_layers
+
+
 def _warning_text(
     *,
     mapped_count: int,
     omitted_count: int,
     non_preview_page_count: int,
+    multi_page_preview_count: int,
 ) -> str:
     if mapped_count <= 0:
         return "未找到可映射 issue bbox; 请检查 issue bbox/page_index 与图纸页尺寸。"
     parts = ["已按图纸页映射 issue bbox"]
     if non_preview_page_count:
         parts.append("非第一页 issue 保留页码和 bbox, 不误投射到第一页预览")
+    elif multi_page_preview_count:
+        parts.append("多页 issue 可在对应页预览层定位")
     else:
         parts.append("第一页 issue 可在预览层直接高亮")
     if omitted_count:

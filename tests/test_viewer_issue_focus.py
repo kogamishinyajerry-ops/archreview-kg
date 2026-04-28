@@ -91,6 +91,44 @@ def test_build_issue_focus_view_maps_issue_bbox_on_own_page() -> None:
     assert focus["h_pct"] == 20.0
 
 
+def test_build_issue_focus_view_marks_non_first_page_preview_when_pages_exist() -> None:
+    primitives = {
+        "pages": [
+            {"page_index": 0, "width_pt": 1000.0, "height_pt": 500.0},
+            {"page_index": 1, "width_pt": 2000.0, "height_pt": 1000.0},
+        ]
+    }
+    preview_pages = {
+        "layers": {
+            "source": [
+                {"page_index": 0, "src": "source_preview.png"},
+                {"page_index": 1, "src": "source_preview_page_2.png"},
+            ],
+            "annotated": [
+                {"page_index": 0, "src": "annotated_preview.png"},
+                {"page_index": 1, "src": "annotated_preview_page_2.png"},
+            ],
+            "overlay": [{"page_index": 0, "src": "entity_overlay.png"}],
+        }
+    }
+    issues = [
+        {
+            "issue_id": "ISS-2",
+            "rule_card_id": "RC-DOOR-WIDTH",
+            "severity": "warning",
+            "page_index": 1,
+            "bbox": [200.0, 100.0, 600.0, 300.0],
+        }
+    ]
+
+    view = build_issue_focus_view(issues, primitives, preview_pages=preview_pages)
+
+    assert view["non_preview_page_count"] == 0
+    focus = view["items"]["ISS-2"]
+    assert focus["preview_layer_supported"] is True
+    assert focus["preview_layers"] == ["source", "annotated"]
+
+
 def test_build_issue_focus_view_tracks_unmapped_page_issue() -> None:
     primitives = {
         "pages": [

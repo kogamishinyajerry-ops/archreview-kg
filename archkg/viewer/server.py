@@ -197,6 +197,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.issue_focus import build_issue_focus_view
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.preview_pages import load_preview_pages_view
     from archkg.viewer.review_diff import load_review_diff_view
     from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.review_workbench import load_review_workbench_view
@@ -254,7 +255,12 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     sheet_issue_review_queue = load_sheet_issue_review_queue_view(out_dir)
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
-    issue_focus = build_issue_focus_view(issues, primitives)
+    preview_pages = load_preview_pages_view(out_dir)
+    issue_focus = build_issue_focus_view(
+        issues,
+        primitives,
+        preview_pages=preview_pages,
+    )
 
     stats = {
         "lines": n_lines,
@@ -288,6 +294,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         sheet_issue_review_queue=sheet_issue_review_queue,
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
+        preview_pages=preview_pages,
         issue_focus=issue_focus,
         mode=mode,
         quality_flags=quality_flags,
@@ -369,9 +376,31 @@ def serve(
         )
 
     # 1) materialise inline previews + copy the source PDF so the page can deep-link to it
-    _render_pdf_preview(source_pdf, out_dir / "source_preview.png")
+    from archkg.viewer.preview_pages import (
+        render_pdf_preview_pages,
+        write_preview_pages_manifest,
+    )
+
+    source_pages = render_pdf_preview_pages(
+        source_pdf,
+        out_dir,
+        layer="source",
+        legacy_name="source_preview.png",
+    )
+    annotated_pages = []
     if (out_dir / "annotated.pdf").exists():
-        _render_pdf_preview(out_dir / "annotated.pdf", out_dir / "annotated_preview.png")
+        annotated_pages = render_pdf_preview_pages(
+            out_dir / "annotated.pdf",
+            out_dir,
+            layer="annotated",
+            legacy_name="annotated_preview.png",
+        )
+    write_preview_pages_manifest(
+        out_dir,
+        source_pages=source_pages,
+        annotated_pages=annotated_pages,
+        overlay_available=(out_dir / "entity_overlay.png").exists(),
+    )
     if not (out_dir / "source.pdf").exists() or (
         out_dir / "source.pdf"
     ).resolve() != source_pdf.resolve():
