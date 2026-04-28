@@ -1469,6 +1469,37 @@ def review_state_cmd(
     )
 
 
+@app.command("review-diff")
+def review_diff_cmd(
+    before_run: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    after_run: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    out: Path | None = typer.Option(
+        None,
+        "-o",
+        "--out",
+        help="Output path. Defaults to AFTER_RUN/review_diff.json.",
+    ),
+) -> None:
+    """Compare two run directories' primary issues.json candidates."""
+
+    from archkg.review_diff import ReviewDiffError, build_review_diff, write_review_diff
+
+    try:
+        report = build_review_diff(before_run, after_run)
+        target = out if out is not None else after_run / "review_diff.json"
+        written = write_review_diff(report, target)
+    except ReviewDiffError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    typer.echo(
+        f"wrote {written} "
+        f"unchanged={report.summary.get('unchanged', 0)} "
+        f"changed={report.summary.get('changed', 0)} "
+        f"new={report.summary.get('new', 0)} "
+        f"resolved={report.summary.get('resolved', 0)}"
+    )
+
+
 @app.command("control-sync")
 def control_sync(
     run_dir: Path = typer.Option(

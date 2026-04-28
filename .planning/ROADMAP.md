@@ -125,6 +125,8 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 ### P42: Re-Run Diff and Resolution Tracking
 
 - Compare two runs and mark issues as unchanged, changed, resolved, or new.
+- P42-01 complete: `archkg review-diff` writes read-only `review_diff.json` over primary `issues.json` candidates without relying on generated issue/entity IDs.
+- Next: surface the diff in Viewer/Studio/workbench without auto-mutating `review_state.json`.
 
 ### P43: Release Readiness Gate
 

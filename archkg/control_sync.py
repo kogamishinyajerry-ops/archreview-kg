@@ -82,6 +82,7 @@ def _collect_run_snapshot(run_dir: Path) -> dict[str, Any]:
         for p in run_dir.iterdir()
         if p.is_file() and p.name in {
             "issues.json",
+            "review_diff.json",
             "review_state.json",
             "entity_graph.json",
             "drawing_understanding.json",

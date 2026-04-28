@@ -38,6 +38,7 @@ archkg viewer -d out
 - `report.md` — 中文复核报告（违规清单 + 人工核对提醒分区）
 - `issues.json` — 结构化问题清单（rule_id / bbox / severity / 证据）
 - `review_state.json` — 人工复核状态层（candidate / confirmed / rejected / needs_info / resolved / superseded），不回写 `issues.json`
+- `review_diff.json` — 两次 run 的主 `issues.json` 差异追踪（unchanged / changed / new / resolved），由 `archkg review-diff` 生成，不回写任一 run
 - `review_workbench.json` — 审图工作台总览，汇总图纸理解、规则输入就绪度、sheet 证据、候选问题和复核状态；提供 evidence 跳转与受限 review-state 操作模板，不改变规则结论
 - `entity_graph.json` — 抽出的实体图谱
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
@@ -142,6 +143,11 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > candidate issues、review state 和 report 的 action links。它只帮助 reviewer 判断先看哪里、缺什么、哪些仍是 candidate；
 > `archkg review-state` 可受限更新主 `issues.json` 对应的 `review_state.json`，不会修改 `issues.json`、per-sheet preview issues 或规则引擎结论。
 > Viewer/Studio 还会把第一页主 issue bbox 映射到 source / overlay / annotated 预览，点击“定位图面”即可核对图面证据。
+>
+> **Re-run diff**: 修图后重跑审图，可用
+> `archkg review-diff out/run-before out/run-after -o out/run-after/review_diff.json`
+> 比较两次主 `issues.json`。匹配不会依赖每次运行随机生成的 `issue_id` 或 entity IDs，而是使用规则卡、条文、页码、空间排序和证据指纹；
+> 输出只标记 `unchanged`、`changed`、`new`、`resolved`，不会自动修改 `review_state.json` 或把 per-sheet preview issue 升级为主问题。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 
@@ -358,6 +364,7 @@ archkg clause readiness
 - P39：multi-plan graph outputs。`sheet_graphs.json` 为每个高置信 plan sheet 生成独立 graph 证据；`sheet_issues.json` 生成 per-sheet candidate issue preview。主 `entity_graph.json`、`issues.json` 和 `review_state.json` 暂不自动聚合多 plan 页。
 - P40：benchmark expansion。Understanding benchmark suite 现在能校验 multi-plan artifacts，并新增 `generated-multi-plan-sheets` active case；真实 Medfield full plan set 以 `known_gap` 登记，暴露 full-set opening evidence 尚未进入 primary drawing-understanding 的缺口。
 - P41：Studio readiness workbench。`review_workbench.json` 与结果页“审图工作台总览”把分散 evidence 汇总成 reviewer 入口，提供 action links 跳到对应面板，提供 `archkg review-state` 本地复核状态操作模板，并支持第一页 issue bbox 的 source/overlay/annotated 预览高亮；主规则结论不变。
+- P42：Re-run diff / resolution tracking。`archkg review-diff` 比较两个 run 的主 `issues.json`，写出 `review_diff.json`，不用随机 issue/entity IDs，改用稳定指纹标记 unchanged / changed / new / resolved，不回写规则输出或人工复核状态。
 
 ---
 

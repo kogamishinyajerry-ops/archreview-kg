@@ -22,6 +22,12 @@ from archkg.schemas.primitives import (
     TextSource,
 )
 from archkg.schemas.project import ClimateZone, FireClass, ProjectMeta
+from archkg.schemas.review_diff import (
+    ReviewDiffIssueRef,
+    ReviewDiffItem,
+    ReviewDiffReport,
+    ReviewDiffStatus,
+)
 from archkg.schemas.review_state import (
     IssueReviewState,
     IssueReviewStateItem,
@@ -70,6 +76,10 @@ __all__ = [
     "PagePrimitives",
     "Primitives",
     "ProjectMeta",
+    "ReviewDiffIssueRef",
+    "ReviewDiffItem",
+    "ReviewDiffReport",
+    "ReviewDiffStatus",
     "Room",
     "RoomLevel",
     "RoomSchedule",

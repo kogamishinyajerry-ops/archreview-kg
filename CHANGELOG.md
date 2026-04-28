@@ -193,6 +193,12 @@ and keeps the no-OCR transparency warning.
   page primary issue bboxes can be focused from the issue list onto the
   source, entity overlay, or annotated preview. Multi-page issue focus remains
   intentionally omitted until multi-page previews are available.
+- P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
+  AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
+  candidates with stable rule/clause/page/spatial/evidence fingerprints instead
+  of per-run `issue_id` or entity ID values, and marks items as unchanged,
+  changed, new, or resolved without mutating either run, `review_state.json`,
+  or per-sheet preview issues.
 
 ### Still limited
 
@@ -224,6 +230,9 @@ and keeps the no-OCR transparency warning.
   It does not prove full construction-set understanding. The Medfield
   full 9-page multi-plan case is now a `known_gap`: per-sheet artifacts
   exist, but primary full-set understanding still misses opening evidence.
+- `review_diff.json` is a local tracking artifact over primary `issues.json`;
+  it does not prove a fix is code-compliant, does not update human review
+  status, and does not aggregate `sheet_issues.json` preview rows.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 
