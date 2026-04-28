@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-303%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-367%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -39,6 +39,7 @@ archkg viewer -d out
 - `issues.json` — 结构化问题清单（rule_id / bbox / severity / 证据）
 - `review_state.json` — 人工复核状态层（candidate / confirmed / rejected / needs_info / resolved / superseded），不回写 `issues.json`
 - `review_diff.json` — 两次 run 的主 `issues.json` 差异追踪（unchanged / changed / new / resolved），由 `archkg review-diff` 生成；Viewer/Studio 会显示，但不回写任一 run
+- `release_readiness.json` — 基于 benchmark suite 与代表性 run artifacts 的发布/演示成熟度门禁；由 `archkg release-readiness` 生成，不以规则数量作为成熟度证明
 - `review_workbench.json` — 审图工作台总览，汇总图纸理解、规则输入就绪度、sheet 证据、候选问题和复核状态；提供 evidence 跳转与受限 review-state 操作模板，不改变规则结论
 - `entity_graph.json` — 抽出的实体图谱
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
@@ -149,6 +150,12 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > 比较两次主 `issues.json`。匹配不会依赖每次运行随机生成的 `issue_id` 或 entity IDs，而是使用规则卡、条文、页码、空间排序和证据指纹；
 > 输出只标记 `unchanged`、`changed`、`new`、`resolved`。Viewer/Studio 会在工作台和 issue 行显示这些状态，但不会自动修改
 > `review_state.json` 或把 per-sheet preview issue 升级为主问题。
+>
+> **Release readiness gate**: 对外演示或发布前，可运行
+> `archkg release-readiness --manifest samples/understanding_benchmarks/suite_manifest.json --run-dir out/ --out out/release_readiness.json --markdown out/release_readiness.md`
+> 生成门禁报告。当前门禁把 active benchmark suite、至少一张 active 真实图纸、核心 run artifacts
+> 和可选成熟度 artifacts 作为证据；`known_gap`、`pending_fixture` 和 generated-heavy proof 会阻止
+> `evidence_ready` 宣称。它只判断“能否作为证据优先工作台演示”，不证明任意复杂真实图纸已可自动合规审查。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 
@@ -189,6 +196,13 @@ archkg understanding-benchmark-suite \
   --manifest samples/understanding_benchmarks/suite_manifest.json \
   --out out/understanding_benchmark_suite.json \
   --markdown out/understanding_benchmark_suite.md
+
+# 可选：对当前 run 做发布/演示成熟度门禁
+archkg release-readiness \
+  --manifest samples/understanding_benchmarks/suite_manifest.json \
+  --run-dir out/ \
+  --out out/release_readiness.json \
+  --markdown out/release_readiness.md
 ```
 
 P40 起，expected spec 也可以检查多页套图证据：`sheet_graphs.graph_count`、per-sheet component counts、
@@ -366,6 +380,7 @@ archkg clause readiness
 - P40：benchmark expansion。Understanding benchmark suite 现在能校验 multi-plan artifacts，并新增 `generated-multi-plan-sheets` active case；真实 Medfield full plan set 以 `known_gap` 登记，暴露 full-set opening evidence 尚未进入 primary drawing-understanding 的缺口。
 - P41：Studio readiness workbench。`review_workbench.json` 与结果页“审图工作台总览”把分散 evidence 汇总成 reviewer 入口，提供 action links 跳到对应面板，提供 `archkg review-state` 本地复核状态操作模板，并支持第一页 issue bbox 的 source/overlay/annotated 预览高亮；主规则结论不变。
 - P42：Re-run diff / resolution tracking。`archkg review-diff` 比较两个 run 的主 `issues.json`，写出 `review_diff.json`，不用随机 issue/entity IDs，改用稳定指纹标记 unchanged / changed / new / resolved；Viewer/Studio 只读显示 diff，不回写规则输出或人工复核状态。
+- P43：Release readiness gate。`archkg release-readiness` 汇总 benchmark suite 与代表性 run artifacts，输出 `not_ready` / `demo_ready_with_known_gaps` / `evidence_ready`，把 known gaps、pending rows 和 generated-heavy proof 从发布宣称里显式剥离。
 
 ---
 

@@ -203,6 +203,13 @@ and keeps the no-OCR transparency warning.
   unchanged / changed / new / resolved counts and sample rows, while current
   issue rows get read-only diff status pills. Missing diff artifacts are
   explained as "diff not run yet", not as "no changes".
+- P43-01 adds `archkg release-readiness`, an evidence gate that evaluates
+  an understanding benchmark suite plus an optional representative run
+  directory. It writes `release_readiness.json` / Markdown reports with
+  `not_ready`, `demo_ready_with_known_gaps`, or `evidence_ready` status,
+  blocks on failed active suites / missing active real drawings / missing core
+  artifacts, and warns on known gaps, pending fixtures, generated-heavy proof,
+  and missing maturity artifacts.
 
 ### Still limited
 
@@ -237,6 +244,9 @@ and keeps the no-OCR transparency warning.
 - `review_diff.json` is a local tracking artifact over primary `issues.json`;
   it does not prove a fix is code-compliant, does not update human review
   status, and does not aggregate `sheet_issues.json` preview rows.
+- `release_readiness.json` is a release/demo evidence gate, not a production
+  certification. A `demo_ready_with_known_gaps` result must be presented with
+  its warnings and cannot be marketed as broad automatic compliance readiness.
 
 ## v1.3.0 — 2026-04-27 — Raster (PNG / JPEG) ingestion via OpenCV
 

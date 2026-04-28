@@ -131,6 +131,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 ### P43: Release Readiness Gate
 
 - Publish a readiness rubric based on real benchmark evidence, not rule count.
+- P43-01 complete: `archkg release-readiness` evaluates suite status, active real benchmark coverage, representative run artifacts, known gaps, pending rows, and generated-heavy proof limits into `not_ready`, `demo_ready_with_known_gaps`, or `evidence_ready`.
 
 ## Explicit Not-Build List
 

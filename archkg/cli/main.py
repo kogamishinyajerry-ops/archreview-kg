@@ -797,6 +797,88 @@ def understanding_benchmark_suite(
         raise typer.Exit(code=1)
 
 
+@app.command("release-readiness")
+def release_readiness(
+    manifest: Path | None = typer.Option(
+        None,
+        "--manifest",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Run an understanding benchmark suite manifest before evaluating readiness.",
+    ),
+    suite_result: Path | None = typer.Option(
+        None,
+        "--suite-result",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Use an existing understanding-benchmark-suite JSON result.",
+    ),
+    run_dir: Path | None = typer.Option(
+        None,
+        "--run-dir",
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Representative review run directory whose artifacts should be checked.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write machine-readable release_readiness.json.",
+    ),
+    markdown: Path | None = typer.Option(
+        None,
+        "--markdown",
+        help="Write Markdown readiness gate report.",
+    ),
+    fail_on_not_ready: bool = typer.Option(
+        True,
+        "--fail-on-not-ready/--no-fail-on-not-ready",
+        help="Exit non-zero only when status is not_ready.",
+    ),
+) -> None:
+    """Evaluate release/demo readiness from evidence, not rule count."""
+    from archkg.release_readiness import (
+        ReleaseReadinessError,
+        build_release_readiness,
+        load_suite_result,
+        write_release_readiness_json,
+        write_release_readiness_markdown,
+    )
+    from archkg.viewer.understanding_benchmark import run_understanding_benchmark_suite
+
+    if (manifest is None) == (suite_result is None):
+        raise typer.BadParameter("provide exactly one of --manifest or --suite-result")
+
+    try:
+        if manifest is not None:
+            suite_payload = run_understanding_benchmark_suite(manifest)
+        elif suite_result is not None:
+            suite_payload = load_suite_result(suite_result)
+        else:
+            raise typer.BadParameter("provide exactly one of --manifest or --suite-result")
+        result = build_release_readiness(suite_payload, run_dir=run_dir)
+        if out is not None:
+            write_release_readiness_json(result, out)
+        if markdown is not None:
+            write_release_readiness_markdown(result, markdown)
+    except ReleaseReadinessError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    status = result["status"]
+    typer.echo(
+        f"release-readiness status={status} "
+        f"blockers={len(result['blockers'])} warnings={len(result['warnings'])} "
+        f"active={result['suite']['active_count']} "
+        f"real_active={result['suite']['real_active_count']} "
+        f"known_gap={result['suite']['known_gap_count']}"
+    )
+    if fail_on_not_ready and status == "not_ready":
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

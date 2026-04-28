@@ -34,6 +34,10 @@ def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> 
         '{"schema_version":"review_diff.v1"}',
         encoding="utf-8",
     )
+    (tmp_path / "release_readiness.json").write_text(
+        '{"schema_version":"release_readiness.v1"}',
+        encoding="utf-8",
+    )
     (tmp_path / "scratch.txt").write_text("ignore me", encoding="utf-8")
 
     snapshot = control_sync._collect_run_snapshot(tmp_path)
@@ -45,6 +49,7 @@ def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> 
     assert "sheet_issues.json" in snapshot["artifacts"]
     assert "review_workbench.json" in snapshot["artifacts"]
     assert "review_diff.json" in snapshot["artifacts"]
+    assert "release_readiness.json" in snapshot["artifacts"]
     assert "scratch.txt" not in snapshot["artifacts"]
 
 

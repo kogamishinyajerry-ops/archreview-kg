@@ -32,12 +32,13 @@ Status:
 - P41-04 is complete: Viewer/Studio can focus first-page primary issue bboxes on source, entity overlay, and annotated previews from the issue list without changing rule output or review state.
 - P42-01 is complete: `archkg review-diff` writes read-only `review_diff.json` artifacts comparing two runs' primary `issues.json` candidates as unchanged, changed, new, or resolved without using generated issue/entity IDs.
 - P42-02 is complete: Viewer/Studio now load `review_diff.json` and render diff status in the workbench and issue list while keeping the artifact read-only.
+- P43-01 is complete: `archkg release-readiness` evaluates benchmark suite evidence and representative run artifacts into `not_ready`, `demo_ready_with_known_gaps`, or `evidence_ready` without using rule count as the maturity metric.
 
 ## Current Phase
 
-P42: Re-run diff and resolution tracking.
+P43: Release readiness gate.
 
-P42 is complete. The tool can compare two primary review runs, write `review_diff.json`, and surface unchanged / changed / new / resolved status in Viewer/Studio without mutating review state.
+P43 is complete. The tool now has a machine-readable release/demo gate over benchmark suite evidence, real drawing coverage, core run artifacts, optional maturity artifacts, known gaps, pending rows, and generated-heavy proof limits.
 
 ## Key Decisions
 
@@ -65,8 +66,9 @@ P42 is complete. The tool can compare two primary review runs, write `review_dif
 - P42-01 duplicate matching is deterministic but still heuristic for multiple same-rule same-page candidates; it uses spatial/evidence ordering because generated entity IDs are not stable across runs.
 - `review_diff.json` is not a compliance proof and does not resolve human review states automatically.
 - P42-02 renders missing diff as "not run yet"; reviewers must still inspect diff rows before marking review_state items resolved or superseded.
+- P43-01 only gates evidence currently represented in the benchmark suite and run directory. It does not certify arbitrary complex real drawings and should report `demo_ready_with_known_gaps` while known_gap/pending rows remain.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move to P43 release readiness gate. Define a readiness rubric based on real benchmark evidence, rule-input readiness, sheet artifacts, issue lifecycle, re-run diff behavior, and known gaps; do not claim broad real-drawing compliance readiness from rule count alone.
+Move beyond P43 by promoting additional real drawing expected inventories from known_gap/pending into active cases, then rerun `archkg release-readiness` before any external demo or release claim.

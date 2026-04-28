@@ -10,12 +10,39 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - 30/30 国标条款都有规则卡（数据完整 ✅）
 - 但 32 张规则中**只有 4 张能在任何 PDF 上直接自动判定违规**（≈ 12.5%）
 - 其余规则需要 ProjectMeta 完整、graph builder 扩展、或本就是人工核对清单
+- P43 后，成熟度主指标改为 `archkg release-readiness`：用 benchmark suite、代表性 run artifacts、
+  review state 和 re-run diff 证据判断能否演示；当前 packaged suite 的合理结论是
+  `demo_ready_with_known_gaps`，不是 `evidence_ready`。
 
 复现该结论：
 
 ```bash
 archkg clause readiness
+archkg release-readiness \
+  --manifest samples/understanding_benchmarks/suite_manifest.json \
+  --run-dir out/ \
+  --out out/release_readiness.json \
+  --markdown out/release_readiness.md
 ```
+
+## P43 发布/演示门禁
+
+`archkg release-readiness` 输出三个状态：
+
+| status | 含义 |
+|---|---|
+| `not_ready` | active suite 失败、没有 active 真实图纸、或代表性 run 缺核心 artifacts。不能对外用作成熟度信号。 |
+| `demo_ready_with_known_gaps` | 可演示证据优先审图工作台，但必须同时展示 known gaps、pending fixtures 和人工复核边界。 |
+| `evidence_ready` | active suite 通过、没有 known_gap / pending rows、代表性 run 具备核心和成熟度 artifacts。仍只适用于已 benchmark 的图纸类别。 |
+
+当前 packaged suite 的门禁烟测结果：
+
+```text
+release-readiness status=demo_ready_with_known_gaps blockers=0 warnings=3 active=3 real_active=1 known_gap=1
+```
+
+这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff”
+组成的闭环；不能宣称“已能处理任意复杂真实设计图并自动精准纠错”。
 
 ## 32 张规则的就绪度分布
 
@@ -216,6 +243,9 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
 - 不再以 rule count 作为成熟度主指标。
 - 以真实图纸 expected inventory、每次 run 的规则输入就绪度、证据来源绑定、issue 复核状态、
   rerun 后问题是否 resolved 为主要指标。
+- P43 起，发布/演示宣称必须经过 `archkg release-readiness`，并把输出状态和 warnings
+  一起展示；`generated_*` fixture 只能做回归锁定，不能替代真实图纸成熟度证明。生成样本数量多于
+  active 真实图纸证据时，门禁会继续阻止 `evidence_ready`。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 
@@ -228,8 +258,8 @@ repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.plan
 - 不要期望：楼梯类（Phase 19+）、户门 subtype、PDF 自动抽净高/楼层（Phase 20+）
 
 如果想**等 production-ready**：
-- 关注 Phase 18+ 路线（见上文「走到真自动审批还需要什么」）
-- 当 `archkg clause readiness` 显示 AUTODETECTABLE ≥ 20 张时，就是 Phase 18 真完成的信号
+- 关注 `archkg release-readiness` 的 `evidence_ready` 状态，而不是只看 AUTODETECTABLE 数量。
+- 等 known_gap / pending 真实图纸 case 被人工 expected inventory 推进为 active 且持续通过后，再扩大试点图纸类别。
 
 ## 状态查询
 
@@ -239,4 +269,5 @@ archkg clause coverage      # 30/30 标准条款覆盖
 archkg clause fidelity      # 数值保真闸 0 errors
 archkg clause verbatim      # paraphrase clause 与 PDF 原文对照
 archkg demo --meta          # 端到端 demo（包括样例 ProjectMeta）
+archkg release-readiness --manifest samples/understanding_benchmarks/suite_manifest.json --run-dir out/
 ```
