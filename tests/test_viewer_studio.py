@@ -501,6 +501,9 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
 
     assert "Sheet 分类" in body
     assert "审图工作台总览" in body
+    assert "Action Surface" in body
+    assert "处理 readiness blockers" in body
+    assert "href=\"#panel-readiness\"" in body
     assert "Sheet 路由" in body
     assert "Sheet Graphs" in body
     assert "Sheet Issue Preview" in body

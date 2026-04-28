@@ -46,6 +46,13 @@ review_workbench.json 暂无数据；请查看下方单项 evidence 面板。
 {% for row in review_workbench.artifact_statuses %}| {{ row.label }} | `{{ row.artifact }}` | {{ row.status }} | {{ row.detail }} |
 {% endfor %}
 
+### 工作台动作入口
+
+| Action | Target | Artifact | Status | Reason |
+|---|---|---|---|---|
+{% for action in review_workbench.action_links %}| {{ action.label }} | {{ action.target }} | `{{ action.artifact }}` | {{ action.status }} | {{ action.reason }} |
+{% endfor %}
+
 {% if review_workbench.warnings %}
 ### 工作台提示
 

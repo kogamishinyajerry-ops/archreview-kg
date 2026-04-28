@@ -138,7 +138,8 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 >
 > **审图工作台总览**: 完整审图会生成 `review_workbench.json`，把 `drawing_understanding.json`、
 > `rule_input_readiness.json`、Sheet 分类/路由/graphs/issues、`issues.json` 和 `review_state.json`
-> 汇总成一个入口面板。它只帮助 reviewer 判断先看哪里、缺什么、哪些仍是 candidate；
+> 汇总成一个入口面板，并提供跳转到图层、component inventory、readiness blockers、sheet evidence、
+> candidate issues、review state 和 report 的 action links。它只帮助 reviewer 判断先看哪里、缺什么、哪些仍是 candidate；
 > 不会修改 `issues.json`、`review_state.json` 或规则引擎结论。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
@@ -355,7 +356,7 @@ archkg clause readiness
 - P38：multi-sheet classification。`sheet_classification.json` 先把多页套图中的 plan / schedule / title / legend / detail / elevation / unknown 作为路由证据展示；`sheet_routing.json` 再以保守条件把单一高置信 plan 页送入 graph，否则回退 legacy 全页输入。
 - P39：multi-plan graph outputs。`sheet_graphs.json` 为每个高置信 plan sheet 生成独立 graph 证据；`sheet_issues.json` 生成 per-sheet candidate issue preview。主 `entity_graph.json`、`issues.json` 和 `review_state.json` 暂不自动聚合多 plan 页。
 - P40：benchmark expansion。Understanding benchmark suite 现在能校验 multi-plan artifacts，并新增 `generated-multi-plan-sheets` active case；真实 Medfield full plan set 以 `known_gap` 登记，暴露 full-set opening evidence 尚未进入 primary drawing-understanding 的缺口。
-- P41：Studio readiness workbench。`review_workbench.json` 与结果页“审图工作台总览”把分散 evidence 汇总成一个 reviewer 入口，但不改变任何规则结论。
+- P41：Studio readiness workbench。`review_workbench.json` 与结果页“审图工作台总览”把分散 evidence 汇总成 reviewer 入口，并提供 action links 跳到对应面板；不改变任何规则结论。
 
 ---
 

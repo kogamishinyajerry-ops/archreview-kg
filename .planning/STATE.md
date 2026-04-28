@@ -27,12 +27,13 @@ Status:
 - P40-02 is complete: pending benchmark suite rows now expose provenance, required artifacts, and promotion rules; the Medfield full 9-page plan/elevation set is registered as a real multi-plan intake gate, not as a passing benchmark.
 - P40-03 is complete: the Medfield full 9-page plan/elevation set now has a committed reduced full-run artifact snapshot and a `known_gap` expected spec. Packaged suite is active=3, pending=1, known_gap=1, failed=0.
 - P41-01 is complete: full CLI and Studio runs now write `review_workbench.json`, while reports and Viewer/Studio render a workbench overview that summarizes evidence readiness without changing rule output.
+- P41-02 is complete: `review_workbench.json` now includes structured action links for source/overlay, component inventory, readiness blockers, sheet evidence, region candidates, candidate issues, review state, and report/clauses.
 
 ## Current Phase
 
 P41: Studio readiness workbench.
 
-P41-01 adds a workbench entry artifact over the existing evidence planes: drawing understanding, rule readiness, sheet classification/routing/graphs/issues, issues, and review state. It is reviewer navigation only and does not mutate `issues.json`, `review_state.json`, or rule results.
+P41-02 turns the workbench entry artifact into a navigation action surface. It remains non-mutating: action links only jump to existing evidence panels/artifacts and do not write `issues.json`, `review_state.json`, or rule results.
 
 ## Key Decisions
 
@@ -55,8 +56,9 @@ P41-01 adds a workbench entry artifact over the existing evidence planes: drawin
 - P40-01 uses a deterministic generated multi-plan fixture; it does not replace real public/private multi-plan expected inventory intake.
 - P40-03 registers a real full-set known_gap, not a passing real-complex-drawing capability claim.
 - P41-01 workbench summary is derived from current artifacts; if future artifacts are added, the summary must be extended or it can drift.
+- P41-02 action links are local navigation only; actual review-state editing still needs a separate bounded design.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Continue P41 by improving the workbench from summary navigation into a reviewer action surface: cross-link source preview, region candidates, component inventory, readiness blockers, candidate issues, and review-state actions.
+Continue P41 by adding bounded review-state operations or source-preview cross-highlighting without merging per-sheet preview issues into final compliance output.

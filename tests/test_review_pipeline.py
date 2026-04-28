@@ -64,6 +64,11 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     assert workbench["schema_version"] == "review_workbench.v1"
     assert workbench["summary"]["ready_rules"] >= 1
     assert workbench["summary"]["blocked_rules"] >= 1
+    action_links = {row["id"]: row for row in workbench["action_links"]}
+    assert action_links["readiness_blockers"]["target"] == "#panel-readiness"
+    assert action_links["readiness_blockers"]["status"] == "attention"
+    assert action_links["candidate_issues"]["artifact"] == "issues.json"
+    assert action_links["review_state"]["artifact"] == "review_state.json"
     assert "review_workbench.json" not in {
         row["artifact"]
         for row in workbench["artifact_statuses"]
@@ -186,6 +191,9 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "GB50096" in md
     assert "规则输入就绪度" in md
     assert "审图工作台总览" in md
+    assert "工作台动作入口" in md
+    assert "#panel-readiness" in md
+    assert "处理 readiness blockers" in md
     assert "review_workbench.json" in md
     assert "缺输入不等于通过" in md
     assert "Sheet 分类" in md

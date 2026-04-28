@@ -118,6 +118,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 
 - Unify source preview, region candidates, component inventory, rule readiness, issues, and review state.
 - Start with `review_workbench.json` as a non-mutating run summary before adding reviewer actions.
+- Add action links that navigate from the workbench to evidence panels before implementing any state-changing review controls.
 
 ### P42: Re-Run Diff and Resolution Tracking
 

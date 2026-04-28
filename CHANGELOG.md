@@ -178,6 +178,12 @@ and keeps the no-OCR transparency warning.
   Studio runs write a partial workbench summary, `report.md` and the
   Viewer render a "审图工作台总览" section, and control sync tracks the
   artifact. It is navigation only and does not mutate rule output.
+- P41-02 turns the workbench summary into an action surface by adding
+  structured `action_links` to `review_workbench.json`. The Viewer renders
+  these as click targets to source/overlay layers, component inventory,
+  readiness blockers, sheet evidence, region candidates, candidate issues,
+  review state, and report/clauses; `report.md` mirrors the same actions.
+  The links are navigation only and do not write review decisions.
 
 ### Still limited
 

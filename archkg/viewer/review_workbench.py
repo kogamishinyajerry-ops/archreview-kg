@@ -120,6 +120,7 @@ def build_review_workbench(
     ]
 
     warnings = _workbench_warnings(summary, artifact_statuses)
+    action_links = _action_links(summary)
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -127,6 +128,7 @@ def build_review_workbench(
         "mode": mode,
         "summary": summary,
         "artifact_statuses": artifact_statuses,
+        "action_links": action_links,
         "warnings": warnings,
         "next_actions": _next_actions(warnings, summary),
         "note": (
@@ -150,6 +152,7 @@ def load_review_workbench_view(out_dir: Path) -> dict[str, Any]:
             "artifact_name": "review_workbench.json",
             "summary": {},
             "artifact_statuses": [],
+            "action_links": [],
             "warnings": ["review_workbench.json 暂无数据; 请查看下方单项 evidence 面板。"],
             "next_actions": [],
         }
@@ -161,6 +164,7 @@ def load_review_workbench_view(out_dir: Path) -> dict[str, Any]:
             "artifact_name": "review_workbench.json",
             "summary": {},
             "artifact_statuses": [],
+            "action_links": [],
             "warnings": [f"could not read review_workbench.json: {exc}"],
             "next_actions": [],
         }
@@ -170,6 +174,7 @@ def load_review_workbench_view(out_dir: Path) -> dict[str, Any]:
             "artifact_name": "review_workbench.json",
             "summary": {},
             "artifact_statuses": [],
+            "action_links": [],
             "warnings": ["review_workbench.json is not an object"],
             "next_actions": [],
         }
@@ -179,6 +184,9 @@ def load_review_workbench_view(out_dir: Path) -> dict[str, Any]:
         "summary": _mapping(raw.get("summary")),
         "artifact_statuses": [
             row for row in _list(raw.get("artifact_statuses")) if isinstance(row, dict)
+        ],
+        "action_links": [
+            row for row in _list(raw.get("action_links")) if isinstance(row, dict)
         ],
         "warnings": [item for item in _list(raw.get("warnings")) if isinstance(item, str)],
         "next_actions": [
@@ -213,6 +221,103 @@ def _workbench_warnings(
     if _int(summary.get("issue_count")) and _int(summary.get("candidate_review_states")):
         warnings.append("规则输出仍是 candidate; 需要人工确认或驳回。")
     return warnings
+
+
+def _action_links(summary: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [
+        _action_link(
+            "check_layers",
+            "核对 source / overlay",
+            "#panel-layer",
+            "source_preview.png",
+            "ready",
+            10,
+            "先对照 source、entity overlay、annotated 图层。",
+        ),
+        _action_link(
+            "component_inventory",
+            "核对 component inventory",
+            "#panel-understanding",
+            "drawing_understanding.json",
+            "review",
+            20,
+            "确认图纸类型、部件数量、尺寸证据和 uncertainty flags。",
+        ),
+        _action_link(
+            "readiness_blockers",
+            "处理 readiness blockers",
+            "#panel-readiness",
+            "rule_input_readiness.json",
+            "attention" if _int(summary.get("blocked_rules")) > 0 else "ready",
+            30,
+            "先补 missing_input / low_confidence, 避免把缺输入当通过。",
+        ),
+        _action_link(
+            "sheet_evidence",
+            "核对 sheet evidence",
+            "#panel-sheet-classification",
+            "sheet_classification.json",
+            "review" if _int(summary.get("sheet_graph_count")) > 1 else "ready",
+            40,
+            "检查 sheet 分类、路由、per-sheet graphs 和 issue preview。",
+        ),
+        _action_link(
+            "region_candidates",
+            "确认候选区域",
+            "#panel-sheet-regions",
+            "sheet_region_candidates.json",
+            "review",
+            50,
+            "需要人工确认 design/title/schedule/legend 候选区, 不默认裁剪。",
+        ),
+        _action_link(
+            "candidate_issues",
+            "确认 candidate issues",
+            "#panel-issues",
+            "issues.json",
+            "attention" if _int(summary.get("issue_count")) > 0 else "ready",
+            60,
+            "逐条确认、驳回或标记 needs_info。",
+        ),
+        _action_link(
+            "review_state",
+            "更新 review state",
+            "#panel-issues",
+            "review_state.json",
+            "attention" if _int(summary.get("candidate_review_states")) > 0 else "ready",
+            70,
+            "复核状态写入 review_state.json, 不回写 issues.json。",
+        ),
+        _action_link(
+            "open_report",
+            "打开 report / clauses",
+            "#panel-report",
+            "report.md",
+            "ready",
+            80,
+            "查看条文触达、报告正文和人工核对提醒。",
+        ),
+    ]
+
+
+def _action_link(
+    action_id: str,
+    label: str,
+    target: str,
+    artifact: str,
+    status: str,
+    priority: int,
+    reason: str,
+) -> dict[str, Any]:
+    return {
+        "id": action_id,
+        "label": label,
+        "target": target,
+        "artifact": artifact,
+        "status": status,
+        "priority": priority,
+        "reason": reason,
+    }
 
 
 def _next_actions(warnings: Sequence[str], summary: Mapping[str, Any]) -> list[str]:
