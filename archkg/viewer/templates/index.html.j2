@@ -380,6 +380,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .issue-focus-status {
+    display: none;
+    margin-top: 8px;
+    border: 1px solid rgba(255, 220, 99, 0.35);
+    border-radius: 8px;
+    background: rgba(255, 220, 99, 0.08);
+    color: #ffeaa0;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .issue-focus-status.is-active {
+    display: block;
+  }
   .focus-button {
     border: 1px solid rgba(255, 220, 99, 0.48);
     border-radius: 999px;
@@ -1855,15 +1869,18 @@
             <div class="issue-focus-label" id="issueFocusLabel"></div>
           </div>
         </div>
+        <div class="issue-focus-status" id="issueFocusStatus" aria-live="polite"></div>
       </div>
     </div>
     <div class="img-card">
       <div class="img-head">标准图层参考</div>
       <div class="img-wrap">
         <div class="bar">
+          <div class="bar-row"><span class="bar-label">source PDF</span><span class="bar-value"><a href="source.pdf" target="_blank">source.pdf</a></span></div>
           <div class="bar-row"><span class="bar-label">source</span><span class="bar-value"><a href="source_preview.png" target="_blank">source_preview.png</a></span></div>
           <div class="bar-row"><span class="bar-label">entity overlay</span><span class="bar-value"><a href="entity_overlay.png" target="_blank">entity_overlay.png</a></span></div>
           <div class="bar-row"><span class="bar-label">annotated</span><span class="bar-value"><a href="annotated_preview.png" target="_blank">annotated_preview.png</a></span></div>
+          <div class="bar-row"><span class="bar-label">annotated PDF</span><span class="bar-value"><a href="annotated.pdf" target="_blank">annotated.pdf</a></span></div>
         </div>
       </div>
     </div>
@@ -1907,7 +1924,13 @@
           <span class="level severity-{{ severity_key }}">{{ issue_sev | upper }}</span>
           <span><code>{{ i.issue_id }}</code></span>
           {% if focus_item %}
-            <button class="focus-button" type="button" data-focus-issue="{{ i.issue_id }}">定位图面</button>
+            <button
+              class="focus-button"
+              type="button"
+              data-focus-issue="{{ i.issue_id }}"
+              data-focus-page-index="{{ focus_item.page_index }}"
+              data-focus-preview-supported="{{ 'true' if focus_item.preview_layer_supported else 'false' }}"
+            >{% if focus_item.preview_layer_supported %}定位图面{% else %}定位第 {{ focus_item.page_number }} 页{% endif %}</button>
           {% endif %}
           <span class="status-pill {{ issue_review.status_class }}">复核状态 {{ issue_review.status_label }} · {{ issue_review.status }}</span>
           {% if issue_diff %}
@@ -2021,6 +2044,7 @@
   const layerPanel = document.getElementById("panel-layer");
   const focusBox = document.getElementById("issueFocusBox");
   const focusLabel = document.getElementById("issueFocusLabel");
+  const focusStatus = document.getElementById("issueFocusStatus");
   const chips = Array.from(document.querySelectorAll('.layer-switch .chip'));
   if (!layerImage || !layerState || !chips.length) {
     return;
@@ -2056,6 +2080,28 @@
     if (!focus || !focusBox || !focusLabel) {
       return;
     }
+    document.querySelectorAll(".issue-item.is-focused").forEach((item) => {
+      item.classList.remove("is-focused");
+    });
+    const card = document.getElementById(`issue-${issueId}`);
+    if (card) {
+      card.classList.add("is-focused");
+    }
+    const pageNumber = focus.page_number || ((focus.page_index || 0) + 1);
+    const previewSupported = focus.preview_layer_supported !== false;
+    if (!previewSupported) {
+      focusBox.classList.remove("is-active");
+      focusBox.setAttribute("aria-hidden", "true");
+      focusLabel.textContent = "";
+      if (focusStatus) {
+        focusStatus.textContent = `${focus.issue_id} 位于第 ${pageNumber} 页；当前图层预览只渲染第一页，请打开 source.pdf 或 annotated.pdf 到对应页复核。`;
+        focusStatus.classList.add("is-active");
+      }
+      if (layerPanel) {
+        layerPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
     const preferredChip = chips.find((chip) => chip.dataset.layer === "annotated" && !chip.disabled);
     applyLayer((preferredChip && preferredChip.dataset.layer) || "source");
     focusBox.style.left = `${focus.x_pct}%`;
@@ -2065,12 +2111,9 @@
     focusLabel.textContent = `${focus.issue_id} · ${focus.rule_card_id || "rule"} · ${focus.severity}`;
     focusBox.classList.add("is-active");
     focusBox.setAttribute("aria-hidden", "false");
-    document.querySelectorAll(".issue-item.is-focused").forEach((item) => {
-      item.classList.remove("is-focused");
-    });
-    const card = document.getElementById(`issue-${issueId}`);
-    if (card) {
-      card.classList.add("is-focused");
+    if (focusStatus) {
+      focusStatus.textContent = `${focus.issue_id} · 第 ${pageNumber} 页 · 已在当前预览层定位。`;
+      focusStatus.classList.add("is-active");
     }
     if (layerPanel) {
       layerPanel.scrollIntoView({ behavior: "smooth", block: "start" });

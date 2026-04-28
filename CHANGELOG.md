@@ -193,6 +193,11 @@ and keeps the no-OCR transparency warning.
   page primary issue bboxes can be focused from the issue list onto the
   source, entity overlay, or annotated preview. Multi-page issue focus remains
   intentionally omitted until multi-page previews are available.
+- P56-01 makes Viewer/Studio issue focus sheet-aware. Primary issue bboxes are
+  normalized against their own `page_index`; page-0 issues still highlight on
+  the static preview layer, while non-page-0 issues keep the correct page label
+  and route reviewers to `source.pdf` / `annotated.pdf` page review instead of
+  being projected onto the first-page PNG.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

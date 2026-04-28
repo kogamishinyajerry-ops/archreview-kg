@@ -121,6 +121,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Add action links that navigate from the workbench to evidence panels before implementing any state-changing review controls.
 - Add bounded local review-state operations that update only `review_state.json` for primary `issues.json` issue IDs and never mutate rule output or per-sheet preview issues.
 - Add first-page issue-to-preview cross-highlighting so reviewers can jump from primary issues to source/overlay/annotated visual evidence.
+- P56-01 complete: issue focus is now sheet-aware. First-page issues still highlight on the preview layer; non-first-page issues keep the correct page number and bbox and route reviewers to PDF page review rather than being projected onto the first-page PNG.
 
 ### P42: Re-Run Diff and Resolution Tracking
 
@@ -197,6 +198,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Let receiving reviewers verify a handoff package against its archive manifest before trusting the package contents.
 - P54-01 complete: `archkg handoff-archive-verify` writes `handoff_archive_verification.v1` JSON/Markdown, reports missing/changed/unexpected package files, refreshes the static package index, and exits non-zero on `archive_drift`.
 - Guardrail: archive verification is checksum alignment only; it does not confirm candidate issues or certify drawing compliance.
+
+### P56: Sheet-Aware Issue Focus
+
+- Remove the first-page-only issue-focus limitation from Viewer/Studio data.
+- Preserve page-aware bbox normalization for primary issues on any page with known dimensions.
+- Keep first-page preview highlighting for page 0, and route non-first-page issues to `source.pdf` / `annotated.pdf` review with explicit page labels.
+- Guardrail: page-aware focus is navigation evidence only; it does not create or confirm issues and does not imply multi-page PNG preview support.
 
 ## Explicit Not-Build List
 

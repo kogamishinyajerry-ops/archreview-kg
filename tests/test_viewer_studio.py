@@ -534,7 +534,10 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "archkg review-state &lt;run_dir&gt;" in body
     assert "定位图面" in body
     assert "data-focus-issue=" in body
+    assert "data-focus-page-index=" in body
+    assert "当前图层预览只渲染第一页" in body
     assert "issueFocusBox" in body
+    assert "issueFocusStatus" in body
     assert "处理 readiness blockers" in body
     assert "href=\"#panel-readiness\"" in body
     assert "Sheet 路由" in body
