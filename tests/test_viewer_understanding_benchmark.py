@@ -163,6 +163,85 @@ def test_understanding_benchmark_scores_text_inventory(tmp_path: Path) -> None:
     assert any(check["name"] == "text_inventory:major_dimension_text:24'-0\"" for check in result["checks"])
 
 
+def test_understanding_benchmark_scores_sheet_graphs_and_sheet_issues(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    payload = {
+        "schema_version": "drawing_understanding.v2",
+        "drawing_type": "建筑平面图",
+        "component_counts": {},
+        "component_inventory": [],
+        "drawing_profile": {"evidence_signals": ["multi_sheet_plan_graphs"]},
+        "benchmark_signals": {},
+    }
+    sheet_graphs = {
+        "schema_version": "sheet_graphs.v1",
+        "graph_count": 2,
+        "graphs": [
+            {"page_index": 0, "component_counts": {"rooms": 4, "doors": 6, "corridors": 1}},
+            {"page_index": 1, "component_counts": {"rooms": 4, "doors": 6, "corridors": 1}},
+        ],
+        "skipped_pages": [{"page_index": 2, "sheet_type": "schedule"}],
+    }
+    sheet_issues = {
+        "schema_version": "sheet_issues.v1",
+        "sheet_count": 2,
+        "issue_count": 4,
+        "sheets": [
+            {
+                "page_index": 0,
+                "issue_count": 2,
+                "issues": [
+                    {"rule_card_id": "RC-CORRIDOR-WIDTH"},
+                    {"rule_card_id": "RC-DOOR-WIDTH"},
+                ],
+            },
+            {
+                "page_index": 1,
+                "issue_count": 2,
+                "issues": [
+                    {"rule_card_id": "RC-CORRIDOR-WIDTH"},
+                    {"rule_card_id": "RC-DOOR-WIDTH"},
+                ],
+            },
+        ],
+    }
+    (run_dir / "drawing_understanding.json").write_text(json.dumps(payload), "utf-8")
+    (run_dir / "sheet_graphs.json").write_text(json.dumps(sheet_graphs), "utf-8")
+    (run_dir / "sheet_issues.json").write_text(json.dumps(sheet_issues), "utf-8")
+    expected = {
+        "benchmark_id": "multi-plan-artifacts",
+        "sheet_graphs": {
+            "graph_count": {"exact": 2},
+            "required_page_indexes": [0, 1],
+            "component_counts": {
+                "rooms": {"min": 4},
+                "doors": {"min": 6},
+                "corridors": {"min": 1},
+            },
+            "skipped_page_indexes": [2],
+        },
+        "sheet_issues": {
+            "sheet_count": {"exact": 2},
+            "issue_count": {"min": 4},
+            "required_page_indexes": [0, 1],
+            "required_rule_ids_by_page": {
+                "0": ["RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH"],
+                "1": ["RC-CORRIDOR-WIDTH", "RC-DOOR-WIDTH"],
+            },
+        },
+    }
+
+    result = run_understanding_benchmark(run_dir, expected)
+
+    assert result["passed"] is True
+    assert result["score"] == 1.0
+    names = {check["name"] for check in result["checks"]}
+    assert "sheet_graphs:graph_count" in names
+    assert "sheet_issues:rule_ids:0" in names
+    assert "sheet_issues:rule_ids:1" in names
+
+
 def test_understanding_benchmark_markdown_report(tmp_path: Path) -> None:
     result = {
         "benchmark_id": "demo",

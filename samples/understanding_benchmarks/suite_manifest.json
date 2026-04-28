@@ -27,6 +27,15 @@
       "expect": "generated/complex_titleblock_expected.json",
       "provenance": "generated/complex_titleblock_provenance.json",
       "notes": "Deterministic generated complex sheet with a right-side title block. The committed run uses --sheet-region 0,0,860,660 so benchmark counts exclude non-design title-block geometry and text."
+    },
+    {
+      "case_id": "generated-multi-plan-sheets",
+      "fixture_kind": "generated_multi_plan_pdf",
+      "status": "active",
+      "run_dir": "generated/multi_plan_run",
+      "expect": "generated/multi_plan_expected.json",
+      "provenance": "generated/multi_plan_provenance.json",
+      "notes": "Deterministic two-page plan set created by duplicating sample_clean.pdf. This locks sheet_graphs.json and sheet_issues.json behavior without promoting per-sheet preview issues into primary issues.json."
     }
   ]
 }

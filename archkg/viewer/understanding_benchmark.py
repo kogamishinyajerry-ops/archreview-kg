@@ -31,7 +31,8 @@ def run_understanding_benchmark(
     expected: Mapping[str, Any],
 ) -> dict[str, Any]:
     payload = _load_understanding_payload(run_dir)
-    checks = _checks(payload, expected)
+    artifacts = _load_optional_run_artifacts(run_dir)
+    checks = _checks(payload, expected, artifacts)
     passed_count = sum(1 for check in checks if check["passed"])
     score = passed_count / len(checks) if checks else 1.0
     min_score = _float(expected.get("min_score"), default=1.0)
@@ -415,8 +416,20 @@ def _load_understanding_payload(run_dir: Path) -> dict[str, Any]:
     return load_or_build_drawing_understanding(run_dir, primitives, graph, ocr_diagnostics)
 
 
-def _checks(payload: Mapping[str, Any], expected: Mapping[str, Any]) -> list[dict[str, Any]]:
+def _load_optional_run_artifacts(run_dir: Path) -> dict[str, Mapping[str, Any] | None]:
+    return {
+        "sheet_graphs": _optional_json_object(run_dir / "sheet_graphs.json"),
+        "sheet_issues": _optional_json_object(run_dir / "sheet_issues.json"),
+    }
+
+
+def _checks(
+    payload: Mapping[str, Any],
+    expected: Mapping[str, Any],
+    artifacts: Mapping[str, Mapping[str, Any] | None] | None = None,
+) -> list[dict[str, Any]]:
     checks: list[dict[str, Any]] = []
+    artifacts = artifacts or {}
     if "drawing_type" in expected:
         actual = payload.get("drawing_type")
         wanted = expected.get("drawing_type")
@@ -489,7 +502,162 @@ def _checks(payload: Mapping[str, Any], expected: Mapping[str, Any]) -> list[dic
                     "benchmark signal mismatch",
                 )
             )
+
+    sheet_graphs = expected.get("sheet_graphs")
+    if isinstance(sheet_graphs, Mapping):
+        checks.extend(_sheet_graph_checks(artifacts.get("sheet_graphs"), sheet_graphs))
+
+    sheet_issues = expected.get("sheet_issues")
+    if isinstance(sheet_issues, Mapping):
+        checks.extend(_sheet_issue_checks(artifacts.get("sheet_issues"), sheet_issues))
     return checks
+
+
+def _sheet_graph_checks(
+    payload: Mapping[str, Any] | None,
+    expected: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    if not isinstance(payload, Mapping):
+        return [_check("sheet_graphs:artifact", False, "sheet_graphs.json", "missing")]
+    checks: list[dict[str, Any]] = []
+    graph_count = _int(payload.get("graph_count"))
+    if "graph_count" in expected:
+        spec = expected.get("graph_count")
+        checks.append(
+            _check(
+                "sheet_graphs:graph_count",
+                _count_matches(graph_count, spec),
+                spec,
+                graph_count,
+                "sheet graph count mismatch",
+            )
+        )
+
+    graph_rows = [row for row in _list(payload.get("graphs")) if isinstance(row, Mapping)]
+    graph_page_indexes = sorted(_int(row.get("page_index")) for row in graph_rows)
+    wanted_pages = _int_list(expected.get("required_page_indexes"))
+    if wanted_pages:
+        checks.append(
+            _check(
+                "sheet_graphs:required_page_indexes",
+                all(page in graph_page_indexes for page in wanted_pages),
+                wanted_pages,
+                graph_page_indexes,
+                "missing sheet graph page index",
+            )
+        )
+
+    component_specs = expected.get("component_counts")
+    if isinstance(component_specs, Mapping):
+        for key, spec in component_specs.items():
+            actual_by_page: dict[int, int] = {}
+            for row in graph_rows:
+                raw_counts = row.get("component_counts")
+                counts = raw_counts if isinstance(raw_counts, Mapping) else {}
+                actual_by_page[_int(row.get("page_index"))] = _int(counts.get(key))
+            checks.append(
+                _check(
+                    f"sheet_graphs:component_counts:{key}",
+                    bool(actual_by_page)
+                    and all(_count_matches(value, spec) for value in actual_by_page.values()),
+                    spec,
+                    actual_by_page,
+                    "per-sheet component count mismatch",
+                )
+            )
+
+    skipped_rows = [
+        row for row in _list(payload.get("skipped_pages")) if isinstance(row, Mapping)
+    ]
+    skipped_indexes = sorted(_int(row.get("page_index")) for row in skipped_rows)
+    wanted_skipped = _int_list(expected.get("skipped_page_indexes"))
+    if wanted_skipped:
+        checks.append(
+            _check(
+                "sheet_graphs:skipped_page_indexes",
+                all(page in skipped_indexes for page in wanted_skipped),
+                wanted_skipped,
+                skipped_indexes,
+                "missing skipped sheet page index",
+            )
+        )
+    return checks
+
+
+def _sheet_issue_checks(
+    payload: Mapping[str, Any] | None,
+    expected: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    if not isinstance(payload, Mapping):
+        return [_check("sheet_issues:artifact", False, "sheet_issues.json", "missing")]
+    checks: list[dict[str, Any]] = []
+    if "sheet_count" in expected:
+        spec = expected.get("sheet_count")
+        actual = _int(payload.get("sheet_count"))
+        checks.append(
+            _check(
+                "sheet_issues:sheet_count",
+                _count_matches(actual, spec),
+                spec,
+                actual,
+                "sheet issue group count mismatch",
+            )
+        )
+    if "issue_count" in expected:
+        spec = expected.get("issue_count")
+        actual = _int(payload.get("issue_count"))
+        checks.append(
+            _check(
+                "sheet_issues:issue_count",
+                _count_matches(actual, spec),
+                spec,
+                actual,
+                "sheet issue total count mismatch",
+            )
+        )
+
+    sheets = [row for row in _list(payload.get("sheets")) if isinstance(row, Mapping)]
+    sheet_page_indexes = sorted(_int(row.get("page_index")) for row in sheets)
+    wanted_pages = _int_list(expected.get("required_page_indexes"))
+    if wanted_pages:
+        checks.append(
+            _check(
+                "sheet_issues:required_page_indexes",
+                all(page in sheet_page_indexes for page in wanted_pages),
+                wanted_pages,
+                sheet_page_indexes,
+                "missing sheet issue page index",
+            )
+        )
+
+    required_by_page = expected.get("required_rule_ids_by_page")
+    if isinstance(required_by_page, Mapping):
+        sheets_by_page = {_int(sheet.get("page_index")): sheet for sheet in sheets}
+        for raw_page, raw_rule_ids in required_by_page.items():
+            page_index = _page_index(raw_page)
+            wanted_rule_ids = _str_list(raw_rule_ids)
+            sheet = sheets_by_page.get(page_index)
+            actual_rule_ids = _sheet_rule_ids(sheet) if isinstance(sheet, Mapping) else []
+            checks.append(
+                _check(
+                    f"sheet_issues:rule_ids:{page_index}",
+                    all(rule_id in actual_rule_ids for rule_id in wanted_rule_ids),
+                    wanted_rule_ids,
+                    actual_rule_ids,
+                    "missing per-sheet rule id",
+                )
+            )
+    return checks
+
+
+def _sheet_rule_ids(sheet: Mapping[str, Any]) -> list[str]:
+    out: list[str] = []
+    for issue in _list(sheet.get("issues")):
+        if isinstance(issue, Mapping):
+            rule_id = issue.get("rule_card_id")
+            if isinstance(rule_id, str) and rule_id:
+                out.append(rule_id)
+    return sorted(set(out))
 
 
 def _text_inventory_checks(
@@ -584,6 +752,12 @@ def _json_object(path: Path) -> dict[str, Any]:
     return {str(key): value for key, value in raw.items()}
 
 
+def _optional_json_object(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    return _json_object(path)
+
+
 def _format_cell(value: object) -> str:
     if isinstance(value, (dict, list)):
         return json.dumps(value, ensure_ascii=False, sort_keys=True)
@@ -594,6 +768,23 @@ def _str_list(raw: object) -> list[str]:
     if not isinstance(raw, list):
         return []
     return [item for item in raw if isinstance(item, str)]
+
+
+def _int_list(raw: object) -> list[int]:
+    if not isinstance(raw, list):
+        return []
+    return [item for item in raw if type(item) is int]
+
+
+def _page_index(raw: object) -> int:
+    if type(raw) is int:
+        return raw
+    if isinstance(raw, str):
+        try:
+            return int(raw)
+        except ValueError:
+            return 0
+    return 0
 
 
 def _unique_nonempty(raw: list[str]) -> list[str]:

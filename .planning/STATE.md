@@ -23,12 +23,13 @@ Status:
 - P38-02 is complete: full CLI and Studio review runs now write `sheet_routing.json`, and protected graph routing selects a single confident plan page only when fallback guards pass.
 - P39-01 is complete: full CLI and Studio review runs now write `sheet_graphs.json`, with one independent graph per high-confidence plan sheet.
 - P39-02 is complete: full CLI and Studio review runs now write `sheet_issues.json`, a per-sheet candidate issue preview decoupled from primary `issues.json` and `review_state.json`.
+- P40-01 is complete: understanding benchmark expected specs can now check `sheet_graphs.json` and `sheet_issues.json`, and the packaged suite includes deterministic active case `generated-multi-plan-sheets`.
 
 ## Current Phase
 
-P39: Multi-plan graph outputs.
+P40: Real drawing benchmark expansion.
 
-P39-02 adds per-sheet issue preview on top of the multi-plan graph evidence artifact. It evaluates each plan sheet graph with existing rule cards and groups candidate issues by page, while leaving primary `issues.json` and review state semantics unchanged.
+P40-01 expands benchmark coverage from drawing-understanding payloads into multi-plan artifacts. The suite now checks graph_count, page indexes, per-sheet component counts, sheet issue groups, and required rule IDs for generated multi-plan fixtures.
 
 ## Key Decisions
 
@@ -48,8 +49,9 @@ P39-02 adds per-sheet issue preview on top of the multi-plan graph evidence arti
 - Rule-card draft heuristics are intentionally conservative; ambiguous clauses need human review and may require split/branch rules.
 - Sheet routing is still page-level and conservative; multiple plan pages need future multi-graph support before automatic per-sheet graph outputs are trusted.
 - Per-sheet issues are preview-only in P39-02; do not claim multi-plan compliance aggregation until issue IDs, review state linkage, and report grouping are explicitly promoted.
+- P40-01 uses a deterministic generated multi-plan fixture; it does not replace real public/private multi-plan expected inventory intake.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Enter P40 benchmark expansion with real or deterministic multi-plan sheet sets.
+Add a real public or user-private multi-plan known_gap/active case.

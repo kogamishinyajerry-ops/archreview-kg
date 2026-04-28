@@ -151,6 +151,12 @@ and keeps the no-OCR transparency warning.
   plan graph and groups candidate issues by page. This preview is rendered
   in Viewer/Studio/report surfaces but is not merged into primary
   `issues.json` or `review_state.json`.
+- P40-01 expands the understanding benchmark harness to score
+  `sheet_graphs.json` and `sheet_issues.json`. Expected specs can now
+  assert graph counts, required plan page indexes, per-sheet component
+  counts, per-sheet issue groups, and required rule IDs by page. The
+  packaged suite adds deterministic active case `generated-multi-plan-sheets`
+  and now reports active=3, pending=1, failed=0.
 
 ### Still limited
 

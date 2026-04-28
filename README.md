@@ -176,6 +176,10 @@ archkg understanding-benchmark-suite \
   --markdown out/understanding_benchmark_suite.md
 ```
 
+P40 起，expected spec 也可以检查多页套图证据：`sheet_graphs.graph_count`、per-sheet component counts、
+`sheet_issues.sheet_count`、per-sheet required rule ids。Packaged suite 已包含 deterministic
+`generated-multi-plan-sheets` active case，用来锁定 `sheet_graphs.json` 与 `sheet_issues.json`。
+
 不填 `--project-meta` 也可跑，但只能触发 4 张 AUTODETECTABLE 规则
 （户门净宽 / 走廊净宽 / 卧室面积 / 无障碍走廊）；其它项目级规则会被
 applicability filter 跳过并在报告里说明原因。
@@ -300,6 +304,9 @@ archkg understanding-benchmark-author out/ --benchmark-id my-plan --out out/expe
 # 图纸理解 benchmark suite intake（active 会跑分；known_gap 会记录真实差距）
 archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks/suite_manifest.json
 
+# P40: benchmark suite 也会校验 sheet_graphs.json / sheet_issues.json
+# packaged suite 当前包含 generated-multi-plan-sheets active case
+
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
 
@@ -338,6 +345,7 @@ archkg clause readiness
 - P37：rule-card authoring / citation assistant。`archkg rule-card draft` 只产 `rule_card_draft.v1` 草稿，人工确认前不进入 active rule_cards。
 - P38：multi-sheet classification。`sheet_classification.json` 先把多页套图中的 plan / schedule / title / legend / detail / elevation / unknown 作为路由证据展示；`sheet_routing.json` 再以保守条件把单一高置信 plan 页送入 graph，否则回退 legacy 全页输入。
 - P39：multi-plan graph outputs。`sheet_graphs.json` 为每个高置信 plan sheet 生成独立 graph 证据；`sheet_issues.json` 生成 per-sheet candidate issue preview。主 `entity_graph.json`、`issues.json` 和 `review_state.json` 暂不自动聚合多 plan 页。
+- P40：benchmark expansion。Understanding benchmark suite 现在能校验 multi-plan artifacts，并新增 `generated-multi-plan-sheets` active case。
 
 ---
 

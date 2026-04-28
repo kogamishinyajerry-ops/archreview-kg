@@ -107,6 +107,7 @@ Goal: handle larger real sheet sets with better source classification and benchm
 
 - Expand active/known_gap suite to at least five reviewed complex cases.
 - Separate real public PDFs, deterministic generated PDFs, and user-private fixtures.
+- Include multi-sheet artifact checks for `sheet_graphs.json` and `sheet_issues.json`.
 
 ## Milestone M4: Review Workbench
 
