@@ -121,6 +121,7 @@ def build_review_workbench(
 
     warnings = _workbench_warnings(summary, artifact_statuses)
     action_links = _action_links(summary)
+    review_state_operations = _review_state_operations(issues)
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -129,6 +130,7 @@ def build_review_workbench(
         "summary": summary,
         "artifact_statuses": artifact_statuses,
         "action_links": action_links,
+        "review_state_operations": review_state_operations,
         "warnings": warnings,
         "next_actions": _next_actions(warnings, summary),
         "note": (
@@ -153,6 +155,7 @@ def load_review_workbench_view(out_dir: Path) -> dict[str, Any]:
             "summary": {},
             "artifact_statuses": [],
             "action_links": [],
+            "review_state_operations": _empty_review_state_operations(),
             "warnings": ["review_workbench.json 暂无数据; 请查看下方单项 evidence 面板。"],
             "next_actions": [],
         }
@@ -165,6 +168,7 @@ def load_review_workbench_view(out_dir: Path) -> dict[str, Any]:
             "summary": {},
             "artifact_statuses": [],
             "action_links": [],
+            "review_state_operations": _empty_review_state_operations(),
             "warnings": [f"could not read review_workbench.json: {exc}"],
             "next_actions": [],
         }
@@ -175,6 +179,7 @@ def load_review_workbench_view(out_dir: Path) -> dict[str, Any]:
             "summary": {},
             "artifact_statuses": [],
             "action_links": [],
+            "review_state_operations": _empty_review_state_operations(),
             "warnings": ["review_workbench.json is not an object"],
             "next_actions": [],
         }
@@ -188,12 +193,49 @@ def load_review_workbench_view(out_dir: Path) -> dict[str, Any]:
         "action_links": [
             row for row in _list(raw.get("action_links")) if isinstance(row, dict)
         ],
+        "review_state_operations": _mapping(
+            raw.get("review_state_operations")
+        ) or _empty_review_state_operations(),
         "warnings": [item for item in _list(raw.get("warnings")) if isinstance(item, str)],
         "next_actions": [
             item for item in _list(raw.get("next_actions")) if isinstance(item, str)
         ],
         "note": _str(raw.get("note")),
     }
+
+
+def refresh_review_workbench_from_run_dir(out_dir: Path) -> Path:
+    """Rebuild review_workbench.json from the current run artifacts."""
+
+    existing = _mapping(_read_json(out_dir / "review_workbench.json", {}))
+    run_meta = _mapping(_read_json(out_dir / "run_meta.json", {}))
+    source_pdf = _str(existing.get("source_pdf")) or _str(run_meta.get("source_pdf"))
+    mode = _str(existing.get("mode")) or _str(run_meta.get("mode")) or "full"
+    issues = [
+        row
+        for row in _list(_read_json(out_dir / "issues.json", []))
+        if isinstance(row, Mapping)
+    ]
+    payload = build_review_workbench(
+        source_pdf=Path(source_pdf or "unknown"),
+        mode=mode,
+        drawing_understanding=_mapping(
+            _read_json(out_dir / "drawing_understanding.json", {})
+        ),
+        rule_readiness=_mapping(_read_json(out_dir / "rule_input_readiness.json", {})),
+        issues=issues,
+        review_state=_mapping(_read_json(out_dir / "review_state.json", {})),
+        sheet_classification=_mapping(
+            _read_json(out_dir / "sheet_classification.json", {})
+        ),
+        sheet_routing=_mapping(_read_json(out_dir / "sheet_routing.json", {})),
+        sheet_graphs=_mapping(_read_json(out_dir / "sheet_graphs.json", {})),
+        sheet_issues=_mapping(_read_json(out_dir / "sheet_issues.json", {})),
+        sheet_region_candidates=_mapping(
+            _read_json(out_dir / "sheet_region_candidates.json", {})
+        ),
+    )
+    return write_review_workbench(payload, out_dir / "review_workbench.json")
 
 
 def _artifact_status(label: str, artifact: str, available: bool, detail: str) -> dict[str, Any]:
@@ -320,6 +362,68 @@ def _action_link(
     }
 
 
+def _review_state_operations(
+    issues: Sequence[Mapping[str, Any]],
+    *,
+    limit: int = 12,
+) -> dict[str, Any]:
+    commands: list[dict[str, Any]] = []
+    for issue in issues[:limit]:
+        issue_id = _str(issue.get("issue_id"))
+        if not issue_id:
+            continue
+        commands.append(
+            {
+                "issue_id": issue_id,
+                "rule_card_id": _str(issue.get("rule_card_id")),
+                "command_template": (
+                    "archkg review-state <run_dir> "
+                    f"{issue_id} --status "
+                    "<candidate|confirmed|rejected|needs_info|resolved|superseded> "
+                    '--reviewer <name> --note "<note>"'
+                ),
+            }
+        )
+    return {
+        "available": bool(commands),
+        "target_artifact": "review_state.json",
+        "mutation_policy": "primary_issues_json_only",
+        "allowed_statuses": [
+            "candidate",
+            "confirmed",
+            "rejected",
+            "needs_info",
+            "resolved",
+            "superseded",
+        ],
+        "commands": commands,
+        "omitted_count": max(len(issues) - len(commands), 0),
+        "note": (
+            "archkg review-state updates review_state.json only. "
+            "It never mutates issues.json or per-sheet preview issues."
+        ),
+    }
+
+
+def _empty_review_state_operations() -> dict[str, Any]:
+    return {
+        "available": False,
+        "target_artifact": "review_state.json",
+        "mutation_policy": "primary_issues_json_only",
+        "allowed_statuses": [
+            "candidate",
+            "confirmed",
+            "rejected",
+            "needs_info",
+            "resolved",
+            "superseded",
+        ],
+        "commands": [],
+        "omitted_count": 0,
+        "note": "",
+    }
+
+
 def _next_actions(warnings: Sequence[str], summary: Mapping[str, Any]) -> list[str]:
     actions: list[str] = []
     if _int(summary.get("blocked_rules")) > 0:
@@ -356,6 +460,15 @@ def _list(raw: object) -> list[Any]:
     return raw if isinstance(raw, list) else []
 
 
+def _read_json(path: Path, default: Any) -> Any:
+    if not path.exists():
+        return default
+    try:
+        return json.loads(path.read_text("utf-8"))
+    except Exception:
+        return default
+
+
 def _str(raw: object) -> str:
     return raw if isinstance(raw, str) else ""
 
@@ -367,5 +480,6 @@ def _int(raw: object) -> int:
 __all__ = [
     "build_review_workbench",
     "load_review_workbench_view",
+    "refresh_review_workbench_from_run_dir",
     "write_review_workbench",
 ]

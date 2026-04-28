@@ -184,6 +184,11 @@ and keeps the no-OCR transparency warning.
   readiness blockers, sheet evidence, region candidates, candidate issues,
   review state, and report/clauses; `report.md` mirrors the same actions.
   The links are navigation only and do not write review decisions.
+- P41-03 adds bounded local review-state operations. `archkg review-state`
+  updates one primary `issues.json` issue in `review_state.json`, refreshes
+  the workbench summary, and rejects per-sheet preview issue IDs. The
+  workbench and report expose command templates while `issues.json` and rule
+  output remain immutable.
 
 ### Still limited
 

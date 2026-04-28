@@ -118,6 +118,43 @@ def test_cli_feedback_smoke(sample_pdf: Path, tmp_path: Path) -> None:
     assert (run_dir / "feedback.yaml").exists()
 
 
+def test_cli_review_state_updates_single_issue_without_mutating_issues(
+    sample_pdf: Path,
+    tmp_path: Path,
+) -> None:
+    runner = CliRunner()
+    run_dir = tmp_path / "run-review-state"
+    _seed_run(sample_pdf, run_dir)
+    issues_before = (run_dir / "issues.json").read_text(encoding="utf-8")
+    issues = json.loads(issues_before)
+    issue_id = issues[0]["issue_id"]
+
+    result = runner.invoke(
+        app,
+        [
+            "review-state",
+            str(run_dir),
+            issue_id,
+            "--status",
+            "rejected",
+            "--reviewer",
+            "Zhu",
+            "--note",
+            "not applicable after manual check",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (run_dir / "issues.json").read_text(encoding="utf-8") == issues_before
+    review_state = json.loads((run_dir / "review_state.json").read_text("utf-8"))
+    by_issue = {item["issue_id"]: item for item in review_state["items"]}
+    assert by_issue[issue_id]["status"] == "rejected"
+    assert by_issue[issue_id]["reviewer"] == "Zhu"
+    assert review_state["summary"]["rejected"] == 1
+    workbench = json.loads((run_dir / "review_workbench.json").read_text("utf-8"))
+    assert workbench["summary"]["candidate_review_states"] == len(issues) - 1
+
+
 def test_build_test_case_for_project_issue_without_meta_returns_none() -> None:
     """Codex P11-B P1: project-level confirmed issues must NOT promote with
     all-None inputs when the run has no project_meta.yaml."""

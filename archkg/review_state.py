@@ -25,6 +25,10 @@ REVIEW_STATUS_ORDER: tuple[IssueReviewStatus, ...] = (
 )
 
 
+class ReviewStateUpdateError(RuntimeError):
+    pass
+
+
 def utc_now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
@@ -115,6 +119,90 @@ def summarize_review_state_items(
 
 def with_updated_summary(state: IssueReviewState) -> IssueReviewState:
     return state.model_copy(update={"summary": summarize_review_state_items(state.items)})
+
+
+def normalize_review_status(raw: str | None) -> IssueReviewStatus:
+    status = (raw or "candidate").strip().lower() or "candidate"
+    if status == "open":
+        return "candidate"
+    if status not in REVIEW_STATUS_ORDER:
+        raise ReviewStateUpdateError(f"invalid review status '{raw}'")
+    return status
+
+
+def update_review_state_issue(
+    run_dir: Path,
+    issue_id: str,
+    *,
+    status: str,
+    reviewer: str | None = None,
+    note: str | None = None,
+    superseded_by_run_id: str | None = None,
+    now: str | None = None,
+) -> IssueReviewState:
+    """Update one primary issue's human review state.
+
+    The operation is intentionally bounded to issue IDs present in the run's
+    primary ``issues.json``. Per-sheet preview issues remain advisory and are
+    not eligible for this lifecycle update path.
+    """
+
+    if not run_dir.is_dir():
+        raise ReviewStateUpdateError(f"not a directory: {run_dir}")
+    issues_path = run_dir / "issues.json"
+    if not issues_path.exists():
+        raise ReviewStateUpdateError(f"missing {issues_path}")
+    try:
+        raw_issues = json.loads(issues_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ReviewStateUpdateError(f"could not read {issues_path}: {exc}") from exc
+    if not isinstance(raw_issues, list):
+        raise ReviewStateUpdateError(f"{issues_path} must contain a JSON list")
+
+    issues = [item for item in raw_issues if isinstance(item, Mapping)]
+    issue_ids = {_issue_string(item, "issue_id") for item in issues}
+    if issue_id not in issue_ids:
+        raise ReviewStateUpdateError(
+            f"issue_id '{issue_id}' is not present in primary issues.json"
+        )
+
+    normalized_status = normalize_review_status(status)
+    if normalized_status == "superseded" and not superseded_by_run_id:
+        raise ReviewStateUpdateError(
+            "superseded status requires --superseded-by-run-id"
+        )
+    if normalized_status != "superseded" and superseded_by_run_id:
+        raise ReviewStateUpdateError(
+            "--superseded-by-run-id may only be used when status=superseded"
+        )
+
+    timestamp = now or utc_now_iso()
+    review_state_path = run_dir / REVIEW_STATE_FILENAME
+    review_state = build_review_state(
+        issues,
+        run_id=run_dir.name,
+        existing=load_review_state_optional(review_state_path),
+        now=timestamp,
+    )
+    items_by_id = review_state_by_issue_id(review_state)
+    item = items_by_id[issue_id]
+    update: dict[str, Any] = {
+        "status": normalized_status,
+        "updated_at": timestamp,
+        "superseded_by_run_id": superseded_by_run_id
+        if normalized_status == "superseded"
+        else None,
+    }
+    if reviewer is not None:
+        update["reviewer"] = reviewer or None
+    if note is not None:
+        update["note"] = note or None
+    items_by_id[issue_id] = item.model_copy(update=update)
+    ordered_items = [items_by_id[item.issue_id] for item in review_state.items]
+    updated_state = review_state.model_copy(update={"items": ordered_items})
+    updated_state = with_updated_summary(updated_state)
+    write_review_state(updated_state, review_state_path)
+    return updated_state
 
 
 def _issue_string(issue: Any, key: str) -> str:

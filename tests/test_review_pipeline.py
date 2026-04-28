@@ -69,6 +69,12 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     assert action_links["readiness_blockers"]["status"] == "attention"
     assert action_links["candidate_issues"]["artifact"] == "issues.json"
     assert action_links["review_state"]["artifact"] == "review_state.json"
+    review_ops = workbench["review_state_operations"]
+    assert review_ops["mutation_policy"] == "primary_issues_json_only"
+    assert "confirmed" in review_ops["allowed_statuses"]
+    assert review_ops["commands"][0]["command_template"].startswith(
+        "archkg review-state <run_dir>"
+    )
     assert "review_workbench.json" not in {
         row["artifact"]
         for row in workbench["artifact_statuses"]
@@ -192,6 +198,8 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "规则输入就绪度" in md
     assert "审图工作台总览" in md
     assert "工作台动作入口" in md
+    assert "复核状态本地操作" in md
+    assert "archkg review-state <run_dir>" in md
     assert "#panel-readiness" in md
     assert "处理 readiness blockers" in md
     assert "review_workbench.json" in md

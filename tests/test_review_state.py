@@ -4,9 +4,11 @@ import json
 from pathlib import Path
 
 from archkg.review_state import (
+    ReviewStateUpdateError,
     build_review_state,
     load_review_state,
     review_state_by_issue_id,
+    update_review_state_issue,
     write_review_state,
 )
 from archkg.schemas.review_state import IssueReviewState, IssueReviewStateItem
@@ -84,3 +86,65 @@ def test_review_state_round_trips_and_preserves_human_state(tmp_path: Path) -> N
     out = write_review_state(rebuilt, tmp_path / "review_state.json")
     loaded = load_review_state(out)
     assert loaded == rebuilt
+
+
+def test_update_review_state_issue_updates_only_primary_state(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run-001"
+    run_dir.mkdir()
+    issues = [_issue("ISS-1"), _issue("ISS-2", "RC-DOOR-WIDTH")]
+    before = json.dumps(issues, sort_keys=True)
+    (run_dir / "issues.json").write_text(
+        json.dumps(issues, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    state = update_review_state_issue(
+        run_dir,
+        "ISS-1",
+        status="confirmed",
+        reviewer="Zhu",
+        note="manual check",
+        now="2026-04-28T11:00:00Z",
+    )
+    by_id = review_state_by_issue_id(state)
+
+    assert by_id["ISS-1"].status == "confirmed"
+    assert by_id["ISS-1"].reviewer == "Zhu"
+    assert by_id["ISS-1"].note == "manual check"
+    assert by_id["ISS-2"].status == "candidate"
+    assert state.summary == {"candidate": 1, "confirmed": 1}
+    assert (
+        json.dumps(json.loads((run_dir / "issues.json").read_text("utf-8")), sort_keys=True)
+        == before
+    )
+
+
+def test_update_review_state_issue_rejects_non_primary_issue(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run-001"
+    run_dir.mkdir()
+    (run_dir / "issues.json").write_text(
+        json.dumps([_issue("ISS-1")], ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    import pytest
+
+    with pytest.raises(
+        ReviewStateUpdateError,
+        match=r"not present in primary issues\.json",
+    ):
+        update_review_state_issue(run_dir, "sheet-issue-preview-1", status="confirmed")
+
+
+def test_update_review_state_issue_requires_superseded_target(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run-001"
+    run_dir.mkdir()
+    (run_dir / "issues.json").write_text(
+        json.dumps([_issue("ISS-1")], ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    import pytest
+
+    with pytest.raises(ReviewStateUpdateError, match="requires --superseded-by-run-id"):
+        update_review_state_issue(run_dir, "ISS-1", status="superseded")

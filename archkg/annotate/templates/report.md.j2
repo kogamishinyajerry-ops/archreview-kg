@@ -53,6 +53,21 @@ review_workbench.json 暂无数据；请查看下方单项 evidence 面板。
 {% for action in review_workbench.action_links %}| {{ action.label }} | {{ action.target }} | `{{ action.artifact }}` | {{ action.status }} | {{ action.reason }} |
 {% endfor %}
 
+{% if review_workbench.review_state_operations and review_workbench.review_state_operations.commands %}
+### 复核状态本地操作
+
+> {{ review_workbench.review_state_operations.note }}
+
+| issue_id | rule_card_id | command template |
+|---|---|---|
+{% for command in review_workbench.review_state_operations.commands %}| `{{ command.issue_id }}` | `{{ command.rule_card_id }}` | `{{ command.command_template }}` |
+{% endfor %}
+{% if review_workbench.review_state_operations.omitted_count %}
+
+另有 {{ review_workbench.review_state_operations.omitted_count }} 条 issue 未展开，完整列表见 `issues.json`。
+{% endif %}
+{% endif %}
+
 {% if review_workbench.warnings %}
 ### 工作台提示
 

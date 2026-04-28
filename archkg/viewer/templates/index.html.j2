@@ -644,7 +644,7 @@
 {% set layer_available = layer_available | default({'source': true, 'overlay': true, 'annotated': true}, true) %}
 {% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
-{% set review_workbench = review_workbench | default({'available': false, 'summary': {}, 'artifact_statuses': [], 'action_links': [], 'warnings': ['review_workbench.json 暂无数据；请查看下方单项 evidence 面板。'], 'next_actions': []}, true) %}
+{% set review_workbench = review_workbench | default({'available': false, 'summary': {}, 'artifact_statuses': [], 'action_links': [], 'review_state_operations': {'available': false, 'commands': [], 'allowed_statuses': [], 'omitted_count': 0, 'note': ''}, 'warnings': ['review_workbench.json 暂无数据；请查看下方单项 evidence 面板。'], 'next_actions': []}, true) %}
 {% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
 {% set sheet_classification = sheet_classification | default({'available': false, 'summary_rows': [], 'pages': [], 'warning_text': 'sheet_classification.json 暂无数据; 缺失分类不代表可直接进入 graph.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_graphs = sheet_graphs | default({'available': false, 'graphs': [], 'skipped_pages': [], 'warning_text': 'sheet_graphs.json 暂无数据; 缺失多页 graph 不代表没有其他 plan sheet.', 'unavailable_reason': 'missing'}, true) %}
@@ -879,6 +879,30 @@
           </div>
         {% else %}
           <div class="metric-note">暂无结构化 action links。</div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>Review-State Ops</h3>
+        {% set review_ops = review_workbench.review_state_operations %}
+        {% if review_ops.available %}
+          <div class="metric-note">{{ review_ops.note }}</div>
+          <table>
+            <thead><tr><th>issue</th><th>rule</th><th>command template</th></tr></thead>
+            <tbody>
+              {% for command in review_ops.commands %}
+                <tr>
+                  <td><code>{{ command.issue_id }}</code></td>
+                  <td><code>{{ command.rule_card_id }}</code></td>
+                  <td><code>{{ command.command_template }}</code></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if review_ops.omitted_count %}
+            <div class="metric-note">另有 {{ review_ops.omitted_count }} 条 issue 未展开；完整列表见 <code>issues.json</code>。</div>
+          {% endif %}
+        {% else %}
+          <div class="metric-note">暂无可更新的主 issue review-state。</div>
         {% endif %}
       </div>
       <div class="metric-card">

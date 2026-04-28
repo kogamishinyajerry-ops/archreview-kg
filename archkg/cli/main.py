@@ -557,7 +557,8 @@ def _print_review_summary(
             f"下一步：\n"
             f"  • 打开 [bold]{annotated_path}[/bold] 看红框标注\n"
             f"  • 打开 [bold]{report_path}[/bold] 看可复核的问题清单\n"
-            f"  • 将 candidate 改为 confirmed/rejected 后跑 [bold]archkg feedback {out_dir} --apply[/bold]",
+            f"  • 用 [bold]archkg review-state {out_dir} <issue_id> --status confirmed[/bold] 更新复核状态\n"
+            f"  • 或编辑 report.md 后跑 [bold]archkg feedback {out_dir} --apply[/bold] 生成反馈用例",
             title="✅ 审图完成",
             border_style="green",
         )
@@ -1400,6 +1401,72 @@ def feedback(
 
     out = record(run_dir, rules_path=rules_path, apply_to_rules=apply_to_rules)
     typer.echo(f"wrote {out}")
+
+
+class ReviewStateStatusChoice(StrEnum):
+    candidate = "candidate"
+    confirmed = "confirmed"
+    rejected = "rejected"
+    needs_info = "needs_info"
+    resolved = "resolved"
+    superseded = "superseded"
+
+
+@app.command("review-state")
+def review_state_cmd(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False),
+    issue_id: str = typer.Argument(..., help="Primary issues.json issue_id to update."),
+    status: ReviewStateStatusChoice = typer.Option(
+        ...,
+        "--status",
+        help="Human review lifecycle status to write into review_state.json.",
+    ),
+    reviewer: str | None = typer.Option(
+        None,
+        "--reviewer",
+        help="Optional reviewer name to store on the review-state item.",
+    ),
+    note: str | None = typer.Option(
+        None,
+        "--note",
+        help="Optional reviewer note to store on the review-state item.",
+    ),
+    superseded_by_run_id: str | None = typer.Option(
+        None,
+        "--superseded-by-run-id",
+        help="Required only when --status superseded.",
+    ),
+) -> None:
+    """Bounded local update of review_state.json for one primary candidate issue.
+
+    This command never mutates issues.json and never promotes per-sheet preview
+    issues into the primary review lifecycle.
+    """
+
+    from archkg.review_state import ReviewStateUpdateError, update_review_state_issue
+    from archkg.viewer.review_workbench import refresh_review_workbench_from_run_dir
+
+    try:
+        state = update_review_state_issue(
+            run_dir,
+            issue_id,
+            status=status.value,
+            reviewer=reviewer,
+            note=note,
+            superseded_by_run_id=superseded_by_run_id,
+        )
+    except ReviewStateUpdateError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    try:
+        refresh_review_workbench_from_run_dir(run_dir)
+    except Exception as exc:
+        typer.echo(f"updated review_state.json; workbench refresh skipped: {exc}")
+        return
+    typer.echo(
+        "updated review_state.json "
+        f"issue_id={issue_id} status={status.value} summary={dict(state.summary)}"
+    )
 
 
 @app.command("control-sync")
