@@ -405,6 +405,10 @@ def run_pipeline(
         write_drawing_understanding,
     )
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.review_workbench import (
+        build_review_workbench,
+        write_review_workbench,
+    )
     from archkg.viewer.rule_readiness import build_rule_readiness_view
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -614,6 +618,17 @@ def run_pipeline(
             "让规则引擎评估违规。"
         )
         (out_dir / "report.md").write_text("\n".join(report_lines), encoding="utf-8")
+        review_workbench = build_review_workbench(
+            source_pdf=pdf_path,
+            mode="inspect_only",
+            drawing_understanding=drawing_understanding,
+            issues=[],
+            sheet_classification=sheet_classification.model_dump(mode="json"),
+            sheet_routing=routing.decision.model_dump(mode="json"),
+            sheet_graphs=sheet_graphs.model_dump(mode="json"),
+            sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+        )
+        write_review_workbench(review_workbench, out_dir / "review_workbench.json")
         _render_viewer_index(
             out_dir, pdf_path,
             quality_flags=quality_flags,
@@ -658,6 +673,20 @@ def run_pipeline(
     )
     review_state = build_review_state(result.issues, run_id=out_dir.name)
     write_review_state(review_state, out_dir / "review_state.json")
+    review_workbench = build_review_workbench(
+        source_pdf=pdf_path,
+        mode="full",
+        drawing_understanding=drawing_understanding,
+        rule_readiness=rule_readiness.model_dump(mode="json"),
+        issues=[issue.model_dump(mode="json") for issue in result.issues],
+        review_state=review_state.model_dump(mode="json"),
+        sheet_classification=sheet_classification.model_dump(mode="json"),
+        sheet_routing=routing.decision.model_dump(mode="json"),
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
+        sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+    )
+    write_review_workbench(review_workbench, out_dir / "review_workbench.json")
 
     annotated = annotate_pdf(pdf_path, result.issues, out_dir / "annotated.pdf")
     render_report(
@@ -677,6 +706,7 @@ def run_pipeline(
         sheet_graphs=sheet_graphs.model_dump(mode="json"),
         sheet_issues=sheet_issues.model_dump(mode="json"),
         review_state=review_state,
+        review_workbench=review_workbench,
     )
 
     if annotated.exists():
@@ -801,6 +831,7 @@ def _render_viewer_index(
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
     from archkg.viewer.review_state import load_review_state_view
+    from archkg.viewer.review_workbench import load_review_workbench_view
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
     from archkg.viewer.sheet_graphs import load_sheet_graphs_view
@@ -836,6 +867,7 @@ def _render_viewer_index(
         ocr_diagnostics,
     )
     rule_readiness = load_rule_readiness_view(out_dir)
+    review_workbench = load_review_workbench_view(out_dir)
     review_state = load_review_state_view(out_dir, issues)
     sheet_classification = load_sheet_classification_view(out_dir)
     sheet_graphs = load_sheet_graphs_view(out_dir)
@@ -858,6 +890,7 @@ def _render_viewer_index(
         ocr_diagnostics=ocr_diagnostics,
         drawing_understanding=drawing_understanding,
         rule_readiness=rule_readiness,
+        review_workbench=review_workbench,
         review_state=review_state,
         sheet_classification=sheet_classification,
         sheet_graphs=sheet_graphs,

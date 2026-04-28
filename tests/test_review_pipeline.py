@@ -22,6 +22,7 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "primitives.json",
         "entity_graph.json",
         "drawing_understanding.json",
+        "review_workbench.json",
         "sheet_graphs.json",
         "sheet_issues.json",
         "sheet_classification.json",
@@ -59,6 +60,15 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     sheet_issues = json.loads((out_dir / "sheet_issues.json").read_text("utf-8"))
     assert sheet_issues["schema_version"] == "sheet_issues.v1"
     assert sheet_issues["sheet_count"] == 1
+    workbench = json.loads((out_dir / "review_workbench.json").read_text("utf-8"))
+    assert workbench["schema_version"] == "review_workbench.v1"
+    assert workbench["summary"]["ready_rules"] >= 1
+    assert workbench["summary"]["blocked_rules"] >= 1
+    assert "review_workbench.json" not in {
+        row["artifact"]
+        for row in workbench["artifact_statuses"]
+        if row["status"] == "missing"
+    }
 
     issues = json.loads((out_dir / "issues.json").read_text(encoding="utf-8"))
     review_state = json.loads((out_dir / "review_state.json").read_text(encoding="utf-8"))
@@ -175,6 +185,8 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "审查报告" in md
     assert "GB50096" in md
     assert "规则输入就绪度" in md
+    assert "审图工作台总览" in md
+    assert "review_workbench.json" in md
     assert "缺输入不等于通过" in md
     assert "Sheet 分类" in md
     assert "sheet_classification.json" in md

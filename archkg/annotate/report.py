@@ -41,6 +41,7 @@ def render(
     sheet_graphs: dict[str, Any] | None = None,
     sheet_issues: dict[str, Any] | None = None,
     review_state: IssueReviewState | dict[str, Any] | None = None,
+    review_workbench: dict[str, Any] | None = None,
 ) -> Path:
     used_ids = {i.standard_clause_id for i in issues}
     clauses_used = [c for c in clauses if c.id in used_ids]
@@ -82,6 +83,7 @@ def render(
         sheet_graphs=sheet_graphs,
         sheet_issues=sheet_issues,
         review_state=review_state_model.model_dump(mode="json"),
+        review_workbench=review_workbench,
     )
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_md.write_text(rendered, encoding="utf-8")

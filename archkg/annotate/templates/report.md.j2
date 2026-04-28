@@ -26,6 +26,36 @@
 {% endif %}
 {% endif %}
 
+## 审图工作台总览
+
+{% if not review_workbench %}
+review_workbench.json 暂无数据；请查看下方单项 evidence 面板。
+{% else %}
+> {{ review_workbench.note }}
+
+| 维度 | 值 |
+|---|---:|
+| drawing_type | {{ review_workbench.summary.drawing_type }} |
+| rooms / doors / corridors / stairs / dimensions | {{ review_workbench.summary.rooms }} / {{ review_workbench.summary.doors }} / {{ review_workbench.summary.corridors }} / {{ review_workbench.summary.stairs }} / {{ review_workbench.summary.dimensions }} |
+| issues / error / warning / info | {{ review_workbench.summary.issue_count }} / {{ review_workbench.summary.issue_error_count }} / {{ review_workbench.summary.issue_warning_count }} / {{ review_workbench.summary.issue_info_count }} |
+| ready rules / blocked rules | {{ review_workbench.summary.ready_rules }} / {{ review_workbench.summary.blocked_rules }} |
+| plan sheets / sheet graphs / sheet preview issues | {{ review_workbench.summary.plan_sheet_count }} / {{ review_workbench.summary.sheet_graph_count }} / {{ review_workbench.summary.sheet_issue_count }} |
+
+| Evidence | Artifact | Status | Detail |
+|---|---|---|---|
+{% for row in review_workbench.artifact_statuses %}| {{ row.label }} | `{{ row.artifact }}` | {{ row.status }} | {{ row.detail }} |
+{% endfor %}
+
+{% if review_workbench.warnings %}
+### 工作台提示
+
+{% for warning in review_workbench.warnings %}- {{ warning }}
+{% endfor %}
+{% endif %}
+
+完整数据见 `review_workbench.json`。
+{% endif %}
+
 ## 规则输入就绪度
 
 {% if not rule_readiness or not rule_readiness.available %}

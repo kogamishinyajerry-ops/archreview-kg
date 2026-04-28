@@ -644,6 +644,7 @@
 {% set layer_available = layer_available | default({'source': true, 'overlay': true, 'annotated': true}, true) %}
 {% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
+{% set review_workbench = review_workbench | default({'available': false, 'summary': {}, 'artifact_statuses': [], 'warnings': ['review_workbench.json 暂无数据；请查看下方单项 evidence 面板。'], 'next_actions': []}, true) %}
 {% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
 {% set sheet_classification = sheet_classification | default({'available': false, 'summary_rows': [], 'pages': [], 'warning_text': 'sheet_classification.json 暂无数据; 缺失分类不代表可直接进入 graph.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_graphs = sheet_graphs | default({'available': false, 'graphs': [], 'skipped_pages': [], 'warning_text': 'sheet_graphs.json 暂无数据; 缺失多页 graph 不代表没有其他 plan sheet.', 'unavailable_reason': 'missing'}, true) %}
@@ -830,6 +831,74 @@
       <div class="t">人工核对清单</div>
     </div>
   </div>
+</section>
+
+<section class="panel full" id="panel-workbench">
+  <h2>审图工作台总览</h2>
+  {% if not review_workbench.available %}
+    <div class="alert warn">
+      <strong>review_workbench.json 暂无数据</strong>：请查看下方单项 evidence 面板。
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>工作台入口</strong>：{{ review_workbench.note }}
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi">
+        <div class="k">图纸类型</div>
+        <div class="v" style="font-size: 20px;">{{ review_workbench.summary.drawing_type }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">部件</div>
+        <div class="v">{{ review_workbench.summary.rooms }} / {{ review_workbench.summary.doors }} / {{ review_workbench.summary.dimensions }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">规则</div>
+        <div class="v">{{ review_workbench.summary.ready_rules }} / {{ review_workbench.summary.blocked_rules }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Sheet</div>
+        <div class="v">{{ review_workbench.summary.plan_sheet_count }} / {{ review_workbench.summary.sheet_graph_count }}</div>
+      </div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <h3>Evidence 状态</h3>
+        <table>
+          <thead><tr><th>Evidence</th><th>Artifact</th><th>Status</th><th>Detail</th></tr></thead>
+          <tbody>
+            {% for row in review_workbench.artifact_statuses %}
+              <tr>
+                <td>{{ row.label }}</td>
+                <td><code>{{ row.artifact }}</code></td>
+                <td>{{ row.status }}</td>
+                <td>{{ row.detail }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="metric-card">
+        <h3>下一步</h3>
+        {% if review_workbench.next_actions %}
+          <ul>
+            {% for action in review_workbench.next_actions %}
+              <li>{{ action }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if review_workbench.warnings %}
+          <div class="metric-note">提示</div>
+          <ul>
+            {% for warning in review_workbench.warnings %}
+              <li>{{ warning }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+    <p class="actions"><a href="review_workbench.json" target="_blank">review_workbench.json</a></p>
+  {% endif %}
 </section>
 
 <section class="panel full" id="panel-readiness">

@@ -126,6 +126,10 @@ def review(
         write_drawing_understanding,
     )
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.review_workbench import (
+        build_review_workbench,
+        write_review_workbench,
+    )
     from archkg.viewer.rule_readiness import build_rule_readiness_view
 
     out.mkdir(parents=True, exist_ok=True)
@@ -319,6 +323,23 @@ def review(
     )
     review_state = build_review_state(result.issues, run_id=out.name)
     review_state_path = write_review_state(review_state, out / "review_state.json")
+    review_workbench = build_review_workbench(
+        source_pdf=pdf,
+        mode="full",
+        drawing_understanding=drawing_understanding,
+        rule_readiness=rule_readiness.model_dump(mode="json"),
+        issues=[issue.model_dump(mode="json") for issue in result.issues],
+        review_state=review_state.model_dump(mode="json"),
+        sheet_classification=sheet_classification.model_dump(mode="json"),
+        sheet_routing=routing.decision.model_dump(mode="json"),
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
+        sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+    )
+    review_workbench_path = write_review_workbench(
+        review_workbench,
+        out / "review_workbench.json",
+    )
 
     annotated = annotate_pdf(pdf, result.issues, out / "annotated.pdf")
     report_path = render_report(
@@ -338,6 +359,7 @@ def review(
         sheet_graphs=sheet_graphs.model_dump(mode="json"),
         sheet_issues=sheet_issues.model_dump(mode="json"),
         review_state=review_state,
+        review_workbench=review_workbench,
     )
     _print_review_summary(
         out_dir=out,
@@ -358,6 +380,7 @@ def review(
         sheet_routing_path=sheet_routing_path,
         readiness_path=readiness_path,
         review_state_path=review_state_path,
+        review_workbench_path=review_workbench_path,
         sheet_candidates_path=sheet_candidates_path,
         sheet_candidates_overlay_path=sheet_candidates_overlay_path,
     )
@@ -383,6 +406,7 @@ def _print_review_summary(
     sheet_routing_path: Path | None = None,
     readiness_path: Path | None = None,
     review_state_path: Path | None = None,
+    review_workbench_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
     sheet_candidates_overlay_path: Path | None = None,
 ) -> None:
@@ -518,6 +542,8 @@ def _print_review_summary(
         art.add_row("rule input readiness", str(readiness_path))
     if review_state_path is not None:
         art.add_row("issue review state", str(review_state_path))
+    if review_workbench_path is not None:
+        art.add_row("review workbench", str(review_workbench_path))
     if sheet_candidates_path is not None:
         art.add_row("sheet region candidates", str(sheet_candidates_path))
     if sheet_candidates_overlay_path is not None:

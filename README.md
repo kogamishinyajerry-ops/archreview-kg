@@ -38,6 +38,7 @@ archkg viewer -d out
 - `report.md` — 中文复核报告（违规清单 + 人工核对提醒分区）
 - `issues.json` — 结构化问题清单（rule_id / bbox / severity / 证据）
 - `review_state.json` — 人工复核状态层（candidate / confirmed / rejected / needs_info / resolved / superseded），不回写 `issues.json`
+- `review_workbench.json` — 审图工作台总览，汇总图纸理解、规则输入就绪度、sheet 证据、候选问题和复核状态；只导航 evidence，不改变规则结论
 - `entity_graph.json` — 抽出的实体图谱
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `sheet_graphs.json` — 每个高置信 plan sheet 的独立 graph 证据输出；P39-01 不把多 plan 页合并进主规则结论
@@ -134,6 +135,11 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > `schedule`、`legend` 和候选排除文本。它不会自动修改 `primitives.json` 或 `entity_graph.json`；
 > 只有用户显式传 `--sheet-region x0,y0,x1,y1` 时才会真正裁剪。结果页还会显示
 > `sheet_region_candidates_overlay.png`，用彩色框线帮助人工确认候选区域。
+>
+> **审图工作台总览**: 完整审图会生成 `review_workbench.json`，把 `drawing_understanding.json`、
+> `rule_input_readiness.json`、Sheet 分类/路由/graphs/issues、`issues.json` 和 `review_state.json`
+> 汇总成一个入口面板。它只帮助 reviewer 判断先看哪里、缺什么、哪些仍是 candidate；
+> 不会修改 `issues.json`、`review_state.json` 或规则引擎结论。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 
@@ -349,6 +355,7 @@ archkg clause readiness
 - P38：multi-sheet classification。`sheet_classification.json` 先把多页套图中的 plan / schedule / title / legend / detail / elevation / unknown 作为路由证据展示；`sheet_routing.json` 再以保守条件把单一高置信 plan 页送入 graph，否则回退 legacy 全页输入。
 - P39：multi-plan graph outputs。`sheet_graphs.json` 为每个高置信 plan sheet 生成独立 graph 证据；`sheet_issues.json` 生成 per-sheet candidate issue preview。主 `entity_graph.json`、`issues.json` 和 `review_state.json` 暂不自动聚合多 plan 页。
 - P40：benchmark expansion。Understanding benchmark suite 现在能校验 multi-plan artifacts，并新增 `generated-multi-plan-sheets` active case；真实 Medfield full plan set 以 `known_gap` 登记，暴露 full-set opening evidence 尚未进入 primary drawing-understanding 的缺口。
+- P41：Studio readiness workbench。`review_workbench.json` 与结果页“审图工作台总览”把分散 evidence 汇总成一个 reviewer 入口，但不改变任何规则结论。
 
 ---
 

@@ -26,12 +26,13 @@ Status:
 - P40-01 is complete: understanding benchmark expected specs can now check `sheet_graphs.json` and `sheet_issues.json`, and the packaged suite includes deterministic active case `generated-multi-plan-sheets`.
 - P40-02 is complete: pending benchmark suite rows now expose provenance, required artifacts, and promotion rules; the Medfield full 9-page plan/elevation set is registered as a real multi-plan intake gate, not as a passing benchmark.
 - P40-03 is complete: the Medfield full 9-page plan/elevation set now has a committed reduced full-run artifact snapshot and a `known_gap` expected spec. Packaged suite is active=3, pending=1, known_gap=1, failed=0.
+- P41-01 is complete: full CLI and Studio runs now write `review_workbench.json`, while reports and Viewer/Studio render a workbench overview that summarizes evidence readiness without changing rule output.
 
 ## Current Phase
 
-P40: Real drawing benchmark expansion.
+P41: Studio readiness workbench.
 
-P40-03 promotes the real Medfield full-set intake to known_gap. Per-sheet artifacts exist, but primary `drawing_understanding` still reports doors=0 and has_openings=false, so the suite records the gap without failing.
+P41-01 adds a workbench entry artifact over the existing evidence planes: drawing understanding, rule readiness, sheet classification/routing/graphs/issues, issues, and review state. It is reviewer navigation only and does not mutate `issues.json`, `review_state.json`, or rule results.
 
 ## Key Decisions
 
@@ -53,8 +54,9 @@ P40-03 promotes the real Medfield full-set intake to known_gap. Per-sheet artifa
 - Per-sheet issues are preview-only in P39-02; do not claim multi-plan compliance aggregation until issue IDs, review state linkage, and report grouping are explicitly promoted.
 - P40-01 uses a deterministic generated multi-plan fixture; it does not replace real public/private multi-plan expected inventory intake.
 - P40-03 registers a real full-set known_gap, not a passing real-complex-drawing capability claim.
+- P41-01 workbench summary is derived from current artifacts; if future artifacts are added, the summary must be extended or it can drift.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Fix or explicitly redesign full-set primary understanding aggregation so openings from selected plan sheets can be represented without merging per-sheet preview issues into final compliance output.
+Continue P41 by improving the workbench from summary navigation into a reviewer action surface: cross-link source preview, region candidates, component inventory, readiness blockers, candidate issues, and review-state actions.

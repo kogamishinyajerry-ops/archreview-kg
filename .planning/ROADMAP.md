@@ -117,6 +117,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 ### P41: Studio Readiness Workbench
 
 - Unify source preview, region candidates, component inventory, rule readiness, issues, and review state.
+- Start with `review_workbench.json` as a non-mutating run summary before adding reviewer actions.
 
 ### P42: Re-Run Diff and Resolution Tracking
 

@@ -500,10 +500,12 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     body = index_path.read_text("utf-8")
 
     assert "Sheet 分类" in body
+    assert "审图工作台总览" in body
     assert "Sheet 路由" in body
     assert "Sheet Graphs" in body
     assert "Sheet Issue Preview" in body
     assert "平面图" in body
+    assert "review_workbench.json" in body
     assert "sheet_classification.json" in body
     assert "sheet_routing.json" in body
     assert "sheet_graphs.json" in body
@@ -513,9 +515,11 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     (out_dir / "sheet_routing.json").unlink()
     (out_dir / "sheet_graphs.json").unlink()
     (out_dir / "sheet_issues.json").unlink()
+    (out_dir / "review_workbench.json").unlink()
     index_path = _render_index(out_dir, SAMPLE_PDF)
     body = index_path.read_text("utf-8")
 
+    assert "review_workbench.json 暂无数据" in body
     assert "sheet_classification.json 暂无数据" in body
     assert "缺失分类不代表可直接进入 graph" in body
     assert "sheet_routing.json 暂无数据" in body

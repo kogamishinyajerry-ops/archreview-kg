@@ -197,6 +197,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
     from archkg.viewer.review_state import load_review_state_view
+    from archkg.viewer.review_workbench import load_review_workbench_view
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
     from archkg.viewer.sheet_graphs import load_sheet_graphs_view
@@ -229,6 +230,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         ocr_diagnostics,
     )
     rule_readiness = load_rule_readiness_view(out_dir)
+    review_workbench = load_review_workbench_view(out_dir)
     review_state = load_review_state_view(out_dir, issues)
     sheet_classification = load_sheet_classification_view(out_dir)
     sheet_graphs = load_sheet_graphs_view(out_dir)
@@ -258,6 +260,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         ocr_diagnostics=ocr_diagnostics,
         drawing_understanding=drawing_understanding,
         rule_readiness=rule_readiness,
+        review_workbench=review_workbench,
         review_state=review_state,
         sheet_classification=sheet_classification,
         sheet_graphs=sheet_graphs,

@@ -171,6 +171,13 @@ and keeps the no-OCR transparency warning.
   the expected inventory intentionally requires full-set opening evidence
   that current primary `drawing_understanding` misses. The packaged suite
   now reports active=3, pending=1, known_gap=1, failed=0.
+- P41-01 adds `review_workbench.json`, a compact Studio/Viewer entry
+  artifact that summarizes drawing-understanding counts, rule readiness,
+  issue counts, sheet classification/routing/graphs/preview issues, and
+  review-state counts. CLI and Studio full runs write it, inspect-only
+  Studio runs write a partial workbench summary, `report.md` and the
+  Viewer render a "审图工作台总览" section, and control sync tracks the
+  artifact. It is navigation only and does not mutate rule output.
 
 ### Still limited
 
