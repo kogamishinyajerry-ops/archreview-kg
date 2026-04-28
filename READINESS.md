@@ -11,8 +11,9 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - 但 32 张规则中**只有 4 张能在任何 PDF 上直接自动判定违规**（≈ 12.5%）
 - 其余规则需要 ProjectMeta 完整、graph builder 扩展、或本就是人工核对清单
 - P43 后，成熟度主指标改为 `archkg release-readiness`：用 benchmark suite、代表性 run artifacts、
-  review state 和 re-run diff 证据判断能否演示；当前 packaged suite 的合理结论是
-  `demo_ready_with_known_gaps`，不是 `evidence_ready`。
+  review state 和 re-run diff 证据判断能否演示；P45 后当前 packaged suite 可在代表性 run
+  artifacts 完整时进入 `evidence_ready`。这个状态仍只适用于已 benchmark 的图纸类别，不是任意复杂
+  真实图纸自动审批证明。
 
 复现该结论：
 
@@ -38,12 +39,13 @@ archkg release-readiness \
 当前 packaged suite 的门禁烟测结果：
 
 ```text
-release-readiness status=demo_ready_with_known_gaps blockers=0 warnings=1 active=4 real_active=2 known_gap=0
+release-readiness status=evidence_ready blockers=0 warnings=0 active=5 real_active=2 known_gap=0
 ```
 
 这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff”
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
-但因为 suite 仍有 pending row，且 per-sheet preview issues 还没有进入主 lifecycle，仍不能宣称
+P45 清理了最后一个 packaged `manual_run_required` toy row，使 release gate 的技术前提完整。
+但 per-sheet preview issues 还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
 
 ## 32 张规则的就绪度分布
@@ -183,6 +185,8 @@ archkg studio
   circulation 缺失，但不把这张真实图纸包装成已通过能力。
 - P44 已把 Medfield 9 页 full plan/elevation set 从 known_gap 晋升为 active recognition benchmark：
   opening evidence 来自 `sheet_graphs.json` 的多页计数汇总，不代表 per-sheet issue 已自动进入主审图结论。
+- P45 已把 `sample_clean_full` toy row 从 `manual_run_required` 固化为 deterministic active fixture：
+  packaged suite 当前 active=5、pending=0、known_gap=0。它只清理可复现门禁，不扩大真实图纸能力宣称。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
@@ -252,6 +256,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   active 真实图纸证据时，门禁会继续阻止 `evidence_ready`。
 - P44 起，`drawing_understanding.json` 可把 `sheet_graphs.json` 的多页 plan graph 计数合并为
   full-set recognition evidence；该 evidence 不会自动合并 per-sheet issues 到主 `issues.json`。
+- P45 起，packaged release gate 可在代表性 run artifacts 完整时输出 `evidence_ready`；该状态应解释为
+  “benchmarked drawing classes 的受限试点证据就绪”，而不是 production certification。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

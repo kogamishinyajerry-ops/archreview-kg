@@ -34,12 +34,13 @@ Status:
 - P42-02 is complete: Viewer/Studio now load `review_diff.json` and render diff status in the workbench and issue list while keeping the artifact read-only.
 - P43-01 is complete: `archkg release-readiness` evaluates benchmark suite evidence and representative run artifacts into `not_ready`, `demo_ready_with_known_gaps`, or `evidence_ready` without using rule count as the maturity metric.
 - P44-01 is complete: `drawing_understanding.json` can merge `sheet_graphs.json` aggregate counts as multi-sheet recognition evidence, promoting the Medfield full 9-page real public plan/elevation set from known_gap to active benchmark.
+- P45-01 is complete: the remaining `sample_clean_full` manual toy suite row is now a committed active fixture, allowing packaged release-readiness to reach `evidence_ready` when representative run artifacts are complete.
 
 ## Current Phase
 
-P44: Real drawing benchmark promotion.
+P45: Release readiness tightening.
 
-P44 is complete. The packaged understanding suite now reports active=4, pending=1, known_gap=0, failed=0; `archkg release-readiness` reports blockers=0 warnings=1 active=4 real_active=2 known_gap=0.
+P45 is complete. The packaged understanding suite now reports active=5, pending=0, known_gap=0, failed=0; `archkg release-readiness` reports blockers=0 warnings=0 active=5 real_active=2 known_gap=0 when a representative run includes all core and maturity artifacts.
 
 ## Key Decisions
 
@@ -67,9 +68,9 @@ P44 is complete. The packaged understanding suite now reports active=4, pending=
 - P42-01 duplicate matching is deterministic but still heuristic for multiple same-rule same-page candidates; it uses spatial/evidence ordering because generated entity IDs are not stable across runs.
 - `review_diff.json` is not a compliance proof and does not resolve human review states automatically.
 - P42-02 renders missing diff as "not run yet"; reviewers must still inspect diff rows before marking review_state items resolved or superseded.
-- P43/P44 only gate evidence currently represented in the benchmark suite and run directory. They do not certify arbitrary complex real drawings and should report `demo_ready_with_known_gaps` while pending rows remain.
+- P43-P45 only gate evidence currently represented in the benchmark suite and run directory. They do not certify arbitrary complex real drawings; `evidence_ready` means constrained pilot readiness for benchmarked drawing classes only.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P44 by resolving the remaining pending suite row or replacing it with an active toy/real benchmark, then rerun `archkg release-readiness` before any external demo or release claim.
+Move beyond P45 by improving multi-page reviewer maturity: either promote a bounded per-sheet preview issue lifecycle bridge or add another reviewed real complex drawing benchmark before broadening external claims.

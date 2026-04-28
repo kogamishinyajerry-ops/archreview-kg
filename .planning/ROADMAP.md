@@ -138,6 +138,11 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Reduce release-readiness warnings by promoting real drawing cases only when reviewed expected inventory passes.
 - P44-01 complete: multi-sheet `drawing_understanding.json` merges count-level `sheet_graphs.json` evidence, promoting Medfield full-set from known_gap to active while keeping per-sheet preview issues out of primary lifecycle.
 
+### P45: Release Readiness Tightening
+
+- Remove remaining packaged suite pending/manual rows without weakening evidence gates.
+- P45-01 complete: `sample_clean_full` is now a committed deterministic active toy fixture; packaged suite reports active=5, pending=0, known_gap=0, and release-readiness can produce `evidence_ready` for benchmarked drawing classes when representative run artifacts are complete.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

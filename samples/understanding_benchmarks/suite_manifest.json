@@ -3,11 +3,13 @@
   "suite_id": "archreview-understanding-intake-v1",
   "cases": [
     {
-      "case_id": "sample-clean-full-manual",
+      "case_id": "sample-clean-full-active",
       "fixture_kind": "toy_vector_pdf",
-      "status": "manual_run_required",
+      "status": "active",
+      "run_dir": "toy/sample_clean_full_run",
       "expect": "sample_clean_full.json",
-      "notes": "Run archkg review samples/sample_clean.pdf -o <run-dir> with demo schedules, then set run_dir in a local manifest. Use archkg understanding-benchmark-author <run-dir> --out <draft.json> when drafting a new expected spec."
+      "provenance": "toy/sample_clean_full_provenance.json",
+      "notes": "Deterministic toy vector fixture generated from samples/sample_clean.pdf with demo project/room/stair schedules. Active only to keep the packaged release gate reproducible; it is not real-drawing proof."
     },
     {
       "case_id": "medfield-a1-first-floor",

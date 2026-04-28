@@ -1,0 +1,495 @@
+{
+  "schema_version": "sheet_graphs.v1",
+  "source_pdf": "samples/sample_clean.pdf",
+  "graph_count": 1,
+  "confidence_floor": 0.5,
+  "graphs": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "classification_confidence": 0.92,
+      "component_counts": {
+        "rooms": 4,
+        "doors": 6,
+        "corridors": 1,
+        "stairs": 0,
+        "dimensions": 3
+      },
+      "graph": {
+        "source_pdf": "samples/sample_clean.pdf",
+        "points_per_meter": 50.0,
+        "page_index": 0,
+        "page_width_pt": 500.0,
+        "page_height_pt": 400.0,
+        "rooms": [
+          {
+            "id": "room-d430bd97",
+            "page_index": 0,
+            "bbox": [
+              0.0,
+              0.0,
+              250.0,
+              200.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                250.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                200.0
+              ],
+              [
+                100.0,
+                200.0
+              ],
+              [
+                142.5,
+                200.0
+              ],
+              [
+                250.0,
+                200.0
+              ],
+              [
+                250.0,
+                120.0
+              ],
+              [
+                250.0,
+                75.0
+              ],
+              [
+                250.0,
+                0.0
+              ]
+            ],
+            "area_m2": 20.0,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-219fcac1",
+            "page_index": 0,
+            "bbox": [
+              250.0,
+              0.0,
+              500.0,
+              200.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                500.0,
+                0.0
+              ],
+              [
+                250.0,
+                0.0
+              ],
+              [
+                250.0,
+                75.0
+              ],
+              [
+                250.0,
+                120.0
+              ],
+              [
+                250.0,
+                200.0
+              ],
+              [
+                350.0,
+                200.0
+              ],
+              [
+                392.5,
+                200.0
+              ],
+              [
+                500.0,
+                200.0
+              ],
+              [
+                500.0,
+                0.0
+              ]
+            ],
+            "area_m2": 20.0,
+            "label": "living"
+          },
+          {
+            "id": "room-a25cedeb",
+            "page_index": 0,
+            "bbox": [
+              250.0,
+              252.5,
+              500.0,
+              400.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                500.0,
+                400.0
+              ],
+              [
+                500.0,
+                252.5
+              ],
+              [
+                392.5,
+                252.5
+              ],
+              [
+                350.0,
+                252.5
+              ],
+              [
+                250.0,
+                252.5
+              ],
+              [
+                250.0,
+                325.0
+              ],
+              [
+                250.0,
+                370.0
+              ],
+              [
+                250.0,
+                400.0
+              ],
+              [
+                500.0,
+                400.0
+              ]
+            ],
+            "area_m2": 14.75,
+            "label": "kitchen"
+          },
+          {
+            "id": "room-a6e6cc16",
+            "page_index": 0,
+            "bbox": [
+              0.0,
+              252.5,
+              250.0,
+              400.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                0.0,
+                400.0
+              ],
+              [
+                250.0,
+                400.0
+              ],
+              [
+                250.0,
+                370.0
+              ],
+              [
+                250.0,
+                325.0
+              ],
+              [
+                250.0,
+                252.5
+              ],
+              [
+                142.5,
+                252.5
+              ],
+              [
+                100.0,
+                252.5
+              ],
+              [
+                0.0,
+                252.5
+              ],
+              [
+                0.0,
+                400.0
+              ]
+            ],
+            "area_m2": 14.75,
+            "label": "bathroom"
+          }
+        ],
+        "doors": [
+          {
+            "id": "door-23d27b5f",
+            "page_index": 0,
+            "bbox": [
+              100.0,
+              200.0,
+              142.5,
+              200.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 0.85,
+            "connects": [
+              "room-d430bd97",
+              "corridor-094e5e07"
+            ]
+          },
+          {
+            "id": "door-93cd1dbb",
+            "page_index": 0,
+            "bbox": [
+              350.0,
+              200.0,
+              392.5,
+              200.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 0.85,
+            "connects": [
+              "room-219fcac1",
+              "corridor-094e5e07"
+            ]
+          },
+          {
+            "id": "door-6f7137ef",
+            "page_index": 0,
+            "bbox": [
+              100.0,
+              252.5,
+              142.5,
+              252.5
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 0.85,
+            "connects": [
+              "corridor-094e5e07",
+              "room-a6e6cc16"
+            ]
+          },
+          {
+            "id": "door-840e9ab6",
+            "page_index": 0,
+            "bbox": [
+              350.0,
+              252.5,
+              392.5,
+              252.5
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 0.85,
+            "connects": [
+              "corridor-094e5e07",
+              "room-a25cedeb"
+            ]
+          },
+          {
+            "id": "door-0b1a76b6",
+            "page_index": 0,
+            "bbox": [
+              250.0,
+              75.0,
+              250.0,
+              120.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 0.9,
+            "connects": [
+              "room-219fcac1",
+              "room-d430bd97"
+            ]
+          },
+          {
+            "id": "door-278ae4aa",
+            "page_index": 0,
+            "bbox": [
+              250.0,
+              325.0,
+              250.0,
+              370.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 0.9,
+            "connects": [
+              "room-a25cedeb",
+              "room-a6e6cc16"
+            ]
+          }
+        ],
+        "corridors": [
+          {
+            "id": "corridor-094e5e07",
+            "page_index": 0,
+            "bbox": [
+              0.0,
+              200.0,
+              500.0,
+              252.5
+            ],
+            "confidence": 0.8,
+            "uncertain": false,
+            "properties": {},
+            "type": "Corridor",
+            "polygon": [
+              [
+                500.0,
+                252.5
+              ],
+              [
+                500.0,
+                200.0
+              ],
+              [
+                392.5,
+                200.0
+              ],
+              [
+                350.0,
+                200.0
+              ],
+              [
+                250.0,
+                200.0
+              ],
+              [
+                142.5,
+                200.0
+              ],
+              [
+                100.0,
+                200.0
+              ],
+              [
+                0.0,
+                200.0
+              ],
+              [
+                0.0,
+                252.5
+              ],
+              [
+                100.0,
+                252.5
+              ],
+              [
+                142.5,
+                252.5
+              ],
+              [
+                250.0,
+                252.5
+              ],
+              [
+                350.0,
+                252.5
+              ],
+              [
+                392.5,
+                252.5
+              ],
+              [
+                500.0,
+                252.5
+              ]
+            ],
+            "min_width_m": 1.05
+          }
+        ],
+        "dimensions": [
+          {
+            "id": "dim-3ea0300d",
+            "page_index": 0,
+            "bbox": [
+              210.0,
+              218.89999389648438,
+              283.5679931640625,
+              229.89199829101562
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "CORRIDOR W=1.05",
+            "value_m": 1.05,
+            "unit": "m"
+          },
+          {
+            "id": "dim-37d93898",
+            "page_index": 0,
+            "bbox": [
+              102.5,
+              186.39999389648438,
+              144.2919921875,
+              197.39199829101562
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "DOOR 0.85",
+            "value_m": 0.85,
+            "unit": "m"
+          },
+          {
+            "id": "dim-4d73fd24",
+            "page_index": 0,
+            "bbox": [
+              352.5,
+              186.39999389648438,
+              394.2919921875,
+              197.39199829101562
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "DOOR 0.85",
+            "value_m": 0.85,
+            "unit": "m"
+          }
+        ],
+        "stairs": []
+      }
+    }
+  ],
+  "skipped_pages": []
+}

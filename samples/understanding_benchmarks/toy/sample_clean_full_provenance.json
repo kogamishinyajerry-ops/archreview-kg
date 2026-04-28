@@ -1,0 +1,14 @@
+{
+  "schema_version": "benchmark_provenance.v1",
+  "case_id": "sample-clean-full-active",
+  "fixture_kind": "toy_vector_pdf",
+  "source": "samples/sample_clean.pdf",
+  "generated_at": "2026-04-28",
+  "command": ".venv/bin/archkg review samples/sample_clean.pdf -o tmp/p45/sample_clean_full_run --project-meta samples/project_meta_demo.yaml --room-schedule samples/room_schedule_demo.yaml --stair-schedule samples/stair_schedule_demo.yaml",
+  "committed_artifacts": [
+    "toy/sample_clean_full_run/drawing_understanding.json",
+    "toy/sample_clean_full_run/sheet_graphs.json",
+    "toy/sample_clean_full_run/sheet_issues.json"
+  ],
+  "scope_note": "This toy vector fixture removes the packaged suite manual_run_required row for reproducible release gating. It does not expand real drawing readiness claims."
+}

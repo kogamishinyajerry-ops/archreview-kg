@@ -5,8 +5,8 @@
     "github",
     "notion"
   ],
-  "current_milestone": "M2 evidence-first plan review platform",
-  "current_phase": "P33 rule-input readiness dashboard",
+  "current_milestone": "M4 review workbench",
+  "current_phase": "P45 release readiness tightening",
   "planning_updated_at": "2026-04-28",
   "agent_contract": {
     "gpt-5.5-xhigh": "architecture, roadmap, risk gates, acceptance criteria, scope arbitration",

@@ -218,6 +218,12 @@ and keeps the no-OCR transparency warning.
   9-page public plan/elevation set is promoted from known_gap to active
   recognition benchmark; the packaged suite now reports active=4, pending=1,
   known_gap=0, failed=0.
+- P45-01 promotes the `sample_clean_full` toy vector fixture from a
+  `manual_run_required` intake row to a committed active benchmark run. The
+  packaged suite now reports active=5, pending=0, known_gap=0, failed=0, so
+  `archkg release-readiness` can reach `evidence_ready` when representative run
+  artifacts are complete. This removes a reproducibility gap only; it does not
+  make toy evidence a proxy for arbitrary real construction drawings.
 
 ### Still limited
 
@@ -253,8 +259,9 @@ and keeps the no-OCR transparency warning.
   it does not prove a fix is code-compliant, does not update human review
   status, and does not aggregate `sheet_issues.json` preview rows.
 - `release_readiness.json` is a release/demo evidence gate, not a production
-  certification. A `demo_ready_with_known_gaps` result must be presented with
-  its warnings and cannot be marketed as broad automatic compliance readiness.
+  certification. An `evidence_ready` result must still be scoped to the
+  benchmarked drawing classes and cannot be marketed as broad automatic
+  compliance readiness.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan

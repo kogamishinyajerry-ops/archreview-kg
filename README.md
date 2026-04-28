@@ -155,7 +155,8 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > `archkg release-readiness --manifest samples/understanding_benchmarks/suite_manifest.json --run-dir out/ --out out/release_readiness.json --markdown out/release_readiness.md`
 > 生成门禁报告。当前门禁把 active benchmark suite、至少一张 active 真实图纸、核心 run artifacts
 > 和可选成熟度 artifacts 作为证据；`known_gap`、`pending_fixture` 和 generated-heavy proof 会阻止
-> `evidence_ready` 宣称。它只判断“能否作为证据优先工作台演示”，不证明任意复杂真实图纸已可自动合规审查。
+> `evidence_ready` 宣称。P45 后 packaged suite 可在代表性 run artifacts 完整时进入
+> `evidence_ready`，但只适用于已 benchmark 的图纸类别，不证明任意复杂真实图纸已可自动合规审查。
 
 YAML 模板和填法见 `samples/` 目录或下面 CLI 流程。
 
@@ -214,6 +215,9 @@ understanding 的 openings 缺口。P44 起，`drawing_understanding.json` 会�
 识图证据汇总到 full-set 摘要中。Medfield 9 页 plan/elevation set 已从 `known_gap` 晋升为
 active recognition benchmark；这只证明多页识图 evidence 已可追踪，不代表 per-sheet preview
 issues 已进入主 `issues.json` 或自动合规聚合。
+P45 起，原先的 `sample_clean_full` manual toy row 已固化为 deterministic active fixture，
+packaged suite 当前为 active=5、pending=0、known_gap=0。这个变化清理的是发布门禁里的
+手动样例缺口，不把 toy 图纸当作真实复杂图纸证明。
 
 不填 `--project-meta` 也可跑，但只能触发 4 张 AUTODETECTABLE 规则
 （户门净宽 / 走廊净宽 / 卧室面积 / 无障碍走廊）；其它项目级规则会被
@@ -339,8 +343,8 @@ archkg understanding-benchmark-author out/ --benchmark-id my-plan --out out/expe
 # 图纸理解 benchmark suite intake（active 会跑分；known_gap 会记录真实差距）
 archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks/suite_manifest.json
 
-# P44: packaged suite 当前包含 medfield-full-plan-set-multi-plan-intake active case
-# 该 case 只证明多页识图 evidence 已可追踪，不代表多页合规聚合已完成
+# P45: packaged suite 当前 active=5, pending=0, known_gap=0
+# Medfield full-set case 只证明多页识图 evidence 已可追踪，不代表多页合规聚合已完成
 
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
@@ -384,7 +388,8 @@ archkg clause readiness
 - P41：Studio readiness workbench。`review_workbench.json` 与结果页“审图工作台总览”把分散 evidence 汇总成 reviewer 入口，提供 action links 跳到对应面板，提供 `archkg review-state` 本地复核状态操作模板，并支持第一页 issue bbox 的 source/overlay/annotated 预览高亮；主规则结论不变。
 - P42：Re-run diff / resolution tracking。`archkg review-diff` 比较两个 run 的主 `issues.json`，写出 `review_diff.json`，不用随机 issue/entity IDs，改用稳定指纹标记 unchanged / changed / new / resolved；Viewer/Studio 只读显示 diff，不回写规则输出或人工复核状态。
 - P43：Release readiness gate。`archkg release-readiness` 汇总 benchmark suite 与代表性 run artifacts，输出 `not_ready` / `demo_ready_with_known_gaps` / `evidence_ready`，把 known gaps、pending rows 和 generated-heavy proof 从发布宣称里显式剥离。
-- P44：Real drawing benchmark promotion。`drawing_understanding.json` 合并 `sheet_graphs.json` 的多页识图计数，Medfield full-set 从 known_gap 晋升为 active；release-readiness 仍因 pending row 保持 `demo_ready_with_known_gaps`。
+- P44：Real drawing benchmark promotion。`drawing_understanding.json` 合并 `sheet_graphs.json` 的多页识图计数，Medfield full-set 从 known_gap 晋升为 active；P44 结束时 release-readiness 只剩 pending row warning。
+- P45：Release readiness tightening。`sample_clean_full` toy fixture 从 manual row 固化为 active reproducible fixture；packaged suite 当前 active=5、pending=0、known_gap=0，代表性 run artifacts 完整时可得到 `evidence_ready`，但宣称范围仍限于 benchmarked drawing classes。
 
 ---
 

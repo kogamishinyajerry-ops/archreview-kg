@@ -208,10 +208,16 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     result = run_understanding_benchmark_suite(manifest_path)
 
     assert result["passed"] is True
-    assert result["pending_count"] == 1
-    assert result["active_count"] == 4
+    assert result["pending_count"] == 0
+    assert result["active_count"] == 5
     assert result["known_gap_count"] == 0
     assert result["failed_count"] == 0
+    sample_clean = next(
+        case for case in result["cases"] if case["case_id"] == "sample-clean-full-active"
+    )
+    assert sample_clean["fixture_kind"] == "toy_vector_pdf"
+    assert sample_clean["status"] == "pass"
+    assert sample_clean["score"] == 1.0
     medfield = next(
         case for case in result["cases"] if case["case_id"] == "medfield-a1-first-floor"
     )

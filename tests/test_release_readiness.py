@@ -12,6 +12,7 @@ from archkg.release_readiness import (
     build_release_readiness,
     render_release_readiness_markdown,
 )
+from archkg.viewer.understanding_benchmark import run_understanding_benchmark_suite
 
 
 def _suite_result(
@@ -129,6 +130,27 @@ def test_release_readiness_can_be_evidence_ready(tmp_path: Path) -> None:
     assert result["status"] == "evidence_ready"
     assert not result["blockers"]
     assert not result["warnings"]
+
+
+def test_packaged_suite_can_be_evidence_ready_with_representative_run(
+    tmp_path: Path,
+) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    suite = run_understanding_benchmark_suite(
+        repo_root / "samples/understanding_benchmarks/suite_manifest.json"
+    )
+    run_dir = tmp_path / "run"
+    _write_run_artifacts(run_dir)
+
+    result = build_release_readiness(suite, run_dir=run_dir)
+
+    assert result["status"] == "evidence_ready"
+    assert result["suite"]["active_count"] == 5
+    assert result["suite"]["pending_count"] == 0
+    assert result["suite"]["known_gap_count"] == 0
+    assert result["suite"]["real_active_count"] == 2
+    assert result["suite"]["generated_active_count"] == 2
+    assert result["warnings"] == []
 
 
 def test_release_readiness_markdown_includes_gate_tables(tmp_path: Path) -> None:
