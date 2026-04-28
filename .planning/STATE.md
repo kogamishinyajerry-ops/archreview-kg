@@ -44,12 +44,13 @@ Status:
 - P52-01 is complete: `archkg handoff-manager-checklist` now writes package-local manager checklist JSON/Markdown and refreshes the static package index.
 - P53-01 is complete: `archkg handoff-archive-manifest` now writes package-local archive manifest JSON/Markdown with SHA-256 file entries and a deterministic package digest.
 - P54-01 is complete: `archkg handoff-archive-verify` now verifies received packages against archive manifests and reports `archive_verified` or `archive_drift`.
+- P55-01 is complete: the active understanding benchmark suite now includes Medfield A-2 Second Floor Plan and a generated complex mixed-sheet set, bringing packaged suite coverage to active=7, real_active=3, generated_active=3.
 
 ## Current Phase
 
-P54: Archive verification import check.
+P55: Complex benchmark expansion.
 
-P54 is complete. Receiving reviewers can now verify a handoff package for missing, changed, or unexpected stable files before using the package.
+P55 is complete. The benchmark suite now has another reviewed real sheet and a deterministic mixed-sheet regression case without weakening generated-heavy proof guardrails.
 
 ## Key Decisions
 
@@ -87,8 +88,9 @@ P54 is complete. Receiving reviewers can now verify a handoff package for missin
 - P52 manager checklist status is package-intake status only; `manager_ready` does not mean the drawing is compliant.
 - P53 archive manifest status is transfer-integrity evidence only; `archive_manifest_ready` does not mean the drawing is compliant.
 - P54 archive verification status is checksum alignment only; `archive_verified` does not mean any issue is confirmed or the drawing is compliant.
+- P55 adds recognition benchmarks only; Medfield A-2 and generated mixed-sheet passing cases do not prove arbitrary real drawing compliance or multi-sheet issue aggregation.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P54 by expanding the real complex benchmark set with another reviewed expected inventory, or by adding a compact handoff bundle index for multiple packages.
+Move beyond P55 by adding a compact multi-package handoff bundle index, or by improving multi-page visual localization beyond first-page issue focus.

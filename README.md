@@ -250,9 +250,10 @@ understanding 的 openings 缺口。P44 起，`drawing_understanding.json` 会�
 识图证据汇总到 full-set 摘要中。Medfield 9 页 plan/elevation set 已从 `known_gap` 晋升为
 active recognition benchmark；这只证明多页识图 evidence 已可追踪，不代表 per-sheet preview
 issues 已进入主 `issues.json` 或自动合规聚合。
-P45 起，原先的 `sample_clean_full` manual toy row 已固化为 deterministic active fixture，
-packaged suite 当前为 active=5、pending=0、known_gap=0。这个变化清理的是发布门禁里的
-手动样例缺口，不把 toy 图纸当作真实复杂图纸证明。
+P55 起，suite 又新增 Medfield A-2 Second Floor Plan 真实单页 expected inventory，以及
+deterministic generated mixed-sheet-set benchmark。Packaged suite 当前为 active=7、pending=0、
+known_gap=0，且 real_active=3、generated_active=3。这个变化扩大的是识图回归面，不把生成图纸
+或单一公共项目当作任意真实复杂图纸证明。
 
 不填 `--project-meta` 也可跑，但只能触发 4 张 AUTODETECTABLE 规则
 （户门净宽 / 走廊净宽 / 卧室面积 / 无障碍走廊）；其它项目级规则会被
@@ -378,7 +379,7 @@ archkg understanding-benchmark-author out/ --benchmark-id my-plan --out out/expe
 # 图纸理解 benchmark suite intake（active 会跑分；known_gap 会记录真实差距）
 archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks/suite_manifest.json
 
-# P45: packaged suite 当前 active=5, pending=0, known_gap=0
+# P55: packaged suite 当前 active=7, pending=0, known_gap=0, real_active=3, generated_active=3
 # Medfield full-set case 只证明多页识图 evidence 已可追踪，不代表多页合规聚合已完成
 
 # P46: 每次完整 review run 生成 reviewer_onboarding.json / reviewer_quickstart.md
@@ -452,6 +453,7 @@ archkg clause readiness
 - P52：Manager checklist export。`archkg handoff-manager-checklist <package-dir>` 在交接包内写 `handoff_manager_checklist.json` / `.md`，由 manifest、quality 和 signoff 推导 `manager_ready` / `manager_needs_info` / `manager_blocked`；它是交接管理信号，不是合规结论。
 - P53：Archive manifest checksums。`archkg handoff-archive-manifest <package-dir>` 在交接包内写 `handoff_archive_manifest.json` / `.md`，对稳定包文件记录 SHA-256 和 package digest；它用于移交完整性核对，不写回源 run，也不是合规结论。
 - P54：Archive verification/import check。`archkg handoff-archive-verify <package-dir>` 重算稳定包文件 checksum 并写 `handoff_archive_verification.json` / `.md`，输出 `archive_verified` 或 `archive_drift`；它用于收到包后的完整性验收，不是合规结论。
+- P55：Complex benchmark expansion。Suite 新增 Medfield A-2 Second Floor Plan 真实单页 expected inventory，以及 generated complex mixed-sheet-set；当前 active=7、real_active=3、generated_active=3，继续维持 generated-heavy proof guardrail。
 
 ---
 

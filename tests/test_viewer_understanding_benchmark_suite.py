@@ -209,7 +209,7 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
 
     assert result["passed"] is True
     assert result["pending_count"] == 0
-    assert result["active_count"] == 5
+    assert result["active_count"] == 7
     assert result["known_gap_count"] == 0
     assert result["failed_count"] == 0
     sample_clean = next(
@@ -224,6 +224,16 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     assert medfield["status"] == "pass"
     assert medfield["passed"] is True
     assert medfield["score"] == 1.0
+    medfield_a2 = next(
+        case for case in result["cases"] if case["case_id"] == "medfield-a2-second-floor"
+    )
+    assert medfield_a2["fixture_kind"] == "real_public_pdf"
+    assert medfield_a2["status"] == "pass"
+    assert medfield_a2["passed"] is True
+    assert medfield_a2["score"] == 1.0
+    check_names = {check["name"] for check in medfield_a2["checks"]}
+    assert "component_counts:doors" in check_names
+    assert "benchmark_signal:has_vertical_circulation" in check_names
     generated = next(
         case for case in result["cases"] if case["case_id"] == "generated-complex-titleblock"
     )
@@ -238,6 +248,18 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     assert multi_plan["score"] == 1.0
     check_names = {check["name"] for check in multi_plan["checks"]}
     assert "sheet_graphs:graph_count" in check_names
+    assert "sheet_issues:rule_ids:0" in check_names
+    mixed_sheet_set = next(
+        case
+        for case in result["cases"]
+        if case["case_id"] == "generated-complex-mixed-sheet-set"
+    )
+    assert mixed_sheet_set["fixture_kind"] == "generated_complex_mixed_sheet_pdf"
+    assert mixed_sheet_set["status"] == "pass"
+    assert mixed_sheet_set["score"] == 1.0
+    check_names = {check["name"] for check in mixed_sheet_set["checks"]}
+    assert "sheet_graphs:graph_count" in check_names
+    assert "sheet_graphs:skipped_page_indexes" in check_names
     assert "sheet_issues:rule_ids:0" in check_names
     real_multi_plan = next(
         case

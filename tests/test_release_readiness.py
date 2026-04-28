@@ -145,11 +145,11 @@ def test_packaged_suite_can_be_evidence_ready_with_representative_run(
     result = build_release_readiness(suite, run_dir=run_dir)
 
     assert result["status"] == "evidence_ready"
-    assert result["suite"]["active_count"] == 5
+    assert result["suite"]["active_count"] == 7
     assert result["suite"]["pending_count"] == 0
     assert result["suite"]["known_gap_count"] == 0
-    assert result["suite"]["real_active_count"] == 2
-    assert result["suite"]["generated_active_count"] == 2
+    assert result["suite"]["real_active_count"] == 3
+    assert result["suite"]["generated_active_count"] == 3
     assert result["warnings"] == []
 
 

@@ -1,0 +1,49 @@
+{
+  "schema_version": "real_drawing_fixture_provenance.v1",
+  "case_id": "medfield-a2-second-floor",
+  "fixture_kind": "real_public_pdf",
+  "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+  "retrieved_at": "2026-04-27",
+  "source_access_note": "Same public Medfield / Hillside Village 9-page PDF used by the A-1 and full-set benchmarks.",
+  "source_pdf": {
+    "committed": false,
+    "local_path_used_for_annotation": "tmp/p28-real/medfield-floorplans-elevations.pdf",
+    "page_count": 9,
+    "selected_page_index_zero_based": 4
+  },
+  "selected_sheet": {
+    "pdf_page_number_1_based": 5,
+    "sheet_number": "A-2",
+    "drawing_name": "Second Floor Plan",
+    "project_title": "New Construction: 16 Unit Apartment Building, Hillside Village"
+  },
+  "committed_artifacts": {
+    "current_recognition_payload": "samples/understanding_benchmarks/real/medfield_a2_second_floor_run/drawing_understanding.json",
+    "manual_expected_inventory": "samples/understanding_benchmarks/real/medfield_a2_second_floor_expected.json"
+  },
+  "current_recognizer_observation": {
+    "run_parameters": {
+      "points_per_meter": 50.0,
+      "min_room_area_m2": 3.0
+    },
+    "rooms": 32,
+    "doors": 88,
+    "corridors": 0,
+    "stairs": 4,
+    "dimensions": 189,
+    "text_inventory": {
+      "room_label_total": 92,
+      "door_or_opening_size_label_total": 71,
+      "major_dimension_texts": [
+        "150'-0\"",
+        "4'-0\"",
+        "24'-0\"",
+        "94'-0\"",
+        "52'-0\"",
+        "19'-6\"",
+        "9'-0\""
+      ]
+    },
+    "interpretation": "The recognizer passes a manually reviewed component-inventory benchmark for the real A-2 second-floor sheet. Horizontal circulation is not asserted for this sheet because the current graph did not expose a corridor object."
+  }
+}

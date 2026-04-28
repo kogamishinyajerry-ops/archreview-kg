@@ -277,6 +277,13 @@ and keeps the no-OCR transparency warning.
   compares them with `handoff_archive_manifest.json`, writes
   `handoff_archive_verification.json` and `.md`, and exits non-zero on
   `archive_drift`.
+- P55-01 expands the active understanding benchmark suite. It adds a
+  human-reviewed Medfield A-2 Second Floor Plan expected inventory and a
+  deterministic generated mixed-sheet-set benchmark with plan, schedule/legend,
+  and elevation/section pages. The packaged suite now reports active=7,
+  pending=0, known_gap=0, failed=0, with real_active=3 and generated_active=3,
+  preserving the release-readiness guardrail that generated evidence must not
+  outnumber real drawing evidence.
 
 ### Still limited
 
@@ -308,6 +315,10 @@ and keeps the no-OCR transparency warning.
   recognition benchmarks only. The full-set case now exposes openings through
   count-level `sheet_graphs.json` aggregation; it still does not prove final
   full construction-set compliance aggregation.
+- The Medfield A-2 single-sheet fixture and generated mixed-sheet-set fixture
+  are recognition benchmarks only. The generated mixed-sheet case locks
+  sheet classification and per-plan graphing behavior, but it is not real
+  project evidence.
 - `review_diff.json` is a local tracking artifact over primary `issues.json`;
   it does not prove a fix is code-compliant, does not update human review
   status, and does not aggregate `sheet_issues.json` preview rows.

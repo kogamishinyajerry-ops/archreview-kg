@@ -57,12 +57,13 @@ archkg release-readiness \
 当前 packaged suite 的门禁烟测结果：
 
 ```text
-release-readiness status=evidence_ready blockers=0 warnings=0 active=5 real_active=2 known_gap=0
+release-readiness status=evidence_ready blockers=0 warnings=0 active=7 real_active=3 known_gap=0
 ```
 
 这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列、只读交接包、包内复核备注、静态交接入口、负责人交接清单”
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
-P45 清理了最后一个 packaged `manual_run_required` toy row，使 release gate 的技术前提完整。
+P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 generated mixed-sheet-set 复杂回归样本，
+使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
 但 per-sheet preview issues 还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
 
@@ -204,7 +205,10 @@ archkg studio
 - P44 已把 Medfield 9 页 full plan/elevation set 从 known_gap 晋升为 active recognition benchmark：
   opening evidence 来自 `sheet_graphs.json` 的多页计数汇总，不代表 per-sheet issue 已自动进入主审图结论。
 - P45 已把 `sample_clean_full` toy row 从 `manual_run_required` 固化为 deterministic active fixture：
-  packaged suite 当前 active=5、pending=0、known_gap=0。它只清理可复现门禁，不扩大真实图纸能力宣称。
+  它只清理可复现门禁，不扩大真实图纸能力宣称。
+- P55 新增 Medfield A-2 Second Floor Plan 真实单页 expected inventory，并新增 generated mixed-sheet-set
+  复杂回归样本；packaged suite 当前 active=7、pending=0、known_gap=0，real_active=3、generated_active=3。
+  这扩大的是 benchmark 覆盖，不是任意复杂真实图纸自动审批证明。
 - P46 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`：完整 review run 会生成新手第一小时流程、
   常用命令、不要误宣称的边界和交接清单；该 artifact 是 guidance-only，不确认 issue、不修改规则结论。
 - P47 新增 `sheet_issue_review_queue.json`：完整 review run 会把 `sheet_issues.json` preview rows
@@ -313,6 +317,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不替代 source run、benchmark、release-readiness 或人工复核。
 - P54 起，收到包后可用 archive verification 做 drift 检查；`archive_verified` 只表示 checksum 对齐，
   不表示任何 candidate issue 已确认或图纸合规。
+- P55 起，release-readiness 仍要求真实图纸证据不少于生成样本证据；新增 generated mixed-sheet-set
+  没有放宽该 guardrail，而是同时补入第二张 Medfield 真实单页 expected inventory。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

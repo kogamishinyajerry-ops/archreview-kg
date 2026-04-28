@@ -142,6 +142,8 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 
 - Remove remaining packaged suite pending/manual rows without weakening evidence gates.
 - P45-01 complete: `sample_clean_full` is now a committed deterministic active toy fixture; packaged suite reports active=5, pending=0, known_gap=0, and release-readiness can produce `evidence_ready` for benchmarked drawing classes when representative run artifacts are complete.
+- P55-01 complete: suite now also includes Medfield A-2 Second Floor Plan as a human-reviewed real single-sheet benchmark plus a generated mixed-sheet-set benchmark. Packaged suite reports active=7, pending=0, known_gap=0, real_active=3, generated_active=3.
+- Guardrail: generated complex fixtures must not outnumber active real drawing evidence in release-readiness claims.
 
 ### P46: Novice Reviewer Onboarding
 
