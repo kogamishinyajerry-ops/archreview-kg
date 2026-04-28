@@ -29,12 +29,13 @@ Status:
 - P41-01 is complete: full CLI and Studio runs now write `review_workbench.json`, while reports and Viewer/Studio render a workbench overview that summarizes evidence readiness without changing rule output.
 - P41-02 is complete: `review_workbench.json` now includes structured action links for source/overlay, component inventory, readiness blockers, sheet evidence, region candidates, candidate issues, review state, and report/clauses.
 - P41-03 is complete: `archkg review-state` now performs bounded single-issue review-state updates for primary `issues.json` issues, refreshes `review_workbench.json`, and leaves `issues.json` / per-sheet preview issues / rule output unchanged.
+- P41-04 is complete: Viewer/Studio can focus first-page primary issue bboxes on source, entity overlay, and annotated previews from the issue list without changing rule output or review state.
 
 ## Current Phase
 
 P41: Studio readiness workbench.
 
-P41-03 adds the first bounded state-changing workbench operation. It is intentionally limited to `review_state.json` items whose `issue_id` exists in primary `issues.json`; per-sheet preview issues remain advisory and cannot be promoted through this command.
+P41-04 adds visual issue-to-drawing cross-highlighting. It is intentionally limited to first-page primary issue bboxes because current source/overlay/annotated previews render page 0 only.
 
 ## Key Decisions
 
@@ -58,8 +59,9 @@ P41-03 adds the first bounded state-changing workbench operation. It is intentio
 - P40-03 registers a real full-set known_gap, not a passing real-complex-drawing capability claim.
 - P41-01 workbench summary is derived from current artifacts; if future artifacts are added, the summary must be extended or it can drift.
 - P41-03 direct review-state operations can still leave pre-rendered HTML stale until the viewer is re-rendered; the command refreshes `review_workbench.json`, but static `index.html` regeneration remains a separate user/viewer step.
+- P41-04 focus is first-page only; multi-page issue focus must wait for multi-page preview rendering to avoid false visual localization.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Continue P41 with source-preview cross-highlighting or move to P42 rerun diff/resolution tracking. Do not merge per-sheet preview issues into final compliance output until issue IDs, review state linkage, and report grouping are explicitly promoted.
+Move to P42 rerun diff/resolution tracking, or add multi-page preview navigation before expanding visual focus beyond page 0. Do not merge per-sheet preview issues into final compliance output until issue IDs, review state linkage, and report grouping are explicitly promoted.

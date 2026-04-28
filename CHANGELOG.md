@@ -189,6 +189,10 @@ and keeps the no-OCR transparency warning.
   the workbench summary, and rejects per-sheet preview issue IDs. The
   workbench and report expose command templates while `issues.json` and rule
   output remain immutable.
+- P41-04 adds source/overlay issue cross-highlighting in Viewer/Studio. First
+  page primary issue bboxes can be focused from the issue list onto the
+  source, entity overlay, or annotated preview. Multi-page issue focus remains
+  intentionally omitted until multi-page previews are available.
 
 ### Still limited
 

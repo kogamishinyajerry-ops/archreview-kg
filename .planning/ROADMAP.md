@@ -120,6 +120,7 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Start with `review_workbench.json` as a non-mutating run summary before adding reviewer actions.
 - Add action links that navigate from the workbench to evidence panels before implementing any state-changing review controls.
 - Add bounded local review-state operations that update only `review_state.json` for primary `issues.json` issue IDs and never mutate rule output or per-sheet preview issues.
+- Add first-page issue-to-preview cross-highlighting so reviewers can jump from primary issues to source/overlay/annotated visual evidence.
 
 ### P42: Re-Run Diff and Resolution Tracking
 

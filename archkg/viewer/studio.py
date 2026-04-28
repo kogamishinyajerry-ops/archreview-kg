@@ -829,6 +829,7 @@ def _render_viewer_index(
     )
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
+    from archkg.viewer.issue_focus import build_issue_focus_view
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
     from archkg.viewer.review_state import load_review_state_view
     from archkg.viewer.review_workbench import load_review_workbench_view
@@ -874,6 +875,7 @@ def _render_viewer_index(
     sheet_issues = load_sheet_issues_view(out_dir)
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
+    issue_focus = build_issue_focus_view(issues, primitives)
 
     html = env.get_template("index.html.j2").render(
         source_pdf=str(source_pdf),
@@ -897,6 +899,7 @@ def _render_viewer_index(
         sheet_issues=sheet_issues,
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
+        issue_focus=issue_focus,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 

@@ -504,6 +504,9 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "Action Surface" in body
     assert "Review-State Ops" in body
     assert "archkg review-state &lt;run_dir&gt;" in body
+    assert "定位图面" in body
+    assert "data-focus-issue=" in body
+    assert "issueFocusBox" in body
     assert "处理 readiness blockers" in body
     assert "href=\"#panel-readiness\"" in body
     assert "Sheet 路由" in body

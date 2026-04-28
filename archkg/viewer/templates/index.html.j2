@@ -348,6 +348,56 @@
     width: 100%;
     border-radius: 8px;
   }
+  .layer-stage {
+    position: relative;
+    width: 100%;
+  }
+  .layer-stage img {
+    display: block;
+  }
+  .issue-focus-box {
+    position: absolute;
+    display: none;
+    border: 3px solid #ffdc63;
+    background: rgba(255, 220, 99, 0.16);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.22), 0 0 18px rgba(255, 220, 99, 0.55);
+    pointer-events: none;
+  }
+  .issue-focus-box.is-active {
+    display: block;
+  }
+  .issue-focus-label {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    max-width: min(460px, 90vw);
+    border: 1px solid rgba(255, 220, 99, 0.55);
+    background: rgba(17, 24, 39, 0.94);
+    color: #ffeaa0;
+    padding: 3px 7px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .focus-button {
+    border: 1px solid rgba(255, 220, 99, 0.48);
+    border-radius: 999px;
+    background: rgba(255, 220, 99, 0.12);
+    color: #ffeaa0;
+    padding: 3px 8px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .focus-button:focus-visible {
+    outline: 2px solid rgba(255, 220, 99, 0.65);
+    outline-offset: 2px;
+  }
+  .issue-item.is-focused {
+    border-color: rgba(255, 220, 99, 0.75);
+    background: rgba(255, 220, 99, 0.08);
+  }
   .layer-switch {
     display: flex;
     gap: 8px;
@@ -646,6 +696,7 @@
 {% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
 {% set review_workbench = review_workbench | default({'available': false, 'summary': {}, 'artifact_statuses': [], 'action_links': [], 'review_state_operations': {'available': false, 'commands': [], 'allowed_statuses': [], 'omitted_count': 0, 'note': ''}, 'warnings': ['review_workbench.json 暂无数据；请查看下方单项 evidence 面板。'], 'next_actions': []}, true) %}
 {% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
+{% set issue_focus = issue_focus | default({'available': false, 'items': {}, 'omitted_count': 0, 'warning_text': '图面定位暂无数据'}, true) %}
 {% set sheet_classification = sheet_classification | default({'available': false, 'summary_rows': [], 'pages': [], 'warning_text': 'sheet_classification.json 暂无数据; 缺失分类不代表可直接进入 graph.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_graphs = sheet_graphs | default({'available': false, 'graphs': [], 'skipped_pages': [], 'warning_text': 'sheet_graphs.json 暂无数据; 缺失多页 graph 不代表没有其他 plan sheet.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_issues = sheet_issues | default({'available': false, 'sheets': [], 'warning_text': 'sheet_issues.json 暂无数据; 缺失 per-sheet issue preview 不代表多页无候选问题.', 'unavailable_reason': 'missing'}, true) %}
@@ -1620,6 +1671,11 @@
 
 <section class="panel full" id="panel-layer">
   <h2>② 成果对照图</h2>
+  {% if issue_focus.available %}
+    <p style="color: var(--muted);">图面定位：{{ issue_focus.warning_text }}</p>
+  {% elif issue_focus.warning_text %}
+    <p style="color: var(--orange);">图面定位暂无可用数据：{{ issue_focus.warning_text }}</p>
+  {% endif %}
   <div class="layer-switch" role="tablist" aria-label="图层切换">
     <button class="chip {% if not layer_available.source %}is-disabled{% endif %}" data-layer="source" {% if not layer_available.source %}disabled{% endif %}>source</button>
     <button class="chip {% if not layer_available.overlay %}is-disabled{% endif %}" data-layer="overlay" {% if not layer_available.overlay %}disabled{% endif %}>entity overlay</button>
@@ -1629,7 +1685,12 @@
     <div class="img-card">
       <div class="img-head">图层对照 <span class="muted" id="layerState">source</span></div>
       <div class="img-wrap layer-view">
-        <img id="layerImage" src="source_preview.png" alt="review layer" />
+        <div class="layer-stage" id="layerStage">
+          <img id="layerImage" src="source_preview.png" alt="review layer" />
+          <div class="issue-focus-box" id="issueFocusBox" aria-hidden="true">
+            <div class="issue-focus-label" id="issueFocusLabel"></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="img-card">
@@ -1665,12 +1726,16 @@
       {% set issue_tier = issue_tiers.get(i.rule_card_id, "UNKNOWN") %}
       {% set issue_tier_class = issue_tier | lower | replace('_', '-') %}
       {% set issue_review = review_state.issue_states.get(i.issue_id, review_state.default_state) %}
-        <article class="issue-item tier-{{ issue_tier_class }}">
+      {% set focus_item = issue_focus["items"].get(i.issue_id) %}
+        <article class="issue-item tier-{{ issue_tier_class }}" id="issue-{{ i.issue_id }}">
         <div class="line">
           {% set issue_sev = i.severity or "info" %}
           {% set severity_key = (issue_sev | lower | replace(" ", "")) %}
           <span class="level severity-{{ severity_key }}">{{ issue_sev | upper }}</span>
           <span><code>{{ i.issue_id }}</code></span>
+          {% if focus_item %}
+            <button class="focus-button" type="button" data-focus-issue="{{ i.issue_id }}">定位图面</button>
+          {% endif %}
           <span class="status-pill {{ issue_review.status_class }}">复核状态 {{ issue_review.status_label }} · {{ issue_review.status }}</span>
           <span class="pill">{{ i.rule_card_id }}</span>
           <span class="pill tier-pill tier-{{ issue_tier_class }}">{{ issue_tier }}</span>
@@ -1773,10 +1838,14 @@
 (function () {
   const layerImage = document.getElementById("layerImage");
   const layerState = document.getElementById("layerState");
+  const layerPanel = document.getElementById("panel-layer");
+  const focusBox = document.getElementById("issueFocusBox");
+  const focusLabel = document.getElementById("issueFocusLabel");
   const chips = Array.from(document.querySelectorAll('.layer-switch .chip'));
   if (!layerImage || !layerState || !chips.length) {
     return;
   }
+  const issueFocus = {{ issue_focus["items"] | tojson }};
   const layerSources = {
     source: "source_preview.png",
     overlay: "entity_overlay.png",
@@ -1802,11 +1871,43 @@
     });
   }
 
+  function setIssueFocus(issueId) {
+    const focus = issueFocus[issueId];
+    if (!focus || !focusBox || !focusLabel) {
+      return;
+    }
+    const preferredChip = chips.find((chip) => chip.dataset.layer === "annotated" && !chip.disabled);
+    applyLayer((preferredChip && preferredChip.dataset.layer) || "source");
+    focusBox.style.left = `${focus.x_pct}%`;
+    focusBox.style.top = `${focus.y_pct}%`;
+    focusBox.style.width = `${focus.w_pct}%`;
+    focusBox.style.height = `${focus.h_pct}%`;
+    focusLabel.textContent = `${focus.issue_id} · ${focus.rule_card_id || "rule"} · ${focus.severity}`;
+    focusBox.classList.add("is-active");
+    focusBox.setAttribute("aria-hidden", "false");
+    document.querySelectorAll(".issue-item.is-focused").forEach((item) => {
+      item.classList.remove("is-focused");
+    });
+    const card = document.getElementById(`issue-${issueId}`);
+    if (card) {
+      card.classList.add("is-focused");
+    }
+    if (layerPanel) {
+      layerPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   chips.forEach((chip) => {
     chip.type = "button";
     chip.setAttribute("aria-pressed", chip.classList.contains("active") ? "true" : "false");
     chip.addEventListener("click", () => {
       applyLayer(chip.dataset.layer);
+    });
+  });
+
+  document.querySelectorAll("[data-focus-issue]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setIssueFocus(button.getAttribute("data-focus-issue"));
     });
   });
 
