@@ -230,6 +230,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Keep handoff packaging manifest-driven so overlay page images referenced by `preview_pages.json` are copied and validated automatically.
 - Guardrail: overlay pages are reviewer orientation aids only. They do not create new detections, certify OCR/component accuracy, or promote per-sheet preview issues into the primary issue lifecycle.
 
+### P60: Handoff Bundle Index
+
+- Scan a parent directory containing multiple handoff packages and write `handoff_bundle_index.json`, `handoff_bundle_index.md`, and `handoff_bundle_index.html`.
+- Summarize each package's manifest, quality, reviewer signoff, manager checklist, archive manifest, archive verification, missing required artifacts, and first open item.
+- Reject a single package directory as the bundle root so the command does not overwrite or mutate package-local review artifacts.
+- Guardrail: bundle index is manager triage only; it is not a compliance certificate, release-readiness gate, or source-run mutation path.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

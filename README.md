@@ -64,6 +64,10 @@ archkg handoff-manager-checklist out-handoff --manager manager-name --note "等�
 archkg handoff-archive-manifest out-handoff --created-by manager-name --note "移交前固化 checksum"
 archkg handoff-archive-verify out-handoff
 open out-handoff/index.html
+
+# 多个交接包放在同一目录时，生成负责人批量索引
+archkg handoff-bundle-index handoff-packages/
+open handoff-packages/handoff_bundle_index.html
 ```
 
 `out-handoff/` 会包含 `index.html`、`handoff_manifest.json`、`handoff_summary.md` 和 `artifacts/` 复制件；
@@ -75,6 +79,8 @@ open out-handoff/index.html
 `handoff-archive-manifest` 只在交接包内写 checksum 清单，用于移交完整性核对，不是合规证书。
 `handoff-archive-verify` 只对照 checksum 清单检查包内文件是否缺失、变更或多出，发现 drift 时返回非零。
 `index.html` 是静态只读入口，会汇总 package boundary、quality、signoff、manager checklist、archive manifest、verification 和 artifact 链接。
+`handoff-bundle-index` 会在多个 package 的父目录写 `handoff_bundle_index.json` / `.md` / `.html`，
+用于负责人快速筛选 ready / needs_info / blocked 包；它不写入任何单包目录，也不是合规证书。
 
 ---
 
@@ -399,6 +405,10 @@ archkg handoff-archive-manifest out-handoff --created-by manager-name --note "�
 archkg handoff-archive-verify out-handoff
 open out-handoff/index.html
 
+# P60: 多交接包负责人索引
+archkg handoff-bundle-index handoff-packages/
+open handoff-packages/handoff_bundle_index.html
+
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
 
@@ -460,6 +470,7 @@ archkg clause readiness
 - P57：Multi-page preview gallery。Viewer/Studio 写出 `preview_pages.json`、多页 source PNG 和多页 annotated PNG，结果页提供图纸页切换；非第一页 issue focus 可直接切到对应页预览并高亮。
 - P58：Handoff preview asset completeness。交接包现在复制 `source.pdf`、`preview_pages.json`、legacy preview PNG 和 preview manifest 引用的所有页图，确保新手 reviewer 打开包内静态 viewer 时不缺图；这仍只是证据交接，不是合规证书。
 - P59：Per-page entity overlay rendering。Viewer/Studio 现在会为每个 graph-backed sheet 生成 entity overlay 页图，并写入 `preview_pages.json`；多页交接包会自动复制这些 overlay 页图。没有 graph 的页仍不是“已识别完成”。
+- P60：Handoff bundle index。`archkg handoff-bundle-index <packages-root>` 扫描多个交接包，生成 `handoff_bundle_index.json` / `.md` / `.html`，按 ready / needs_info / blocked 汇总 quality、signoff、manager checklist、archive verification 和下一步；它只写父目录索引，不改单包或源 run。
 
 ---
 

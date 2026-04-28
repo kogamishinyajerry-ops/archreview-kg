@@ -49,12 +49,13 @@ Status:
 - P57-01 is complete: Viewer/Studio now write `preview_pages.json` plus multi-page source/annotated PNG page sets, render page-switch controls, and focus non-first-page issues directly on their corresponding source/annotated preview page.
 - P58-01 is complete: `archkg handoff-package` now copies `preview_pages.json`, `source.pdf`, annotated/source preview PNGs, and every page image referenced by `preview_pages.json`; missing referenced preview assets become package blockers.
 - P59-01 is complete: Viewer/Studio now render entity overlay preview pages for each graph-backed sheet, record them in `preview_pages.json`, and preserve those overlay page assets through handoff packaging.
+- P60-01 is complete: `archkg handoff-bundle-index` now scans a directory of handoff packages and writes bundle-level JSON/Markdown/HTML summaries without mutating individual packages or source runs.
 
 ## Current Phase
 
-P59: Per-page entity overlay rendering.
+P60: Handoff bundle index.
 
-P59 is complete. Multi-page preview-enabled runs now provide source, annotated, and graph-backed entity overlay page images for static review, with handoff packages preserving all manifest-referenced preview assets.
+P60 is complete. Review managers can now triage multiple package directories through a compact bundle index before assigning novice reviewers or requesting missing handoff steps.
 
 ## Key Decisions
 
@@ -97,8 +98,9 @@ P59 is complete. Multi-page preview-enabled runs now provide source, annotated, 
 - P57/P59 preview pages are visual navigation artifacts only; they do not create new detection evidence, mutate issue state, or certify entity recognition accuracy.
 - P58 strengthens handoff completeness for preview assets only; complete copied visuals still do not certify issue correctness or drawing compliance.
 - P59 multi-page entity overlays improve reviewer orientation only; they do not promote per-sheet preview issues into primary `issues.json`.
+- P60 bundle indexes summarize package-local handoff state only; `bundle_ready` is not a compliance certificate, and bundle generation must not mutate single-package artifacts.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P59 by adding a compact multi-package handoff bundle index or stronger reviewer task sequencing across multi-sheet runs.
+Move beyond P60 by adding stronger reviewer task sequencing across multi-sheet runs or a package-bundle intake checklist.

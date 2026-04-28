@@ -38,6 +38,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   缺少 manifest 引用的页图会成为 handoff quality blocker。
 - P59 后 Viewer/Studio 会为 graph-backed sheet 生成多页 entity overlay 预览，并把这些页图纳入
   `preview_pages.json` 和 handoff 复制链路；没有 graph 的页仍需 source/annotated/PDF 人工核对。
+- P60 后负责人可对多个交接包运行 `archkg handoff-bundle-index <packages-root>`，生成批量
+  `handoff_bundle_index` JSON/Markdown/HTML，用于筛出 ready / needs_info / blocked 包。
 
 复现该结论：
 
@@ -329,6 +331,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   preview pages 只是导航/复核辅助，不能当成合规结论或完整识图证明。
 - P58 起，交接包会保全多页 preview assets；这只提升包内静态 viewer 可用性，
   不表示 candidate issue 已确认或图纸合规。
+- P60 起，bundle index 只汇总多个 package 的交接状态，不写入单包或源 run；
+  `bundle_ready` 不是图纸合规，也不是 release-readiness 的替代品。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

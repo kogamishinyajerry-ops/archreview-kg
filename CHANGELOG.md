@@ -211,6 +211,11 @@ and keeps the no-OCR transparency warning.
   Viewer/Studio now write overlay page entries into `preview_pages.json`,
   preserve the legacy `entity_overlay.png` for the primary graph, and rely on
   manifest-driven handoff copying so overlay page images survive package export.
+- P60-01 adds a compact multi-package handoff bundle index. `archkg
+  handoff-bundle-index <packages-root>` scans child handoff packages and writes
+  JSON, Markdown, and static HTML summaries without mutating package contents.
+  The index groups packages as ready, needs-info, or blocked across quality,
+  reviewer signoff, manager checklist, and archive verification state.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

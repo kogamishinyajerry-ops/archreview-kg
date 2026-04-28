@@ -1192,6 +1192,65 @@ def handoff_archive_verify_cmd(
         raise typer.Exit(code=1)
 
 
+@app.command("handoff-bundle-index")
+def handoff_bundle_index_cmd(
+    packages_root: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Directory containing one or more handoff package directories.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write machine-readable bundle index JSON.",
+    ),
+    markdown: Path | None = typer.Option(
+        None,
+        "--markdown",
+        help="Write Markdown bundle index.",
+    ),
+    html_path: Path | None = typer.Option(
+        None,
+        "--html",
+        help="Write static HTML bundle index.",
+    ),
+    fail_on_blocked: bool = typer.Option(
+        False,
+        "--fail-on-blocked/--no-fail-on-blocked",
+        help="Exit non-zero when any package is blocked.",
+    ),
+) -> None:
+    """Summarize multiple handoff packages without mutating package contents."""
+    from archkg.viewer.handoff_bundle import write_handoff_bundle_index
+
+    try:
+        index_path = write_handoff_bundle_index(
+            packages_root,
+            out=out,
+            markdown=markdown,
+            html_path=html_path,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(index_path.read_text("utf-8"))
+    summary = payload["summary"]
+    typer.echo(
+        f"{payload['schema_version']} wrote={index_path} "
+        f"status={payload['status']} "
+        f"packages={summary['package_count']} "
+        f"ready={summary['ready_count']} "
+        f"needs_info={summary['needs_info_count']} "
+        f"blocked={summary['blocked_count']}"
+    )
+    if fail_on_blocked and payload["status"] == "bundle_blocked":
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

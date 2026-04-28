@@ -6,6 +6,9 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from archkg.cli.main import app
+from archkg.viewer.handoff_bundle import (
+    build_handoff_bundle_index,
+)
 from archkg.viewer.handoff_package import (
     build_handoff_package_quality,
     write_handoff_archive_manifest,
@@ -702,6 +705,114 @@ def test_handoff_archive_verification_reports_checksum_drift(tmp_path: Path) -> 
         "artifacts/issues.json"
     ]["actual_sha256"]
     assert payload["checks"]["file_checksums_match"]["passed"] is False
+
+
+def test_handoff_bundle_index_summarizes_multiple_packages_without_mutation(
+    tmp_path: Path,
+) -> None:
+    runs_root = tmp_path / "runs"
+    packages_root = tmp_path / "packages"
+    runs_root.mkdir()
+    packages_root.mkdir()
+
+    run_ready = runs_root / "ready"
+    package_ready = packages_root / "pkg-ready"
+    _write_minimal_run(run_ready)
+    write_handoff_package(run_ready, package_ready)
+    quality = build_handoff_package_quality(package_ready)
+    write_handoff_package_quality_json(
+        quality,
+        package_ready / "handoff_quality.json",
+    )
+    write_handoff_package_quality_markdown(
+        quality,
+        package_ready / "handoff_quality.md",
+    )
+    write_handoff_reviewer_signoff(
+        package_ready,
+        reviewer="reviewer-ready",
+        status="ready",
+        note="Ready for manager intake.",
+    )
+    write_handoff_manager_checklist(
+        package_ready,
+        manager="manager-ready",
+        note="Ready.",
+    )
+    write_handoff_archive_manifest(package_ready, created_by="manager-ready")
+    write_handoff_archive_verification(package_ready)
+
+    run_blocked = runs_root / "blocked"
+    package_blocked = packages_root / "pkg-blocked"
+    _write_minimal_run(run_blocked)
+    (run_blocked / "rule_input_readiness.json").unlink()
+    write_handoff_package(run_blocked, package_blocked)
+    blocked_quality = build_handoff_package_quality(package_blocked)
+    write_handoff_package_quality_json(
+        blocked_quality,
+        package_blocked / "handoff_quality.json",
+    )
+
+    payload = build_handoff_bundle_index(packages_root)
+
+    assert payload["schema_version"] == "handoff_bundle_index.v1"
+    assert payload["mutation_policy"] == "bundle_index_only_no_package_mutation"
+    assert payload["status"] == "bundle_blocked"
+    assert payload["summary"]["package_count"] == 2
+    assert payload["summary"]["ready_count"] == 1
+    assert payload["summary"]["blocked_count"] == 1
+    packages = {row["package_name"]: row for row in payload["packages"]}
+    assert packages["pkg-ready"]["package_status"] == "package_ready"
+    assert packages["pkg-ready"]["archive_verification_status"] == "archive_verified"
+    assert packages["pkg-ready"]["index_path"] == "pkg-ready/index.html"
+    assert packages["pkg-blocked"]["package_status"] == "package_blocked"
+    assert packages["pkg-blocked"]["missing_required_artifacts"] == [
+        "rule_input_readiness.json"
+    ]
+    assert "required artifact missing" in " ".join(packages["pkg-blocked"]["open_items"])
+    assert not (package_ready / "handoff_bundle_index.json").exists()
+    assert not (package_blocked / "handoff_bundle_index.json").exists()
+
+
+def test_handoff_bundle_index_cli_writes_json_markdown_and_html(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    packages_root = tmp_path / "packages"
+    package_dir = packages_root / "pkg-a"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+
+    result = CliRunner().invoke(app, ["handoff-bundle-index", str(packages_root)])
+
+    assert result.exit_code == 0, result.output
+    assert "handoff_bundle_index.v1" in result.output
+    assert "status=bundle_needs_info" in result.output
+    assert (packages_root / "handoff_bundle_index.json").exists()
+    assert (packages_root / "handoff_bundle_index.md").exists()
+    assert (packages_root / "handoff_bundle_index.html").exists()
+    payload = json.loads((packages_root / "handoff_bundle_index.json").read_text("utf-8"))
+    assert payload["summary"]["package_count"] == 1
+    assert payload["packages"][0]["quality_status"] == "not_run"
+    markdown = (packages_root / "handoff_bundle_index.md").read_text("utf-8")
+    assert "ArchReview-KG Handoff Bundle Index" in markdown
+    assert "run handoff-check" in markdown
+    html = (packages_root / "handoff_bundle_index.html").read_text("utf-8")
+    assert "ArchReview-KG Handoff Bundle" in html
+    assert "pkg-a/index.html" in html
+    assert "not a drawing-compliance certificate" in html
+
+
+def test_handoff_bundle_index_rejects_single_package_root(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "package"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+
+    result = CliRunner().invoke(app, ["handoff-bundle-index", str(package_dir)])
+
+    assert result.exit_code == 2
+    assert "single handoff package directory" in result.output
 
 
 def _write_minimal_run(run_dir: Path) -> None:
