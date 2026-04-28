@@ -58,10 +58,12 @@ archkg viewer -o out --source samples/sample_clean.pdf
 
 ```bash
 archkg handoff-package out/ -o out-handoff
+archkg handoff-check out-handoff --out out-handoff/handoff_quality.json --markdown out-handoff/handoff_quality.md
 ```
 
 `out-handoff/` 会包含 `handoff_manifest.json`、`handoff_summary.md` 和 `artifacts/` 复制件；
 它只复制证据，不写回原 run，不确认 issue，也不把 per-sheet preview 升级为主违规。
+`handoff-check` 会独立检查 manifest schema、只读策略、必需 artifact、复制件存在性和边界提醒。
 
 ---
 
@@ -376,6 +378,7 @@ archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks
 
 # P48: 把已有 run 打成只读交接包
 archkg handoff-package out/ -o out-handoff
+archkg handoff-check out-handoff
 
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
@@ -427,6 +430,7 @@ archkg clause readiness
 - P46：Novice reviewer onboarding。完整审图 run 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`，报告和 Viewer 显示第一小时流程、常用命令、边界提醒和交接检查，让新手审图工程师按 evidence 顺序上手。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate 等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。
+- P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
 
 ---
 

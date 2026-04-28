@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "handoff_package.v1"
+QUALITY_SCHEMA_VERSION = "handoff_package_quality.v1"
 
 MUTATION_POLICY = "copy_artifacts_only_no_source_run_mutation"
 
@@ -216,6 +217,98 @@ def render_handoff_summary(manifest: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def build_handoff_package_quality(package_dir: Path) -> dict[str, Any]:
+    package_dir = package_dir.resolve()
+    manifest_path = package_dir / "handoff_manifest.json"
+    manifest = _load_manifest(manifest_path)
+    checks = {
+        "manifest_schema": _check_manifest_schema(manifest),
+        "read_only_policy": _check_read_only_policy(manifest),
+        "required_artifacts_present": _check_required_artifacts_present(manifest),
+        "copied_artifacts_exist": _check_copied_artifacts_exist(
+            package_dir,
+            manifest,
+        ),
+        "boundary_warnings_present": _check_boundary_warnings_present(manifest),
+    }
+    blockers = [
+        detail
+        for check in checks.values()
+        if check["severity"] == "blocker" and check["passed"] is False
+        for detail in _str_list(check.get("details"))
+    ]
+    warnings = [
+        detail
+        for check in checks.values()
+        if check["severity"] == "warning" and check["passed"] is False
+        for detail in _str_list(check.get("details"))
+    ]
+    status = "not_ready" if blockers else "handoff_ready_with_warnings" if warnings else "handoff_ready"
+    return {
+        "schema_version": QUALITY_SCHEMA_VERSION,
+        "created_at": datetime.now(UTC).isoformat(),
+        "package_dir": str(package_dir),
+        "manifest_path": str(manifest_path),
+        "status": status,
+        "checks": checks,
+        "blockers": blockers,
+        "warnings": warnings,
+        "note": (
+            "Handoff quality validates package completeness and boundaries. "
+            "It does not certify drawing compliance."
+        ),
+    }
+
+
+def write_handoff_package_quality_json(result: dict[str, Any], path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
+
+
+def write_handoff_package_quality_markdown(result: dict[str, Any], path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_handoff_package_quality_markdown(result), encoding="utf-8")
+    return path
+
+
+def render_handoff_package_quality_markdown(result: dict[str, Any]) -> str:
+    lines = [
+        "# ArchReview-KG Handoff Package Quality",
+        "",
+        f"Status: `{_str(result.get('status'))}`",
+        "",
+        _str(result.get("note")),
+        "",
+        "## Checks",
+        "",
+        "| Check | Severity | Status | Details |",
+        "|---|---|---:|---|",
+    ]
+    checks = result.get("checks")
+    if isinstance(checks, dict):
+        for check_id, raw in checks.items():
+            check = raw if isinstance(raw, dict) else {}
+            details = "; ".join(_str_list(check.get("details"))) or "-"
+            lines.append(
+                "| "
+                f"{check_id} | "
+                f"{_str(check.get('severity'))} | "
+                f"{'PASS' if check.get('passed') else 'FAIL'} | "
+                f"{details} |"
+            )
+    blockers = _str_list(result.get("blockers"))
+    warnings = _str_list(result.get("warnings"))
+    if blockers:
+        lines.extend(["", "## Blockers", ""])
+        lines.extend(f"- {item}" for item in blockers)
+    if warnings:
+        lines.extend(["", "## Warnings", ""])
+        lines.extend(f"- {item}" for item in warnings)
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _copy_artifact(
     run_dir: Path,
     artifacts_dir: Path,
@@ -241,6 +334,73 @@ def _copy_artifact(
         "package_path": package_rel,
         "purpose": spec.purpose,
     }
+
+
+def _load_manifest(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {
+            "schema_version": "missing",
+            "artifact_statuses": [],
+            "missing_required_artifacts": ["handoff_manifest.json"],
+            "boundary_warnings": [],
+        }
+    try:
+        raw = json.loads(path.read_text("utf-8"))
+    except json.JSONDecodeError as exc:
+        return {
+            "schema_version": "invalid",
+            "artifact_statuses": [],
+            "missing_required_artifacts": ["handoff_manifest.json"],
+            "boundary_warnings": [],
+            "manifest_error": str(exc),
+        }
+    return raw if isinstance(raw, dict) else {"schema_version": "invalid"}
+
+
+def _check_manifest_schema(manifest: dict[str, Any]) -> dict[str, Any]:
+    passed = manifest.get("schema_version") == SCHEMA_VERSION
+    details = [] if passed else [f"manifest schema is {_str(manifest.get('schema_version')) or 'missing'}"]
+    return _check("blocker", passed, details)
+
+
+def _check_read_only_policy(manifest: dict[str, Any]) -> dict[str, Any]:
+    passed = (
+        manifest.get("read_only") is True
+        and manifest.get("mutation_policy") == MUTATION_POLICY
+    )
+    details = [] if passed else ["handoff manifest must be read_only with copy-only mutation policy"]
+    return _check("blocker", passed, details)
+
+
+def _check_required_artifacts_present(manifest: dict[str, Any]) -> dict[str, Any]:
+    missing = _str_list(manifest.get("missing_required_artifacts"))
+    return _check("blocker", not missing, [f"required artifact missing: {item}" for item in missing])
+
+
+def _check_copied_artifacts_exist(
+    package_dir: Path,
+    manifest: dict[str, Any],
+) -> dict[str, Any]:
+    missing: list[str] = []
+    for row in _artifact_rows(manifest):
+        if row.get("status") != "available":
+            continue
+        artifact = _str(row.get("artifact"))
+        rel = _str(row.get("package_path"))
+        if not rel or not (package_dir / rel).is_file():
+            missing.append(artifact or rel or "unknown")
+    return _check("blocker", not missing, [f"copied artifact missing: {item}" for item in missing])
+
+
+def _check_boundary_warnings_present(manifest: dict[str, Any]) -> dict[str, Any]:
+    joined = " ".join(_str_list(manifest.get("boundary_warnings"))).lower()
+    required_terms = ["candidate", "preview", "archkg review-state", "missing input", "evidence_ready"]
+    missing_terms = [term for term in required_terms if term not in joined]
+    return _check("blocker", not missing_terms, [f"boundary warning missing term: {item}" for item in missing_terms])
+
+
+def _check(severity: str, passed: bool, details: list[str]) -> dict[str, Any]:
+    return {"severity": severity, "passed": passed, "details": details}
 
 
 def _validate_paths(run_dir: Path, package_dir: Path) -> None:
@@ -293,7 +453,12 @@ __all__ = [
     "ARTIFACTS",
     "BOUNDARY_WARNINGS",
     "MUTATION_POLICY",
+    "QUALITY_SCHEMA_VERSION",
     "SCHEMA_VERSION",
+    "build_handoff_package_quality",
+    "render_handoff_package_quality_markdown",
     "render_handoff_summary",
     "write_handoff_package",
+    "write_handoff_package_quality_json",
+    "write_handoff_package_quality_markdown",
 ]

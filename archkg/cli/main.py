@@ -961,6 +961,51 @@ def handoff_package_cmd(
     )
 
 
+@app.command("handoff-check")
+def handoff_check_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to validate.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write machine-readable handoff quality JSON.",
+    ),
+    markdown: Path | None = typer.Option(
+        None,
+        "--markdown",
+        help="Write Markdown handoff quality report.",
+    ),
+    fail_on_not_ready: bool = typer.Option(
+        True,
+        "--fail-on-not-ready/--no-fail-on-not-ready",
+        help="Exit non-zero when the handoff package is not ready.",
+    ),
+) -> None:
+    """Validate a read-only handoff package."""
+    from archkg.viewer.handoff_package import (
+        build_handoff_package_quality,
+        write_handoff_package_quality_json,
+        write_handoff_package_quality_markdown,
+    )
+
+    result = build_handoff_package_quality(package_dir)
+    if out is not None:
+        write_handoff_package_quality_json(result, out)
+    if markdown is not None:
+        write_handoff_package_quality_markdown(result, markdown)
+    typer.echo(
+        f"handoff-check status={result['status']} "
+        f"blockers={len(result['blockers'])} warnings={len(result['warnings'])}"
+    )
+    if fail_on_not_ready and result["status"] == "not_ready":
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

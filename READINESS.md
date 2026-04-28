@@ -20,6 +20,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   收束成有界人工审阅队列，但 preview id 仍不能进入主 `review_state.json`。
 - P48 后可用 `archkg handoff-package <run-dir> -o <package-dir>` 生成只读交接包，
   将 quickstart、readiness、diff、preview queue 和边界提醒固化为可移交证据。
+- P49 后可用 `archkg handoff-check <package-dir>` 对交接包做独立质量门禁，
+  检查 schema、copy-only 策略、必需 artifact、复制件存在性和边界提醒。
 
 复现该结论：
 
@@ -200,6 +202,8 @@ archkg studio
   `archkg review-state` 写入这些 preview rows。
 - P48 新增 `archkg handoff-package`：从已有 run 复制交接所需 artifacts 到独立目录，
   写出 `handoff_manifest.json` 与 `handoff_summary.md`；该操作不修改源 run，不确认 issue。
+- P49 新增 `archkg handoff-check`：读取交接包并输出 `handoff_package_quality.v1`；
+  缺少必需 artifact、复制件丢失或边界提醒缺失时返回 `not_ready`。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
@@ -277,6 +281,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   但不代表多页候选问题已经自动聚合为主违规结论。
 - P48 起，交付前建议另跑 `archkg handoff-package` 生成只读包；它是交接完整性证据，
   不是 release-readiness gate 的替代品。
+- P49 起，交付前还应跑 `archkg handoff-check`；它只验证交接包完整性，
+  不替代图纸识别 benchmark 或 release-readiness。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

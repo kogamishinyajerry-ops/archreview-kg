@@ -6,7 +6,12 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from archkg.cli.main import app
-from archkg.viewer.handoff_package import write_handoff_package
+from archkg.viewer.handoff_package import (
+    build_handoff_package_quality,
+    write_handoff_package,
+    write_handoff_package_quality_json,
+    write_handoff_package_quality_markdown,
+)
 
 
 def test_handoff_package_copies_review_artifacts_without_mutating_run(
@@ -73,6 +78,93 @@ def test_handoff_package_cli_writes_package(tmp_path: Path) -> None:
     assert "missing_required=0" in result.output
     assert (package_dir / "handoff_manifest.json").exists()
     assert (package_dir / "handoff_summary.md").exists()
+
+
+def test_handoff_package_quality_gate_accepts_complete_package(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+
+    quality = build_handoff_package_quality(package_dir)
+
+    assert quality["schema_version"] == "handoff_package_quality.v1"
+    assert quality["status"] == "handoff_ready"
+    assert quality["blockers"] == []
+    assert quality["checks"]["manifest_schema"]["passed"] is True
+    assert quality["checks"]["required_artifacts_present"]["passed"] is True
+    assert quality["checks"]["copied_artifacts_exist"]["passed"] is True
+    assert quality["checks"]["boundary_warnings_present"]["passed"] is True
+    assert quality["checks"]["read_only_policy"]["passed"] is True
+
+    out_json = write_handoff_package_quality_json(
+        quality,
+        package_dir / "handoff_quality.json",
+    )
+    out_md = write_handoff_package_quality_markdown(
+        quality,
+        package_dir / "handoff_quality.md",
+    )
+    assert out_json.exists()
+    markdown = out_md.read_text("utf-8")
+    assert "# ArchReview-KG Handoff Package Quality" in markdown
+    assert "handoff_ready" in markdown
+    assert "manifest_schema" in markdown
+
+
+def test_handoff_package_quality_gate_blocks_missing_required_copy(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    (package_dir / "artifacts" / "issues.json").unlink()
+
+    quality = build_handoff_package_quality(package_dir)
+
+    assert quality["status"] == "not_ready"
+    assert "copied artifact missing: issues.json" in quality["blockers"]
+    assert quality["checks"]["copied_artifacts_exist"]["passed"] is False
+
+
+def test_handoff_package_quality_cli_writes_reports(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    out = tmp_path / "quality.json"
+    markdown = tmp_path / "quality.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "handoff-check",
+            str(package_dir),
+            "--out",
+            str(out),
+            "--markdown",
+            str(markdown),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "handoff-check status=handoff_ready" in result.output
+    assert out.exists()
+    assert markdown.exists()
+
+
+def test_handoff_package_quality_cli_fails_not_ready(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    (package_dir / "artifacts" / "issues.json").unlink()
+
+    result = CliRunner().invoke(app, ["handoff-check", str(package_dir)])
+
+    assert result.exit_code == 1
+    assert "handoff-check status=not_ready" in result.output
 
 
 def _write_minimal_run(run_dir: Path) -> None:

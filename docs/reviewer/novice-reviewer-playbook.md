@@ -23,9 +23,11 @@ archkg viewer -o out/review-demo --source samples/sample_clean.pdf
 
 ```bash
 archkg handoff-package out/review-demo -o out/review-demo-handoff
+archkg handoff-check out/review-demo-handoff
 ```
 
 交接包包含 `handoff_manifest.json`、`handoff_summary.md` 和 `artifacts/` 复制件；它不修改原 run。
+交接前应让 `handoff-check` 输出 `handoff_ready`。
 
 ## 第一小时流程
 
@@ -78,6 +80,11 @@ archkg release-readiness \
 
 # 生成只读交接包
 archkg handoff-package out/review-demo -o out/review-demo-handoff
+
+# 检查交接包完整性
+archkg handoff-check out/review-demo-handoff \
+  --out out/review-demo-handoff/handoff_quality.json \
+  --markdown out/review-demo-handoff/handoff_quality.md
 ```
 
 ## 交接模板
@@ -95,5 +102,6 @@ run_dir：
 commit：
 验证命令：
 handoff_package：
+handoff_quality：
 下一步：
 ```

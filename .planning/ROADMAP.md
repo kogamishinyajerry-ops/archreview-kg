@@ -160,6 +160,12 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - P48-01 complete: `archkg handoff-package` writes `handoff_manifest.json`, `handoff_summary.md`, and copied artifacts under `artifacts/` without mutating the source run.
 - Guardrail: handoff packages are evidence bundles, not compliance certificates.
 
+### P49: Handoff Package Quality Gate
+
+- Validate a generated handoff package before it is used for external review.
+- P49-01 complete: `archkg handoff-check` writes `handoff_package_quality.v1` JSON/Markdown reports and fails `not_ready` packages.
+- Guardrail: package quality checks completeness and boundary warnings only; it does not certify drawing compliance.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

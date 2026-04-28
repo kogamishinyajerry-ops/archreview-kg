@@ -244,6 +244,11 @@ and keeps the no-OCR transparency warning.
   diff/readiness/visual artifacts, and writes `handoff_manifest.json` plus
   `handoff_summary.md`. The package is outside the source run by default and
   uses `copy_artifacts_only_no_source_run_mutation`.
+- P49-01 adds a handoff package quality gate. `archkg handoff-check PACKAGE_DIR`
+  validates `handoff_manifest.json`, the copy-only/read-only policy, required
+  artifact availability, copied file existence, and boundary warnings. It writes
+  `handoff_package_quality.v1` JSON/Markdown reports and exits non-zero when a
+  package is `not_ready`.
 
 ### Still limited
 
@@ -292,6 +297,9 @@ and keeps the no-OCR transparency warning.
 - `handoff_manifest.json` and `handoff_summary.md` are read-only package
   metadata. They copy existing evidence for external review and do not mutate
   the source run or confirm candidate issues.
+- `handoff_package_quality.v1` validates package completeness only. It is not a
+  drawing-compliance certificate and does not replace release-readiness or
+  benchmark evidence.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan
