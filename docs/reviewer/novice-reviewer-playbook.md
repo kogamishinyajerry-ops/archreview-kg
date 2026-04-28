@@ -24,10 +24,16 @@ archkg viewer -o out/review-demo --source samples/sample_clean.pdf
 ```bash
 archkg handoff-package out/review-demo -o out/review-demo-handoff
 archkg handoff-check out/review-demo-handoff
+archkg handoff-signoff out/review-demo-handoff \
+  --reviewer reviewer-name \
+  --status needs_info \
+  --note "缺少剖面净高证据"
 ```
 
 交接包包含 `handoff_manifest.json`、`handoff_summary.md` 和 `artifacts/` 复制件；它不修改原 run。
 交接前应让 `handoff-check` 输出 `handoff_ready`。
+交接复核人可用 `handoff-signoff` 写入 `reviewer_signoff.json` / `.md`，状态只能是 `ready`、`needs_info` 或
+`blocked`；该记录只是包内交接备注，不确认 issue，也不是合规证书。
 
 ## 第一小时流程
 
@@ -85,6 +91,15 @@ archkg handoff-package out/review-demo -o out/review-demo-handoff
 archkg handoff-check out/review-demo-handoff \
   --out out/review-demo-handoff/handoff_quality.json \
   --markdown out/review-demo-handoff/handoff_quality.md
+
+# 写入交接复核备注
+archkg handoff-signoff out/review-demo-handoff \
+  --reviewer reviewer-name \
+  --status needs_info \
+  --note "缺少剖面净高证据" \
+  --blocker "missing section height" \
+  --needs-info "door type schedule" \
+  --next-action "request section sheet"
 ```
 
 ## 交接模板
@@ -103,5 +118,6 @@ commit：
 验证命令：
 handoff_package：
 handoff_quality：
+reviewer_signoff：
 下一步：
 ```

@@ -166,6 +166,12 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - P49-01 complete: `archkg handoff-check` writes `handoff_package_quality.v1` JSON/Markdown reports and fails `not_ready` packages.
 - Guardrail: package quality checks completeness and boundary warnings only; it does not certify drawing compliance.
 
+### P50: Package Reviewer Signoff Notes
+
+- Let a receiving reviewer record package-level ready / needs_info / blocked status without touching source run artifacts.
+- P50-01 complete: `archkg handoff-signoff` writes `reviewer_signoff.json` and `reviewer_signoff.md` inside the handoff package.
+- Guardrail: reviewer signoff is a handoff note, not a compliance certificate, and it does not confirm candidate issues.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

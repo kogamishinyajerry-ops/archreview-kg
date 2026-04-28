@@ -1006,6 +1006,71 @@ def handoff_check_cmd(
         raise typer.Exit(code=1)
 
 
+@app.command("handoff-signoff")
+def handoff_signoff_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to annotate with reviewer signoff notes.",
+    ),
+    reviewer: str = typer.Option(
+        ...,
+        "--reviewer",
+        help="Reviewer name or initials to record in the package-local note.",
+    ),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Package reviewer status: ready, needs_info, or blocked.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Free-form reviewer note. This is package-local and not a compliance certificate.",
+    ),
+    blocker: list[str] | None = typer.Option(
+        None,
+        "--blocker",
+        help="Repeatable blocker note for blocked or needs-info handoffs.",
+    ),
+    needs_info: list[str] | None = typer.Option(
+        None,
+        "--needs-info",
+        help="Repeatable missing-information note.",
+    ),
+    next_action: list[str] | None = typer.Option(
+        None,
+        "--next-action",
+        help="Repeatable next action for the receiving reviewer.",
+    ),
+) -> None:
+    """Write package-local reviewer signoff notes without mutating source run artifacts."""
+    from archkg.viewer.handoff_package import write_handoff_reviewer_signoff
+
+    try:
+        signoff_path = write_handoff_reviewer_signoff(
+            package_dir,
+            reviewer=reviewer,
+            status=status,
+            note=note,
+            blockers=blocker or [],
+            needs_info=needs_info or [],
+            next_actions=next_action or [],
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(signoff_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={signoff_path} "
+        f"reviewer={payload['reviewer']} status={payload['status']}"
+    )
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),

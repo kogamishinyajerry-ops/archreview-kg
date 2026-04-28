@@ -249,6 +249,12 @@ and keeps the no-OCR transparency warning.
   artifact availability, copied file existence, and boundary warnings. It writes
   `handoff_package_quality.v1` JSON/Markdown reports and exits non-zero when a
   package is `not_ready`.
+- P50-01 adds package-local reviewer signoff notes. `archkg handoff-signoff
+  PACKAGE_DIR --reviewer NAME --status ready|needs_info|blocked` writes
+  `reviewer_signoff.json` and `reviewer_signoff.md` inside the handoff package,
+  including blockers, missing information, next actions, and a boundary warning
+  that the signoff is not a compliance certificate. Source run artifacts remain
+  untouched.
 
 ### Still limited
 
@@ -300,6 +306,9 @@ and keeps the no-OCR transparency warning.
 - `handoff_package_quality.v1` validates package completeness only. It is not a
   drawing-compliance certificate and does not replace release-readiness or
   benchmark evidence.
+- `reviewer_signoff.json` is a package-local handoff note only. It records a
+  human reviewer's transfer status and follow-up items, but it does not confirm
+  candidate issues, mutate the source run, or certify compliance.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan

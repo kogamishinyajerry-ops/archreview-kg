@@ -9,6 +9,7 @@ from typing import Any
 
 SCHEMA_VERSION = "handoff_package.v1"
 QUALITY_SCHEMA_VERSION = "handoff_package_quality.v1"
+SIGNOFF_SCHEMA_VERSION = "handoff_reviewer_signoff.v1"
 
 MUTATION_POLICY = "copy_artifacts_only_no_source_run_mutation"
 
@@ -309,6 +310,76 @@ def render_handoff_package_quality_markdown(result: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def write_handoff_reviewer_signoff(
+    package_dir: Path,
+    *,
+    reviewer: str,
+    status: str,
+    note: str,
+    blockers: list[str] | None = None,
+    needs_info: list[str] | None = None,
+    next_actions: list[str] | None = None,
+) -> Path:
+    package_dir = package_dir.resolve()
+    manifest = _load_manifest(package_dir / "handoff_manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
+    normalized_status = _normalize_signoff_status(status)
+    payload = {
+        "schema_version": SIGNOFF_SCHEMA_VERSION,
+        "created_at": datetime.now(UTC).isoformat(),
+        "package_dir": str(package_dir),
+        "source_run_dir": _str(manifest.get("source_run_dir")),
+        "mutation_policy": "package_note_only_no_source_run_mutation",
+        "reviewer": reviewer,
+        "status": normalized_status,
+        "note": note,
+        "blockers": blockers or [],
+        "needs_info": needs_info or [],
+        "next_actions": next_actions or [],
+        "boundary_warning": (
+            "Reviewer signoff is a handoff note, not a compliance certificate; "
+            "it does not mutate source run artifacts or confirm candidate issues."
+        ),
+    }
+    path = package_dir / "reviewer_signoff.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    (package_dir / "reviewer_signoff.md").write_text(
+        render_handoff_reviewer_signoff_markdown(payload),
+        encoding="utf-8",
+    )
+    return path
+
+
+def render_handoff_reviewer_signoff_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Handoff Reviewer Signoff",
+        "",
+        f"Reviewer: `{_str(payload.get('reviewer'))}`",
+        f"Status: `{_str(payload.get('status'))}`",
+        f"Mutation policy: `{_str(payload.get('mutation_policy'))}`",
+        "",
+        _str(payload.get("boundary_warning")),
+        "",
+        "## Note",
+        "",
+        _str(payload.get("note")) or "-",
+        "",
+        "## Blockers",
+        "",
+    ]
+    blockers = _str_list(payload.get("blockers"))
+    lines.extend(f"- {item}" for item in blockers) if blockers else lines.append("- None")
+    lines.extend(["", "## Needs Info", ""])
+    needs_info = _str_list(payload.get("needs_info"))
+    lines.extend(f"- {item}" for item in needs_info) if needs_info else lines.append("- None")
+    lines.extend(["", "## Next Actions", ""])
+    next_actions = _str_list(payload.get("next_actions"))
+    lines.extend(f"- {item}" for item in next_actions) if next_actions else lines.append("- None")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _copy_artifact(
     run_dir: Path,
     artifacts_dir: Path,
@@ -403,6 +474,16 @@ def _check(severity: str, passed: bool, details: list[str]) -> dict[str, Any]:
     return {"severity": severity, "passed": passed, "details": details}
 
 
+def _normalize_signoff_status(status: str) -> str:
+    value = status.strip().lower()
+    allowed = {"ready", "needs_info", "blocked"}
+    if value not in allowed:
+        raise ValueError(
+            "signoff status must be one of: ready, needs_info, blocked"
+        )
+    return value
+
+
 def _validate_paths(run_dir: Path, package_dir: Path) -> None:
     if not run_dir.exists() or not run_dir.is_dir():
         raise FileNotFoundError(f"run_dir not found: {run_dir}")
@@ -455,10 +536,13 @@ __all__ = [
     "MUTATION_POLICY",
     "QUALITY_SCHEMA_VERSION",
     "SCHEMA_VERSION",
+    "SIGNOFF_SCHEMA_VERSION",
     "build_handoff_package_quality",
     "render_handoff_package_quality_markdown",
+    "render_handoff_reviewer_signoff_markdown",
     "render_handoff_summary",
     "write_handoff_package",
     "write_handoff_package_quality_json",
     "write_handoff_package_quality_markdown",
+    "write_handoff_reviewer_signoff",
 ]

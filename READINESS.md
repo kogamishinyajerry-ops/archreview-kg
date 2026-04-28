@@ -22,6 +22,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   将 quickstart、readiness、diff、preview queue 和边界提醒固化为可移交证据。
 - P49 后可用 `archkg handoff-check <package-dir>` 对交接包做独立质量门禁，
   检查 schema、copy-only 策略、必需 artifact、复制件存在性和边界提醒。
+- P50 后可用 `archkg handoff-signoff <package-dir>` 在交接包内记录 reviewer 的 ready /
+  needs_info / blocked 状态、阻塞项和下一步；它只写包内 note，不是合规证书。
 
 复现该结论：
 
@@ -50,7 +52,7 @@ archkg release-readiness \
 release-readiness status=evidence_ready blockers=0 warnings=0 active=5 real_active=2 known_gap=0
 ```
 
-这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列、只读交接包”
+这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列、只读交接包、包内复核备注”
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
 P45 清理了最后一个 packaged `manual_run_required` toy row，使 release gate 的技术前提完整。
 但 per-sheet preview issues 还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
@@ -204,6 +206,9 @@ archkg studio
   写出 `handoff_manifest.json` 与 `handoff_summary.md`；该操作不修改源 run，不确认 issue。
 - P49 新增 `archkg handoff-check`：读取交接包并输出 `handoff_package_quality.v1`；
   缺少必需 artifact、复制件丢失或边界提醒缺失时返回 `not_ready`。
+- P50 新增 `archkg handoff-signoff`：在交接包内写 `reviewer_signoff.json` / `.md`，
+  记录 reviewer、ready / needs_info / blocked 状态、阻塞项、待补信息和下一步；该命令不修改源 run，
+  不确认 candidate issue。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
@@ -283,6 +288,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不是 release-readiness gate 的替代品。
 - P49 起，交付前还应跑 `archkg handoff-check`；它只验证交接包完整性，
   不替代图纸识别 benchmark 或 release-readiness。
+- P50 起，交接复核可以用 `archkg handoff-signoff` 收口为包内 note；ready 只表示交接包可进入下一位 reviewer
+  流程，不表示图纸合规。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

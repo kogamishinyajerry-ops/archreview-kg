@@ -11,6 +11,7 @@ from archkg.viewer.handoff_package import (
     write_handoff_package,
     write_handoff_package_quality_json,
     write_handoff_package_quality_markdown,
+    write_handoff_reviewer_signoff,
 )
 
 
@@ -165,6 +166,74 @@ def test_handoff_package_quality_cli_fails_not_ready(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "handoff-check status=not_ready" in result.output
+
+
+def test_handoff_reviewer_signoff_writes_package_only_notes(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    original_issues = (run_dir / "issues.json").read_text("utf-8")
+
+    signoff_path = write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-a",
+        status="needs_info",
+        note="Need section height evidence before confirmation.",
+        blockers=["missing section height"],
+        needs_info=["door type schedule"],
+        next_actions=["request section sheet"],
+    )
+
+    assert signoff_path == package_dir / "reviewer_signoff.json"
+    assert (package_dir / "reviewer_signoff.md").exists()
+    assert (run_dir / "issues.json").read_text("utf-8") == original_issues
+    assert not (run_dir / "reviewer_signoff.json").exists()
+
+    payload = json.loads(signoff_path.read_text("utf-8"))
+    assert payload["schema_version"] == "handoff_reviewer_signoff.v1"
+    assert payload["mutation_policy"] == "package_note_only_no_source_run_mutation"
+    assert payload["reviewer"] == "reviewer-a"
+    assert payload["status"] == "needs_info"
+    assert payload["blockers"] == ["missing section height"]
+    assert payload["needs_info"] == ["door type schedule"]
+    assert payload["next_actions"] == ["request section sheet"]
+    assert "not a compliance certificate" in payload["boundary_warning"]
+
+    markdown = (package_dir / "reviewer_signoff.md").read_text("utf-8")
+    assert "# Handoff Reviewer Signoff" in markdown
+    assert "reviewer-a" in markdown
+    assert "needs_info" in markdown
+    assert "missing section height" in markdown
+
+
+def test_handoff_reviewer_signoff_cli_writes_notes(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "handoff-signoff",
+            str(package_dir),
+            "--reviewer",
+            "reviewer-b",
+            "--status",
+            "ready",
+            "--note",
+            "Ready for manager review.",
+            "--next-action",
+            "archive package",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "handoff_reviewer_signoff.v1" in result.output
+    assert "status=ready" in result.output
+    assert (package_dir / "reviewer_signoff.json").exists()
+    assert (package_dir / "reviewer_signoff.md").exists()
 
 
 def _write_minimal_run(run_dir: Path) -> None:

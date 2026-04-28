@@ -39,12 +39,13 @@ Status:
 - P47-01 is complete: full CLI and Studio review runs now write `sheet_issue_review_queue.json`, a bounded per-sheet preview review bridge that stays separate from primary `issues.json` and `review_state.json`.
 - P48-01 is complete: `archkg handoff-package` now builds a read-only handoff package with manifest, summary, and copied review artifacts outside the source run.
 - P49-01 is complete: `archkg handoff-check` now validates handoff package schema, copy-only policy, required artifacts, copied files, and boundary warnings into `handoff_package_quality.v1`.
+- P50-01 is complete: `archkg handoff-signoff` now writes package-local reviewer signoff JSON/Markdown notes without mutating the source run.
 
 ## Current Phase
 
-P49: Handoff package quality gate.
+P50: Package reviewer signoff notes.
 
-P49 is complete. Handoff packages can now be independently checked before external review, and incomplete packages return `not_ready` without mutating the source run.
+P50 is complete. Handoff packages can now be checked for completeness and annotated by a receiving reviewer as `ready`, `needs_info`, or `blocked` without changing source run artifacts.
 
 ## Key Decisions
 
@@ -77,8 +78,9 @@ P49 is complete. Handoff packages can now be independently checked before extern
 - P47 preview queue artifacts are guidance-only and preview-only; their `preview_id` values are not valid `archkg review-state` targets.
 - P48 handoff packages copy existing artifacts only; a complete package is still not a compliance certificate and missing artifacts must be treated as handoff risk.
 - P49 handoff package quality validates package completeness and boundaries only; it is not a release-readiness or drawing-compliance gate.
+- P50 reviewer signoff notes are package-local handoff notes only; `ready` does not mean the drawing is compliant.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P49 by expanding the real complex benchmark set with another reviewed expected inventory, or by adding package-level reviewer signoff notes without changing source run artifacts.
+Move beyond P50 by making the handoff package easier to consume in a static browser view, or by expanding the real complex benchmark set with another reviewed expected inventory.
