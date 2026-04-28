@@ -225,6 +225,10 @@ and keeps the no-OCR transparency warning.
   `reviewer_task_checklist.md` from the ordered sequence, report/Viewer render
   the checklist, and handoff packages copy it as entry evidence without
   mutating issue state.
+- P63-01 extends the handoff bundle index with reviewer checklist risk
+  aggregation. Bundle JSON/Markdown/HTML now summarize checklist open item
+  totals, per-package checklist review status, and first open samples without
+  mutating package artifacts or changing package readiness semantics.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

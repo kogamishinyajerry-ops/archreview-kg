@@ -16,6 +16,9 @@ from archkg.viewer.handoff_package import (
 from archkg.viewer.handoff_package import (
     SCHEMA_VERSION as PACKAGE_SCHEMA_VERSION,
 )
+from archkg.viewer.reviewer_task_checklist import (
+    SCHEMA_VERSION as REVIEWER_TASK_CHECKLIST_SCHEMA_VERSION,
+)
 
 SCHEMA_VERSION = "handoff_bundle_index.v1"
 MUTATION_POLICY = "bundle_index_only_no_package_mutation"
@@ -106,14 +109,22 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
         f"- Needs info: `{_int(summary.get('needs_info_count'))}`",
         f"- Blocked: `{_int(summary.get('blocked_count'))}`",
         f"- Missing required artifacts: `{_int(summary.get('missing_required_total'))}`",
+        f"- Checklist open items: `{_int(summary.get('checklist_open_item_total'))}`",
+        f"- Packages with open checklist: `{_int(summary.get('checklist_open_package_count'))}`",
+        f"- Packages missing checklist: `{_int(summary.get('checklist_missing_count'))}`",
         "",
         "## Packages",
         "",
-        "| Package | Status | Quality | Signoff | Manager | Archive | Missing | Open Items |",
-        "|---|---|---|---|---|---|---:|---|",
+        "| Package | Status | Quality | Signoff | Manager | Archive | Checklist | Missing | Open Items |",
+        "|---|---|---|---|---|---|---|---:|---|",
     ]
     for row in _list_of_dicts(payload.get("packages")):
         open_items = "<br>".join(_str_list(row.get("open_items"))) or "-"
+        checklist_cell = (
+            f"{_str(row.get('checklist_review_status'))} "
+            f"({_int(row.get('checklist_open_item_count'))}/"
+            f"{_int(row.get('checklist_item_count'))} open)"
+        )
         lines.append(
             "| "
             f"`{_str(row.get('package_name'))}` | "
@@ -122,6 +133,7 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
             f"{_str(row.get('signoff_status'))} | "
             f"{_str(row.get('manager_status'))} | "
             f"{_str(row.get('archive_verification_status'))} | "
+            f"{checklist_cell} | "
             f"{_int(row.get('missing_required_count'))} | "
             f"{open_items} |"
         )
@@ -177,6 +189,11 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
         _kpi("Needs Info", str(_int(summary.get("needs_info_count"))), "warn"),
         _kpi("Blocked", str(_int(summary.get("blocked_count"))), "bad"),
         _kpi("Missing Required", str(_int(summary.get("missing_required_total"))), "bad"),
+        _kpi(
+            "Checklist Open",
+            str(_int(summary.get("checklist_open_item_total"))),
+            "warn" if _int(summary.get("checklist_open_item_total")) else "ok",
+        ),
         "</section>",
         '<section class="panel">',
         "<h2>Bundle Boundary</h2>",
@@ -186,7 +203,7 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
         '<section class="panel">',
         "<h2>Packages</h2>",
         "<table>",
-        "<thead><tr><th>Package</th><th>Status</th><th>Quality</th><th>Signoff</th><th>Manager</th><th>Archive Check</th><th>Open Items</th></tr></thead>",
+        "<thead><tr><th>Package</th><th>Status</th><th>Quality</th><th>Signoff</th><th>Manager</th><th>Archive Check</th><th>Checklist</th><th>Open Items</th></tr></thead>",
         "<tbody>",
     ]
     for row in packages:
@@ -206,6 +223,9 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
             f"<td>{_html(_str(row.get('signoff_status')))}</td>"
             f"<td>{_html(_str(row.get('manager_status')))}</td>"
             f"<td>{_html(_str(row.get('archive_verification_status')))}</td>"
+            f"<td>{_html(_str(row.get('checklist_review_status')))} "
+            f"({_int(row.get('checklist_open_item_count'))}/"
+            f"{_int(row.get('checklist_item_count'))} open)</td>"
             f"<td>{_html('; '.join(open_items) if open_items else '-')}</td>"
             "</tr>"
         )
@@ -234,6 +254,9 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
     manager = _load_json(package_dir / "handoff_manager_checklist.json")
     archive_manifest = _load_json(package_dir / "handoff_archive_manifest.json")
     archive_verification = _load_json(package_dir / "handoff_archive_verification.json")
+    checklist = _checklist_summary(
+        _load_json(package_dir / "artifacts" / "reviewer_task_checklist.json")
+    )
     artifact_rows = _list_of_dicts(manifest.get("artifact_statuses"))
     available_count = sum(1 for row in artifact_rows if row.get("status") == "available")
     missing_required = _str_list(manifest.get("missing_required_artifacts"))
@@ -293,6 +316,19 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
             missing="not_recorded",
         ),
         "package_digest": _str(archive_manifest.get("package_digest")),
+        "checklist_available": checklist["available"],
+        "checklist_status": checklist["status"],
+        "checklist_review_status": checklist["review_status"],
+        "checklist_item_count": checklist["item_count"],
+        "checklist_done_item_count": checklist["done_item_count"],
+        "checklist_open_item_count": checklist["open_item_count"],
+        "checklist_blocked_item_count": checklist["blocked_item_count"],
+        "checklist_needs_info_item_count": checklist["needs_info_item_count"],
+        "checklist_readiness_item_count": checklist["readiness_item_count"],
+        "checklist_primary_issue_item_count": checklist["primary_issue_item_count"],
+        "checklist_preview_item_count": checklist["preview_item_count"],
+        "checklist_handoff_item_count": checklist["handoff_item_count"],
+        "checklist_open_samples": checklist["open_samples"],
         "artifact_available_count": available_count,
         "artifact_total_count": len(artifact_rows),
         "missing_required_count": len(missing_required),
@@ -439,6 +475,21 @@ def _bundle_summary(packages: list[dict[str, Any]]) -> dict[str, int]:
         "signoff_not_recorded_count": sum(
             1 for row in packages if row.get("signoff_status") == "not_recorded"
         ),
+        "checklist_open_package_count": sum(
+            1 for row in packages if _int(row.get("checklist_open_item_count")) > 0
+        ),
+        "checklist_open_item_total": sum(
+            _int(row.get("checklist_open_item_count")) for row in packages
+        ),
+        "checklist_blocked_item_total": sum(
+            _int(row.get("checklist_blocked_item_count")) for row in packages
+        ),
+        "checklist_needs_info_item_total": sum(
+            _int(row.get("checklist_needs_info_item_count")) for row in packages
+        ),
+        "checklist_missing_count": sum(
+            1 for row in packages if row.get("checklist_review_status") == "checklist_missing"
+        ),
     }
 
 
@@ -465,7 +516,106 @@ def _bundle_next_actions(packages: list[dict[str, Any]]) -> list[str]:
             )
         else:
             actions.append(f"{_str(package.get('package_name'))}: review package status")
+    for package in packages:
+        if _int(package.get("checklist_open_item_count")) <= 0:
+            continue
+        actions.append(
+            f"{_str(package.get('package_name'))}: complete "
+            f"{_int(package.get('checklist_open_item_count'))} reviewer checklist items"
+        )
     return actions
+
+
+def _checklist_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    if not payload:
+        return _empty_checklist_summary("checklist_missing", available=False)
+    if _str(payload.get("schema_version")) != REVIEWER_TASK_CHECKLIST_SCHEMA_VERSION:
+        return _empty_checklist_summary("checklist_invalid", available=False)
+
+    items = _list_of_dicts(payload.get("items"))
+    open_items = [
+        item
+        for item in items
+        if _str(item.get("reviewer_status")) not in {"done", "skipped_preview"}
+    ]
+    blocked_items = [
+        item for item in items if _str(item.get("reviewer_status")) == "blocked"
+    ]
+    needs_info_items = [
+        item for item in items if _str(item.get("reviewer_status")) == "needs_info"
+    ]
+    done_items = [
+        item
+        for item in items
+        if _str(item.get("reviewer_status")) in {"done", "skipped_preview"}
+    ]
+    return {
+        "available": True,
+        "status": _str(payload.get("status")) or "unknown",
+        "review_status": _checklist_review_status(
+            item_count=len(items),
+            open_count=len(open_items),
+            blocked_count=len(blocked_items),
+            needs_info_count=len(needs_info_items),
+        ),
+        "item_count": len(items),
+        "done_item_count": len(done_items),
+        "open_item_count": len(open_items),
+        "blocked_item_count": len(blocked_items),
+        "needs_info_item_count": len(needs_info_items),
+        "readiness_item_count": _count_stage(items, "readiness"),
+        "primary_issue_item_count": _count_stage(items, "primary_issue_review"),
+        "preview_item_count": _count_stage(items, "per_sheet_preview"),
+        "handoff_item_count": _count_stage(items, "handoff"),
+        "open_samples": [
+            _str(item.get("title")) or _str(item.get("check_id"))
+            for item in open_items[:3]
+        ],
+    }
+
+
+def _empty_checklist_summary(
+    review_status: str,
+    *,
+    available: bool,
+) -> dict[str, Any]:
+    return {
+        "available": available,
+        "status": review_status,
+        "review_status": review_status,
+        "item_count": 0,
+        "done_item_count": 0,
+        "open_item_count": 0,
+        "blocked_item_count": 0,
+        "needs_info_item_count": 0,
+        "readiness_item_count": 0,
+        "primary_issue_item_count": 0,
+        "preview_item_count": 0,
+        "handoff_item_count": 0,
+        "open_samples": [],
+    }
+
+
+def _checklist_review_status(
+    *,
+    item_count: int,
+    open_count: int,
+    blocked_count: int,
+    needs_info_count: int,
+) -> str:
+    if item_count == 0:
+        return "checklist_empty"
+    if blocked_count:
+        return "checklist_blocked"
+    if needs_info_count:
+        return "checklist_needs_info"
+    if open_count:
+        return "checklist_open"
+    return "checklist_complete"
+
+
+def _count_stage(items: list[dict[str, Any]], stage: str) -> int:
+    return sum(1 for item in items if _str(item.get("stage")) == stage)
 
 
 def _load_json(path: Path) -> dict[str, Any]:

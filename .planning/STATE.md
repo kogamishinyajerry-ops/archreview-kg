@@ -52,12 +52,13 @@ Status:
 - P60-01 is complete: `archkg handoff-bundle-index` now scans a directory of handoff packages and writes bundle-level JSON/Markdown/HTML summaries without mutating individual packages or source runs.
 - P61-01 is complete: full CLI and Studio runs now write `reviewer_task_sequence.json` / `.md`, report and Viewer render the ordered review queue, and handoff packages include the sequence as entry evidence.
 - P62-01 is complete: full CLI and Studio runs now derive `reviewer_task_checklist.json` / `.md` from the ordered queue, report and Viewer render the fillable checklist seed, and handoff packages include it as entry evidence.
+- P63-01 is complete: `archkg handoff-bundle-index` now reads package-local reviewer task checklists and summarizes checklist open item totals, per-package review status, and open samples without mutating packages.
 
 ## Current Phase
 
-P62: Reviewer task checklist seed.
+P63: Bundle checklist risk aggregation.
 
-P62 is complete. Novice reviewers now get both an ordered task queue and a fillable checklist seed for reviewer_status, notes, checked evidence, and unresolved risks.
+P63 is complete. Review managers can now scan multiple handoff packages and see both package readiness and open reviewer checklist risk in one bundle index.
 
 ## Key Decisions
 
@@ -103,8 +104,9 @@ P62 is complete. Novice reviewers now get both an ordered task queue and a filla
 - P60 bundle indexes summarize package-local handoff state only; `bundle_ready` is not a compliance certificate, and bundle generation must not mutate single-package artifacts.
 - P61 reviewer task sequencing is order guidance only; it does not confirm issues, mutate `review_state.json`, or promote preview issues into primary lifecycle.
 - P62 reviewer task checklist is a fillable seed only; checked rows are not issue confirmations unless the reviewer separately updates primary `review_state.json`.
+- P63 checklist risk aggregation is read-only bundle triage only; it does not mutate package artifacts and does not change package readiness semantics.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P62 by adding package-level reviewer checklist import/export or a richer static manager view that highlights open checklist risk across bundles.
+Move beyond P63 by adding package-level checklist import/export or static package commands to record checklist completion without touching source runs.

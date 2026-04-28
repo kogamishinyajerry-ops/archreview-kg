@@ -724,6 +724,17 @@ def test_handoff_bundle_index_summarizes_multiple_packages_without_mutation(
     package_ready = packages_root / "pkg-ready"
     _write_minimal_run(run_ready)
     write_handoff_package(run_ready, package_ready)
+    _write_package_checklist(
+        package_ready,
+        [
+            {"title": "ready evidence checked", "stage": "handoff", "status": "done"},
+            {
+                "title": "preview accepted as skipped",
+                "stage": "per_sheet_preview",
+                "status": "skipped_preview",
+            },
+        ],
+    )
     quality = build_handoff_package_quality(package_ready)
     write_handoff_package_quality_json(
         quality,
@@ -752,6 +763,21 @@ def test_handoff_bundle_index_summarizes_multiple_packages_without_mutation(
     _write_minimal_run(run_blocked)
     (run_blocked / "rule_input_readiness.json").unlink()
     write_handoff_package(run_blocked, package_blocked)
+    _write_package_checklist(
+        package_blocked,
+        [
+            {
+                "title": "补齐规则输入: RC-PROJECT-META",
+                "stage": "readiness",
+                "status": "needs_info",
+            },
+            {
+                "title": "复核主 issue: issue-open",
+                "stage": "primary_issue_review",
+                "status": "todo",
+            },
+        ],
+    )
     blocked_quality = build_handoff_package_quality(package_blocked)
     write_handoff_package_quality_json(
         blocked_quality,
@@ -766,15 +792,24 @@ def test_handoff_bundle_index_summarizes_multiple_packages_without_mutation(
     assert payload["summary"]["package_count"] == 2
     assert payload["summary"]["ready_count"] == 1
     assert payload["summary"]["blocked_count"] == 1
+    assert payload["summary"]["checklist_open_package_count"] == 1
+    assert payload["summary"]["checklist_open_item_total"] == 2
+    assert payload["summary"]["checklist_needs_info_item_total"] == 1
     packages = {row["package_name"]: row for row in payload["packages"]}
     assert packages["pkg-ready"]["package_status"] == "package_ready"
+    assert packages["pkg-ready"]["checklist_review_status"] == "checklist_complete"
+    assert packages["pkg-ready"]["checklist_open_item_count"] == 0
     assert packages["pkg-ready"]["archive_verification_status"] == "archive_verified"
     assert packages["pkg-ready"]["index_path"] == "pkg-ready/index.html"
     assert packages["pkg-blocked"]["package_status"] == "package_blocked"
+    assert packages["pkg-blocked"]["checklist_review_status"] == "checklist_needs_info"
+    assert packages["pkg-blocked"]["checklist_open_item_count"] == 2
+    assert "补齐规则输入" in packages["pkg-blocked"]["checklist_open_samples"][0]
     assert packages["pkg-blocked"]["missing_required_artifacts"] == [
         "rule_input_readiness.json"
     ]
     assert "required artifact missing" in " ".join(packages["pkg-blocked"]["open_items"])
+    assert "complete 2 reviewer checklist items" in " ".join(payload["next_actions"])
     assert not (package_ready / "handoff_bundle_index.json").exists()
     assert not (package_blocked / "handoff_bundle_index.json").exists()
 
@@ -798,13 +833,16 @@ def test_handoff_bundle_index_cli_writes_json_markdown_and_html(
     assert (packages_root / "handoff_bundle_index.html").exists()
     payload = json.loads((packages_root / "handoff_bundle_index.json").read_text("utf-8"))
     assert payload["summary"]["package_count"] == 1
+    assert payload["packages"][0]["checklist_review_status"] == "checklist_empty"
     assert payload["packages"][0]["quality_status"] == "not_run"
     markdown = (packages_root / "handoff_bundle_index.md").read_text("utf-8")
     assert "ArchReview-KG Handoff Bundle Index" in markdown
+    assert "Checklist open items" in markdown
     assert "run handoff-check" in markdown
     html = (packages_root / "handoff_bundle_index.html").read_text("utf-8")
     assert "ArchReview-KG Handoff Bundle" in html
     assert "pkg-a/index.html" in html
+    assert "Checklist Open" in html
     assert "not a drawing-compliance certificate" in html
 
 
@@ -845,3 +883,28 @@ def _write_minimal_run(run_dir: Path) -> None:
     for name, content in files.items():
         (run_dir / name).write_text(content, encoding="utf-8")
     (run_dir / "annotated.pdf").write_bytes(b"%PDF-1.7\n")
+
+
+def _write_package_checklist(
+    package_dir: Path,
+    rows: list[dict[str, str]],
+) -> None:
+    items = [
+        {
+            "check_id": f"check-{index:03d}",
+            "ordinal": index,
+            "stage": row["stage"],
+            "title": row["title"],
+            "reviewer_status": row["status"],
+        }
+        for index, row in enumerate(rows, start=1)
+    ]
+    payload = {
+        "schema_version": "reviewer_task_checklist.v1",
+        "status": "needs_input_review",
+        "items": items,
+    }
+    (package_dir / "artifacts" / "reviewer_task_checklist.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )

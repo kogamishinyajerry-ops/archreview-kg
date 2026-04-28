@@ -45,6 +45,9 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - P62 后完整 run 会从任务序列派生 `reviewer_task_checklist.json` / `.md`，供新手
   reviewer 逐项勾选证据、记录 reviewer_status 与未解决风险；该清单不写回
   `issues.json` 或 `review_state.json`。
+- P63 后 `handoff-bundle-index` 会读取每个包内的 `artifacts/reviewer_task_checklist.json`，
+  汇总 checklist open item 总数、每包 checklist_review_status 和 open samples；它只做负责人
+  triage，不改变 package readiness。
 
 复现该结论：
 
@@ -342,6 +345,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   `review_state.json`，也不会把 preview issue 提升为主 issue。
 - P62 起，reviewer task checklist 只是人工填写的清单种子，不会自动完成任务、
   确认 issue、写入 `review_state.json`，也不是合规证书。
+- P63 起，bundle checklist risk 只是跨包只读汇总；它不修改单包 artifacts，也不把
+  checklist 状态当成图纸合规状态。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

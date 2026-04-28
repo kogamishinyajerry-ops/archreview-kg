@@ -251,6 +251,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Render the checklist seed in report and Viewer, and include it in handoff packages as entry evidence.
 - Guardrail: checklist rows are fillable human work aids only; they do not mutate source run artifacts, confirm candidate issues, or certify compliance.
 
+### P63: Bundle Checklist Risk Aggregation
+
+- Extend `archkg handoff-bundle-index` to read `artifacts/reviewer_task_checklist.json` from each handoff package.
+- Summarize checklist item counts, open item counts, blocked/needs-info counts, per-package checklist_review_status, and first open samples in bundle JSON/Markdown/HTML.
+- Keep `package_status` based on package quality/signoff/manager/archive gates; checklist risk is displayed for triage but does not mutate packages or redefine readiness.
+- Guardrail: bundle checklist risk is a read-only manager view only; it does not write package artifacts, confirm candidate issues, or certify compliance.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.
