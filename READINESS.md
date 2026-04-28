@@ -54,6 +54,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - P65 后 `archkg handoff-manager-checklist <package-dir>` 会读取 package-local reviewer
   checklist 完成度；open / needs_info item 会让 manager intake 保持 `manager_needs_info`，
   blocked 或缺失 checklist 会阻塞 manager intake。
+- P66 后交接包会写 `handoff_ready_runbook.json` / `.md`；`archkg handoff-ready-runbook`
+  可刷新新手 reviewer 的下一步命令清单，直到 checklist 和 manager intake 闭环。
 
 复现该结论：
 
@@ -357,6 +359,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不写主 `review_state.json`，也不确认 candidate issue。
 - P65 起，manager checklist 要求 reviewer checklist 完成后才输出 `manager_ready`；
   该 gate 只说明交接包可进入负责人下一步 intake，不说明图纸合规。
+- P66 起，ready-to-review runbook 是包内导航面和命令提示；它不纳入 archive checksum，
+  不确认 candidate issue，也不替代人工复核或经理 intake。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

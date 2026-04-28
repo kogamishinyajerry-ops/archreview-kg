@@ -272,6 +272,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Require checklist completion before `manager_ready`; open or needs-info rows keep the package at `manager_needs_info`, while blocked or missing checklist state blocks manager intake.
 - Guardrail: this is package-intake gating only; it does not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
 
+### P66: Ready-to-Review Runbook
+
+- Generate package-local `handoff_ready_runbook.json` and `handoff_ready_runbook.md` as a novice reviewer closeout guide.
+- Add `archkg handoff-ready-runbook` to refresh runbook next actions from current quality, signoff, reviewer checklist, and manager checklist state.
+- Surface the runbook in package `index.html`; open checklist rows produce concrete `handoff-checklist-update` commands, complete prerequisites produce the manager checklist command, and manager-ready packages show no remaining actions.
+- Guardrail: runbook is navigation guidance only, excluded from archive checksums, and does not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

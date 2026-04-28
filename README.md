@@ -62,6 +62,7 @@ archkg handoff-package out/ -o out-handoff
 archkg handoff-check out-handoff --out out-handoff/handoff_quality.json --markdown out-handoff/handoff_quality.md
 archkg handoff-signoff out-handoff --reviewer reviewer-name --status needs_info --note "缺少剖面净高证据"
 archkg handoff-checklist-update out-handoff --ordinal 1 --reviewer reviewer-name --status done --note "已核对交接边界" --evidence-checked handoff_manifest.json
+archkg handoff-ready-runbook out-handoff
 archkg handoff-manager-checklist out-handoff --manager manager-name --note "等待补齐剖面证据"
 archkg handoff-archive-manifest out-handoff --created-by manager-name --note "移交前固化 checksum"
 archkg handoff-archive-verify out-handoff
@@ -94,6 +95,8 @@ P64 起 reviewer 可用 `archkg handoff-checklist-update` 在交接包内更新�
 记录 reviewer_status、note 和 evidence_checked；它只写 package-local 文件，不碰源 run。
 P65 起 manager checklist 会把 reviewer checklist completion 纳入 intake：open / needs_info 行会让
 manager 状态停在 `manager_needs_info`，blocked 或缺失清单会阻塞；这仍只是交接状态，不是合规结论。
+P66 起交接包会生成 `handoff_ready_runbook.json` / `.md`，并可用 `archkg handoff-ready-runbook`
+刷新；它把 quality、signoff、checklist、manager gate 汇成新手下一步命令，不写源 run。
 
 ---
 
@@ -415,6 +418,7 @@ archkg handoff-check out-handoff
 archkg handoff-signoff out-handoff --reviewer reviewer-name --status ready --note "交接包可进入复核"
 # repeat for each checklist row that has been reviewed; open rows will hold manager intake at needs_info
 archkg handoff-checklist-update out-handoff --ordinal 1 --reviewer reviewer-name --status done --note "已核对边界" --evidence-checked handoff_manifest.json
+archkg handoff-ready-runbook out-handoff
 archkg handoff-manager-checklist out-handoff --manager manager-name --note "进入复核队列"
 archkg handoff-archive-manifest out-handoff --created-by manager-name --note "移交前固化 checksum"
 archkg handoff-archive-verify out-handoff
@@ -483,6 +487,7 @@ archkg clause readiness
 - P63：Bundle checklist risk aggregation。`archkg handoff-bundle-index` 读取各包的 `artifacts/reviewer_task_checklist.json`，汇总 checklist open item、blocked/needs_info item 和每包 checklist_review_status；它只做负责人 triage，不改变 `package_status`。
 - P64：Package-local checklist update。`archkg handoff-checklist-update` 只更新交接包内 `artifacts/reviewer_task_checklist.json/.md` 并刷新包内 `index.html`，让 reviewer 记录单项完成情况；它不写源 run 或主 `review_state.json`。
 - P65：Manager checklist reviewer gate。`archkg handoff-manager-checklist` 会读取包内 reviewer checklist 完成度；未完成清单让 manager intake 保持 needs_info / blocked，不再把 quality+signoff ready 误当成交接清单已闭环。
+- P66：Ready-to-review runbook。交接包根目录新增 `handoff_ready_runbook.json/.md`，`archkg handoff-ready-runbook` 可刷新新手下一步动作；open checklist 会生成对应 `handoff-checklist-update` 命令，全部闭环后只剩 manager checklist 或进入 ready。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
@@ -500,6 +505,7 @@ archkg clause readiness
 - P63：Bundle checklist risk aggregation。bundle index 现在还汇总 reviewer checklist open item 总数和每包 checklist_review_status，让负责人看到复核清单风险；这不改变 package readiness，也不写单包 artifact。
 - P64：Package-local checklist update。交接包接收方可用命令记录 checklist item 的 reviewer_status / note / evidence_checked，供包内 index 和 bundle index 读取；该状态不是 candidate issue 确认。
 - P65：Manager checklist reviewer gate。manager checklist 汇总 reviewer checklist status、open/blocked/needs_info item counts，并要求清单完成后才输出 `manager_ready`；这只约束交接包 intake，不确认 issue。
+- P66：Ready-to-review runbook。包内 runbook 只做导航和命令提示，不纳入 archive checksum，不确认 candidate issue，也不替代人工复核。
 
 ---
 

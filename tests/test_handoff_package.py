@@ -17,6 +17,7 @@ from archkg.viewer.handoff_package import (
     write_handoff_package,
     write_handoff_package_quality_json,
     write_handoff_package_quality_markdown,
+    write_handoff_ready_runbook,
     write_handoff_reviewer_signoff,
     write_handoff_reviewer_task_checklist_update,
 )
@@ -51,6 +52,8 @@ def test_handoff_package_copies_review_artifacts_without_mutating_run(
     assert (package_dir / "artifacts" / "reviewer_task_checklist.md").exists()
     assert (package_dir / "artifacts" / "sheet_issue_review_queue.json").exists()
     assert (package_dir / "artifacts" / "review_diff.json").exists()
+    assert (package_dir / "handoff_ready_runbook.json").exists()
+    assert (package_dir / "handoff_ready_runbook.md").exists()
 
     summary = (package_dir / "handoff_summary.md").read_text("utf-8")
     assert "# ArchReview-KG Handoff Package" in summary
@@ -113,6 +116,7 @@ def test_handoff_package_writes_static_index_for_novice_review(
     assert "handoff_package.v1" in html
     assert "copy_artifacts_only_no_source_run_mutation" in html
     assert "href=\"handoff_summary.md\"" in html
+    assert "href=\"handoff_ready_runbook.md\"" in html
     assert "href=\"artifacts/reviewer_quickstart.md\"" in html
     assert "href=\"artifacts/issues.json\"" in html
     assert "preview ids are not primary issue ids" in html
@@ -706,6 +710,105 @@ def test_handoff_manager_checklist_cli_writes_needs_info(tmp_path: Path) -> None
     assert "manager-b" in html
 
 
+def test_handoff_ready_runbook_guides_open_reviewer_checklist(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    original_issues = (run_dir / "issues.json").read_text("utf-8")
+
+    runbook_path = write_handoff_ready_runbook(package_dir)
+
+    assert runbook_path == package_dir / "handoff_ready_runbook.json"
+    assert (package_dir / "handoff_ready_runbook.md").exists()
+    assert (run_dir / "issues.json").read_text("utf-8") == original_issues
+    payload = json.loads(runbook_path.read_text("utf-8"))
+    assert payload["schema_version"] == "handoff_ready_runbook.v1"
+    assert payload["mutation_policy"] == "package_runbook_only_no_source_run_mutation"
+    assert payload["status"] == "reviewer_action_required"
+    assert payload["summary"]["reviewer_checklist_status"] == "checklist_open"
+    action_ids = {item["id"] for item in payload["next_actions"]}
+    assert "run_handoff_quality" in action_ids
+    assert "record_reviewer_signoff" in action_ids
+    assert "close_checklist_1" in action_ids
+    checklist_action = next(
+        item for item in payload["next_actions"] if item["id"] == "close_checklist_1"
+    )
+    assert "archkg handoff-checklist-update" in checklist_action["command"]
+    assert "--ordinal 1" in checklist_action["command"]
+
+    markdown = (package_dir / "handoff_ready_runbook.md").read_text("utf-8")
+    assert "# Handoff Ready-To-Review Runbook" in markdown
+    assert "Run handoff package quality gate." in markdown
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "Ready-To-Review Runbook" in html
+    assert "reviewer_action_required" in html
+
+
+def test_handoff_ready_runbook_reports_ready_for_manager_intake(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-ready",
+        status="ready",
+        note="Ready for manager intake.",
+    )
+    write_handoff_reviewer_task_checklist_update(
+        package_dir,
+        ordinal=1,
+        reviewer="reviewer-ready",
+        status="done",
+        note="Checklist complete.",
+        evidence_checked=["handoff_manifest.json"],
+    )
+    write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-ready",
+        note="Intake ready.",
+    )
+
+    runbook_path = write_handoff_ready_runbook(package_dir)
+
+    payload = json.loads(runbook_path.read_text("utf-8"))
+    assert payload["status"] == "ready_for_manager_intake"
+    assert payload["next_actions"] == []
+    steps = {item["id"]: item["status"] for item in payload["required_before_manager_intake"]}
+    assert steps["handoff_quality"] == "done"
+    assert steps["reviewer_signoff"] == "done"
+    assert steps["reviewer_task_checklist"] == "done"
+    assert steps["manager_checklist"] == "done"
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "ready_for_manager_intake" in html
+
+
+def test_handoff_ready_runbook_cli_writes_status(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    write_handoff_package(run_dir, package_dir)
+
+    result = CliRunner().invoke(
+        app,
+        ["handoff-ready-runbook", str(package_dir)],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "handoff_ready_runbook.v1" in result.output
+    assert "status=reviewer_action_required" in result.output
+    assert (package_dir / "handoff_ready_runbook.json").exists()
+    assert (package_dir / "handoff_ready_runbook.md").exists()
+
+
 def test_handoff_archive_manifest_writes_checksums_without_source_mutation(
     tmp_path: Path,
 ) -> None:
@@ -750,6 +853,8 @@ def test_handoff_archive_manifest_writes_checksums_without_source_mutation(
     assert payload["excluded_paths"] == [
         "handoff_archive_manifest.json",
         "handoff_archive_manifest.md",
+        "handoff_ready_runbook.json",
+        "handoff_ready_runbook.md",
         "index.html",
     ]
     paths = {entry["path"]: entry for entry in payload["files"]}
@@ -760,6 +865,7 @@ def test_handoff_archive_manifest_writes_checksums_without_source_mutation(
     assert "handoff_manager_checklist.json" in paths
     assert "index.html" not in paths
     assert "handoff_archive_manifest.json" not in paths
+    assert "handoff_ready_runbook.json" not in paths
     assert len(paths["artifacts/issues.json"]["sha256"]) == 64
     assert paths["artifacts/issues.json"]["size_bytes"] >= 2
     assert len(payload["package_digest"]) == 64

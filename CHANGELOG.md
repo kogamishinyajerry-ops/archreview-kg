@@ -240,6 +240,12 @@ and keeps the no-OCR transparency warning.
   open/blocked/needs-info counts in the manager checklist summary, and keeps
   manager intake at needs-info or blocked until reviewer checklist rows are
   completed or explicitly skipped as preview-only.
+- P66-01 adds a package-local ready-to-review runbook for novice reviewers.
+  Handoff packages now include `handoff_ready_runbook.json` and
+  `handoff_ready_runbook.md`, and `archkg handoff-ready-runbook` refreshes the
+  runbook with quality, signoff, checklist, and manager-intake next actions.
+  The runbook is navigation guidance only and is excluded from archive
+  checksums because it refreshes with package-local state.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

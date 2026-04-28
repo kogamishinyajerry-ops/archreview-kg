@@ -55,12 +55,13 @@ Status:
 - P63-01 is complete: `archkg handoff-bundle-index` now reads package-local reviewer task checklists and summarizes checklist open item totals, per-package review status, and open samples without mutating packages.
 - P64-01 is complete: `archkg handoff-checklist-update` now updates one package-local reviewer checklist item, regenerates package checklist Markdown, and refreshes package `index.html` without touching the source run.
 - P65-01 is complete: `archkg handoff-manager-checklist` now reads package-local reviewer checklist status and requires the checklist to be complete before emitting `manager_ready`.
+- P66-01 is complete: handoff packages now include a ready-to-review runbook, and `archkg handoff-ready-runbook` refreshes novice next actions from package-local quality, signoff, checklist, and manager-intake state.
 
 ## Current Phase
 
-P65: Manager checklist reviewer gate.
+P66: Ready-to-review runbook.
 
-P65 is complete. Manager intake now combines package quality, reviewer signoff, required artifacts, boundary warnings, and reviewer checklist completion; open checklist rows hold the package at `manager_needs_info`, while blocked or missing checklist evidence blocks manager intake.
+P66 is complete. New reviewers can open the package runbook or refresh it by CLI to see the exact remaining commands before manager intake; the runbook remains package-local guidance and does not change issue truth.
 
 ## Key Decisions
 
@@ -109,8 +110,9 @@ P65 is complete. Manager intake now combines package quality, reviewer signoff, 
 - P63 checklist risk aggregation is read-only bundle triage only; it does not mutate package artifacts and does not change package readiness semantics.
 - P64 checklist updates are package-local progress notes only; they do not mutate source run artifacts, primary `review_state.json`, or candidate issue truth.
 - P65 manager checklist reviewer gate is package-intake governance only; `manager_ready` still does not mean candidate issues are confirmed or the drawing is compliant.
+- P66 ready-to-review runbook is generated navigation guidance only; it is excluded from archive checksums because it refreshes as package-local state changes.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P65 by adding package-level novice reviewer acceptance presets or a compact "ready to review" runbook that guides a new reviewer through checklist closeout before manager intake.
+Move beyond P66 by adding an optional bundle-level "who should act next" queue or by tightening the static handoff index around the runbook-first reviewer flow.

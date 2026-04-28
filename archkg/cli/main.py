@@ -1209,6 +1209,34 @@ def handoff_checklist_update_cmd(
     )
 
 
+@app.command("handoff-ready-runbook")
+def handoff_ready_runbook_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to summarize for novice review closeout.",
+    ),
+) -> None:
+    """Write a package-local ready-to-review runbook for novice reviewers."""
+    from archkg.viewer.handoff_package import write_handoff_ready_runbook
+
+    try:
+        runbook_path = write_handoff_ready_runbook(package_dir)
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(runbook_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={runbook_path} "
+        f"status={payload['status']} "
+        f"next_actions={len(payload.get('next_actions', []))}"
+    )
+
+
 @app.command("handoff-manager-checklist")
 def handoff_manager_checklist_cmd(
     package_dir: Path = typer.Argument(

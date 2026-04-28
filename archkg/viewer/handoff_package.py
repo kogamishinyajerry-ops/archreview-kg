@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import html
 import json
+import shlex
 import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -21,6 +22,7 @@ SCHEMA_VERSION = "handoff_package.v1"
 QUALITY_SCHEMA_VERSION = "handoff_package_quality.v1"
 SIGNOFF_SCHEMA_VERSION = "handoff_reviewer_signoff.v1"
 MANAGER_CHECKLIST_SCHEMA_VERSION = "handoff_manager_checklist.v1"
+READY_RUNBOOK_SCHEMA_VERSION = "handoff_ready_runbook.v1"
 ARCHIVE_MANIFEST_SCHEMA_VERSION = "handoff_archive_manifest.v1"
 ARCHIVE_VERIFICATION_SCHEMA_VERSION = "handoff_archive_verification.v1"
 
@@ -34,6 +36,8 @@ ARCHIVE_VERIFICATION_MUTATION_POLICY = (
 ARCHIVE_MANIFEST_EXCLUDED_PATHS: tuple[str, ...] = (
     "handoff_archive_manifest.json",
     "handoff_archive_manifest.md",
+    "handoff_ready_runbook.json",
+    "handoff_ready_runbook.md",
     "index.html",
 )
 ARCHIVE_VERIFICATION_EXCLUDED_PATHS: tuple[str, ...] = (
@@ -239,7 +243,8 @@ def write_handoff_package(run_dir: Path, package_dir: Path) -> Path:
         render_handoff_summary(manifest),
         encoding="utf-8",
     )
-    _write_handoff_index_from_payloads(package_dir, manifest)
+    ready_runbook = _refresh_handoff_ready_runbook_if_possible(package_dir)
+    _write_handoff_index_from_payloads(package_dir, manifest, ready_runbook=ready_runbook)
     return manifest_path
 
 
@@ -391,6 +396,7 @@ def write_handoff_index(
     signoff: dict[str, Any] | None = None,
     reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
+    ready_runbook: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
 ) -> Path:
@@ -405,6 +411,11 @@ def write_handoff_index(
         signoff=signoff,
         reviewer_task_checklist=reviewer_task_checklist,
         manager_checklist=manager_checklist,
+        ready_runbook=(
+            ready_runbook
+            if ready_runbook is not None
+            else _refresh_handoff_ready_runbook_if_possible(package_dir)
+        ),
         archive_manifest=archive_manifest,
         archive_verification=archive_verification,
     )
@@ -417,6 +428,7 @@ def render_handoff_index_html(
     signoff: dict[str, Any] | None = None,
     reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
+    ready_runbook: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
 ) -> str:
@@ -426,6 +438,7 @@ def render_handoff_index_html(
         reviewer_task_checklist if isinstance(reviewer_task_checklist, dict) else {}
     )
     manager_checklist = manager_checklist if isinstance(manager_checklist, dict) else {}
+    ready_runbook = ready_runbook if isinstance(ready_runbook, dict) else {}
     archive_manifest = archive_manifest if isinstance(archive_manifest, dict) else {}
     archive_verification = (
         archive_verification if isinstance(archive_verification, dict) else {}
@@ -441,6 +454,7 @@ def render_handoff_index_html(
         reviewer_task_checklist
     )
     manager_status = _str(manager_checklist.get("status")) or "not_recorded"
+    ready_runbook_status = _str(ready_runbook.get("status")) or "not_recorded"
     archive_status = _str(archive_manifest.get("status")) or "not_recorded"
     archive_digest = _str(archive_manifest.get("package_digest")) or "not_recorded"
     archive_file_count = archive_manifest.get("file_count")
@@ -493,6 +507,7 @@ def render_handoff_index_html(
             _status_class(_str(checklist_summary.get("review_status"))),
         ),
         _kpi("Manager", manager_status, _status_class(manager_status)),
+        _kpi("Runbook", ready_runbook_status, _status_class(ready_runbook_status)),
         _kpi("Archive", archive_status, _status_class(archive_status)),
         _kpi(
             "Archive Check",
@@ -549,6 +564,28 @@ def render_handoff_index_html(
     lines.extend(
         [
             '<p><a href="artifacts/reviewer_task_checklist.json">reviewer_task_checklist.json</a> · <a href="artifacts/reviewer_task_checklist.md">reviewer_task_checklist.md</a></p>',
+            "</section>",
+            '<section class="panel">',
+            "<h2>Ready-To-Review Runbook</h2>",
+            f"<p><b>Schema:</b> {_html(_str(ready_runbook.get('schema_version')) or 'not_recorded')}</p>",
+            f"<p><b>Status:</b> <span class=\"pill\">{_html(ready_runbook_status)}</span></p>",
+            f"<p>{_html(_str(ready_runbook.get('boundary_warning')) or 'Runbook is package-local guidance, not a compliance certificate.')}</p>",
+        ]
+    )
+    next_actions = _list_of_dicts(ready_runbook.get("next_actions"))
+    if next_actions:
+        lines.extend(["<ul>"])
+        for action in next_actions[:3]:
+            lines.append(
+                "<li>"
+                f"{_html(_str(action.get('title')))}"
+                f" <code>{_html(_str(action.get('command')))}</code>"
+                "</li>"
+            )
+        lines.append("</ul>")
+    lines.extend(
+        [
+            '<p><a href="handoff_ready_runbook.json">handoff_ready_runbook.json</a> · <a href="handoff_ready_runbook.md">handoff_ready_runbook.md</a></p>',
             "</section>",
             '<section class="panel">',
             "<h2>Manager Checklist</h2>",
@@ -899,6 +936,143 @@ def render_handoff_manager_checklist_markdown(payload: dict[str, Any]) -> str:
         lines.extend(["", "## Open Items", ""])
         lines.extend(f"- {item}" for item in open_items)
     lines.append("")
+    return "\n".join(lines)
+
+
+def write_handoff_ready_runbook(package_dir: Path) -> Path:
+    """Write a package-local novice runbook for closing manager-intake gates."""
+
+    package_dir = package_dir.resolve()
+    payload = _write_handoff_ready_runbook_files(package_dir)
+    write_handoff_index(package_dir, ready_runbook=payload)
+    return package_dir / "handoff_ready_runbook.json"
+
+
+def build_handoff_ready_runbook(package_dir: Path) -> dict[str, Any]:
+    package_dir = package_dir.resolve()
+    manifest = _load_manifest(package_dir / "handoff_manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
+    quality = _load_optional_json(package_dir / "handoff_quality.json") or {}
+    signoff = _load_optional_json(package_dir / "reviewer_signoff.json") or {}
+    reviewer_task_checklist = (
+        _load_optional_json(package_dir / "artifacts" / "reviewer_task_checklist.json")
+        or {}
+    )
+    manager_checklist = (
+        _load_optional_json(package_dir / "handoff_manager_checklist.json") or {}
+    )
+    reviewer_checklist_summary = _reviewer_task_checklist_index_summary(
+        reviewer_task_checklist
+    )
+    summary = {
+        "quality_status": _str(quality.get("status")) or "missing",
+        "signoff_status": _str(signoff.get("status")) or "missing",
+        "manager_status": _str(manager_checklist.get("status")) or "missing",
+        "reviewer_checklist_status": _str(
+            reviewer_checklist_summary.get("review_status")
+        ),
+        "reviewer_checklist_item_count": _int(
+            reviewer_checklist_summary.get("item_count")
+        ),
+        "reviewer_checklist_open_item_count": _int(
+            reviewer_checklist_summary.get("open_item_count")
+        ),
+        "reviewer_checklist_blocked_item_count": _int(
+            reviewer_checklist_summary.get("blocked_item_count")
+        ),
+        "reviewer_checklist_needs_info_item_count": _int(
+            reviewer_checklist_summary.get("needs_info_item_count")
+        ),
+        "missing_required_count": len(_str_list(manifest.get("missing_required_artifacts"))),
+    }
+    required_steps = _ready_runbook_required_steps(summary)
+    return {
+        "schema_version": READY_RUNBOOK_SCHEMA_VERSION,
+        "created_at": datetime.now(UTC).isoformat(),
+        "package_dir": str(package_dir),
+        "source_run_dir": _str(manifest.get("source_run_dir")),
+        "mutation_policy": "package_runbook_only_no_source_run_mutation",
+        "audience": "novice_review_engineer",
+        "status": _ready_runbook_status(required_steps),
+        "summary": summary,
+        "required_before_manager_intake": required_steps,
+        "next_actions": _ready_runbook_next_actions(
+            package_dir,
+            summary,
+            reviewer_task_checklist,
+        ),
+        "manager_intake_command": (
+            f"archkg handoff-manager-checklist {_shell_path(package_dir)} "
+            '--manager <manager> --note "<manager intake note>"'
+        ),
+        "boundary_warning": (
+            "Ready-to-review runbook is package-local guidance only; it does not "
+            "mutate source run artifacts, confirm candidate issues, or certify "
+            "drawing compliance."
+        ),
+    }
+
+
+def render_handoff_ready_runbook_markdown(payload: dict[str, Any]) -> str:
+    raw_summary = payload.get("summary")
+    summary: dict[str, Any] = raw_summary if isinstance(raw_summary, dict) else {}
+    lines = [
+        "# Handoff Ready-To-Review Runbook",
+        "",
+        f"Status: `{_str(payload.get('status'))}`",
+        f"Mutation policy: `{_str(payload.get('mutation_policy'))}`",
+        f"Audience: `{_str(payload.get('audience'))}`",
+        "",
+        _str(payload.get("boundary_warning")),
+        "",
+        "## Gate Summary",
+        "",
+        f"- Quality: `{_str(summary.get('quality_status'))}`",
+        f"- Reviewer signoff: `{_str(summary.get('signoff_status'))}`",
+        f"- Reviewer checklist: `{_str(summary.get('reviewer_checklist_status'))}` "
+        f"({_int(summary.get('reviewer_checklist_open_item_count'))}/"
+        f"{_int(summary.get('reviewer_checklist_item_count'))} open)",
+        f"- Manager checklist: `{_str(summary.get('manager_status'))}`",
+        f"- Missing required artifacts: `{_int(summary.get('missing_required_count'))}`",
+        "",
+        "## Required Before Manager Intake",
+        "",
+        "| Gate | Status | Detail |",
+        "|---|---|---|",
+    ]
+    for step in _list_of_dicts(payload.get("required_before_manager_intake")):
+        lines.append(
+            "| "
+            f"`{_md_cell(_str(step.get('id')))}` | "
+            f"{_md_cell(_str(step.get('status')))} | "
+            f"{_md_cell(_str(step.get('detail')))} |"
+        )
+    lines.extend(["", "## Next Actions", ""])
+    next_actions = _list_of_dicts(payload.get("next_actions"))
+    if next_actions:
+        for index, action in enumerate(next_actions, start=1):
+            lines.append(f"{index}. {_str(action.get('title'))}")
+            reason = _str(action.get("reason"))
+            if reason:
+                lines.append(f"   - Reason: {reason}")
+            command = _str(action.get("command"))
+            if command:
+                lines.append(f"   - Command: `{command}`")
+            evidence = _str_list(action.get("required_evidence"))
+            if evidence:
+                lines.append(f"   - Evidence: {', '.join(evidence)}")
+    else:
+        lines.append("- None. Package is ready for manager intake.")
+    lines.extend(
+        [
+            "",
+            "## Manager Intake Command",
+            "",
+            f"`{_str(payload.get('manager_intake_command'))}`",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -1253,6 +1427,7 @@ def _write_handoff_index_from_payloads(
     signoff: dict[str, Any] | None = None,
     reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
+    ready_runbook: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
 ) -> Path:
@@ -1274,6 +1449,11 @@ def _write_handoff_index_from_payloads(
         if manager_checklist is not None
         else _load_optional_json(package_dir / "handoff_manager_checklist.json")
     )
+    ready_runbook = (
+        ready_runbook
+        if ready_runbook is not None
+        else _load_optional_json(package_dir / "handoff_ready_runbook.json")
+    )
     archive_manifest = (
         archive_manifest
         if archive_manifest is not None
@@ -1292,6 +1472,7 @@ def _write_handoff_index_from_payloads(
             signoff=signoff,
             reviewer_task_checklist=reviewer_task_checklist,
             manager_checklist=manager_checklist,
+            ready_runbook=ready_runbook,
             archive_manifest=archive_manifest,
             archive_verification=archive_verification,
         ),
@@ -1526,6 +1707,241 @@ def _manager_status(items: list[dict[str, str]]) -> str:
     return "manager_ready"
 
 
+def _ready_runbook_required_steps(summary: dict[str, Any]) -> list[dict[str, str]]:
+    missing_required_count = _int(summary.get("missing_required_count"))
+    quality_status = _str(summary.get("quality_status")) or "missing"
+    signoff_status = _str(summary.get("signoff_status")) or "missing"
+    checklist_status = _str(summary.get("reviewer_checklist_status")) or "not_recorded"
+    manager_status = _str(summary.get("manager_status")) or "missing"
+    return [
+        _ready_runbook_step(
+            "required_artifacts",
+            "done" if missing_required_count == 0 else "blocked",
+            "all required artifacts present"
+            if missing_required_count == 0
+            else f"{missing_required_count} required artifacts missing",
+        ),
+        _ready_runbook_step(
+            "handoff_quality",
+            "done" if quality_status == "handoff_ready" else "blocked"
+            if quality_status == "not_ready"
+            else "todo",
+            f"handoff quality {quality_status}",
+        ),
+        _ready_runbook_step(
+            "reviewer_signoff",
+            "done" if signoff_status == "ready" else "blocked"
+            if signoff_status == "blocked"
+            else "todo",
+            f"reviewer signoff {signoff_status}",
+        ),
+        _ready_runbook_step(
+            "reviewer_task_checklist",
+            "done" if checklist_status == "checklist_complete" else "blocked"
+            if checklist_status in {"checklist_blocked", "not_recorded"}
+            else "todo",
+            _reviewer_checklist_manager_item_detail(
+                {
+                    "review_status": checklist_status,
+                    "item_count": summary.get("reviewer_checklist_item_count"),
+                    "open_item_count": summary.get("reviewer_checklist_open_item_count"),
+                    "blocked_item_count": summary.get(
+                        "reviewer_checklist_blocked_item_count"
+                    ),
+                    "needs_info_item_count": summary.get(
+                        "reviewer_checklist_needs_info_item_count"
+                    ),
+                }
+            ),
+        ),
+        _ready_runbook_step(
+            "manager_checklist",
+            "done" if manager_status == "manager_ready" else "blocked"
+            if manager_status == "manager_blocked"
+            else "todo",
+            f"manager checklist {manager_status}",
+        ),
+    ]
+
+
+def _ready_runbook_step(step_id: str, status: str, detail: str) -> dict[str, str]:
+    return {"id": step_id, "status": status, "detail": detail}
+
+
+def _ready_runbook_status(required_steps: list[dict[str, str]]) -> str:
+    status_by_id = {
+        _str(step.get("id")): _str(step.get("status")) for step in required_steps
+    }
+    if status_by_id.get("manager_checklist") == "done":
+        return "ready_for_manager_intake"
+    if "blocked" in status_by_id.values():
+        return "blocked"
+    prereq_ids = {
+        "required_artifacts",
+        "handoff_quality",
+        "reviewer_signoff",
+        "reviewer_task_checklist",
+    }
+    if all(status_by_id.get(step_id) == "done" for step_id in prereq_ids):
+        return "ready_for_manager_checklist"
+    return "reviewer_action_required"
+
+
+def _ready_runbook_next_actions(
+    package_dir: Path,
+    summary: dict[str, Any],
+    reviewer_task_checklist: dict[str, Any],
+) -> list[dict[str, Any]]:
+    actions: list[dict[str, Any]] = []
+    package_arg = _shell_path(package_dir)
+    quality_status = _str(summary.get("quality_status")) or "missing"
+    signoff_status = _str(summary.get("signoff_status")) or "missing"
+    checklist_status = _str(summary.get("reviewer_checklist_status")) or "not_recorded"
+    manager_status = _str(summary.get("manager_status")) or "missing"
+    missing_required_count = _int(summary.get("missing_required_count"))
+
+    if missing_required_count:
+        actions.append(
+            _ready_runbook_action(
+                "restore_required_artifacts",
+                "Restore missing required artifacts before package intake.",
+                "Package manifest reports missing required artifacts.",
+                "",
+            )
+        )
+    if quality_status != "handoff_ready":
+        actions.append(
+            _ready_runbook_action(
+                "run_handoff_quality",
+                "Run handoff package quality gate.",
+                f"Current handoff quality status is {quality_status}.",
+                (
+                    f"archkg handoff-check {package_arg} "
+                    f"--out {package_arg}/handoff_quality.json "
+                    f"--markdown {package_arg}/handoff_quality.md"
+                ),
+            )
+        )
+    if signoff_status != "ready":
+        actions.append(
+            _ready_runbook_action(
+                "record_reviewer_signoff",
+                "Record reviewer signoff after evidence review.",
+                f"Current reviewer signoff status is {signoff_status}.",
+                (
+                    f"archkg handoff-signoff {package_arg} --reviewer <reviewer> "
+                    '--status ready --note "<handoff note>"'
+                ),
+            )
+        )
+    if checklist_status != "checklist_complete":
+        actions.extend(
+            _ready_runbook_checklist_actions(package_dir, reviewer_task_checklist)
+        )
+    if (
+        missing_required_count == 0
+        and quality_status == "handoff_ready"
+        and signoff_status == "ready"
+        and checklist_status == "checklist_complete"
+        and manager_status != "manager_ready"
+    ):
+        actions.append(
+            _ready_runbook_action(
+                "run_manager_checklist",
+                "Run manager checklist for intake.",
+                f"Current manager checklist status is {manager_status}.",
+                (
+                    f"archkg handoff-manager-checklist {package_arg} "
+                    '--manager <manager> --note "<manager intake note>"'
+                ),
+            )
+        )
+    return actions
+
+
+def _ready_runbook_checklist_actions(
+    package_dir: Path,
+    reviewer_task_checklist: dict[str, Any],
+) -> list[dict[str, Any]]:
+    actions: list[dict[str, Any]] = []
+    if reviewer_task_checklist.get("schema_version") != REVIEWER_TASK_CHECKLIST_SCHEMA_VERSION:
+        return [
+            _ready_runbook_action(
+                "restore_reviewer_task_checklist",
+                "Restore reviewer task checklist artifact.",
+                "Package is missing a valid reviewer task checklist.",
+                "",
+            )
+        ]
+    package_arg = _shell_path(package_dir)
+    for item in _list_of_dicts(reviewer_task_checklist.get("items")):
+        reviewer_status = _str(item.get("reviewer_status")) or "todo"
+        if reviewer_status in {"done", "skipped_preview"}:
+            continue
+        ordinal = _int(item.get("ordinal"))
+        check_id = _str(item.get("check_id"))
+        evidence = _str_list(item.get("required_evidence"))
+        evidence_flags = "".join(
+            f" --evidence-checked {shlex.quote(value)}" for value in evidence
+        )
+        selector = f"--ordinal {ordinal}" if ordinal else f"--check-id {shlex.quote(check_id)}"
+        actions.append(
+            {
+                **_ready_runbook_action(
+                    f"close_checklist_{ordinal or check_id}",
+                    _str(item.get("title")) or f"Close checklist item {ordinal}",
+                    f"Checklist item is currently {reviewer_status}.",
+                    (
+                        f"archkg handoff-checklist-update {package_arg} {selector} "
+                        f"--reviewer <reviewer> --status done "
+                        f'--note "<evidence reviewed>"{evidence_flags}'
+                    ),
+                ),
+                "ordinal": ordinal,
+                "check_id": check_id,
+                "current_status": reviewer_status,
+                "required_evidence": evidence,
+            }
+        )
+    return actions
+
+
+def _ready_runbook_action(
+    action_id: str,
+    title: str,
+    reason: str,
+    command: str,
+) -> dict[str, Any]:
+    return {
+        "id": action_id,
+        "title": title,
+        "reason": reason,
+        "command": command,
+    }
+
+
+def _write_handoff_ready_runbook_files(package_dir: Path) -> dict[str, Any]:
+    payload = build_handoff_ready_runbook(package_dir)
+    (package_dir / "handoff_ready_runbook.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    (package_dir / "handoff_ready_runbook.md").write_text(
+        render_handoff_ready_runbook_markdown(payload),
+        encoding="utf-8",
+    )
+    return payload
+
+
+def _refresh_handoff_ready_runbook_if_possible(
+    package_dir: Path,
+) -> dict[str, Any] | None:
+    try:
+        return _write_handoff_ready_runbook_files(package_dir)
+    except FileNotFoundError:
+        return None
+
+
 def _archive_file_entries(
     package_dir: Path,
     *,
@@ -1677,6 +2093,7 @@ def _status_class(status: str) -> str:
         "archive_manifest_ready",
         "archive_verified",
         "checklist_complete",
+        "ready_for_manager_intake",
     }:
         return "ok"
     if status in {
@@ -1697,6 +2114,8 @@ def _status_class(status: str) -> str:
         "checklist_open",
         "checklist_needs_info",
         "checklist_empty",
+        "ready_for_manager_checklist",
+        "reviewer_action_required",
     }:
         return "warn"
     return ""
@@ -1801,6 +2220,14 @@ def _html_attr(raw: object) -> str:
     return html.escape(_str(raw), quote=True)
 
 
+def _md_cell(raw: str) -> str:
+    return raw.replace("|", "\\|").replace("\n", " ")
+
+
+def _shell_path(path: Path) -> str:
+    return shlex.quote(str(path))
+
+
 __all__ = [
     "ARCHIVE_MANIFEST_SCHEMA_VERSION",
     "ARCHIVE_VERIFICATION_SCHEMA_VERSION",
@@ -1809,17 +2236,20 @@ __all__ = [
     "MANAGER_CHECKLIST_SCHEMA_VERSION",
     "MUTATION_POLICY",
     "QUALITY_SCHEMA_VERSION",
+    "READY_RUNBOOK_SCHEMA_VERSION",
     "SCHEMA_VERSION",
     "SIGNOFF_SCHEMA_VERSION",
     "build_handoff_archive_manifest",
     "build_handoff_archive_verification",
     "build_handoff_manager_checklist",
     "build_handoff_package_quality",
+    "build_handoff_ready_runbook",
     "render_handoff_archive_manifest_markdown",
     "render_handoff_archive_verification_markdown",
     "render_handoff_index_html",
     "render_handoff_manager_checklist_markdown",
     "render_handoff_package_quality_markdown",
+    "render_handoff_ready_runbook_markdown",
     "render_handoff_reviewer_signoff_markdown",
     "render_handoff_summary",
     "write_handoff_archive_manifest",
@@ -1829,6 +2259,7 @@ __all__ = [
     "write_handoff_package",
     "write_handoff_package_quality_json",
     "write_handoff_package_quality_markdown",
+    "write_handoff_ready_runbook",
     "write_handoff_reviewer_signoff",
     "write_handoff_reviewer_task_checklist_update",
 ]
