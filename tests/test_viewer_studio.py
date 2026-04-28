@@ -540,6 +540,9 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "Sheet 路由" in body
     assert "Sheet Graphs" in body
     assert "Sheet Issue Preview" in body
+    assert "Sheet Issue Review Queue" in body
+    assert "preview-only bounded bridge" in body
+    assert "sheet_issue_review_queue.json" in body
     assert "平面图" in body
     assert "review_workbench.json" in body
     assert "sheet_classification.json" in body

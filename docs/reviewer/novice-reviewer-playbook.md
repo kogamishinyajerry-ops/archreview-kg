@@ -17,6 +17,7 @@ archkg viewer -o out/review-demo --source samples/sample_clean.pdf
 
 - `reviewer_onboarding.json`: 机器可读的第一小时流程、常用命令和边界提醒。
 - `reviewer_quickstart.md`: 可直接交给审图工程师阅读的上手清单。
+- `sheet_issue_review_queue.json`: per-sheet preview 的有界人工审阅队列，供逐页核对。
 
 ## 第一小时流程
 
@@ -24,7 +25,7 @@ archkg viewer -o out/review-demo --source samples/sample_clean.pdf
 2. 核对 source preview、entity overlay、annotated PDF，确认识别没有明显错位。
 3. 看 `drawing_understanding.json` 的图纸类型、房间、门、走廊、楼梯、尺寸数量。
 4. 看 `rule_input_readiness.json`，把 missing input 和 low confidence 列为待补证据。
-5. 看 Sheet 分类、路由和候选区域，确认系统读的是正确设计区。
+5. 看 Sheet 分类、路由、候选区域和 `sheet_issue_review_queue.json`，确认系统读的是正确设计区。
 6. 逐条复核 `issues.json` candidate issue；不要把 candidate 当 confirmed。
 7. 用 `archkg review-state` 写入 confirmed / rejected / needs_info。
 8. 交接时附上 run 目录、已确认事项、待补输入、低置信证据和未处理页面。
@@ -33,7 +34,8 @@ archkg viewer -o out/review-demo --source samples/sample_clean.pdf
 
 - 缺输入不等于通过。
 - `issues.json` 是 candidate 输出，人工确认前不是最终违规。
-- `sheet_issues.json` 是 per-sheet preview，不会自动进入主 `issues.json` 或 `review_state.json`。
+- `sheet_issue_review_queue.json` / `sheet_issues.json` 是 per-sheet preview，不会自动进入主 `issues.json` 或 `review_state.json`。
+- 不要把 `sheet_issue_review_queue.json` 的 `preview_id` 传给 `archkg review-state`；该命令只处理主 `issues.json` 的 issue id。
 - `evidence_ready` 只适用于已 benchmark 的图纸类别，不是任意复杂真实图纸自动审批证明。
 - OCR、VLM、text_hint 都只能辅助复核，不能替代条文和实体证据链。
 

@@ -148,6 +148,12 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Make a generated review run understandable to a first-time plan-review engineer.
 - P46-01 complete: full review runs and Studio runs write `reviewer_onboarding.json` and `reviewer_quickstart.md`; report and Viewer render the first-hour flow, boundary reminders, common commands, and handoff checklist.
 
+### P47: Sheet Preview Review Bridge
+
+- Make per-sheet candidate preview actionable without promoting it into the primary issue lifecycle.
+- P47-01 complete: full review runs and Studio runs write `sheet_issue_review_queue.json`; report, Viewer, workbench, control sync, and release readiness all surface the queue as a preview-only bounded bridge.
+- Guardrail: preview queue ids are not primary issue ids and must not be used with `archkg review-state`.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

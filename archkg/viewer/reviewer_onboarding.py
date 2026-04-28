@@ -218,9 +218,9 @@ def _first_hour_steps(summary: Mapping[str, Any], *, mode: str) -> list[dict[str
             _step(
                 "inspect_per_sheet_preview",
                 "逐页核对 per-sheet issue preview",
-                "sheet_issues.json",
+                "sheet_issue_review_queue.json / sheet_issues.json",
                 "#panel-sheet-issues",
-                "只作为多页提示; 不得直接并入主复核状态。",
+                "先看 bounded queue; preview id 不得直接用于 review-state。",
             )
         )
     steps.append(
@@ -308,7 +308,7 @@ def _do_not_claim() -> list[str]:
     return [
         "缺输入不等于通过; missing_input / low_confidence 必须列为待补证据。",
         "issues.json 是规则引擎 candidate 输出; 未经人工复核不得宣称 confirmed defect。",
-        "sheet_issues.json 是 per-sheet preview, 不会自动进入主 issues.json 或 review_state.json。",
+        "sheet_issue_review_queue.json / sheet_issues.json 是 per-sheet preview, 不会自动进入主 issues.json 或 review_state.json。",
         "evidence_ready 只适用于已 benchmark 的图纸类别, 不是任意复杂真实图纸自动审批证明。",
         "OCR、VLM 或 text_hint 证据只能辅助复核, 不能替代条文和实体证据链。",
     ]
@@ -319,7 +319,7 @@ def _handoff_checklist() -> list[str]:
         "已打开 source / overlay / annotated 图层并记录明显识别偏差。",
         "已列出 rule_input_readiness 中的 missing_input / low_confidence。",
         "已逐条处理高风险 candidate issue, 或标记 needs_info。",
-        "已说明哪些 sheet/page 只作为 preview, 还没有进入主生命周期。",
+        "已说明哪些 sheet/page 只作为 preview, 还没有进入主生命周期或 review-state。",
         "已附上 run_dir、commit、验证命令和未解决问题。",
     ]
 

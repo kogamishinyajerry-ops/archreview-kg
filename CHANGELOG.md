@@ -231,6 +231,13 @@ and keeps the no-OCR transparency warning.
   component inventory, readiness blockers, sheet scope, candidate issues,
   review-state commands, and handoff notes. It is guidance-only and does not
   mutate rule output or confirm defects.
+- P47-01 adds a bounded sheet preview review queue. Full review runs and Studio
+  runs now write `sheet_issue_review_queue.json` from `sheet_issues.json`, then
+  render it in `report.md`, Viewer, workbench artifact status, control sync, and
+  release-readiness gates. The queue is explicitly `preview_only` with
+  `preview_only_no_primary_write`, forbids `archkg review-state` on preview ids,
+  and gives novice reviewers a concrete per-sheet checklist without promoting
+  preview rows into primary `issues.json` or `review_state.json`.
 
 ### Still limited
 
@@ -273,6 +280,9 @@ and keeps the no-OCR transparency warning.
   surfaces, not compliance evidence by themselves. They help reviewers inspect
   existing evidence in order; they do not validate the drawing or confirm
   candidate issues.
+- `sheet_issue_review_queue.json` is an inspection bridge over per-sheet
+  preview issues. Its `preview_id` values are not primary issue ids and must not
+  be passed to `archkg review-state`.
 - Multi-sheet drawing-understanding aggregation is count-level evidence. It
   does not merge per-sheet candidate issues into primary `issues.json`, does
   not update `review_state.json`, and does not prove final multi-plan

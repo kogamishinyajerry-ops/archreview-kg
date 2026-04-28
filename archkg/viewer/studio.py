@@ -415,6 +415,10 @@ def run_pipeline(
         write_reviewer_quickstart_markdown,
     )
     from archkg.viewer.rule_readiness import build_rule_readiness_view
+    from archkg.viewer.sheet_issue_review_queue import (
+        build_sheet_issue_review_queue,
+        write_sheet_issue_review_queue,
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -675,6 +679,13 @@ def run_pipeline(
         project_meta=meta,
     )
     write_sheet_issues(sheet_issues, out_dir / "sheet_issues.json")
+    sheet_issue_review_queue = build_sheet_issue_review_queue(
+        sheet_issues.model_dump(mode="json")
+    )
+    write_sheet_issue_review_queue(
+        sheet_issue_review_queue,
+        out_dir / "sheet_issue_review_queue.json",
+    )
     result = evaluate(graph, rules, standards, project_meta=meta)
     rule_readiness = build_rule_input_readiness(
         graph,
@@ -704,6 +715,7 @@ def run_pipeline(
         sheet_routing=routing.decision.model_dump(mode="json"),
         sheet_graphs=sheet_graphs.model_dump(mode="json"),
         sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
         sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
     )
     write_review_workbench(review_workbench, out_dir / "review_workbench.json")
@@ -739,6 +751,7 @@ def run_pipeline(
         sheet_routing=routing.decision.model_dump(mode="json"),
         sheet_graphs=sheet_graphs.model_dump(mode="json"),
         sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
         review_state=review_state,
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
@@ -872,6 +885,7 @@ def _render_viewer_index(
     from archkg.viewer.rule_readiness import load_rule_readiness_view
     from archkg.viewer.sheet_classification import load_sheet_classification_view
     from archkg.viewer.sheet_graphs import load_sheet_graphs_view
+    from archkg.viewer.sheet_issue_review_queue import load_sheet_issue_review_queue_view
     from archkg.viewer.sheet_issues import load_sheet_issues_view
     from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
     from archkg.viewer.sheet_routing import load_sheet_routing_view
@@ -910,6 +924,7 @@ def _render_viewer_index(
     sheet_classification = load_sheet_classification_view(out_dir)
     sheet_graphs = load_sheet_graphs_view(out_dir)
     sheet_issues = load_sheet_issues_view(out_dir)
+    sheet_issue_review_queue = load_sheet_issue_review_queue_view(out_dir)
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
     issue_focus = build_issue_focus_view(issues, primitives)
@@ -935,6 +950,7 @@ def _render_viewer_index(
         sheet_classification=sheet_classification,
         sheet_graphs=sheet_graphs,
         sheet_issues=sheet_issues,
+        sheet_issue_review_queue=sheet_issue_review_queue,
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
         issue_focus=issue_focus,

@@ -46,6 +46,7 @@ archkg viewer -o out --source samples/sample_clean.pdf
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `sheet_graphs.json` — 每个高置信 plan sheet 的独立 graph 证据输出；P39-01 不把多 plan 页合并进主规则结论
 - `sheet_issues.json` — 每个 plan sheet 的候选问题 preview；P39-02 不写入主 `issues.json` / `review_state.json`
+- `sheet_issue_review_queue.json` — 从 per-sheet preview 派生的有界人工审阅队列；preview id 不能用于 `archkg review-state`
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
 - `sheet_classification.json` — 多页图纸 sheet 类型分类（plan / schedule / title / legend / detail / elevation / unknown），只做路由证据，不自动跳页
 - `sheet_routing.json` — 受保护 graph 路由决策；只有高置信单一 plan 页场景才过滤非 graph 页，否则回退 legacy 全页输入
@@ -133,6 +134,9 @@ archkg rule-card draft --clause-id GB50096-5.7.2 -o out/rule_card_draft.json
 > P39-01 不把这些 per-sheet graph 自动合并成最终违规结论。P39-02 起还会生成
 > `sheet_issues.json`，按 sheet graph 运行规则得到候选问题 preview；它不写入主 `issues.json`
 > 或 `review_state.json`，避免多页候选和人工复核状态混在一起。
+> P47 起还会生成 `sheet_issue_review_queue.json`，把 preview rows 收束成
+> `preview-only bounded bridge`，方便新手逐页核对；这些 `preview_id` 不是主 issue id，
+> 不能传给 `archkg review-state`，也不会自动合并进主生命周期。
 >
 > **候选区域**: 完整审图会生成 `sheet_region_candidates.json`，提示可能的 `design_region`、`title_block`、
 > `schedule`、`legend` 和候选排除文本。它不会自动修改 `primitives.json` 或 `entity_graph.json`；
@@ -358,6 +362,9 @@ archkg understanding-benchmark-suite --manifest samples/understanding_benchmarks
 # P46: 每次完整 review run 生成 reviewer_onboarding.json / reviewer_quickstart.md
 # 用于新手审图工程师第一小时上手，不确认 issue、不改规则结论
 
+# P47: 每次完整 review run 生成 sheet_issue_review_queue.json
+# 用于逐页检查 per-sheet preview，不允许直接写入主 review_state.json
+
 # Clause fidelity 审计 (规则卡 vs 国标条款 numeric drift)
 archkg clause fidelity
 
@@ -406,6 +413,7 @@ archkg clause readiness
 - P44：Real drawing benchmark promotion。`drawing_understanding.json` 合并 `sheet_graphs.json` 的多页识图计数，Medfield full-set 从 known_gap 晋升为 active；P44 结束时 release-readiness 只剩 pending row warning。
 - P45：Release readiness tightening。`sample_clean_full` toy fixture 从 manual row 固化为 active reproducible fixture；packaged suite 当前 active=5、pending=0、known_gap=0，代表性 run artifacts 完整时可得到 `evidence_ready`，但宣称范围仍限于 benchmarked drawing classes。
 - P46：Novice reviewer onboarding。完整审图 run 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`，报告和 Viewer 显示第一小时流程、常用命令、边界提醒和交接检查，让新手审图工程师按 evidence 顺序上手。
+- P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 
 ---
 

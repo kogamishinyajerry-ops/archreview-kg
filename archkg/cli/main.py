@@ -136,6 +136,10 @@ def review(
         write_reviewer_quickstart_markdown,
     )
     from archkg.viewer.rule_readiness import build_rule_readiness_view
+    from archkg.viewer.sheet_issue_review_queue import (
+        build_sheet_issue_review_queue,
+        write_sheet_issue_review_queue,
+    )
 
     out.mkdir(parents=True, exist_ok=True)
 
@@ -308,6 +312,13 @@ def review(
         project_meta=meta,
     )
     sheet_issues_path = write_sheet_issues(sheet_issues, out / "sheet_issues.json")
+    sheet_issue_review_queue = build_sheet_issue_review_queue(
+        sheet_issues.model_dump(mode="json")
+    )
+    sheet_issue_review_queue_path = write_sheet_issue_review_queue(
+        sheet_issue_review_queue,
+        out / "sheet_issue_review_queue.json",
+    )
     result = evaluate(graph, rules, standards, project_meta=meta)
     rule_readiness = build_rule_input_readiness(
         graph,
@@ -340,6 +351,7 @@ def review(
         sheet_routing=routing.decision.model_dump(mode="json"),
         sheet_graphs=sheet_graphs.model_dump(mode="json"),
         sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
         sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
     )
     review_workbench_path = write_review_workbench(
@@ -378,6 +390,7 @@ def review(
         sheet_routing=routing.decision.model_dump(mode="json"),
         sheet_graphs=sheet_graphs.model_dump(mode="json"),
         sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
         review_state=review_state,
         review_workbench=review_workbench,
         reviewer_onboarding=reviewer_onboarding,
@@ -397,6 +410,7 @@ def review(
         drawing_understanding_path=drawing_understanding_path,
         sheet_graphs_path=sheet_graphs_path,
         sheet_issues_path=sheet_issues_path,
+        sheet_issue_review_queue_path=sheet_issue_review_queue_path,
         sheet_classification_path=sheet_classification_path,
         sheet_routing_path=sheet_routing_path,
         readiness_path=readiness_path,
@@ -425,6 +439,7 @@ def _print_review_summary(
     drawing_understanding_path: Path | None = None,
     sheet_graphs_path: Path | None = None,
     sheet_issues_path: Path | None = None,
+    sheet_issue_review_queue_path: Path | None = None,
     sheet_classification_path: Path | None = None,
     sheet_routing_path: Path | None = None,
     readiness_path: Path | None = None,
@@ -559,6 +574,8 @@ def _print_review_summary(
         art.add_row("sheet graphs", str(sheet_graphs_path))
     if sheet_issues_path is not None:
         art.add_row("sheet issue preview", str(sheet_issues_path))
+    if sheet_issue_review_queue_path is not None:
+        art.add_row("sheet issue review queue", str(sheet_issue_review_queue_path))
     if sheet_classification_path is not None:
         art.add_row("sheet classification", str(sheet_classification_path))
     if sheet_routing_path is not None:

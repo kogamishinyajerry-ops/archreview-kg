@@ -1327,6 +1327,68 @@
       <a href="sheet_issues.json" target="_blank">sheet_issues.json</a>
     </div>
   {% endif %}
+  <h3>Sheet Issue Review Queue</h3>
+  {% if not sheet_issue_review_queue.available %}
+    <div class="alert warn">
+      <strong>sheet_issue_review_queue.json 暂无数据</strong>：{{ sheet_issue_review_queue.warning_text }}
+      {{ sheet_issue_review_queue.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>preview-only bounded bridge</strong>：{{ sheet_issue_review_queue.warning_text }}
+    </div>
+    <div class="metric-note" style="margin-top: 8px;">
+      mutation_policy={{ sheet_issue_review_queue.mutation_policy }};
+      queued={{ sheet_issue_review_queue.queued_issue_count }};
+      primary_review_state_linked={{ sheet_issue_review_queue.primary_review_state_linked }}
+    </div>
+    <div class="table-wrap" style="max-height: 260px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>page</th>
+            <th>queued</th>
+            <th>preview id</th>
+            <th>source issue</th>
+            <th>rule</th>
+            <th>action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for sheet in sheet_issue_review_queue.sheets %}
+          {% if sheet["items"] %}
+            {% for item in sheet["items"] %}
+                <tr>
+                  <td>{{ sheet.page_index }}</td>
+                  <td>{{ sheet.queued_issue_count }}</td>
+                  <td>{{ item.preview_id }}</td>
+                  <td>{{ item.source_issue_id }}</td>
+                  <td>{{ item.rule_card_id }}</td>
+                  <td>{{ item.recommended_action }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td>{{ sheet.page_index }}</td>
+                <td>{{ sheet.queued_issue_count }}</td>
+                <td colspan="4">暂无 queued preview item。</td>
+              </tr>
+            {% endif %}
+          {% else %}
+            <tr><td colspan="6">暂无 sheet preview review queue。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if sheet_issue_review_queue.forbidden_actions %}
+      <div class="metric-note" style="margin-top: 8px;">
+        {{ sheet_issue_review_queue.forbidden_actions[0] }}
+      </div>
+    {% endif %}
+    <div class="links">
+      <a href="sheet_issue_review_queue.json" target="_blank">sheet_issue_review_queue.json</a>
+    </div>
+  {% endif %}
   <h3>Sheet 路由</h3>
   {% if not sheet_routing.available %}
     <div class="alert warn">

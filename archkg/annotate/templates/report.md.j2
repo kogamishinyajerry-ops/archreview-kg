@@ -206,6 +206,25 @@ sheet_issues.json 暂无数据；缺失 per-sheet issue preview 不代表多页�
 sheet_count: {{ sheet_issues.sheet_count }}；issue_count: {{ sheet_issues.issue_count }}。完整数据见 `sheet_issues.json`。
 {% endif %}
 
+## Sheet Issue Review Queue
+
+{% if not sheet_issue_review_queue %}
+sheet_issue_review_queue.json 暂无数据；per-sheet preview issue 仍不得进入主 `review_state.json`。
+{% else %}
+> {{ sheet_issue_review_queue.note }}
+
+mutation_policy: `{{ sheet_issue_review_queue.mutation_policy }}`；primary_review_state_linked: `{{ sheet_issue_review_queue.primary_review_state_linked }}`。
+
+| page | queued issues | omitted |
+|---|---:|---:|
+{% for sheet in sheet_issue_review_queue.sheets %}| {{ sheet.page_index }} | {{ sheet.queued_issue_count }} | {{ sheet.omitted_issue_count }} |
+{% endfor %}
+
+第一条禁止动作：{{ sheet_issue_review_queue.forbidden_actions[0] if sheet_issue_review_queue.forbidden_actions else '不得把 preview id 作为主 issue id 使用。' }}
+
+完整数据见 `sheet_issue_review_queue.json`。
+{% endif %}
+
 ## Issue 生命周期
 
 `issues.json` 是规则引擎输出的候选观察，默认状态为 `candidate`；人工确认、驳回、补信息、解决或被新 run 替代的状态写入 `review_state.json`，不回写到 `issues.json`。

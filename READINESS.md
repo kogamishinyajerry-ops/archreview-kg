@@ -16,6 +16,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   真实图纸自动审批证明。
 - P46 后每次完整 review run 会生成 `reviewer_onboarding.json` / `reviewer_quickstart.md`，
   把新手审图工程师的第一小时复核路径固化为 artifact。
+- P47 后每次完整 review run 会生成 `sheet_issue_review_queue.json`，把 per-sheet preview
+  收束成有界人工审阅队列，但 preview id 仍不能进入主 `review_state.json`。
 
 复现该结论：
 
@@ -44,7 +46,7 @@ archkg release-readiness \
 release-readiness status=evidence_ready blockers=0 warnings=0 active=5 real_active=2 known_gap=0
 ```
 
-这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包”
+这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列”
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
 P45 清理了最后一个 packaged `manual_run_required` toy row，使 release gate 的技术前提完整。
 但 per-sheet preview issues 还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
@@ -191,6 +193,9 @@ archkg studio
   packaged suite 当前 active=5、pending=0、known_gap=0。它只清理可复现门禁，不扩大真实图纸能力宣称。
 - P46 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`：完整 review run 会生成新手第一小时流程、
   常用命令、不要误宣称的边界和交接清单；该 artifact 是 guidance-only，不确认 issue、不修改规则结论。
+- P47 新增 `sheet_issue_review_queue.json`：完整 review run 会把 `sheet_issues.json` preview rows
+  收束为 `preview-only bounded bridge`，供人工逐页核对；它不创建主 issue id，也不允许
+  `archkg review-state` 写入这些 preview rows。
 
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
@@ -264,6 +269,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   “benchmarked drawing classes 的受限试点证据就绪”，而不是 production certification。
 - P46 起，readiness gate 也把 reviewer onboarding artifacts 视为 maturity evidence；交付前不仅要看模型输出，
   还要看新手能否按 `reviewer_quickstart.md` 完成复核与交接。
+- P47 起，readiness gate 也要求 `sheet_issue_review_queue.json`；它证明 per-sheet preview 有可执行的人工审阅入口，
+  但不代表多页候选问题已经自动聚合为主违规结论。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

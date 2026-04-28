@@ -36,12 +36,13 @@ Status:
 - P44-01 is complete: `drawing_understanding.json` can merge `sheet_graphs.json` aggregate counts as multi-sheet recognition evidence, promoting the Medfield full 9-page real public plan/elevation set from known_gap to active benchmark.
 - P45-01 is complete: the remaining `sample_clean_full` manual toy suite row is now a committed active fixture, allowing packaged release-readiness to reach `evidence_ready` when representative run artifacts are complete.
 - P46-01 is complete: full review runs now write reviewer onboarding and quickstart artifacts, and Viewer/report render a first-hour path for novice plan-review engineers.
+- P47-01 is complete: full CLI and Studio review runs now write `sheet_issue_review_queue.json`, a bounded per-sheet preview review bridge that stays separate from primary `issues.json` and `review_state.json`.
 
 ## Current Phase
 
-P46: Novice reviewer onboarding.
+P47: Sheet preview review bridge.
 
-P46 is complete. New runs include `reviewer_onboarding.json` and `reviewer_quickstart.md`, so a novice reviewer can follow source/overlay, inventory, readiness, sheet scope, candidate issue, review-state, and handoff steps without reading internal implementation notes first.
+P47 is complete. New runs include `sheet_issue_review_queue.json`, so a novice reviewer can inspect per-sheet preview issues through a bounded checklist while the primary review lifecycle remains limited to `issues.json` issue IDs.
 
 ## Key Decisions
 
@@ -71,8 +72,9 @@ P46 is complete. New runs include `reviewer_onboarding.json` and `reviewer_quick
 - P42-02 renders missing diff as "not run yet"; reviewers must still inspect diff rows before marking review_state items resolved or superseded.
 - P43-P45 only gate evidence currently represented in the benchmark suite and run directory. They do not certify arbitrary complex real drawings; `evidence_ready` means constrained pilot readiness for benchmarked drawing classes only.
 - P46 onboarding artifacts are guidance-only; they do not confirm issues, mutate rule output, or certify compliance.
+- P47 preview queue artifacts are guidance-only and preview-only; their `preview_id` values are not valid `archkg review-state` targets.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P46 by hardening real-project handoff: either add another reviewed real complex benchmark, or promote a bounded per-sheet preview review bridge that keeps preview issues separate from primary lifecycle.
+Move beyond P47 by improving real-project handoff depth: either add another reviewed real complex benchmark with expected inventory, or add a read-only export package that bundles quickstart, readiness, diff, and preview-queue evidence for external review.

@@ -32,6 +32,7 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "sheet_region_candidates_overlay.png",
         "issues.json",
         "review_state.json",
+        "sheet_issue_review_queue.json",
         "reviewer_onboarding.json",
         "reviewer_quickstart.md",
         "annotated.pdf",
@@ -62,6 +63,13 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     sheet_issues = json.loads((out_dir / "sheet_issues.json").read_text("utf-8"))
     assert sheet_issues["schema_version"] == "sheet_issues.v1"
     assert sheet_issues["sheet_count"] == 1
+    sheet_issue_queue = json.loads(
+        (out_dir / "sheet_issue_review_queue.json").read_text("utf-8")
+    )
+    assert sheet_issue_queue["schema_version"] == "sheet_issue_review_queue.v1"
+    assert sheet_issue_queue["mutation_policy"] == "preview_only_no_primary_write"
+    assert sheet_issue_queue["primary_review_state_linked"] is False
+    assert "archkg review-state" in sheet_issue_queue["forbidden_actions"][0]
     workbench = json.loads((out_dir / "review_workbench.json").read_text("utf-8"))
     assert workbench["schema_version"] == "review_workbench.v1"
     assert workbench["summary"]["ready_rules"] >= 1
@@ -208,6 +216,19 @@ def test_review_writes_sheet_graphs_for_multiple_plan_pages(
     assert sheet_issues["sheet_count"] == 2
     assert [group["page_index"] for group in sheet_issues["sheets"]] == [0, 1]
     assert all(group["issue_count"] >= 2 for group in sheet_issues["sheets"])
+    queue = json.loads((out_dir / "sheet_issue_review_queue.json").read_text("utf-8"))
+    assert queue["schema_version"] == "sheet_issue_review_queue.v1"
+    assert queue["source_artifact"] == "sheet_issues.json"
+    assert queue["preview_only"] is True
+    assert queue["primary_review_state_linked"] is False
+    assert queue["mutation_policy"] == "preview_only_no_primary_write"
+    assert [group["page_index"] for group in queue["sheets"]] == [0, 1]
+    assert all(group["queued_issue_count"] >= 2 for group in queue["sheets"])
+    first_item = queue["sheets"][0]["items"][0]
+    assert first_item["preview_id"].startswith("sheet-0-preview-")
+    assert first_item["source_issue_id"]
+    assert first_item["recommended_action"] == "inspect_then_decide_if_primary_promotion_needed"
+    assert "review-state" not in " ".join(first_item["allowed_actions"])
 
 
 def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> None:
@@ -239,6 +260,9 @@ def test_report_md_contains_clause_text(sample_pdf: Path, tmp_path: Path) -> Non
     assert "sheet_graphs.json" in md
     assert "Sheet Issue Preview" in md
     assert "sheet_issues.json" in md
+    assert "Sheet Issue Review Queue" in md
+    assert "sheet_issue_review_queue.json" in md
+    assert "preview-only bounded bridge" in md
     assert "Issue 生命周期" in md
     # Should contain reviewer/status placeholder columns
     assert "reviewer" in md

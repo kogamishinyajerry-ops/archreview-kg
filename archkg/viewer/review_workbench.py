@@ -28,6 +28,7 @@ def build_review_workbench(
     sheet_routing: Mapping[str, Any] | None = None,
     sheet_graphs: Mapping[str, Any] | None = None,
     sheet_issues: Mapping[str, Any] | None = None,
+    sheet_issue_review_queue: Mapping[str, Any] | None = None,
     sheet_region_candidates: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a stable summary for the review workbench."""
@@ -39,6 +40,7 @@ def build_review_workbench(
     sheet_routing = sheet_routing or {}
     sheet_graphs = sheet_graphs or {}
     sheet_issues = sheet_issues or {}
+    sheet_issue_review_queue = sheet_issue_review_queue or {}
     sheet_region_candidates = sheet_region_candidates or {}
 
     component_counts = _mapping(drawing_understanding.get("component_counts"))
@@ -66,6 +68,9 @@ def build_review_workbench(
         "plan_sheet_count": _int(classification_summary.get("plan")),
         "sheet_graph_count": _int(sheet_graphs.get("graph_count")),
         "sheet_issue_count": _int(sheet_issues.get("issue_count")),
+        "sheet_issue_queue_count": _int(
+            sheet_issue_review_queue.get("queued_issue_count")
+        ),
     }
 
     artifact_statuses = [
@@ -104,6 +109,12 @@ def build_review_workbench(
             "sheet_issues.json",
             bool(sheet_issues),
             f"{summary['sheet_issue_count']} candidate issue(s)",
+        ),
+        _artifact_status(
+            "Sheet Issue Review Queue",
+            "sheet_issue_review_queue.json",
+            bool(sheet_issue_review_queue),
+            f"{summary['sheet_issue_queue_count']} queued preview issue(s)",
         ),
         _artifact_status(
             "候选区域",
@@ -231,6 +242,9 @@ def refresh_review_workbench_from_run_dir(out_dir: Path) -> Path:
         sheet_routing=_mapping(_read_json(out_dir / "sheet_routing.json", {})),
         sheet_graphs=_mapping(_read_json(out_dir / "sheet_graphs.json", {})),
         sheet_issues=_mapping(_read_json(out_dir / "sheet_issues.json", {})),
+        sheet_issue_review_queue=_mapping(
+            _read_json(out_dir / "sheet_issue_review_queue.json", {})
+        ),
         sheet_region_candidates=_mapping(
             _read_json(out_dir / "sheet_region_candidates.json", {})
         ),
