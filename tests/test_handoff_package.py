@@ -70,6 +70,62 @@ def test_handoff_package_copies_review_artifacts_without_mutating_run(
     assert "preview ids are not primary issue ids" in summary
 
 
+def test_handoff_package_surfaces_opening_provenance_coverage(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    (run_dir / "layout_ifc_export.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "layout_ifc_export.v1",
+                "status": "exported",
+                "opening_provenance": {
+                    "semantic_count": 2,
+                    "measurement_count": 2,
+                    "host_count": 1,
+                    "all_three_count": 1,
+                },
+                "boundary_warning": "IFC preview is not review-grade BIM.",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    manifest_path = write_handoff_package(run_dir, package_dir)
+
+    manifest = json.loads(manifest_path.read_text("utf-8"))
+    assert manifest["opening_provenance"] == {
+        "available": True,
+        "source_artifact": "layout_ifc_export.json",
+        "semantic_count": 2,
+        "measurement_count": 2,
+        "host_count": 1,
+        "all_three_count": 1,
+        "boundary_warning": (
+            "Opening provenance coverage is preview-only handoff guidance; "
+            "missing signals are review prompts, not compliance failures."
+        ),
+    }
+
+    summary = (package_dir / "handoff_summary.md").read_text("utf-8")
+    assert "## Opening Provenance Coverage" in summary
+    assert "| `semantic` | 2 |" in summary
+    assert "| `measurement` | 2 |" in summary
+    assert "| `host_wall` | 1 |" in summary
+    assert "| `all_three` | 1 |" in summary
+    assert "preview-only handoff guidance" in summary
+
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "Opening Provenance Coverage" in html
+    assert "semantic=2" in html
+    assert "measurement=2" in html
+    assert "host_wall=1" in html
+    assert "all_three=1" in html
+    assert "not compliance failures" in html
+
+
 def test_handoff_package_records_missing_required_artifacts(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     package_dir = tmp_path / "handoff"

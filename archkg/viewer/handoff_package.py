@@ -55,6 +55,11 @@ BOUNDARY_WARNINGS: tuple[str, ...] = (
     "layout.ifc is an optional preview derived from layout_3d evidence; it is not review-grade BIM.",
 )
 
+OPENING_PROVENANCE_BOUNDARY_WARNING = (
+    "Opening provenance coverage is preview-only handoff guidance; "
+    "missing signals are review prompts, not compliance failures."
+)
+
 
 @dataclass(frozen=True)
 class HandoffArtifactSpec:
@@ -267,6 +272,7 @@ def write_handoff_package(run_dir: Path, package_dir: Path) -> Path:
         ],
         "missing_required_artifacts": missing_required,
         "boundary_warnings": list(BOUNDARY_WARNINGS),
+        "opening_provenance": _opening_provenance_from_run(run_dir),
         "commands": _commands(run_dir),
         "handoff_summary_path": "handoff_summary.md",
         "artifacts_dir": "artifacts",
@@ -323,6 +329,7 @@ def render_handoff_summary(manifest: dict[str, Any]) -> str:
             f"`{_str(row.get('package_path')) or '-'}` | "
             f"{_str(row.get('purpose'))} |"
         )
+    _extend_opening_provenance_summary(lines, manifest)
     lines.extend(["", "## Next Review Actions", ""])
     lines.append("- Open `artifacts/reviewer_quickstart.md` first.")
     lines.append("- Follow `artifacts/reviewer_task_sequence.md` for priority order.")
@@ -498,6 +505,12 @@ def render_handoff_index_html(
     archive_verification_status = (
         _str(archive_verification.get("status")) or "not_recorded"
     )
+    raw_opening_provenance = manifest.get("opening_provenance")
+    opening_provenance = (
+        raw_opening_provenance
+        if isinstance(raw_opening_provenance, dict)
+        else _empty_opening_provenance()
+    )
 
     lines = [
         "<!doctype html>",
@@ -561,6 +574,28 @@ def render_handoff_index_html(
     for warning in _str_list(manifest.get("boundary_warnings")):
         lines.append(f"<li>{_html(warning)}</li>")
     lines.extend(["</ul>", "</section>"])
+
+    if opening_provenance.get("available") is True:
+        lines.extend(
+            [
+                '<section class="panel">',
+                "<h2>Opening Provenance Coverage</h2>",
+                "<p><b>Source:</b> "
+                f"{_html(_str(opening_provenance.get('source_artifact')))}</p>",
+                "<p>"
+                f"semantic={_int(opening_provenance.get('semantic_count'))} · "
+                f"measurement={_int(opening_provenance.get('measurement_count'))} · "
+                f"host_wall={_int(opening_provenance.get('host_count'))} · "
+                f"all_three={_int(opening_provenance.get('all_three_count'))}"
+                "</p>",
+                f"<p>{_html(_str(opening_provenance.get('boundary_warning')))}</p>",
+                '<p><a href="artifacts/layout_ifc_export.json">'
+                "layout_ifc_export.json</a> · "
+                '<a href="artifacts/layout_ifc_export.md">'
+                "layout_ifc_export.md</a></p>",
+                "</section>",
+            ]
+        )
 
     lines.extend(
         [
@@ -1526,6 +1561,61 @@ def _load_optional_json(path: Path) -> dict[str, Any] | None:
     except json.JSONDecodeError:
         return None
     return raw if isinstance(raw, dict) else None
+
+
+def _opening_provenance_from_run(run_dir: Path) -> dict[str, Any]:
+    ifc_report = _load_optional_json(run_dir / "layout_ifc_export.json") or {}
+    raw = ifc_report.get("opening_provenance")
+    if not isinstance(raw, dict):
+        return _empty_opening_provenance()
+    return {
+        "available": True,
+        "source_artifact": "layout_ifc_export.json",
+        "semantic_count": _int(raw.get("semantic_count")),
+        "measurement_count": _int(raw.get("measurement_count")),
+        "host_count": _int(raw.get("host_count")),
+        "all_three_count": _int(raw.get("all_three_count")),
+        "boundary_warning": OPENING_PROVENANCE_BOUNDARY_WARNING,
+    }
+
+
+def _empty_opening_provenance() -> dict[str, Any]:
+    return {
+        "available": False,
+        "source_artifact": "",
+        "semantic_count": 0,
+        "measurement_count": 0,
+        "host_count": 0,
+        "all_three_count": 0,
+        "boundary_warning": OPENING_PROVENANCE_BOUNDARY_WARNING,
+    }
+
+
+def _extend_opening_provenance_summary(
+    lines: list[str],
+    manifest: dict[str, Any],
+) -> None:
+    raw_opening_provenance = manifest.get("opening_provenance")
+    if not isinstance(raw_opening_provenance, dict):
+        return
+    if raw_opening_provenance.get("available") is not True:
+        return
+
+    lines.extend(
+        [
+            "",
+            "## Opening Provenance Coverage",
+            "",
+            _str(raw_opening_provenance.get("boundary_warning")),
+            "",
+            "| Signal | Count |",
+            "|---|---:|",
+            f"| `semantic` | {_int(raw_opening_provenance.get('semantic_count'))} |",
+            f"| `measurement` | {_int(raw_opening_provenance.get('measurement_count'))} |",
+            f"| `host_wall` | {_int(raw_opening_provenance.get('host_count'))} |",
+            f"| `all_three` | {_int(raw_opening_provenance.get('all_three_count'))} |",
+        ]
+    )
 
 
 def _load_manifest(path: Path) -> dict[str, Any]:

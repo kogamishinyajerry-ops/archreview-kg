@@ -341,6 +341,20 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Show per-opening missing provenance prompts in Viewer/Studio so reviewers can see which evidence surfaces are absent.
 - Guardrail: this is a coverage/navigation view only; missing signals are not failures, compliance issues, BIM completeness checks, or inference triggers.
 
+### P75-01: Opening Provenance IFC Summary
+
+- Carry opening provenance consistency counts into `layout_ifc_export.v1` JSON and Markdown reports.
+- Let IFC Viewer data parse `opening_provenance` so the optional IFC preview page can show semantic, measurement, host-wall, and all-three coverage KPIs.
+- Keep the data as preview-only export metadata, not as IFC validity, wall-void geometry, or rule-engine evidence.
+- Guardrail: do not infer opening provenance, do not make IfcOpenShell required, and do not call `layout.ifc` review-grade BIM.
+
+### P76-01: Handoff Opening Provenance Coverage
+
+- Read `layout_ifc_export.json` during `archkg handoff-package` and copy opening provenance coverage into `handoff_manifest.json`.
+- Render an `Opening Provenance Coverage` section in `handoff_summary.md` and the package-root static `index.html`.
+- Show semantic, measurement, host-wall, and all-three counts as reviewer prompts only.
+- Guardrail: missing provenance signals are not handoff quality blockers, candidate issue confirmations, BIM completeness failures, or compliance findings.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

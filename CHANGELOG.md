@@ -302,6 +302,17 @@ and keeps the no-OCR transparency warning.
   coverage samples and missing-provenance prompts. This is reviewer navigation
   metadata only, not a failure gate, BIM completeness claim, or compliance
   input.
+- P75-01 carries opening provenance coverage into the optional IFC export
+  summary. `layout_ifc_export.v1` JSON/Markdown reports and IFC Viewer data now
+  show semantic, measurement, host-wall, and all-three coverage counts without
+  changing IFC preview boundaries, IfcOpenShell optionality, or rule-engine
+  semantics.
+- P76-01 surfaces opening provenance coverage in handoff packages.
+  `archkg handoff-package` reads `layout_ifc_export.json` and writes the
+  coverage into `handoff_manifest.json`, `handoff_summary.md`, and package-root
+  `index.html` so novice reviewers can see opening evidence gaps without
+  opening Studio. Missing signals remain review prompts, not handoff blockers
+  or compliance findings.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

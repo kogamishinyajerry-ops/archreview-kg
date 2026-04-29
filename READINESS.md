@@ -81,6 +81,11 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - P74 后 Viewer/Studio 和 summary 会显示 Opening Provenance Consistency，把 semantic、
   measurement、host 三类 opening 证据面合并成 coverage 视图。缺失项是复核提示，不是失败、
   合规结论或 BIM 完整性声明。
+- P75 后 `layout_ifc_export.v1` 和 IFC Viewer 数据会透传 opening provenance coverage KPI；
+  它只是 optional IFC preview 的元数据，不把 `layout.ifc` 升级为审查级 BIM。
+- P76 后交接包的 manifest、summary 和静态 `index.html` 会显示 opening provenance coverage，
+  让新手 reviewer 在包入口看到 semantic / measurement / host_wall / all_three 覆盖；
+  缺失项仍只是复核提示，不是 handoff quality blocker 或合规结论。
 
 复现该结论：
 
@@ -115,7 +120,8 @@ P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 ge
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
 但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics、
 Opening Measurements、Opening Host Wall Provenance 和 Opening Provenance Consistency
-只解释来源与覆盖，不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
+只解释来源与覆盖；P75/P76 把同一组 coverage 透传到 IFC export summary 和 handoff package，
+但仍不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
 且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
 
@@ -391,6 +397,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不确认 candidate issue，也不替代人工复核或经理 intake。
 - P67 起，bundle next-actor queue 是只读调度提示；它不修改单包、不替代包内 runbook，
   也不改变 package readiness 或合规状态。
+- P76 起，handoff opening provenance coverage 是包内导航提示；它不改变 handoff quality、
+  reviewer checklist、manager checklist、archive verification 或图纸合规状态。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 
