@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-368%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-418%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -47,6 +47,7 @@ archkg viewer -o out --source samples/sample_clean.pdf
 - `sheet_graphs.json` — 每个高置信 plan sheet 的独立 graph 证据输出；P39-01 不把多 plan 页合并进主规则结论
 - `sheet_issues.json` — 每个 plan sheet 的候选问题 preview；P39-02 不写入主 `issues.json` / `review_state.json`
 - `layout_3d.json` / `layout_3d_summary.md` / `layout_3d.glb` — 从 graph 证据生成的 2.5D 布局模型；只用于空间理解和复核导航，默认高度/厚度均写入 assumptions，不作为 BIM 真值或合规判断
+- `layout.ifc` / `layout_ifc_export.json` / `layout_ifc_export.md` — 可选显式导出的 IFC preview；只从 `layout_3d.json` 派生，不随默认审图自动生成，不作为审查级 BIM 或规范判断输入
 - `sheet_issue_review_queue.json` — 从 per-sheet preview 派生的有界人工审阅队列；preview id 不能用于 `archkg review-state`
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
 - `sheet_classification.json` — 多页图纸 sheet 类型分类（plan / schedule / title / legend / detail / elevation / unknown），只做路由证据，不自动跳页
@@ -103,6 +104,9 @@ P67 起 `handoff-bundle-index` 会为每个包标出 `next_actor` 和下一动�
 P68 起完整 review run 会生成 `layout_3d.json`、`layout_3d_summary.md` 和 `layout_3d.glb`，
 帮助 reviewer 从平面图 graph 证据理解房间、墙段、门洞、楼梯占位和尺寸锚点的 2.5D 空间关系；
 这不是 IFC/BIM 输出，也不会改变规则引擎结论。
+P69 起可显式运行 `archkg ifc export-layout` 把 `layout_3d.json` 导出为 `layout.ifc` preview；
+该命令需要可选 IfcOpenShell 依赖，缺依赖时写出 `dependency_missing` 报告并返回非零，
+不会影响普通 PDF/栅格审图流水线。
 
 ---
 
@@ -124,9 +128,21 @@ archkg studio
 
 ```bash
 archkg ifc validate --ifc model.ifc --ids requirements.ids -o out/ifc
+
+# P69: 从 graph-derived 2.5D evidence 显式导出 IFC preview
+archkg ifc export-layout \
+  --layout out/layout_3d.json \
+  --out out/layout.ifc \
+  --report out/layout_ifc_export.json \
+  --markdown out/layout_ifc_export.md
 ```
 
-该路径独立于 PDF 图纸识别流水线。安装 IfcOpenShell/IfcTester 后会写出 `ids_report_raw.json`、`ifc_validation.json` 和 `ifc_issues.json`；缺少可选依赖时 CLI 会清晰降级提示，PDF 审图命令不受影响。
+该路径独立于 PDF 图纸识别流水线。安装 IfcOpenShell/IfcTester 后，`validate` 会写出
+`ids_report_raw.json`、`ifc_validation.json` 和 `ifc_issues.json`；安装 IfcOpenShell 后，
+`export-layout` 会把 `floor_slab`、`wall`、`room/corridor volume`、`door_opening`
+和 `stair_placeholder` 映射成基础 IFC preview 实体。缺少可选依赖时 CLI 会清晰降级提示，
+并在传入 `--report/--markdown` 时仍写 `layout_ifc_export.v1` 报告。`layout.ifc` 不是审查级 BIM，
+不读取 PDF，不改变 `issues.json` / `review_state.json` / 规则引擎结论。
 
 ## Rule-Card Draft Authoring
 
@@ -440,6 +456,9 @@ open out/reviewer_task_checklist.md
 # P68: 3D layout evidence 会随完整 review run 自动生成
 open out/layout_3d_summary.md
 
+# P69: 可选 IFC preview 需要显式导出
+archkg ifc export-layout --layout out/layout_3d.json --out out/layout.ifc --report out/layout_ifc_export.json --markdown out/layout_ifc_export.md
+
 # P64: 在交接包内记录单项 checklist 进度
 archkg handoff-checklist-update out-handoff --ordinal 1 --reviewer reviewer-name --status done --note "已核对边界" --evidence-checked handoff_manifest.json
 
@@ -502,6 +521,7 @@ archkg clause readiness
 - P66：Ready-to-review runbook。交接包根目录新增 `handoff_ready_runbook.json/.md`，`archkg handoff-ready-runbook` 可刷新新手下一步动作；open checklist 会生成对应 `handoff-checklist-update` 命令，全部闭环后只剩 manager checklist 或进入 ready。
 - P67：Bundle next-actor queue。`archkg handoff-bundle-index` 现在输出 `next_action_queue`，并在每包行里展示 next_actor / next_action / next_action_command；负责人不用打开每个包也能分派下一步。
 - P68：Evidence 3D layout model。完整 CLI/Studio run 会基于 `sheet_graphs.json` 优先、`entity_graph.json` 兜底生成 `layout_3d.json` / `.glb` / summary；Viewer 和 handoff package 会展示/复制这些 2.5D 空间导航证据，但它不是 BIM、不是规范结论，也不进入规则引擎。
+- P69：Layout IFC export skeleton。`archkg ifc export-layout` 可从 `layout_3d.json` 显式生成 `layout.ifc` preview 和 `layout_ifc_export.v1` 报告；缺 IfcOpenShell 时清晰降级并不生成 IFC。Viewer 和 handoff package 只把它作为可选 preview artifact，不当作审查级 BIM 或合规结论。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。

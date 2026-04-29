@@ -726,6 +726,7 @@
 {% set sheet_routing = sheet_routing | default({'available': false, 'warning_text': 'sheet_routing.json 暂无数据; 缺失路由不代表已按 sheet 类型过滤.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_region_candidates = sheet_region_candidates | default({'available': false, 'candidates': [], 'excluded_texts': [], 'warning_text': '候选区域暂无数据; 缺失 candidate artifact 不代表已裁剪或已确认.', 'unavailable_reason': 'missing'}, true) %}
 {% set layout_3d = layout_3d | default({'available': false, 'model_status': 'missing', 'summary': {}, 'assumptions': [], 'blocked_reasons': [], 'object_samples': [], 'glb_available': false, 'summary_available': false, 'warning_text': 'layout_3d.json 暂无数据; 缺失 3D layout 不代表图纸无法审查，也不代表 2D evidence 已完整。', 'unavailable_reason': 'missing'}, true) %}
+{% set layout_ifc = layout_ifc | default({'available': false, 'status': 'not_exported', 'object_count': 0, 'exported_counts': {}, 'skipped_counts': {}, 'exported_total': 0, 'skipped_total': 0, 'assumptions_count': 0, 'warnings': [], 'ifc_available': false, 'markdown_available': false, 'warning_text': 'layout.ifc has not been exported. This is an optional preview lane, not a review blocker.', 'unavailable_reason': 'missing'}, true) %}
 
 <header>
   <div>
@@ -1454,6 +1455,75 @@
     {% endif %}
     {% if layout_3d.blocked_reasons %}
       <div class="metric-note">未建模项：{{ layout_3d.blocked_reasons | join(' / ') }}</div>
+    {% endif %}
+  {% endif %}
+  <h3 id="panel-layout-ifc">Layout IFC Preview</h3>
+  {% if not layout_ifc.available %}
+    <div class="alert warn">
+      <strong>layout.ifc 未导出</strong>：{{ layout_ifc.warning_text }}
+      {{ layout_ifc.unavailable_reason }}。IFC preview 不是审查级 BIM，也不是规范判断输入。
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>IFC preview 不是审查级 BIM</strong>：{{ layout_ifc.warning_text }}
+      该产物只从 layout_3d.json 派生，不改规则引擎结论。
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi">
+        <div class="k">Status</div>
+        <div class="v">{{ layout_ifc.status }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Source Objects</div>
+        <div class="v">{{ layout_ifc.object_count }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Exported</div>
+        <div class="v">{{ layout_ifc.exported_total }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Skipped</div>
+        <div class="v">{{ layout_ifc.skipped_total }}</div>
+      </div>
+    </div>
+    <div class="links">
+      <a href="layout_ifc_export.json" target="_blank">layout_ifc_export.json</a>
+      {% if layout_ifc.ifc_available %}
+        · <a href="layout.ifc" target="_blank">layout.ifc</a>
+      {% else %}
+        · layout.ifc 未生成
+      {% endif %}
+      {% if layout_ifc.markdown_available %}
+        · <a href="layout_ifc_export.md" target="_blank">layout_ifc_export.md</a>
+      {% endif %}
+    </div>
+    {% if layout_ifc.exported_counts or layout_ifc.skipped_counts %}
+      <div class="table-wrap" style="max-height: 220px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object type</th><th>exported</th><th>skipped</th></tr></thead>
+          <tbody>
+            {% for key, count in layout_ifc.exported_counts.items() %}
+              <tr>
+                <td><code>{{ key }}</code></td>
+                <td>{{ count }}</td>
+                <td>{{ layout_ifc.skipped_counts.get(key, 0) }}</td>
+              </tr>
+            {% endfor %}
+            {% for key, count in layout_ifc.skipped_counts.items() %}
+              {% if key not in layout_ifc.exported_counts %}
+                <tr>
+                  <td><code>{{ key }}</code></td>
+                  <td>0</td>
+                  <td>{{ count }}</td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_ifc.warnings %}
+      <div class="metric-note">IFC 导出提示：{{ layout_ifc.warnings | join(' / ') }}</div>
     {% endif %}
   {% endif %}
   <h3>Sheet Issue Preview</h3>

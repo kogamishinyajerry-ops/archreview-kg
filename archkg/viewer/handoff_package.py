@@ -52,6 +52,7 @@ BOUNDARY_WARNINGS: tuple[str, ...] = (
     "preview ids are not primary issue ids and must not be passed to archkg review-state.",
     "Missing input or low confidence evidence must be listed as unresolved handoff risk.",
     "release_readiness evidence_ready is scoped to benchmarked drawing classes only.",
+    "layout.ifc is an optional preview derived from layout_3d evidence; it is not review-grade BIM.",
 )
 
 
@@ -189,6 +190,24 @@ ARTIFACTS: tuple[HandoffArtifactSpec, ...] = (
         False,
         "visual",
         "Human-readable 3D layout assumptions and blocked reasons.",
+    ),
+    HandoffArtifactSpec(
+        "layout.ifc",
+        False,
+        "ifc",
+        "Optional IFC preview derived from layout_3d.json evidence.",
+    ),
+    HandoffArtifactSpec(
+        "layout_ifc_export.json",
+        False,
+        "ifc",
+        "Machine-readable optional IFC export status and boundary warnings.",
+    ),
+    HandoffArtifactSpec(
+        "layout_ifc_export.md",
+        False,
+        "ifc",
+        "Human-readable optional IFC export summary.",
     ),
     HandoffArtifactSpec(
         "source_preview.png",

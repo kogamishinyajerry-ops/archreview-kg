@@ -258,6 +258,14 @@ and keeps the no-OCR transparency warning.
   read-only evidence. The model is for spatial navigation only; default
   heights/thicknesses remain explicit assumptions and are not rule-engine facts
   or BIM truth.
+- P69-01 adds an optional layout IFC export lane. `archkg ifc export-layout`
+  reads only `layout_3d.json` and can write `layout.ifc`,
+  `layout_ifc_export.json`, and `layout_ifc_export.md` when IfcOpenShell is
+  available. Missing IfcOpenShell now degrades to `dependency_missing` with a
+  written report when requested, blocked `layout_3d` inputs return `blocked`,
+  and Viewer/Studio/handoff/control-sync treat the IFC files as optional
+  preview artifacts. The exported IFC is not review-grade BIM and is not a
+  rule-engine or compliance input.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

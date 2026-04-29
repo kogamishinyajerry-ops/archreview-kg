@@ -43,6 +43,15 @@ def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> 
         "# 3D Layout Evidence",
         encoding="utf-8",
     )
+    (tmp_path / "layout.ifc").write_text("IFC preview", encoding="utf-8")
+    (tmp_path / "layout_ifc_export.json").write_text(
+        '{"schema_version":"layout_ifc_export.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "layout_ifc_export.md").write_text(
+        "# Layout IFC Export",
+        encoding="utf-8",
+    )
     (tmp_path / "reviewer_onboarding.json").write_text(
         '{"schema_version":"reviewer_onboarding.v1"}',
         encoding="utf-8",
@@ -73,6 +82,9 @@ def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> 
     assert "layout_3d.json" in snapshot["artifacts"]
     assert "layout_3d.glb" in snapshot["artifacts"]
     assert "layout_3d_summary.md" in snapshot["artifacts"]
+    assert "layout.ifc" in snapshot["artifacts"]
+    assert "layout_ifc_export.json" in snapshot["artifacts"]
+    assert "layout_ifc_export.md" in snapshot["artifacts"]
     assert "reviewer_onboarding.json" in snapshot["artifacts"]
     assert "reviewer_quickstart.md" in snapshot["artifacts"]
     assert "review_diff.json" in snapshot["artifacts"]

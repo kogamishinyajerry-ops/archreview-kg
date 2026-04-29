@@ -294,6 +294,15 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Render the 3D model status, object counts, assumptions, blocked reasons, and GLB links in Viewer/Studio and copy the artifacts into handoff packages.
 - Guardrail: `layout_3d` is an evidence/navigation layer only. Default heights/thicknesses are explicit assumptions for visualization and must not become rule-engine inputs, BIM truth, or compliance conclusions.
 
+### P69: Layout IFC Export Skeleton
+
+- Add explicit `archkg ifc export-layout --layout out/layout_3d.json --out out/layout.ifc --report out/layout_ifc_export.json --markdown out/layout_ifc_export.md`.
+- Read only `layout_3d.json`; do not read PDF inputs, mutate `issues.json`, or change rule-engine semantics.
+- Map v1 layout primitives into IFC preview classes: slabs, walls, spaces, door placeholders, and stair placeholders; skip dimension anchors into the report.
+- Write `layout_ifc_export.v1` with `exported`, `dependency_missing`, `blocked`, or `failed` status and boundary warnings.
+- Surface optional IFC artifacts in Viewer/Studio, handoff packages, and control sync without treating missing IFC as a review failure.
+- Guardrail: `layout.ifc` is an optional preview artifact, not review-grade BIM, not an automatic full `archkg review` output, and not a compliance input.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.
@@ -302,3 +311,4 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - No benchmark promotion without reviewed expected inventory.
 - No IFC stack rewrite while IfcOpenShell/IfcTester can provide the first lane.
 - No arbitrary drawing PDF/raster to review-grade BIM claim from the v1 `layout_3d` model.
+- No claim that `layout.ifc` exported from graph evidence is a design-grade or review-grade BIM model.

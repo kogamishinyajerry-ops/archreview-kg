@@ -55,6 +55,9 @@ def test_handoff_package_copies_review_artifacts_without_mutating_run(
     assert (package_dir / "artifacts" / "layout_3d.json").exists()
     assert (package_dir / "artifacts" / "layout_3d.glb").exists()
     assert (package_dir / "artifacts" / "layout_3d_summary.md").exists()
+    assert (package_dir / "artifacts" / "layout.ifc").exists()
+    assert (package_dir / "artifacts" / "layout_ifc_export.json").exists()
+    assert (package_dir / "artifacts" / "layout_ifc_export.md").exists()
     assert (package_dir / "handoff_ready_runbook.json").exists()
     assert (package_dir / "handoff_ready_runbook.md").exists()
 
@@ -1270,11 +1273,14 @@ def _write_minimal_run(run_dir: Path) -> None:
         "release_readiness.md": "# Release Readiness\n",
         "layout_3d.json": '{"schema_version":"layout_3d.v1"}',
         "layout_3d_summary.md": "# 3D Layout Evidence\n",
+        "layout_ifc_export.json": '{"schema_version":"layout_ifc_export.v1","status":"exported"}',
+        "layout_ifc_export.md": "# Layout IFC Export\n",
     }
     for name, content in files.items():
         (run_dir / name).write_text(content, encoding="utf-8")
     (run_dir / "annotated.pdf").write_bytes(b"%PDF-1.7\n")
     (run_dir / "layout_3d.glb").write_bytes(b"glb bytes")
+    (run_dir / "layout.ifc").write_text("IFC preview\n", encoding="utf-8")
 
 
 def _write_package_checklist(

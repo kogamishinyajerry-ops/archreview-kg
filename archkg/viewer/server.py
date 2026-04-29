@@ -199,6 +199,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.issue_focus import build_issue_focus_view
     from archkg.viewer.layout_3d import load_layout_3d_view
+    from archkg.viewer.layout_ifc import load_layout_ifc_view
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
     from archkg.viewer.preview_pages import load_preview_pages_view
     from archkg.viewer.review_diff import load_review_diff_view
@@ -263,6 +264,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
     layout_3d = load_layout_3d_view(out_dir)
+    layout_ifc = load_layout_ifc_view(out_dir)
     preview_pages = load_preview_pages_view(out_dir)
     issue_focus = build_issue_focus_view(
         issues,
@@ -305,6 +307,7 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
         layout_3d=layout_3d,
+        layout_ifc=layout_ifc,
         preview_pages=preview_pages,
         issue_focus=issue_focus,
         mode=mode,

@@ -61,6 +61,9 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - P68 后完整 CLI/Studio run 会写 `layout_3d.json`、`layout_3d_summary.md` 和
   `layout_3d.glb`，把已识别的平面 graph 转成证据化 2.5D 空间导航模型；默认层高、墙厚、
   板厚、门洞高度只用于可视化，并在 assumptions 中显式标出，不是 BIM 真值或合规判断输入。
+- P69 后可显式运行 `archkg ifc export-layout`，从 `layout_3d.json` 派生可打开的
+  `layout.ifc` preview 和 `layout_ifc_export.v1` 报告；它需要可选 IfcOpenShell，
+  缺依赖时清晰降级，不生成 IFC，也不影响普通审图流水线。
 
 复现该结论：
 
@@ -93,8 +96,8 @@ release-readiness status=evidence_ready blockers=0 warnings=0 active=7 real_acti
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
 P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 generated mixed-sheet-set 复杂回归样本，
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
-但 `layout_3d` 仍是从当前 graph 推导的辅助导航层，per-sheet preview issues 还没有进入主 lifecycle，
-且真实复杂图纸覆盖仍有限，所以仍不能宣称
+但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，per-sheet preview issues
+还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
 
 ## 32 张规则的就绪度分布

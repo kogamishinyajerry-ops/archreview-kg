@@ -577,6 +577,9 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "layout_3d.json" in body
     assert "layout_3d.glb" in body
     assert "默认值只用于 3D 辅助可视化" in body
+    assert "Layout IFC Preview" in body
+    assert "layout.ifc 未导出" in body
+    assert "IFC preview 不是审查级 BIM" in body
     assert "preview-only bounded bridge" in body
     assert "sheet_issue_review_queue.json" in body
     assert "平面图" in body
@@ -605,6 +608,7 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "sheet_issues.json 暂无数据" in body
     assert "缺失 per-sheet issue preview 不代表多页无候选问题" in body
     assert "layout_3d.json 暂无数据" in body
+    assert "layout.ifc 未导出" in body
 
 
 def test_standalone_viewer_renders_second_page_issue_focus(

@@ -1580,6 +1580,60 @@ def ifc_validate(
     typer.echo(f"wrote {out / 'ifc_validation.json'}")
 
 
+@ifc_app.command("export-layout")
+def ifc_export_layout(
+    layout_path: Path = typer.Option(
+        ...,
+        "--layout",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="layout_3d.json evidence artifact to export.",
+    ),
+    out: Path = typer.Option(
+        Path("out/layout.ifc"),
+        "-o",
+        "--out",
+        help="Output IFC preview file.",
+    ),
+    report: Path | None = typer.Option(
+        None,
+        "--report",
+        help="Optional layout_ifc_export.json report path.",
+    ),
+    markdown: Path | None = typer.Option(
+        None,
+        "--markdown",
+        help="Optional layout_ifc_export.md report path.",
+    ),
+) -> None:
+    """Export layout_3d.json to an optional IFC preview artifact."""
+    from archkg.ifc.layout_exporter import export_layout_ifc
+
+    result = export_layout_ifc(
+        layout_path=layout_path,
+        ifc_path=out,
+        report_path=report,
+        markdown_path=markdown,
+    )
+    exported_total = sum(result.exported_counts.values())
+    skipped_total = sum(result.skipped_counts.values())
+    typer.echo(
+        f"{result.schema_version} status={result.status} "
+        f"objects={result.object_count} exported={exported_total} skipped={skipped_total}"
+    )
+    for warning in result.warnings:
+        typer.echo(f"warning: {warning}")
+    if result.status == "exported":
+        typer.echo(f"wrote {out}")
+    if report is not None:
+        typer.echo(f"wrote {report}")
+    if markdown is not None:
+        typer.echo(f"wrote {markdown}")
+    if result.status != "exported":
+        raise typer.Exit(code=1)
+
+
 @adversarial_app.command("run")
 def adversarial_run(
     battery_size: int = typer.Option(
