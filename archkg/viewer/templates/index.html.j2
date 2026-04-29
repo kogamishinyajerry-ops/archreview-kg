@@ -1583,6 +1583,25 @@
         <div class="k">Skipped</div>
         <div class="v">{{ layout_ifc.skipped_total }}</div>
       </div>
+      <div class="kpi">
+        <div class="k">Opening semantic</div>
+        <div class="v">{{ layout_ifc.opening_provenance.semantic_count | default(0) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Opening measurement</div>
+        <div class="v">{{ layout_ifc.opening_provenance.measurement_count | default(0) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Opening host</div>
+        <div class="v">{{ layout_ifc.opening_provenance.host_count | default(0) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">All three</div>
+        <div class="v">{{ layout_ifc.opening_provenance.all_three_count | default(0) }}</div>
+      </div>
+    </div>
+    <div class="metric-note">
+      IFC 预览里的 opening provenance 数值仅用于审阅覆盖提示，不改变合规输入。
     </div>
     <div class="links">
       <a href="layout_ifc_export.json" target="_blank">layout_ifc_export.json</a>

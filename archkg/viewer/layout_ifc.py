@@ -36,6 +36,7 @@ def load_layout_ifc_view(out_dir: Path) -> dict[str, Any]:
         "exported_total": sum(exported_counts.values()),
         "skipped_total": sum(skipped_counts.values()),
         "assumptions_count": _int(raw.get("assumptions_count")),
+        "opening_provenance": _int_mapping(raw.get("opening_provenance")),
         "warnings": warnings,
         "boundary_warning": _str(raw.get("boundary_warning")),
         "ifc_available": (out_dir / "layout.ifc").exists(),
@@ -62,6 +63,7 @@ def _missing_view(reason: str, out_dir: Path) -> dict[str, Any]:
         "exported_total": 0,
         "skipped_total": 0,
         "assumptions_count": 0,
+        "opening_provenance": {},
         "warnings": [],
         "boundary_warning": (
             "IFC preview is optional evidence derived from layout_3d.json; "

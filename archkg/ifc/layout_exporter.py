@@ -36,6 +36,7 @@ class LayoutIfcExportReport(BaseModel):
     exported_counts: dict[str, int] = Field(default_factory=dict)
     skipped_counts: dict[str, int] = Field(default_factory=dict)
     assumptions_count: int = Field(..., ge=0)
+    opening_provenance: dict[str, int] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     boundary_warning: str = BOUNDARY_WARNING
 
@@ -156,6 +157,27 @@ def render_layout_ifc_export_markdown(report: LayoutIfcExportReport) -> str:
         lines.extend(f"- {warning}" for warning in report.warnings)
     else:
         lines.append("None")
+    lines.extend(["", "## Opening Provenance Coverage (preview)", ""])
+    lines.extend(
+        [
+            "| Signal | Count |",
+            "|---|---:|",
+            (
+                f"| `semantic` | {report.opening_provenance.get('semantic_count', 0)} |"
+            ),
+            (
+                f"| `measurement` | {report.opening_provenance.get('measurement_count', 0)} |"
+            ),
+            (
+                f"| `host_wall` | {report.opening_provenance.get('host_count', 0)} |"
+            ),
+            (
+                f"| `all_three` | {report.opening_provenance.get('all_three_count', 0)} |"
+            ),
+            "",
+            "> Opening provenance coverage is preview-only metadata for reviewer orientation and does not change rule or compliance results.",
+        ]
+    )
     lines.append("")
     return "\n".join(lines)
 
@@ -206,6 +228,7 @@ def _report(
         exported_counts=exported_counts or {},
         skipped_counts=skipped_counts or {},
         assumptions_count=len(layout.assumptions),
+        opening_provenance=_opening_provenance_from_layout(layout),
         warnings=warnings or [],
     )
 
@@ -298,6 +321,18 @@ def _write_ifc(
 
     model.write(str(ifc_path))
     return exported, skipped
+
+
+def _opening_provenance_from_layout(layout: Layout3DReport) -> dict[str, int]:
+    summary = layout.summary or {}
+    return {
+        "opening_count": int(summary.get("door_opening_count", 0))
+        + int(summary.get("window_opening_count", 0)),
+        "semantic_count": int(summary.get("opening_provenance_semantic_count", 0)),
+        "measurement_count": int(summary.get("opening_provenance_measurement_count", 0)),
+        "host_count": int(summary.get("opening_provenance_host_count", 0)),
+        "all_three_count": int(summary.get("opening_provenance_all_three_count", 0)),
+    }
 
 
 def _ifc_class_for_object(obj: Layout3DObject) -> str | None:

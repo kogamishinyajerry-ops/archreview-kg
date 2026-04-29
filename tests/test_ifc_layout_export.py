@@ -69,6 +69,54 @@ def test_ifc_export_layout_cli_with_fake_dependency_writes_preview_artifacts(
     assert "not a review-grade BIM" in report["boundary_warning"]
 
 
+def test_ifc_export_layout_cli_with_fake_dependency_tracks_opening_provenance_metadata(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_ifcopenshell_modules(monkeypatch)
+    layout_path = write_layout_3d(
+        build_layout_3d(entity_graph=_entity_graph_with_opening_provenance()),
+        tmp_path / "layout_3d.json",
+    )
+    ifc_path = tmp_path / "layout.ifc"
+    report_path = tmp_path / "layout_ifc_export.json"
+    markdown_path = tmp_path / "layout_ifc_export.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "ifc",
+            "export-layout",
+            "--layout",
+            str(layout_path),
+            "--out",
+            str(ifc_path),
+            "--report",
+            str(report_path),
+            "--markdown",
+            str(markdown_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["opening_provenance"] == {
+        "opening_count": 2,
+        "semantic_count": 2,
+        "measurement_count": 2,
+        "host_count": 2,
+        "all_three_count": 2,
+    }
+    assert markdown_path.exists()
+    markdown = markdown_path.read_text("utf-8")
+    assert "## Opening Provenance Coverage" in markdown
+    assert "`semantic` | 2" in markdown
+    assert "`measurement` | 2" in markdown
+    assert "`host_wall` | 2" in markdown
+    assert "`all_three` | 2" in markdown
+
+
 def test_ifc_export_layout_cli_with_fake_dependency_tracks_window_opening_counts(
     tmp_path: Path,
     monkeypatch,
@@ -419,6 +467,91 @@ def _entity_graph_with_window() -> EntityGraph:
                 page_index=0,
                 bbox=(92.0, -4.0, 138.0, 5.0),
                 width_m=0.92,
+                connects=("room-1", "corridor-1"),
+            ),
+        ],
+        corridors=[
+            Corridor(
+                id="corridor-1",
+                page_index=0,
+                bbox=(0.0, 150.0, 200.0, 210.0),
+                polygon=[
+                    (0.0, 150.0),
+                    (200.0, 150.0),
+                    (200.0, 210.0),
+                    (0.0, 210.0),
+                    (0.0, 150.0),
+                ],
+            )
+        ],
+        dimensions=[
+            Dimension(
+                id="dim-1",
+                page_index=0,
+                bbox=(15.0, 215.0, 75.0, 235.0),
+                text="4.0 m",
+                value_m=4.0,
+                unit="m",
+            )
+        ],
+        stairs=[
+            Stair(
+                id="stair-1",
+                page_index=0,
+                bbox=(220.0, 20.0, 320.0, 120.0),
+                tread_width_m=1.1,
+            )
+        ],
+    )
+
+
+def _entity_graph_with_opening_provenance() -> EntityGraph:
+    return EntityGraph(
+        source_pdf="synthetic-opening-provenance-ifc.pdf",
+        points_per_meter=50.0,
+        page_index=0,
+        page_width_pt=400.0,
+        page_height_pt=260.0,
+        rooms=[
+            Room(
+                id="room-1",
+                page_index=0,
+                bbox=(0.0, 0.0, 200.0, 150.0),
+                polygon=[
+                    (0.0, 0.0),
+                    (200.0, 0.0),
+                    (200.0, 150.0),
+                    (0.0, 150.0),
+                    (0.0, 0.0),
+                ],
+                area_m2=12.0,
+                label="bedroom",
+            )
+        ],
+        doors=[
+            Door(
+                id="door-2",
+                page_index=0,
+                bbox=(92.0, -4.0, 138.0, 5.0),
+                width_m=0.92,
+                connects=("room-1", "corridor-1"),
+                properties={
+                    "height_m": 2.05,
+                    "opening_host_wall_id": "wall-1",
+                    "opening_host_wall_segment": "0.0,0.0;0.0,1.5",
+                },
+            ),
+            Door(
+                id="window-1",
+                page_index=0,
+                bbox=(40.0, -6.0, 100.0, 5.0),
+                width_m=1.2,
+                properties={
+                    "opening_kind": "window",
+                    "height_m": 1.2,
+                    "opening_host_wall_id": "wall-2",
+                    "opening_host_wall_segment": "1.0,0.0;1.0,2.5",
+                },
                 connects=("room-1", "corridor-1"),
             ),
         ],
