@@ -369,6 +369,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Render the same triage queue in bundle Markdown and HTML as a separate queue from the existing package `next_action_queue`.
 - Guardrail: opening provenance triage is reviewer assignment guidance only; it must not change package status, `next_action_queue`, quality/signoff/manager/archive semantics, or compliance claims.
 
+### P79-01: Package Opening Provenance Checklist Guidance
+
+- Add package-local `opening_provenance_guidance` to `artifacts/reviewer_task_checklist.json` when `archkg handoff-package` sees weak opening provenance coverage.
+- Render the guidance in `artifacts/reviewer_task_checklist.md` as a preview-only section with coverage counts, missing signals, source artifact, and mutation boundary.
+- Keep checklist `items[]` and item counts unchanged so this guidance does not alter manager readiness or normal checklist completion gates.
+- Guardrail: package-local guidance must not mutate the source run, confirm issues, change `review_state.json`, or turn weak opening provenance into compliance failure.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

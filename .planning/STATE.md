@@ -1,12 +1,12 @@
 # ArchReview-KG State
 
-Updated: 2026-04-29
+Updated: 2026-04-30
 
 ## Current Position
 
 Branch: `main`
 
-Latest completed commit before P78: `12ebfe4 feat(P77-01): add bundle opening provenance triage`
+Latest completed commit before P79: `93ebb73 feat(P78-01): add opening provenance triage queue`
 
 Status:
 
@@ -68,14 +68,15 @@ Status:
 - P76-01 is complete: handoff packages now copy through opening provenance coverage into `handoff_manifest.json`, `handoff_summary.md`, and package `index.html` from `layout_ifc_export.json`.
 - P77-01 is complete: bundle index now surfaces per-package opening provenance coverage and weak-package counts for triage.
 - P78-01 is complete: bundle index now emits a separate `opening_provenance_triage_queue` for weak coverage packages and renders it in Markdown/HTML.
+- P79-01 is complete: handoff packages now add package-local opening provenance guidance to reviewer checklist JSON/Markdown when weak coverage is present, without changing checklist item counts.
 
 ## Current Phase
 
-P78-01: Bundle opening provenance review queue (complete).
+P79-01: Package opening provenance checklist guidance (complete).
 
-P78 is complete. Bundle index now has a dedicated opening provenance triage
-queue for reviewer assignment, separated from package readiness and the normal
-package `next_action_queue`.
+P79 is complete. Weak opening provenance coverage now reaches package-local
+reviewer checklist guidance while preserving checklist item counts and manager
+readiness semantics.
 
 ## Key Decisions
 
@@ -138,10 +139,11 @@ package `next_action_queue`.
 - P77 bundle opening provenance triage is review dispatch guidance only. Weak
   coverage is a triage signal for manager assignment, not a compliance failure.
 - P78 opening provenance triage queue is a secondary review-assignment queue only. It does not change `package_status`, normal `next_action_queue`, quality/signoff/manager/archive semantics, or compliance claims.
+- P79 opening provenance checklist guidance is package-local reviewer guidance only. It does not add checklist items, change checklist item counts, alter manager gates, mutate source runs, or confirm issues.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next adjacent step after P78 is P79+: connect opening provenance triage to
-package-local reviewer checklist guidance, still as optional preview-only review
-work and without mutating source run issue truth.
+Next adjacent step after P79 is P80+: consider adding ready-runbook wording for
+opening provenance guidance so novice reviewers can find the package-local
+guidance quickly, while keeping it optional and non-blocking.

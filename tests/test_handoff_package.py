@@ -126,6 +126,73 @@ def test_handoff_package_surfaces_opening_provenance_coverage(
     assert "not compliance failures" in html
 
 
+def test_handoff_package_adds_opening_provenance_guidance_to_reviewer_checklist(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    original_checklist = (run_dir / "reviewer_task_checklist.json").read_text(
+        "utf-8"
+    )
+    (run_dir / "layout_ifc_export.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "layout_ifc_export.v1",
+                "status": "exported",
+                "opening_provenance": {
+                    "semantic_count": 2,
+                    "measurement_count": 0,
+                    "host_count": 1,
+                    "all_three_count": 0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    write_handoff_package(run_dir, package_dir)
+
+    assert (run_dir / "reviewer_task_checklist.json").read_text(
+        "utf-8"
+    ) == original_checklist
+    checklist = json.loads(
+        (package_dir / "artifacts" / "reviewer_task_checklist.json").read_text(
+            "utf-8"
+        )
+    )
+    assert len(checklist["items"]) == 1
+    assert checklist["opening_provenance_guidance"] == {
+        "available": True,
+        "weak": True,
+        "source_artifact": "layout_ifc_export.json",
+        "coverage": {
+            "semantic_count": 2,
+            "measurement_count": 0,
+            "host_count": 1,
+            "all_three_count": 0,
+        },
+        "missing_signals": ["measurement"],
+        "reviewer_prompt": (
+            "Review opening provenance coverage before relying on 3D/IFC "
+            "opening previews; missing signals are handoff prompts only."
+        ),
+        "boundary_warning": (
+            "Opening provenance coverage is preview-only handoff guidance; "
+            "missing signals are review prompts, not compliance failures."
+        ),
+        "mutation_policy": "package_checklist_guidance_only_no_source_run_mutation",
+    }
+
+    markdown = (
+        package_dir / "artifacts" / "reviewer_task_checklist.md"
+    ).read_text("utf-8")
+    assert "## Opening Provenance Guidance" in markdown
+    assert "missing `measurement`" in markdown
+    assert "package_checklist_guidance_only_no_source_run_mutation" in markdown
+    assert "preview-only handoff guidance" in markdown
+
+
 def test_handoff_package_records_missing_required_artifacts(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     package_dir = tmp_path / "handoff"

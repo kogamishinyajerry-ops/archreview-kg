@@ -90,6 +90,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   coverage 包数量，供负责人分派复核。
 - P78 后 bundle index 还会输出独立 `opening_provenance_triage_queue`，把 weak coverage
   包列为 reviewer triage 项；它与正常 `next_action_queue` 分离，不改变 readiness 或交接状态。
+- P79 后 weak opening provenance 会进入包内 reviewer checklist guidance 区，提示缺失的
+  semantic / measurement / host_wall 信号；它不新增 checklist item，不改变 manager readiness。
 
 复现该结论：
 
@@ -124,8 +126,8 @@ P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 ge
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
 但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics、
 Opening Measurements、Opening Host Wall Provenance 和 Opening Provenance Consistency
-只解释来源与覆盖；P75-P78 把同一组 coverage 透传到 IFC export summary、handoff package、
-bundle summary 和独立 triage queue，
+只解释来源与覆盖；P75-P79 把同一组 coverage 透传到 IFC export summary、handoff package、
+bundle summary、独立 triage queue 和包内 reviewer checklist guidance，
 但仍不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
 且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
@@ -406,6 +408,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   reviewer checklist、manager checklist、archive verification 或图纸合规状态。
 - P77/P78 起，bundle opening provenance aggregation 和 triage queue 只帮助负责人跨包分派 reviewer；
   它不改变 package readiness、normal next action queue、handoff quality 或图纸合规状态。
+- P79 起，package-local opening provenance checklist guidance 不新增 checklist item，不改变
+  checklist completion、manager readiness、source run 或图纸合规状态。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

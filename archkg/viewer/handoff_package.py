@@ -258,6 +258,11 @@ def write_handoff_package(run_dir: Path, package_dir: Path) -> Path:
         for row in statuses
         if row["required"] is True and row["status"] == "missing"
     ]
+    opening_provenance = _opening_provenance_from_run(run_dir)
+    _refresh_opening_provenance_checklist_guidance(
+        package_dir=package_dir,
+        opening_provenance=opening_provenance,
+    )
     manifest: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "created_at": datetime.now(UTC).isoformat(),
@@ -272,7 +277,7 @@ def write_handoff_package(run_dir: Path, package_dir: Path) -> Path:
         ],
         "missing_required_artifacts": missing_required,
         "boundary_warnings": list(BOUNDARY_WARNINGS),
-        "opening_provenance": _opening_provenance_from_run(run_dir),
+        "opening_provenance": opening_provenance,
         "commands": _commands(run_dir),
         "handoff_summary_path": "handoff_summary.md",
         "artifacts_dir": "artifacts",
@@ -1616,6 +1621,72 @@ def _extend_opening_provenance_summary(
             f"| `all_three` | {_int(raw_opening_provenance.get('all_three_count'))} |",
         ]
     )
+
+
+def _refresh_opening_provenance_checklist_guidance(
+    *,
+    package_dir: Path,
+    opening_provenance: dict[str, Any],
+) -> None:
+    checklist_path = package_dir / "artifacts" / "reviewer_task_checklist.json"
+    payload = _load_optional_json(checklist_path)
+    if not payload:
+        return
+    if payload.get("schema_version") != REVIEWER_TASK_CHECKLIST_SCHEMA_VERSION:
+        return
+    guidance = _opening_provenance_checklist_guidance(opening_provenance)
+    if not guidance:
+        return
+    payload["opening_provenance_guidance"] = guidance
+    checklist_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    (package_dir / "artifacts" / "reviewer_task_checklist.md").write_text(
+        render_reviewer_task_checklist_markdown(payload),
+        encoding="utf-8",
+    )
+
+
+def _opening_provenance_checklist_guidance(
+    opening_provenance: dict[str, Any],
+) -> dict[str, Any] | None:
+    if opening_provenance.get("available") is not True:
+        return None
+    missing = _opening_provenance_missing_signals(opening_provenance)
+    if not missing:
+        return None
+    return {
+        "available": True,
+        "weak": True,
+        "source_artifact": _str(opening_provenance.get("source_artifact")),
+        "coverage": {
+            "semantic_count": _int(opening_provenance.get("semantic_count")),
+            "measurement_count": _int(opening_provenance.get("measurement_count")),
+            "host_count": _int(opening_provenance.get("host_count")),
+            "all_three_count": _int(opening_provenance.get("all_three_count")),
+        },
+        "missing_signals": missing,
+        "reviewer_prompt": (
+            "Review opening provenance coverage before relying on 3D/IFC "
+            "opening previews; missing signals are handoff prompts only."
+        ),
+        "boundary_warning": OPENING_PROVENANCE_BOUNDARY_WARNING,
+        "mutation_policy": "package_checklist_guidance_only_no_source_run_mutation",
+    }
+
+
+def _opening_provenance_missing_signals(
+    opening_provenance: dict[str, Any],
+) -> list[str]:
+    missing: list[str] = []
+    if _int(opening_provenance.get("semantic_count")) == 0:
+        missing.append("semantic")
+    if _int(opening_provenance.get("measurement_count")) == 0:
+        missing.append("measurement")
+    if _int(opening_provenance.get("host_count")) == 0:
+        missing.append("host_wall")
+    return missing
 
 
 def _load_manifest(path: Path) -> dict[str, Any]:

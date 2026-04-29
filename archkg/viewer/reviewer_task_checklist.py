@@ -162,6 +162,7 @@ def render_reviewer_task_checklist_markdown(payload: Mapping[str, Any]) -> str:
             f"{checked_evidence} | "
             f"{reviewer_note} |"
         )
+    _extend_opening_provenance_guidance(lines, payload)
     lines.append("")
     return "\n".join(lines)
 
@@ -251,6 +252,40 @@ def _mutation_warning(stage: str) -> str:
     if stage == "per_sheet_preview":
         return "Preview ids must not be passed to archkg review-state."
     return "Checklist notes do not mutate source run artifacts."
+
+
+def _extend_opening_provenance_guidance(
+    lines: list[str],
+    payload: Mapping[str, Any],
+) -> None:
+    raw = payload.get("opening_provenance_guidance")
+    if not isinstance(raw, Mapping):
+        return
+    coverage = _mapping(raw.get("coverage"))
+    missing = _str_list(raw.get("missing_signals"))
+    missing_text = ", ".join(f"`{item}`" for item in missing) or "None"
+    lines.extend(
+        [
+            "",
+            "## Opening Provenance Guidance",
+            "",
+            _str(raw.get("boundary_warning")),
+            "",
+            f"- Mutation policy: `{_str(raw.get('mutation_policy'))}`",
+            f"- Source artifact: `{_str(raw.get('source_artifact')) or '-'}`",
+            f"- Weak coverage: `{str(raw.get('weak') is True).lower()}`",
+            (
+                "- Coverage: "
+                f"semantic=`{_int(coverage.get('semantic_count'))}`, "
+                f"measurement=`{_int(coverage.get('measurement_count'))}`, "
+                f"host_wall=`{_int(coverage.get('host_count'))}`, "
+                f"all_three=`{_int(coverage.get('all_three_count'))}`"
+            ),
+            f"- Missing signals: {missing_text}",
+            f"- Review status: missing {missing_text}",
+            f"- Reviewer prompt: {_str(raw.get('reviewer_prompt'))}",
+        ]
+    )
 
 
 def _summary(items: Sequence[Mapping[str, Any]]) -> dict[str, int]:

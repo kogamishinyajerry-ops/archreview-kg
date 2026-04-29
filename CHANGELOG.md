@@ -327,6 +327,13 @@ and keeps the no-OCR transparency warning.
   Markdown/HTML. The queue is separate from the normal package
   `next_action_queue` and does not change readiness, quality, signoff, manager,
   archive, or compliance semantics.
+- P79-01 adds package-local opening provenance checklist guidance. When a
+  handoff package has weak opening provenance coverage, `archkg handoff-package`
+  now writes an `opening_provenance_guidance` section into the copied
+  `artifacts/reviewer_task_checklist.json` and renders it in
+  `artifacts/reviewer_task_checklist.md`. The guidance does not add checklist
+  items, change item counts, alter manager readiness, mutate source runs, or
+  turn weak coverage into a compliance finding.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

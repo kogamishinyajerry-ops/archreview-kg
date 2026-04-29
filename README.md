@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-435%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-436%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -108,6 +108,8 @@ P77 起 `handoff_bundle_index` 将聚合每个包的 opening provenance 计数�
 measurement / host_wall / all_three），并输出 weak coverage 包数量，供 manager 做 triage 时优先分派 reviewer，不把缺口当作合规失败。
 P78 起 bundle index 还会生成独立的 `opening_provenance_triage_queue`，
 把 weak coverage 包整理成 reviewer 复核队列；它和正常 `next_action_queue` 分开，不改变 package readiness。
+P79 起如果单包 opening provenance coverage 较弱，`artifacts/reviewer_task_checklist.json/.md`
+会增加 `opening_provenance_guidance` 指导区，说明缺哪些证据面；它不新增 checklist item，也不改变 manager gate。
 P68 起完整 review run 会生成 `layout_3d.json`、`layout_3d_summary.md` 和 `layout_3d.glb`，
 帮助 reviewer 从平面图 graph 证据理解房间、墙段、门洞、楼梯占位和尺寸锚点的 2.5D 空间关系；
 这不是 IFC/BIM 输出，也不会改变规则引擎结论。
@@ -177,6 +179,7 @@ P77 起 `handoff_bundle_index.json/.md/.html` 将跨包汇总 semantic、measure
 计数，并把任一缺口标记为 weak 包，直接作为 triage 提示。
 P76 起 handoff package 也会显示这些计数，方便交接时不打开 Studio 也能看到洞口证据覆盖。
 P78 起 bundle 还会写 `opening_provenance_triage_queue`，把 weak 包列成独立 reviewer 复核队列。
+P79 起单包 reviewer checklist Markdown 会显示 Opening Provenance Guidance，方便 reviewer 在包内完成证据核对记录。
 这些字段仍是 preview-only metadata，不证明 IFC/BIM 几何准确。
 
 ## Rule-Card Draft Authoring
@@ -569,6 +572,7 @@ archkg clause readiness
 - P76：Handoff opening provenance coverage。交接包的 manifest、summary 和静态 index 会显示 semantic / measurement / host_wall / all_three 计数，让新手 reviewer 在交接入口就能看到洞口证据覆盖；缺失项不是 package blocker。
 - P77：Bundle opening provenance triage。`handoff_bundle_index` 聚合每包的 opening provenance 计数与 weak 包数量，并在 Markdown/HTML bundle index 中暴露 triage 线索，用于负责人分派 reviewer，不改变 quality/signoff/checklist/manager/archive 语义。
 - P78：Bundle opening provenance review queue。`handoff_bundle_index` 新增 `opening_provenance_triage_queue`，把 weak coverage 包单独列为 reviewer triage 项；它不改变原有 `next_action_queue` 或 package readiness。
+- P79：Package opening provenance checklist guidance。`handoff-package` 会在包内 reviewer checklist JSON/Markdown 增加 opening provenance guidance 指导区，但不增加 checklist item、不改变 checklist 计数或 manager readiness。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
@@ -591,6 +595,7 @@ archkg clause readiness
 - P76：Handoff opening provenance coverage。包内 opening provenance 计数只做复核导航，不改变 handoff quality、reviewer checklist、manager checklist 或 archive verification 的语义。
 - P77：Bundle opening provenance triage。handoff bundle index 的 opening provenance 聚合只是 triage 信号，不改变 package readiness、package quality、manager checklist 或合规结论。
 - P78：Bundle opening provenance review queue。`opening_provenance_triage_queue` 是额外 reviewer 分派队列，不写单包、不改 `next_action_queue`、不改变任何合规或移交状态。
+- P79：Package opening provenance checklist guidance。包内 checklist guidance 只补充复核提示，不新增 item、不改变 checklist 完成度、manager gate 或 source run。
 
 ---
 
