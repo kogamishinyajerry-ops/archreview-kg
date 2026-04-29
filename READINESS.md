@@ -97,6 +97,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   它不进入 required next actions，也不阻塞 manager intake。
 - P81 后包根 `index.html` 会在 Ready-To-Review Runbook 区显示 optional guidance 导航，
   链接到 runbook optional section 和 package-local checklist guidance；它仍只是静态入口。
+- P82 后 bundle index 会汇总哪些包已经在 package index 暴露 optional guidance 入口，
+  并输出独立 `package_index_optional_guidance_queue`；它不改变正常 next action queue。
 
 复现该结论：
 
@@ -131,8 +133,8 @@ P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 ge
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
 但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics、
 Opening Measurements、Opening Host Wall Provenance 和 Opening Provenance Consistency
-只解释来源与覆盖；P75-P81 把同一组 coverage 透传到 IFC export summary、handoff package、
-bundle summary、独立 triage queue、包内 reviewer checklist guidance、ready-runbook optional guidance 和 package index navigation，
+只解释来源与覆盖；P75-P82 把同一组 coverage 透传到 IFC export summary、handoff package、
+bundle summary、独立 triage queue、包内 reviewer checklist guidance、ready-runbook optional guidance、package index navigation 和 bundle optional-guidance visibility，
 但仍不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
 且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
@@ -419,6 +421,8 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不改变 manager intake、package readiness、source run 或图纸合规状态。
 - P81 起，package index optional opening provenance guidance link 只做入口导航，
   不改变 required next actions、manager intake、package readiness、source run 或图纸合规状态。
+- P82 起，bundle optional guidance visibility 只帮助负责人看到包内可用入口，
+  不改变 `next_action_queue`、next actor、manager intake、package readiness、source run 或图纸合规状态。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

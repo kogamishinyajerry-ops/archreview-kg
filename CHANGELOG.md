@@ -349,6 +349,12 @@ and keeps the no-OCR transparency warning.
   package-local checklist artifact. The link is navigation-only and does not
   alter required `next_actions`, manager intake, package readiness, source
   runs, or compliance semantics.
+- P82-01 adds bundle-level visibility for package-index optional guidance.
+  `handoff_bundle_index.v1` now includes summary counts and a separate
+  `package_index_optional_guidance_queue` for packages whose static index links
+  to ready-runbook optional guidance. Markdown/HTML render the same queue for
+  manager visibility. This does not alter package status, `next_actor`,
+  `next_action_queue`, manager intake, source runs, or compliance semantics.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

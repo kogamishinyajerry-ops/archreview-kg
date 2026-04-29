@@ -13,6 +13,7 @@ from archkg.viewer.handoff_package import (
     MANAGER_CHECKLIST_SCHEMA_VERSION,
     OPENING_PROVENANCE_BOUNDARY_WARNING,
     QUALITY_SCHEMA_VERSION,
+    READY_RUNBOOK_SCHEMA_VERSION,
     SIGNOFF_SCHEMA_VERSION,
 )
 from archkg.viewer.handoff_package import (
@@ -56,6 +57,9 @@ def build_handoff_bundle_index(packages_root: Path) -> dict[str, Any]:
         "packages": packages,
         "boundary_warning": BOUNDARY_WARNING,
         "opening_provenance_triage_queue": _opening_provenance_triage_queue(packages),
+        "package_index_optional_guidance_queue": (
+            _package_index_optional_guidance_queue(packages)
+        ),
         "next_action_queue": _bundle_next_action_queue(packages),
         "next_actions": _bundle_next_actions(packages),
     }
@@ -125,6 +129,8 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
         f"host_wall=`{_int(summary.get('opening_provenance_host_count'))}`, "
         f"all_three=`{_int(summary.get('opening_provenance_all_three_count'))}`",
         f"- Weak opening provenance packages: `{opening_weak_count}`",
+        f"- Package index optional guidance packages: "
+        f"`{_int(summary.get('package_index_optional_guidance_package_count'))}`",
         "",
         "## Packages",
         "",
@@ -160,6 +166,9 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
     opening_triage_queue = _list_of_dicts(
         payload.get("opening_provenance_triage_queue")
     )
+    index_guidance_queue = _list_of_dicts(
+        payload.get("package_index_optional_guidance_queue")
+    )
     if opening_triage_queue:
         lines.extend(
             [
@@ -181,6 +190,27 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
                 f"{_str(item.get('coverage'))} | "
                 f"{_str(item.get('reason'))} |"
             )
+    if index_guidance_queue:
+        lines.extend(
+            [
+                "",
+                "## Package Index Optional Guidance",
+                "",
+                OPENING_PROVENANCE_BOUNDARY_WARNING,
+                "",
+                "| Package | Actions | Index | Runbook | Reason |",
+                "|---|---:|---|---|---|",
+            ]
+        )
+        for item in index_guidance_queue:
+            lines.append(
+                "| "
+                f"`{_str(item.get('package_name'))}` | "
+                f"{_int(item.get('action_count'))} | "
+                f"`{_str(item.get('index_path'))}` | "
+                f"`{_str(item.get('runbook_path'))}` | "
+                f"{_str(item.get('reason'))} |"
+            )
     if next_actions:
         lines.extend(["", "## Next Actions", ""])
         lines.extend(f"- {item}" for item in next_actions)
@@ -193,6 +223,9 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
     packages = _list_of_dicts(payload.get("packages"))
     opening_triage_queue = _list_of_dicts(
         payload.get("opening_provenance_triage_queue")
+    )
+    index_guidance_queue = _list_of_dicts(
+        payload.get("package_index_optional_guidance_queue")
     )
     lines = [
         "<!doctype html>",
@@ -248,6 +281,15 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
             str(_int(summary.get("opening_provenance_weak_package_count"))),
             "warn" if _int(summary.get("opening_provenance_weak_package_count")) else "ok",
         ),
+        _kpi(
+            "Index Guidance",
+            str(_int(summary.get("package_index_optional_guidance_package_count"))),
+            (
+                "warn"
+                if _int(summary.get("package_index_optional_guidance_package_count"))
+                else "ok"
+            ),
+        ),
         "</section>",
         '<section class="panel">',
         "<h2>Bundle Boundary</h2>",
@@ -286,6 +328,40 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
                 f"<td>{_html(_str(item.get('actor')))}</td>"
                 f"<td>{_html(_str(item.get('action_id')))}</td>"
                 f"<td>{_html(_str(item.get('coverage')))}</td>"
+                f"<td>{_html(_str(item.get('reason')))}</td>"
+                "</tr>"
+            )
+        lines.extend(["</tbody>", "</table>", "</section>"])
+    if index_guidance_queue:
+        lines.extend(
+            [
+                '<section class="panel">',
+                "<h2>Package Index Optional Guidance</h2>",
+                f"<p>{_html(OPENING_PROVENANCE_BOUNDARY_WARNING)}</p>",
+                "<table>",
+                "<thead><tr><th>Package</th><th>Actions</th><th>Index</th><th>Runbook</th><th>Reason</th></tr></thead>",
+                "<tbody>",
+            ]
+        )
+        for item in index_guidance_queue:
+            index_path = _str(item.get("index_path"))
+            runbook_path = _str(item.get("runbook_path"))
+            index_link = (
+                f'<a href="{_html_attr(index_path)}">{_html(index_path)}</a>'
+                if index_path
+                else "-"
+            )
+            runbook_link = (
+                f'<a href="{_html_attr(runbook_path)}">{_html(runbook_path)}</a>'
+                if runbook_path
+                else "-"
+            )
+            lines.append(
+                "<tr>"
+                f"<td>{_html(_str(item.get('package_name')))}</td>"
+                f"<td>{_int(item.get('action_count'))}</td>"
+                f"<td>{index_link}</td>"
+                f"<td>{runbook_link}</td>"
                 f"<td>{_html(_str(item.get('reason')))}</td>"
                 "</tr>"
             )
@@ -351,6 +427,7 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
     quality = _load_json(package_dir / "handoff_quality.json")
     signoff = _load_json(package_dir / "reviewer_signoff.json")
     manager = _load_json(package_dir / "handoff_manager_checklist.json")
+    ready_runbook = _load_json(package_dir / "handoff_ready_runbook.json")
     archive_manifest = _load_json(package_dir / "handoff_archive_manifest.json")
     archive_verification = _load_json(package_dir / "handoff_archive_verification.json")
     opening_provenance = _opening_provenance_summary(manifest)
@@ -389,6 +466,11 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
     )
     relative_dir = package_dir.relative_to(packages_root).as_posix()
     index_rel = f"{relative_dir}/index.html" if (package_dir / "index.html").is_file() else ""
+    optional_guidance = _package_index_optional_guidance_summary(
+        ready_runbook,
+        index_path=index_rel,
+        relative_package_dir=relative_dir,
+    )
     return {
         "package_name": package_dir.name,
         "package_dir": str(package_dir),
@@ -463,7 +545,48 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
             or opening_provenance["measurement_count"] == 0
             or opening_provenance["host_count"] == 0
         ),
+        "package_index_optional_guidance_available": optional_guidance["available"],
+        "package_index_optional_guidance_count": optional_guidance["count"],
+        "package_index_optional_guidance_path": optional_guidance["index_path"],
+        "package_index_optional_guidance_runbook_path": optional_guidance[
+            "runbook_path"
+        ],
+        "package_index_optional_guidance_reason": optional_guidance["reason"],
+        "package_index_optional_guidance_boundary_warning": optional_guidance[
+            "boundary_warning"
+        ],
         "open_items": open_items,
+    }
+
+
+def _package_index_optional_guidance_summary(
+    ready_runbook: dict[str, Any],
+    *,
+    index_path: str,
+    relative_package_dir: str,
+) -> dict[str, Any]:
+    actions = (
+        _list_of_dicts(ready_runbook.get("optional_review_actions"))
+        if _str(ready_runbook.get("schema_version")) == READY_RUNBOOK_SCHEMA_VERSION
+        else []
+    )
+    available = bool(actions and index_path)
+    first_action = actions[0] if actions else {}
+    return {
+        "available": available,
+        "count": len(actions) if available else 0,
+        "index_path": index_path if available else "",
+        "runbook_path": (
+            f"{relative_package_dir}/handoff_ready_runbook.md#optional-review-guidance"
+            if available
+            else ""
+        ),
+        "reason": _str(first_action.get("reason")) if available else "",
+        "boundary_warning": (
+            _str(first_action.get("boundary_warning"))
+            if available
+            else OPENING_PROVENANCE_BOUNDARY_WARNING
+        ),
     }
 
 
@@ -873,6 +996,15 @@ def _bundle_summary(packages: list[dict[str, Any]]) -> dict[str, int]:
         "opening_provenance_all_three_count": sum(
             _int(row.get("opening_provenance_all_three_count")) for row in packages
         ),
+        "package_index_optional_guidance_package_count": sum(
+            1
+            for row in packages
+            if _bool(row.get("package_index_optional_guidance_available"))
+        ),
+        "package_index_optional_guidance_action_total": sum(
+            _int(row.get("package_index_optional_guidance_count"))
+            for row in packages
+        ),
     }
 
 
@@ -945,6 +1077,35 @@ def _opening_provenance_triage_reason(package: dict[str, Any]) -> str:
     if not missing:
         return "Opening provenance coverage is weak."
     return f"Opening provenance coverage is weak: missing {', '.join(missing)}."
+
+
+def _package_index_optional_guidance_queue(
+    packages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    queue: list[dict[str, Any]] = []
+    for package in packages:
+        if not _bool(package.get("package_index_optional_guidance_available")):
+            continue
+        queue.append(
+            {
+                "package_name": _str(package.get("package_name")),
+                "relative_package_dir": _str(package.get("relative_package_dir")),
+                "index_path": _str(package.get("package_index_optional_guidance_path")),
+                "runbook_path": _str(
+                    package.get("package_index_optional_guidance_runbook_path")
+                ),
+                "action_count": _int(
+                    package.get("package_index_optional_guidance_count")
+                ),
+                "reason": _str(
+                    package.get("package_index_optional_guidance_reason")
+                ),
+                "boundary_warning": _str(
+                    package.get("package_index_optional_guidance_boundary_warning")
+                ),
+            }
+        )
+    return queue
 
 
 def _bundle_next_action_queue(packages: list[dict[str, Any]]) -> list[dict[str, str]]:

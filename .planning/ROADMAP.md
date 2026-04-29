@@ -390,6 +390,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Keep static index content as navigation only; do not change ready-runbook `next_actions`, package readiness, manager gates, or source-run artifacts.
 - Guardrail: index-level opening provenance guidance must remain optional, preview-only, and non-blocking.
 
+### P82-01: Bundle Optional Guidance Visibility
+
+- Add bundle summary counts for packages whose static package index exposes ready-runbook optional guidance.
+- Emit a separate `package_index_optional_guidance_queue` with package name, index path, runbook optional section link, action count, reason, and boundary warning.
+- Render that queue in bundle Markdown/HTML as manager visibility only, separate from `next_action_queue`.
+- Guardrail: bundle optional guidance visibility must not change package status, next actor, normal next actions, manager gates, or compliance semantics.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

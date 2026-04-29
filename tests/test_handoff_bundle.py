@@ -257,6 +257,86 @@ def test_handoff_bundle_index_markdown_html_show_opening_provenance_triage_queue
     assert "preview-only handoff guidance" in html
 
 
+def test_handoff_bundle_index_surfaces_package_index_optional_guidance(
+    tmp_path: Path,
+) -> None:
+    runs_root = tmp_path / "runs"
+    packages_root = tmp_path / "handoff-packages"
+    runs_root.mkdir()
+    packages_root.mkdir()
+
+    run_weak = runs_root / "weak"
+    package_weak = packages_root / "pkg-weak"
+    _write_minimal_run(run_weak)
+    _write_layout_ifc_with_opening_provenance(
+        run_weak,
+        {
+            "semantic_count": 1,
+            "measurement_count": 0,
+            "host_count": 1,
+            "all_three_count": 0,
+        },
+    )
+    write_handoff_package(run_weak, package_weak)
+
+    run_plain = runs_root / "plain"
+    package_plain = packages_root / "pkg-plain"
+    _write_minimal_run(run_plain)
+    write_handoff_package(run_plain, package_plain)
+
+    out_json = packages_root / "handoff_bundle_index.json"
+    out_md = packages_root / "handoff_bundle_index.md"
+    out_html = packages_root / "handoff_bundle_index.html"
+    write_handoff_bundle_index(
+        packages_root,
+        out=out_json,
+        markdown=out_md,
+        html_path=out_html,
+    )
+    payload = json.loads(out_json.read_text("utf-8"))
+
+    assert payload["summary"]["package_index_optional_guidance_package_count"] == 1
+    assert payload["summary"]["package_index_optional_guidance_action_total"] == 1
+    rows = {row["package_name"]: row for row in payload["packages"]}
+    assert rows["pkg-weak"]["package_index_optional_guidance_available"] is True
+    assert rows["pkg-weak"]["package_index_optional_guidance_count"] == 1
+    assert rows["pkg-weak"]["package_index_optional_guidance_path"] == (
+        "pkg-weak/index.html"
+    )
+    assert rows["pkg-weak"]["package_index_optional_guidance_runbook_path"] == (
+        "pkg-weak/handoff_ready_runbook.md#optional-review-guidance"
+    )
+    assert rows["pkg-plain"]["package_index_optional_guidance_available"] is False
+    assert payload["package_index_optional_guidance_queue"] == [
+        {
+            "package_name": "pkg-weak",
+            "relative_package_dir": "pkg-weak",
+            "index_path": "pkg-weak/index.html",
+            "runbook_path": "pkg-weak/handoff_ready_runbook.md#optional-review-guidance",
+            "action_count": 1,
+            "reason": "Opening provenance coverage is weak: missing measurement.",
+            "boundary_warning": (
+                "Opening provenance coverage is preview-only handoff guidance; "
+                "missing signals are review prompts, not compliance failures."
+            ),
+        }
+    ]
+    assert all(
+        item["package_name"] != "pkg-weak" or item["action_id"] != "review_opening_provenance_guidance"
+        for item in payload["next_action_queue"]
+    )
+
+    markdown = out_md.read_text("utf-8")
+    assert "## Package Index Optional Guidance" in markdown
+    assert "| `pkg-weak` | 1 | `pkg-weak/index.html` | `pkg-weak/handoff_ready_runbook.md#optional-review-guidance` | Opening provenance coverage is weak: missing measurement. |" in markdown
+
+    html = out_html.read_text("utf-8")
+    assert "Package Index Optional Guidance" in html
+    assert "pkg-weak/index.html" in html
+    assert "handoff_ready_runbook.md#optional-review-guidance" in html
+    assert "missing measurement" in html
+
+
 def _write_layout_ifc_with_opening_provenance(
     run_dir: Path,
     counts: dict[str, int],
