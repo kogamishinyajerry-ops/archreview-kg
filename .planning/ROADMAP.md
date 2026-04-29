@@ -303,6 +303,15 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Surface optional IFC artifacts in Viewer/Studio, handoff packages, and control sync without treating missing IFC as a review failure.
 - Guardrail: `layout.ifc` is an optional preview artifact, not review-grade BIM, not an automatic full `archkg review` output, and not a compliance input.
 
+### P70-01: Layout IFC Preview Validation
+
+- Expose graph-backed window/opening evidence in `layout_3d` as `window_opening` only when explicit evidence exists (`opening_kind == window`, `opening_kind == window_opening`, or `is_window == true`).
+- Map `window_opening` to IFC `IfcWindow` in the optional IFC preview exporter while keeping door/stair/space/wall handling unchanged.
+- Add regression coverage for `window_opening` construction in both `layout_3d` and `layout_ifc_export` pathways.
+- Add optional real IfcOpenShell smoke test guarded by `importorskip`, plus `README`/`ROADMAP`/`STATE` update notes on install and manual verification.
+- Keep all optional artifacts (`layout.ifc`, `layout_ifc_export.json`, `layout_ifc_export.md`) in Viewer/Studio/handoff/control-sync as non-blocking `preview / evidence` signals only.
+- Guardrail: do not assert true geometry semantics such as boolean opening subtraction, wall void carving, multi-floor stacking, or rule-engine promotion from optional previews.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

@@ -145,7 +145,6 @@ def build_layout_3d(
         )
 
     blocked = list(blocked_reasons)
-    blocked.append("window_openings_not_available_in_entity_graph")
     assumptions = [
         assumption
         for assumption in assumption_by_id.values()
@@ -341,8 +340,12 @@ def _objects_for_graph(
         objects.append(obj)
         objects.extend(_wall_objects_for_polygon(corridor, source, assumptions))
     for door in graph.doors:
-        obj = _door_object(door, source)
-        _apply_assumption(obj, assumptions["A-DOOR-OPENING-HEIGHT"])
+        if _is_explicit_window_opening(door):
+            obj = _window_opening_object(door, source)
+            _apply_assumption(obj, assumptions["A-WINDOW-OPENING-HEIGHT"])
+        else:
+            obj = _door_object(door, source)
+            _apply_assumption(obj, assumptions["A-DOOR-OPENING-HEIGHT"])
         if "thickness_m" in obj.dimensions_m:
             _apply_assumption(obj, assumptions["A-WALL-THICKNESS"])
         objects.append(obj)
@@ -490,6 +493,46 @@ def _door_object(door: Door, source: _GraphSource) -> Layout3DObject:
     )
 
 
+def _is_explicit_window_opening(door: Door) -> bool:
+    opening_kind = door.properties.get("opening_kind")
+    if isinstance(opening_kind, str) and opening_kind.strip().lower() in {
+        "window",
+        "window_opening",
+    }:
+        return True
+    return door.properties.get("is_window") is True
+
+
+def _window_opening_object(door: Door, source: _GraphSource) -> Layout3DObject:
+    bbox_m = _bbox_m(door.bbox, source.graph.points_per_meter)
+    x0, y0, x1, y1 = bbox_m
+    width = door.width_m or max(x1 - x0, y1 - y0)
+    return Layout3DObject(
+        object_id=f"{source.source_sheet_id}-window-opening-{door.id}",
+        object_type="window_opening",
+        source_entity_id=door.id,
+        source_entity_type=door.type,
+        source_page_index=door.page_index,
+        source_sheet_id=source.source_sheet_id,
+        bbox_m=bbox_m,
+        footprint=[(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)],
+        center_m=((x0 + x1) / 2, (y0 + y1) / 2, DEFAULT_DOOR_HEIGHT_M / 2),
+        z_base_m=0.0,
+        height_m=DEFAULT_DOOR_HEIGHT_M,
+        dimensions_m={
+            "width_m": width,
+            "height_m": DEFAULT_DOOR_HEIGHT_M,
+            "thickness_m": DEFAULT_WALL_THICKNESS_M,
+        },
+        confidence=door.confidence,
+        properties={
+            "connects": [door.connects[0], door.connects[1]],
+            "source_door_id": door.id,
+            "opening_kind": "window",
+        },
+    )
+
+
 def _stair_object(stair: Stair, source: _GraphSource) -> Layout3DObject:
     bbox_m = _bbox_m(stair.bbox, source.graph.points_per_meter)
     x0, y0, x1, y1 = bbox_m
@@ -575,6 +618,13 @@ def _default_assumptions() -> dict[str, Layout3DAssumption]:
             value=DEFAULT_DOOR_HEIGHT_M,
             unit="m",
             reason="door opening height is not extracted from current evidence",
+        ),
+        "A-WINDOW-OPENING-HEIGHT": Layout3DAssumption(
+            assumption_id="A-WINDOW-OPENING-HEIGHT",
+            field="window_opening.height_m",
+            value=DEFAULT_DOOR_HEIGHT_M,
+            unit="m",
+            reason="window opening height is not extracted from current evidence",
         ),
         "A-STAIR-PLACEHOLDER-HEIGHT": Layout3DAssumption(
             assumption_id="A-STAIR-PLACEHOLDER-HEIGHT",

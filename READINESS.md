@@ -64,6 +64,10 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - P69 后可显式运行 `archkg ifc export-layout`，从 `layout_3d.json` 派生可打开的
   `layout.ifc` preview 和 `layout_ifc_export.v1` 报告；它需要可选 IfcOpenShell，
   缺依赖时清晰降级，不生成 IFC，也不影响普通审图流水线。
+- P70 后 `layout_3d` 会把明确窗口洞口（`Door` 上有 `opening_kind: "window"` /
+  `opening_kind: "window_opening"` 或 `is_window: true`）建模为 `window_opening`，
+  并在 IFC preview 导出时映射为 `IfcWindow`。这仍是 preview / evidence 信号，不是
+  规则引擎或合规输入。
 
 复现该结论：
 

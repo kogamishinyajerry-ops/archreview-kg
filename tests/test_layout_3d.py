@@ -25,7 +25,7 @@ def test_layout_3d_prefers_sheet_graphs_and_records_assumptions() -> None:
     assert report.source_artifact == "sheet_graphs.json"
     assert report.source_sheet_ids == ["page-0"]
     assert report.scale_basis["points_per_meter"] == 50.0
-    assert report.blocked_reasons == ["window_openings_not_available_in_entity_graph"]
+    assert report.blocked_reasons == []
 
     object_types = {obj.object_type for obj in report.objects}
     assert {
@@ -66,6 +66,31 @@ def test_layout_3d_falls_back_to_entity_graph_when_sheet_graphs_missing() -> Non
     object_count = report.summary["object_count"]
     assert isinstance(object_count, int)
     assert object_count > 0
+
+
+def test_layout_3d_builds_window_openings_from_explicit_graph_evidence() -> None:
+    report = build_layout_3d(entity_graph=_entity_graph_with_window())
+
+    assert report.model_status == "partial"
+    assert report.summary["door_opening_count"] == 1
+    assert report.summary["window_opening_count"] == 1
+    assert report.summary["wall_count"] == 8
+    assert "window_opening.height_m" in {item.field for item in report.assumptions}
+
+    door = next(obj for obj in report.objects if obj.object_type == "door_opening")
+    window = next(obj for obj in report.objects if obj.object_type == "window_opening")
+    assert door.object_id.startswith("page-0-door-opening-door-2")
+    assert window.object_id.startswith("page-0-window-opening-window-1")
+    assert door.source_entity_id == "door-2"
+    assert window.source_entity_id == "window-1"
+    assert door.properties["connects"] == ["room-1", "corridor-1"]
+    assert window.properties["opening_kind"] == "window"
+    assert window.properties["connects"] == ["room-1", "corridor-1"]
+
+    window_assumption = next(
+        item for item in report.assumptions if item.field == "window_opening.height_m"
+    )
+    assert window.object_id in window_assumption.applies_to_object_ids
 
 
 def test_layout_3d_blocks_without_graph_geometry() -> None:
@@ -222,4 +247,79 @@ def _empty_graph() -> EntityGraph:
         corridors=[],
         dimensions=[],
         stairs=[],
+    )
+
+
+def _entity_graph_with_window() -> EntityGraph:
+    return EntityGraph(
+        source_pdf="synthetic-window.pdf",
+        points_per_meter=50.0,
+        page_index=0,
+        page_width_pt=400.0,
+        page_height_pt=260.0,
+        rooms=[
+            Room(
+                id="room-1",
+                page_index=0,
+                bbox=(0.0, 0.0, 200.0, 150.0),
+                polygon=[
+                    (0.0, 0.0),
+                    (200.0, 0.0),
+                    (200.0, 150.0),
+                    (0.0, 150.0),
+                    (0.0, 0.0),
+                ],
+                area_m2=12.0,
+                label="bedroom",
+            )
+        ],
+        doors=[
+            Door(
+                id="window-1",
+                page_index=0,
+                bbox=(40.0, -6.0, 72.0, 5.0),
+                width_m=0.64,
+                properties={"opening_kind": "window"},
+                connects=("room-1", "corridor-1"),
+            ),
+            Door(
+                id="door-2",
+                page_index=0,
+                bbox=(92.0, -4.0, 138.0, 5.0),
+                width_m=0.92,
+                connects=("room-1", "corridor-1"),
+            ),
+        ],
+        corridors=[
+            Corridor(
+                id="corridor-1",
+                page_index=0,
+                bbox=(0.0, 150.0, 200.0, 210.0),
+                polygon=[
+                    (0.0, 150.0),
+                    (200.0, 150.0),
+                    (200.0, 210.0),
+                    (0.0, 210.0),
+                    (0.0, 150.0),
+                ],
+            )
+        ],
+        dimensions=[
+            Dimension(
+                id="dim-1",
+                page_index=0,
+                bbox=(15.0, 215.0, 75.0, 235.0),
+                text="4.0 m",
+                value_m=4.0,
+                unit="m",
+            )
+        ],
+        stairs=[
+            Stair(
+                id="stair-1",
+                page_index=0,
+                bbox=(220.0, 20.0, 320.0, 120.0),
+                tread_width_m=1.1,
+            )
+        ],
     )

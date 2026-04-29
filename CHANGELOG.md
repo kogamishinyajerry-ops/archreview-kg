@@ -266,6 +266,13 @@ and keeps the no-OCR transparency warning.
   and Viewer/Studio/handoff/control-sync treat the IFC files as optional
   preview artifacts. The exported IFC is not review-grade BIM and is not a
   rule-engine or compliance input.
+- P70-01 hardens layout IFC preview semantics. `build_layout_3d` now emits
+  `window_opening` objects only for explicit graph evidence (`opening_kind:
+  "window"` / `"window_opening"` or `is_window: true`) and keeps generic doors as
+  `door_opening`. `layout_ifc_export` maps `window_opening` to `IfcWindow` and
+  reports exported counts separately. Missing IfcOpenShell remains a clean
+  non-blocking `dependency_missing` path; optional real IfcOpenShell smoke is
+  added in regression tests with `importorskip("ifcopenshell")`.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

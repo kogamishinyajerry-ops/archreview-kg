@@ -6,6 +6,7 @@ import types
 from pathlib import Path
 from typing import Any
 
+import pytest
 from typer.testing import CliRunner
 
 from archkg.cli.main import app
@@ -66,6 +67,75 @@ def test_ifc_export_layout_cli_with_fake_dependency_writes_preview_artifacts(
     assert report["skipped_counts"]["dimension_anchor"] == 1
     assert report["assumptions_count"] >= 1
     assert "not a review-grade BIM" in report["boundary_warning"]
+
+
+def test_ifc_export_layout_cli_with_fake_dependency_tracks_window_opening_counts(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _install_fake_ifcopenshell_modules(monkeypatch)
+    layout_path = write_layout_3d(
+        build_layout_3d(entity_graph=_entity_graph_with_window()),
+        tmp_path / "layout_3d.json",
+    )
+    ifc_path = tmp_path / "layout.ifc"
+    report_path = tmp_path / "layout_ifc_export.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "ifc",
+            "export-layout",
+            "--layout",
+            str(layout_path),
+            "--out",
+            str(ifc_path),
+            "--report",
+            str(report_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["status"] == "exported"
+    assert report["exported_counts"]["window_opening"] == 1
+    assert report["exported_counts"]["door_opening"] == 1
+    assert report["exported_counts"]["wall"] == 8
+
+
+def test_ifc_export_layout_cli_real_ifcopenshell_smoke(tmp_path: Path) -> None:
+    pytest.importorskip("ifcopenshell")
+    layout_path = write_layout_3d(
+        build_layout_3d(entity_graph=_entity_graph_with_window()),
+        tmp_path / "layout_3d.json",
+    )
+    ifc_path = tmp_path / "layout.ifc"
+    report_path = tmp_path / "layout_ifc_export.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "ifc",
+            "export-layout",
+            "--layout",
+            str(layout_path),
+            "--out",
+            str(ifc_path),
+            "--report",
+            str(report_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert ifc_path.exists()
+    assert ifc_path.stat().st_size > 32
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["status"] == "exported"
+    assert report["exported_counts"]["window_opening"] == 1
+
+
 
 
 def test_ifc_export_layout_cli_writes_dependency_missing_report(
@@ -307,6 +377,81 @@ def _entity_graph() -> EntityGraph:
                 id="stair-1",
                 page_index=0,
                 bbox=(220.0, 20.0, 320.0, 120.0),
+            )
+        ],
+    )
+
+
+def _entity_graph_with_window() -> EntityGraph:
+    return EntityGraph(
+        source_pdf="synthetic-window.pdf",
+        points_per_meter=50.0,
+        page_index=0,
+        page_width_pt=400.0,
+        page_height_pt=260.0,
+        rooms=[
+            Room(
+                id="room-1",
+                page_index=0,
+                bbox=(0.0, 0.0, 200.0, 150.0),
+                polygon=[
+                    (0.0, 0.0),
+                    (200.0, 0.0),
+                    (200.0, 150.0),
+                    (0.0, 150.0),
+                    (0.0, 0.0),
+                ],
+                area_m2=12.0,
+                label="bedroom",
+            )
+        ],
+        doors=[
+            Door(
+                id="window-1",
+                page_index=0,
+                bbox=(40.0, -6.0, 72.0, 5.0),
+                width_m=0.64,
+                properties={"opening_kind": "window"},
+                connects=("room-1", "corridor-1"),
+            ),
+            Door(
+                id="door-2",
+                page_index=0,
+                bbox=(92.0, -4.0, 138.0, 5.0),
+                width_m=0.92,
+                connects=("room-1", "corridor-1"),
+            ),
+        ],
+        corridors=[
+            Corridor(
+                id="corridor-1",
+                page_index=0,
+                bbox=(0.0, 150.0, 200.0, 210.0),
+                polygon=[
+                    (0.0, 150.0),
+                    (200.0, 150.0),
+                    (200.0, 210.0),
+                    (0.0, 210.0),
+                    (0.0, 150.0),
+                ],
+            )
+        ],
+        dimensions=[
+            Dimension(
+                id="dim-1",
+                page_index=0,
+                bbox=(15.0, 215.0, 75.0, 235.0),
+                text="4.0 m",
+                value_m=4.0,
+                unit="m",
+            )
+        ],
+        stairs=[
+            Stair(
+                id="stair-1",
+                page_index=0,
+                bbox=(220.0, 20.0, 320.0, 120.0),
+                tread_width_m=1.1,
             )
         ],
     )

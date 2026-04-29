@@ -6,7 +6,7 @@ Updated: 2026-04-29
 
 Branch: `main`
 
-Latest completed commit before P69: `5df1e80 feat(P68-01): add evidence 3d layout model`
+Latest completed commit before P70: `215a5c6 feat(P69-01): add layout ifc export lane`
 
 Status:
 
@@ -59,12 +59,15 @@ Status:
 - P67-01 is complete: `archkg handoff-bundle-index` now exposes per-package `next_actor` / `next_action_*` fields plus a structured `next_action_queue` for cross-package reviewer/manager/archive routing.
 - P68-01 is complete: full CLI and Studio review runs now generate `layout_3d.json`, `layout_3d_summary.md`, and `layout_3d.glb` from graph evidence; Viewer/Studio, workbench summaries, control sync, and handoff packages expose the 2.5D model as navigation evidence only.
 - P69-01 is complete: `archkg ifc export-layout` now explicitly exports optional `layout.ifc` preview artifacts from `layout_3d.json`, writes `layout_ifc_export.v1` reports, degrades cleanly when IfcOpenShell is missing, and surfaces optional IFC artifacts in Viewer/Studio, control sync, and handoff packages.
+- P70-01 is complete: `layout_3d` models explicit graph window evidence as `window_opening`, `layout.ifc` export maps it to `IfcWindow`, and regression coverage includes both fake-module and optional real-IfcOpenShell smoke paths.
 
 ## Current Phase
 
-P69: Layout IFC export skeleton.
+P70-01: Layout IFC preview hardening and smoke validation.
 
-P69 is complete. Reviewers can optionally export a graph-derived IFC preview after a `layout_3d.json` exists, while default review runs, rule outputs, and review-state semantics remain unchanged.
+P70 is complete. `layout_3d` now distinguishes explicit window openings from generic
+door openings, `window_opening` exports to `IfcWindow` in preview IFC, and optional
+IfcOpenShell smoke verification is available via guarded regression when installed.
 
 ## Key Decisions
 
@@ -117,8 +120,9 @@ P69 is complete. Reviewers can optionally export a graph-derived IFC preview aft
 - P67 bundle next-actor queue is a read-only dispatch surface; it does not mutate packages, source runs, issue states, or package readiness semantics.
 - P68 layout_3d is a derived 2.5D navigation model only; it does not certify arbitrary drawings, replace 2D evidence, create BIM truth, or supply compliance inputs from default visualization dimensions.
 - P69 `layout.ifc` is a preview artifact derived from `layout_3d.json`; it does not certify arbitrary drawings, does not perform boolean opening subtraction/window modeling/multi-floor stacking, and must not be described as review-grade BIM.
+- P70 `window_opening` is an optional preview semantic in `layout_3d`; it is only built from explicit graph evidence and mapped to `IfcWindow` for preview export without changing rule-engine truth, review state, or compliance claims.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next major 3D step is richer graph-backed opening/window semantics or a real IfcOpenShell smoke test when the dependency is available. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.
+Next major 3D step after P70 is to start graph-backed opening/window semantics research for explicit evidence only, plus optional real IfcOpenShell smoke checks when the environment is stable. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.

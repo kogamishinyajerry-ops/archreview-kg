@@ -111,7 +111,7 @@ def export_layout_ifc(
         skipped_counts=dict(skipped_counts),
         warnings=[
             "IFC export is preview-only; door and stair objects are placeholders.",
-            "Boolean wall voids, windows, multi-floor stacking, and compliance semantics are not exported.",
+            "Boolean wall voids, staircase voids, multi-floor stacking, and compliance semantics are not exported.",
         ],
     )
     _write_optional_reports(report, report_path, markdown_path)
@@ -307,6 +307,7 @@ def _ifc_class_for_object(obj: Layout3DObject) -> str | None:
         "corridor_volume": "IfcSpace",
         "wall": "IfcWall",
         "door_opening": "IfcDoor",
+        "window_opening": "IfcWindow",
         "stair_placeholder": "IfcStair",
     }.get(obj.object_type)
 
