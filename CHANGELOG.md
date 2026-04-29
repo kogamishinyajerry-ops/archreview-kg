@@ -289,6 +289,19 @@ and keeps the no-OCR transparency warning.
   remain explicit visualization assumptions. `layout_3d_summary.md` and
   Viewer/Studio now show `Opening Measurements` as preview provenance only,
   without promoting dimensions to rule-engine or compliance facts.
+- P73-01 adds explicit opening wall-host provenance to the 3D evidence layer.
+  Door and window opening objects now carry `properties.opening_host` only when
+  graph evidence provides explicit host wall or source-segment fields such as
+  `Door.properties.opening_host_wall_id` and
+  `Door.properties.opening_host_wall_segment`. `layout_3d_summary.md` and
+  Viewer/Studio now show `Opening Host Wall Provenance` without inferring host
+  walls, carving wall voids, or changing rule-engine semantics.
+- P74-01 adds an opening provenance consistency coverage view. `layout_3d`
+  summary counts now show how many openings have semantic, measurement, host,
+  and all-three preview provenance signals; Viewer/Studio shows per-opening
+  coverage samples and missing-provenance prompts. This is reviewer navigation
+  metadata only, not a failure gate, BIM completeness claim, or compliance
+  input.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

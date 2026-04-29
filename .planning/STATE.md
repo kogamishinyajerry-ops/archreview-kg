@@ -6,7 +6,7 @@ Updated: 2026-04-29
 
 Branch: `main`
 
-Latest completed commit before P72: `b382975 feat(P71-01): add opening semantic provenance`
+Latest completed commit before P74: `e9b6eb3 feat(P73-01): add opening wall-host provenance`
 
 Status:
 
@@ -62,14 +62,16 @@ Status:
 - P70-01 is complete: `layout_3d` models explicit graph window evidence as `window_opening`, `layout.ifc` export maps it to `IfcWindow`, and regression coverage includes both fake-module and optional real-IfcOpenShell smoke paths.
 - P71-01 is complete: `layout_3d` now records `properties.opening_semantic` provenance for door/window openings, and both summary Markdown and Viewer/Studio expose Opening Semantics for reviewer audit.
 - P72-01 is complete: `layout_3d` now records `properties.opening_measurement` provenance for explicit graph opening dimensions, and both summary Markdown and Viewer/Studio expose Opening Measurements for reviewer audit.
+- P73-01 is complete: `layout_3d` now records `properties.opening_host` provenance only for explicit graph host wall/source-segment fields, and both summary Markdown and Viewer/Studio expose Opening Host Wall Provenance.
+- P74-01 is complete: `layout_3d` summary and Viewer/Studio now expose Opening Provenance Consistency coverage across semantic, measurement, and host-wall provenance signals.
 
 ## Current Phase
 
-P72-01: Opening measurement provenance.
+P74-01: Opening provenance consistency.
 
-P72 is complete. `layout_3d` now records explicit opening width/height/sill/head
-dimension provenance when the graph carries source fields, while keeping missing
-dimensions as assumptions and keeping opening dimensions out of compliance logic.
+P74 is complete. `layout_3d` now shows coverage across opening semantic,
+measurement, and host-wall provenance so reviewers can see which evidence
+surfaces are present or missing without treating gaps as compliance failures.
 
 ## Key Decisions
 
@@ -125,8 +127,10 @@ dimensions as assumptions and keeping opening dimensions out of compliance logic
 - P70 `window_opening` is an optional preview semantic in `layout_3d`; it is only built from explicit graph evidence and mapped to `IfcWindow` for preview export without changing rule-engine truth, review state, or compliance claims.
 - P71 opening semantic provenance is audit metadata only. It does not prove wall void geometry, window recognition accuracy, fire/smoke performance, sill height, or compliance.
 - P72 opening measurement provenance is audit metadata only. It records explicit graph fields such as `Door.width_m` or `Door.properties.height_m`, but does not infer missing dimensions, certify wall void geometry, or feed rule-engine compliance findings.
+- P73 opening host-wall provenance is audit metadata only. It records explicit graph host fields, but does not infer nearest walls, snap openings to wall geometry, carve voids, or feed rule-engine compliance findings.
+- P74 opening provenance consistency is a coverage view only. Missing semantic/measurement/host signals are review prompts, not failures, BIM completeness checks, or compliance findings.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next major 3D step after P72 is to add wall-host references for openings only when the graph can identify an explicit host wall/source segment. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.
+Next major 3D step after P74 is to consider optional downstream export of opening provenance metadata into IFC export reports or handoff summaries, still without treating GLB/IFC previews as review-grade BIM. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.

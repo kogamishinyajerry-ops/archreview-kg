@@ -41,6 +41,7 @@ def load_layout_3d_view(out_dir: Path) -> dict[str, Any]:
         "opening_semantics": _opening_semantics(objects),
         "opening_measurements": _opening_measurements(objects),
         "opening_wall_hosts": _opening_wall_hosts(objects),
+        "opening_provenance_consistency": _opening_provenance_consistency(objects),
         "glb_available": (out_dir / "layout_3d.glb").exists(),
         "summary_available": (out_dir / "layout_3d_summary.md").exists(),
         "warning_text": (
@@ -68,6 +69,7 @@ def _missing_view(reason: str) -> dict[str, Any]:
         "opening_semantics": _empty_opening_semantics(),
         "opening_measurements": _empty_opening_measurements(),
         "opening_wall_hosts": _empty_opening_wall_hosts(),
+        "opening_provenance_consistency": _empty_opening_provenance_consistency(),
         "glb_available": False,
         "summary_available": False,
         "warning_text": (
@@ -231,6 +233,85 @@ def _empty_opening_wall_hosts() -> dict[str, Any]:
         "samples": [],
         "boundary_warning": (
             "Opening host-wall provenance is shown only when explicit host wall or source-segment evidence exists."
+        ),
+    }
+
+
+def _opening_provenance_consistency(objects: list[dict[str, Any]]) -> dict[str, Any]:
+    opening_count = 0
+    semantic_count = 0
+    measurement_count = 0
+    host_count = 0
+    all_three_count = 0
+    samples: list[dict[str, Any]] = []
+    for obj in objects:
+        object_type = _str(obj.get("object_type"))
+        if object_type not in {"door_opening", "window_opening"}:
+            continue
+        opening_count += 1
+        properties = _mapping(obj.get("properties"))
+        has_semantic = bool(_str(_mapping(properties.get("opening_semantic")).get("kind")))
+        has_measurement = _has_any_measurement(properties)
+        has_host = bool(_str(_mapping(properties.get("opening_host")).get("host_wall_id")).strip())
+        if has_semantic:
+            semantic_count += 1
+        if has_measurement:
+            measurement_count += 1
+        if has_host:
+            host_count += 1
+        if has_semantic and has_measurement and has_host:
+            all_three_count += 1
+        missing = []
+        if not has_semantic:
+            missing.append("semantic")
+        if not has_measurement:
+            missing.append("measurement")
+        if not has_host:
+            missing.append("host_wall")
+        samples.append(
+            {
+                "object_id": _str(obj.get("object_id")),
+                "object_type": object_type,
+                "source_entity_id": _str(obj.get("source_entity_id")),
+                "has_semantic": has_semantic,
+                "has_measurement": has_measurement,
+                "has_host": has_host,
+                "missing_provenance": missing,
+            }
+        )
+    return {
+        **_empty_opening_provenance_consistency(),
+        "opening_count": opening_count,
+        "semantic_count": semantic_count,
+        "measurement_count": measurement_count,
+        "host_count": host_count,
+        "all_three_count": all_three_count,
+        "samples": samples[:8],
+    }
+
+
+def _has_any_measurement(properties: dict[str, Any]) -> bool:
+    measurement = _mapping(properties.get("opening_measurement"))
+    for entry_raw in measurement.values():
+        entry = _mapping(entry_raw)
+        if entry.get("explicit") is not True:
+            continue
+        value = entry.get("value")
+        if isinstance(value, int | float) and not isinstance(value, bool):
+            return True
+    return False
+
+
+def _empty_opening_provenance_consistency() -> dict[str, Any]:
+    return {
+        "opening_count": 0,
+        "semantic_count": 0,
+        "measurement_count": 0,
+        "host_count": 0,
+        "all_three_count": 0,
+        "samples": [],
+        "boundary_warning": (
+            "Opening provenance consistency is a coverage view only; missing signals are review prompts, not failures."
         ),
     }
 

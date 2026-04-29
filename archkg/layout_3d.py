@@ -250,6 +250,29 @@ def render_layout_3d_summary_markdown(report: Layout3DReport) -> str:
             ),
             "",
             "> Opening host-wall provenance is navigation metadata only; it does not imply boolean wall carving or compliance input.",
+            "",
+            "## Opening Provenance Consistency",
+            "",
+            "| Signal | Count | Boundary |",
+            "|---|---:|---|",
+            (
+                f"| `semantic` | {report.summary.get('opening_provenance_semantic_count', 0)} | "
+                "opening semantic provenance present |"
+            ),
+            (
+                f"| `measurement` | {report.summary.get('opening_provenance_measurement_count', 0)} | "
+                "at least one explicit opening measurement field |"
+            ),
+            (
+                f"| `host_wall` | {report.summary.get('opening_provenance_host_count', 0)} | "
+                "explicit host wall provenance present |"
+            ),
+            (
+                f"| `semantic+measurement+host_wall` | {report.summary.get('opening_provenance_all_three_count', 0)} | "
+                "all three preview provenance surfaces present |"
+            ),
+            "",
+            "> This is a coverage view only; missing provenance is a review prompt, not a failed compliance check.",
         ]
     )
     lines.extend(["", "## Assumptions", ""])
@@ -924,6 +947,7 @@ def _summary(objects: list[Layout3DObject]) -> dict[str, int | str]:
     counter = Counter(obj.object_type for obj in objects)
     opening_measurements = _opening_measurement_counts(objects)
     opening_host_counts = _opening_host_counts(objects)
+    opening_provenance_counts = _opening_provenance_counts(objects)
     return {
         "object_count": len(objects),
         "mesh_object_count": len([obj for obj in objects if _has_mesh(obj)]),
@@ -941,6 +965,10 @@ def _summary(objects: list[Layout3DObject]) -> dict[str, int | str]:
         "opening_measured_head_height_count": opening_measurements["head_height_m"],
         "opening_host_wall_count": opening_host_counts["host_wall"],
         "opening_host_segment_count": opening_host_counts["host_segment"],
+        "opening_provenance_semantic_count": opening_provenance_counts["semantic"],
+        "opening_provenance_measurement_count": opening_provenance_counts["measurement"],
+        "opening_provenance_host_count": opening_provenance_counts["host"],
+        "opening_provenance_all_three_count": opening_provenance_counts["all_three"],
     }
 
 
@@ -967,6 +995,43 @@ def _opening_host_counts(objects: list[Layout3DObject]) -> dict[str, int]:
             if isinstance(host.get("source_segment"), Mapping):
                 counts["host_segment"] += 1
     return {"host_wall": int(counts["host_wall"]), "host_segment": int(counts["host_segment"])}
+
+
+def _opening_provenance_counts(objects: list[Layout3DObject]) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for obj in objects:
+        if obj.object_type not in {"door_opening", "window_opening"}:
+            continue
+        has_semantic = _has_opening_semantic(obj)
+        has_measurement = _has_any_explicit_opening_measurement(obj)
+        raw_host = obj.properties.get("opening_host")
+        has_host = _has_opening_host(raw_host if isinstance(raw_host, dict) else {})
+        if has_semantic:
+            counts["semantic"] += 1
+        if has_measurement:
+            counts["measurement"] += 1
+        if has_host:
+            counts["host"] += 1
+        if has_semantic and has_measurement and has_host:
+            counts["all_three"] += 1
+    return {
+        "semantic": int(counts["semantic"]),
+        "measurement": int(counts["measurement"]),
+        "host": int(counts["host"]),
+        "all_three": int(counts["all_three"]),
+    }
+
+
+def _has_opening_semantic(obj: Layout3DObject) -> bool:
+    raw_semantic = obj.properties.get("opening_semantic")
+    if not isinstance(raw_semantic, Mapping):
+        return False
+    kind = raw_semantic.get("kind")
+    return kind in {"door_opening", "window_opening"}
+
+
+def _has_any_explicit_opening_measurement(obj: Layout3DObject) -> bool:
+    return any(_has_explicit_opening_measurement(obj, field) for field in OPENING_MEASUREMENT_FIELDS)
 
 
 def _has_opening_host(host: dict[str, Any]) -> bool:

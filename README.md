@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-423%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-428%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -46,7 +46,7 @@ archkg viewer -o out --source samples/sample_clean.pdf
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `sheet_graphs.json` — 每个高置信 plan sheet 的独立 graph 证据输出；P39-01 不把多 plan 页合并进主规则结论
 - `sheet_issues.json` — 每个 plan sheet 的候选问题 preview；P39-02 不写入主 `issues.json` / `review_state.json`
-- `layout_3d.json` / `layout_3d_summary.md` / `layout_3d.glb` — 从 graph 证据生成的 2.5D 布局模型；只用于空间理解和复核导航，默认高度/厚度均写入 assumptions；P72 起显式 `Door.width_m` / `Door.properties.height_m` 等会记录为 opening measurement provenance，但仍不作为 BIM 真值或合规判断
+- `layout_3d.json` / `layout_3d_summary.md` / `layout_3d.glb` — 从 graph 证据生成的 2.5D 布局模型；只用于空间理解和复核导航，默认高度/厚度均写入 assumptions；P72 起显式 `Door.width_m` / `Door.properties.height_m` 等会记录为 opening measurement provenance，P73/P74 起显式 opening host wall 和 provenance consistency 会进入 summary/Viewer，但仍不作为 BIM 真值或合规判断
 - `layout.ifc` / `layout_ifc_export.json` / `layout_ifc_export.md` — 可选显式导出的 IFC preview；只从 `layout_3d.json` 派生，不随默认审图自动生成，不作为审查级 BIM 或规范判断输入
 - `sheet_issue_review_queue.json` — 从 per-sheet preview 派生的有界人工审阅队列；preview id 不能用于 `archkg review-state`
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
@@ -161,6 +161,10 @@ P71 起 `layout_3d_summary.md` 和 Viewer/Studio 会显示 `Opening Semantics`�
 P72 起 opening object 还会在有明确 graph 字段时记录 `properties.opening_measurement`：
 `Door.width_m`、`Door.properties.height_m`、`sill_height_m`、`head_height_m` 会带上来源和单位。
 缺失字段继续走显式 assumptions；这些尺寸只用于 3D preview 复核导航，不进入规则引擎。
+P73 起 opening object 只有在 graph 明确提供 `opening_host_wall_id` / `opening_host_wall_segment`
+等字段时才记录 `properties.opening_host`。P74 起 `layout_3d_summary.md` 和 Viewer/Studio 会显示
+`Opening Provenance Consistency`，把 semantic、measurement、host 三个证据面合并成覆盖视图。
+这只是 reviewer 复核提示；缺失项不是失败，也不会触发合规结论。
 
 ## Rule-Card Draft Authoring
 
@@ -546,6 +550,8 @@ archkg clause readiness
 - P70：layout_3d 开始接受 explicit opening evidence 的窗口语义。`build_layout_3d` 在 `Door` 明确标为 window 时生成 `window_opening`，并映射为 IFC `IfcWindow`；`window_opening` 和 `door_opening` 都是 preview 语义，不变更规则引擎。完整可选的真实 IfcOpenShell smoke 也已加入回归套件。
 - P71：Opening semantic provenance。`door_opening` / `window_opening` 对象会记录 `properties.opening_semantic`，summary 和 Viewer/Studio 会显示 Opening Semantics；这只说明语义来源，不代表墙体开洞几何或合规结论。
 - P72：Opening measurement provenance。`door_opening` / `window_opening` 在 graph 有显式尺寸字段时记录 `properties.opening_measurement`，summary 和 Viewer/Studio 会显示 Opening Measurements；显式高度会替代对应默认高度 assumption，缺失字段仍按 assumptions 展示。这只增强 preview provenance，不产生合规结论。
+- P73：Opening wall-host provenance。`door_opening` / `window_opening` 只有在 graph 有显式 host wall/source-segment 字段时记录 `properties.opening_host`，summary 和 Viewer/Studio 会显示 Opening Host Wall Provenance；不推断 host，也不做布尔开洞。
+- P74：Opening provenance consistency。summary 和 Viewer/Studio 会把 Opening Semantics、Opening Measurements、Opening Host Wall Provenance 合并成 coverage 视图，帮助 reviewer 看到每个 opening 缺哪类证据；缺失信号只是复核提示，不是失败或合规判断。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。

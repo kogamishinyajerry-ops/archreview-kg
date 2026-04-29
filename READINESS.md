@@ -75,6 +75,12 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   `Door.width_m`、`Door.properties.height_m`、`sill_height_m` 或 `head_height_m` 时会携带
   `properties.opening_measurement`；Viewer/Studio 和 summary 会显示 Opening Measurements。
   缺失尺寸仍按显式 assumptions 处理，所有 opening measurements 仍只是 preview provenance。
+- P73 后 `layout_3d` 只有在 graph 明确提供 opening host wall/source-segment 字段时才写入
+  `properties.opening_host`；Viewer/Studio 和 summary 会显示 Opening Host Wall Provenance。
+  没有显式 host evidence 时不推断 host，不生成墙体布尔开洞。
+- P74 后 Viewer/Studio 和 summary 会显示 Opening Provenance Consistency，把 semantic、
+  measurement、host 三类 opening 证据面合并成 coverage 视图。缺失项是复核提示，不是失败、
+  合规结论或 BIM 完整性声明。
 
 复现该结论：
 
@@ -107,8 +113,9 @@ release-readiness status=evidence_ready blockers=0 warnings=0 active=7 real_acti
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
 P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 generated mixed-sheet-set 复杂回归样本，
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
-但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics
-和 Opening Measurements 只解释来源，不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
+但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics、
+Opening Measurements、Opening Host Wall Provenance 和 Opening Provenance Consistency
+只解释来源与覆盖，不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
 且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
 

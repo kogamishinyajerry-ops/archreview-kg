@@ -327,6 +327,20 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Add `Opening Measurements` counts and samples to `layout_3d_summary.md` and Viewer/Studio so reviewers can audit which dimensions were evidence-backed.
 - Guardrail: opening measurements remain preview provenance only; they are not rule-engine facts, wall-void geometry, fire/smoke/window compliance evidence, or BIM truth.
 
+### P73-01: Opening Wall-Host Provenance
+
+- Record `properties.opening_host` on `door_opening` and `window_opening` only when graph evidence carries explicit host wall or source-segment fields.
+- Treat `Door.properties.opening_host_wall_id` / `host_wall_id` and `Door.properties.opening_host_wall_segment` / `host_wall_segment` as preview provenance only.
+- Add `Opening Host Wall Provenance` counts and samples to `layout_3d_summary.md` and Viewer/Studio.
+- Guardrail: do not infer host walls, do not snap openings to nearest walls, do not carve wall voids, and do not promote host metadata into rule-engine facts.
+
+### P74-01: Opening Provenance Consistency
+
+- Add a coverage view that merges opening semantic, measurement, and host-wall provenance signals.
+- Count openings with semantic provenance, at least one explicit measurement, explicit host wall provenance, and all three preview provenance surfaces.
+- Show per-opening missing provenance prompts in Viewer/Studio so reviewers can see which evidence surfaces are absent.
+- Guardrail: this is a coverage/navigation view only; missing signals are not failures, compliance issues, BIM completeness checks, or inference triggers.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

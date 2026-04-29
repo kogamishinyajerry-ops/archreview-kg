@@ -1456,6 +1456,15 @@
       <code>host_wall_segment</code>={{ layout_3d.opening_wall_hosts.explicit_host_segment_count | default(0) }}.
       Only explicit graph host-wall or source-segment evidence is shown.
     </div>
+    <div class="metric-note">
+      Opening Provenance Consistency:
+      <code>openings</code>={{ layout_3d.opening_provenance_consistency.opening_count | default(0) }},
+      <code>semantic</code>={{ layout_3d.opening_provenance_consistency.semantic_count | default(0) }},
+      <code>measurement</code>={{ layout_3d.opening_provenance_consistency.measurement_count | default(0) }},
+      <code>host_wall</code>={{ layout_3d.opening_provenance_consistency.host_count | default(0) }},
+      <code>all_three</code>={{ layout_3d.opening_provenance_consistency.all_three_count | default(0) }}.
+      Coverage only; missing signals are review prompts, not failures.
+    </div>
     {% if layout_3d.opening_semantics.samples %}
       <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
         <table>
@@ -1501,6 +1510,24 @@
                 <td>{{ row.host_wall_id }}</td>
                 <td>{{ row.source_property }}</td>
                 <td>{{ row.source_segment }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_3d.opening_provenance_consistency.samples %}
+      <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object</th><th>semantic</th><th>measurement</th><th>host</th><th>missing</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.opening_provenance_consistency.samples %}
+              <tr>
+                <td><code>{{ row.object_id }}</code></td>
+                <td>{{ row.has_semantic }}</td>
+                <td>{{ row.has_measurement }}</td>
+                <td>{{ row.has_host }}</td>
+                <td>{{ row.missing_provenance | join(', ') }}</td>
               </tr>
             {% endfor %}
           </tbody>

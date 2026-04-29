@@ -582,6 +582,10 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "explicit graph evidence" in body
     assert "Opening Measurements" in body
     assert "measured opening provenance" in body
+    assert "Opening Host Wall Provenance" in body
+    assert "host-wall or source-segment evidence" in body
+    assert "Opening Provenance Consistency" in body
+    assert "Coverage only; missing signals are review prompts" in body
     assert "Layout IFC Preview" in body
     assert "layout.ifc 未导出" in body
     assert "IFC preview 不是审查级 BIM" in body

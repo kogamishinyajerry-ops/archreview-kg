@@ -219,6 +219,22 @@ def test_layout_3d_records_explicit_opening_host_wall_provenance() -> None:
     assert report.summary["opening_host_segment_count"] == 2
 
 
+def test_layout_3d_summarizes_opening_provenance_consistency() -> None:
+    report = build_layout_3d(entity_graph=_entity_graph_with_opening_host_provenance())
+
+    assert report.summary["opening_provenance_semantic_count"] == 2
+    assert report.summary["opening_provenance_measurement_count"] == 2
+    assert report.summary["opening_provenance_host_count"] == 2
+    assert report.summary["opening_provenance_all_three_count"] == 2
+
+    summary = render_layout_3d_summary_markdown(report)
+    assert "## Opening Provenance Consistency" in summary
+    assert "`semantic` | 2 | opening semantic provenance present" in summary
+    assert "`measurement` | 2 | at least one explicit opening measurement field" in summary
+    assert "`host_wall` | 2 | explicit host wall provenance present" in summary
+    assert "`semantic+measurement+host_wall` | 2 | all three preview provenance surfaces present" in summary
+
+
 def test_layout_3d_no_opening_host_wall_provenance_without_explicit_host_fields() -> None:
     report = build_layout_3d(entity_graph=_entity_graph_with_window())
 
@@ -353,6 +369,32 @@ def test_layout_3d_view_loader_exposes_opening_host_wall_provenance(tmp_path: Pa
         "explicit": True,
         "source_segment_property": "Door.properties.opening_host_wall_segment",
     } in hosts["samples"]
+
+
+def test_layout_3d_view_loader_exposes_opening_provenance_consistency(tmp_path: Path) -> None:
+    report = build_layout_3d(entity_graph=_entity_graph_with_window())
+    write_layout_3d(report, tmp_path / "layout_3d.json")
+
+    view = load_layout_3d_view(tmp_path)
+
+    consistency = view["opening_provenance_consistency"]
+    assert consistency["opening_count"] == 2
+    assert consistency["semantic_count"] == 2
+    assert consistency["measurement_count"] == 2
+    assert consistency["host_count"] == 0
+    assert consistency["all_three_count"] == 0
+    assert consistency["boundary_warning"] == (
+        "Opening provenance consistency is a coverage view only; missing signals are review prompts, not failures."
+    )
+    assert {
+        "object_id": "page-0-window-opening-window-1",
+        "object_type": "window_opening",
+        "source_entity_id": "window-1",
+        "has_semantic": True,
+        "has_measurement": True,
+        "has_host": False,
+        "missing_provenance": ["host_wall"],
+    } in consistency["samples"]
 
 
 def _sheet_graphs() -> SheetGraphsReport:
