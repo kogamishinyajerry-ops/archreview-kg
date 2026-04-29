@@ -383,6 +383,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Keep `next_actions`, required manager-intake steps, checklist counts, and package readiness unchanged.
 - Guardrail: ready-runbook opening provenance guidance is navigation only; it must not become a blocker, compliance finding, source-run mutation, or BIM completeness claim.
 
+### P81-01: Package Index Opening Provenance Guidance Link
+
+- Surface ready-runbook `optional_review_actions` in the package-root static `index.html` under the Ready-To-Review Runbook panel.
+- Link directly to `handoff_ready_runbook.md#optional-review-guidance` and the referenced package-local checklist artifact.
+- Keep static index content as navigation only; do not change ready-runbook `next_actions`, package readiness, manager gates, or source-run artifacts.
+- Guardrail: index-level opening provenance guidance must remain optional, preview-only, and non-blocking.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

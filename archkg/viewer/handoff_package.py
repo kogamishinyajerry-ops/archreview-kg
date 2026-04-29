@@ -660,6 +660,34 @@ def render_handoff_index_html(
                 "</li>"
             )
         lines.append("</ul>")
+    optional_actions = _list_of_dicts(ready_runbook.get("optional_review_actions"))
+    if optional_actions:
+        lines.extend(
+            [
+                "<h3>Optional Review Guidance</h3>",
+                (
+                    '<p><a href="handoff_ready_runbook.md#optional-review-guidance">'
+                    "Open runbook optional guidance</a></p>"
+                ),
+                "<ul>",
+            ]
+        )
+        for action in optional_actions[:3]:
+            artifact = _str(action.get("artifact"))
+            artifact_link = (
+                f' · <a href="{_html(artifact)}">{_html(artifact)}</a>'
+                if artifact
+                else ""
+            )
+            reason = _str(action.get("reason"))
+            lines.append(
+                "<li>"
+                f"{_html(_str(action.get('title')))}"
+                f"{(': ' + _html(reason)) if reason else ''}"
+                f"{artifact_link}"
+                "</li>"
+            )
+        lines.append("</ul>")
     lines.extend(
         [
             '<p><a href="handoff_ready_runbook.json">handoff_ready_runbook.json</a> · <a href="handoff_ready_runbook.md">handoff_ready_runbook.md</a></p>',

@@ -6,7 +6,7 @@ Updated: 2026-04-30
 
 Branch: `main`
 
-Latest completed commit before P80: `72f12a2 feat(P79-01): add package opening provenance checklist guidance`
+Latest completed commit before P81: `3b27a2c feat(P80-01): surface opening provenance guidance in runbook`
 
 Status:
 
@@ -70,14 +70,16 @@ Status:
 - P78-01 is complete: bundle index now emits a separate `opening_provenance_triage_queue` for weak coverage packages and renders it in Markdown/HTML.
 - P79-01 is complete: handoff packages now add package-local opening provenance guidance to reviewer checklist JSON/Markdown when weak coverage is present, without changing checklist item counts.
 - P80-01 is complete: ready-runbook now surfaces package-local opening provenance guidance as optional review guidance, without changing required next actions or manager readiness.
+- P81-01 is complete: package-root static `index.html` now links to ready-runbook optional opening provenance guidance and the package-local checklist artifact, without changing readiness semantics.
 
 ## Current Phase
 
-P80-01: Ready runbook opening provenance guidance (complete).
+P81-01: Package index opening provenance guidance link (complete).
 
-P80 is complete. Weak opening provenance guidance now appears in the package
-ready-runbook as optional reviewer navigation, while preserving required
-`next_actions`, checklist counts, manager gates, and package readiness semantics.
+P81 is complete. The package-root static index now exposes ready-runbook
+optional opening provenance guidance as a navigation link for novice reviewers,
+while preserving required `next_actions`, checklist counts, manager gates, and
+package readiness semantics.
 
 ## Key Decisions
 
@@ -142,10 +144,11 @@ ready-runbook as optional reviewer navigation, while preserving required
 - P78 opening provenance triage queue is a secondary review-assignment queue only. It does not change `package_status`, normal `next_action_queue`, quality/signoff/manager/archive semantics, or compliance claims.
 - P79 opening provenance checklist guidance is package-local reviewer guidance only. It does not add checklist items, change checklist item counts, alter manager gates, mutate source runs, or confirm issues.
 - P80 ready-runbook opening provenance guidance is optional navigation only. It does not populate required `next_actions`, block manager intake, alter readiness gates, mutate source runs, or confirm issues.
+- P81 package index opening provenance guidance link is static navigation only. It does not add required actions, block manager intake, alter package readiness, mutate source runs, or confirm issues.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next adjacent step after P80 is P81+: consider adding package index navigation
-links from the static handoff page to the ready-runbook optional opening
-provenance guidance, while keeping it non-blocking and preview-only.
+Next adjacent step after P81 is P82+: consider adding bundle-level visibility
+for package index optional guidance availability, still separate from normal
+`next_action_queue` and still non-blocking.
