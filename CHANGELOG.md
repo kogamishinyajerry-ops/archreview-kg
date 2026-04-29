@@ -313,6 +313,13 @@ and keeps the no-OCR transparency warning.
   `index.html` so novice reviewers can see opening evidence gaps without
   opening Studio. Missing signals remain review prompts, not handoff blockers
   or compliance findings.
+- P77-01 adds bundle-level opening provenance triage in
+  `archkg handoff-bundle-index`. The bundle index now aggregates each package's
+  opening provenance semantic / measurement / host_wall / all_three counts, exposes
+  a weak-coverage package counter, and renders per-package `Opening Provenance`
+  and `Weak Coverage` columns in both Markdown and HTML summaries for manager
+  dispatch. It remains triage-only and does not alter package readiness,
+  quality, signoff, manager, archive verification, or compliance semantics.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

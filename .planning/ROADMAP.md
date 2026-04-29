@@ -355,6 +355,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Show semantic, measurement, host-wall, and all-three counts as reviewer prompts only.
 - Guardrail: missing provenance signals are not handoff quality blockers, candidate issue confirmations, BIM completeness failures, or compliance findings.
 
+### P77-01: Bundle Opening Provenance Triage
+
+- Extend `archkg handoff-bundle-index` to read per-package `opening_provenance` from each `handoff_manifest.json`.
+- Aggregate semantic, measurement, host-wall, and all-three counts across packages; add a weak-package counter where coverage misses any required provenance signal.
+- Add Markdown/HTML bundle fields and table columns for each package's opening provenance tuple and weak-coverage status.
+- Keep weak coverage as dispatch guidance only: it does not change package readiness rules, issue status, or compliance semantics.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

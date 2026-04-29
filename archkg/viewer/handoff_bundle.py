@@ -11,6 +11,7 @@ from archkg.viewer.handoff_package import (
     ARCHIVE_MANIFEST_SCHEMA_VERSION,
     ARCHIVE_VERIFICATION_SCHEMA_VERSION,
     MANAGER_CHECKLIST_SCHEMA_VERSION,
+    OPENING_PROVENANCE_BOUNDARY_WARNING,
     QUALITY_SCHEMA_VERSION,
     SIGNOFF_SCHEMA_VERSION,
 )
@@ -95,6 +96,7 @@ def write_handoff_bundle_index(
 
 def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
     summary = _dict(payload.get("summary"))
+    opening_weak_count = _int(summary.get("opening_provenance_weak_package_count"))
     lines = [
         "# ArchReview-KG Handoff Bundle Index",
         "",
@@ -117,14 +119,21 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
         f"- Reviewer next: `{_int(summary.get('next_actor_reviewer_count'))}`",
         f"- Manager next: `{_int(summary.get('next_actor_manager_count'))}`",
         f"- Archive next: `{_int(summary.get('next_actor_archive_count'))}`",
+        f"- Opening provenance: semantic=`{_int(summary.get('opening_provenance_semantic_count'))}`, "
+        f"measurement=`{_int(summary.get('opening_provenance_measurement_count'))}`, "
+        f"host_wall=`{_int(summary.get('opening_provenance_host_count'))}`, "
+        f"all_three=`{_int(summary.get('opening_provenance_all_three_count'))}`",
+        f"- Weak opening provenance packages: `{opening_weak_count}`",
         "",
         "## Packages",
         "",
-        "| Package | Status | Next Actor | Next Action | Quality | Signoff | Manager | Archive | Checklist | Missing | Open Items |",
-        "|---|---|---|---|---|---|---|---|---|---:|---|",
+        "| Package | Status | Next Actor | Next Action | Quality | Signoff | Manager | Archive | Checklist | Missing | Open Items | Opening Provenance | Weak Coverage |",
+        "|---|---|---|---|---|---|---|---|---|---:|---|---|---|",
     ]
     for row in _list_of_dicts(payload.get("packages")):
         open_items = "<br>".join(_str_list(row.get("open_items"))) or "-"
+        opening_coverage = _opening_provenance_summary_text(row)
+        opening_weak = _opening_coverage_weak(row)
         checklist_cell = (
             f"{_str(row.get('checklist_review_status'))} "
             f"({_int(row.get('checklist_open_item_count'))}/"
@@ -142,7 +151,9 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
             f"{_str(row.get('archive_verification_status'))} | "
             f"{checklist_cell} | "
             f"{_int(row.get('missing_required_count'))} | "
-            f"{open_items} |"
+            f"{open_items} | "
+            f"{opening_coverage} | "
+            f"{_str(opening_weak)} |"
         )
     next_actions = _str_list(payload.get("next_actions"))
     if next_actions:
@@ -204,6 +215,11 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
             str(_int(summary.get("checklist_open_item_total"))),
             "warn" if _int(summary.get("checklist_open_item_total")) else "ok",
         ),
+        _kpi(
+            "Opening Weak Coverage",
+            str(_int(summary.get("opening_provenance_weak_package_count"))),
+            "warn" if _int(summary.get("opening_provenance_weak_package_count")) else "ok",
+        ),
         "</section>",
         '<section class="panel">',
         "<h2>Bundle Boundary</h2>",
@@ -211,14 +227,29 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
         f"<p>{_html(_str(payload.get('boundary_warning')))}</p>",
         "</section>",
         '<section class="panel">',
+        "<h2>Opening Provenance Coverage</h2>",
+        "<p>"
+        f"Semantic={_int(summary.get('opening_provenance_semantic_count'))}, "
+        f"Measurement={_int(summary.get('opening_provenance_measurement_count'))}, "
+        f"Host wall={_int(summary.get('opening_provenance_host_count'))}, "
+        f"All-three={_int(summary.get('opening_provenance_all_three_count'))}"
+        "</p>",
+        "<p>"
+        f"Weak opening provenance packages: {_int(summary.get('opening_provenance_weak_package_count'))}. "
+        f"{_html(OPENING_PROVENANCE_BOUNDARY_WARNING)}"
+        "</p>",
+        "</section>",
+        '<section class="panel">',
         "<h2>Packages</h2>",
         "<table>",
-        "<thead><tr><th>Package</th><th>Status</th><th>Next Actor</th><th>Next Action</th><th>Quality</th><th>Signoff</th><th>Manager</th><th>Archive Check</th><th>Checklist</th><th>Open Items</th></tr></thead>",
+        "<thead><tr><th>Package</th><th>Status</th><th>Next Actor</th><th>Next Action</th><th>Quality</th><th>Signoff</th><th>Manager</th><th>Archive Check</th><th>Checklist</th><th>Open Items</th><th>Opening Provenance</th><th>Weak Coverage</th></tr></thead>",
         "<tbody>",
     ]
     for row in packages:
         package_name = _str(row.get("package_name"))
         index_path = _str(row.get("index_path"))
+        opening_coverage = _opening_provenance_summary_text(row)
+        opening_weak = _opening_coverage_weak(row)
         label = (
             f'<a href="{_html_attr(index_path)}">{_html(package_name)}</a>'
             if index_path
@@ -239,6 +270,8 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
             f"({_int(row.get('checklist_open_item_count'))}/"
             f"{_int(row.get('checklist_item_count'))} open)</td>"
             f"<td>{_html('; '.join(open_items) if open_items else '-')}</td>"
+            f"<td>{_html(opening_coverage)}</td>"
+            f"<td>{_html(opening_weak)}</td>"
             "</tr>"
         )
     lines.extend(["</tbody>", "</table>", "</section>"])
@@ -266,6 +299,7 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
     manager = _load_json(package_dir / "handoff_manager_checklist.json")
     archive_manifest = _load_json(package_dir / "handoff_archive_manifest.json")
     archive_verification = _load_json(package_dir / "handoff_archive_verification.json")
+    opening_provenance = _opening_provenance_summary(manifest)
     checklist_payload = _load_json(
         package_dir / "artifacts" / "reviewer_task_checklist.json"
     )
@@ -362,8 +396,63 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
         "artifact_total_count": len(artifact_rows),
         "missing_required_count": len(missing_required),
         "missing_required_artifacts": missing_required,
+        "opening_provenance_available": opening_provenance["available"],
+        "opening_provenance_source_artifact": opening_provenance["source_artifact"],
+        "opening_provenance_semantic_count": opening_provenance["semantic_count"],
+        "opening_provenance_measurement_count": opening_provenance["measurement_count"],
+        "opening_provenance_host_count": opening_provenance["host_count"],
+        "opening_provenance_all_three_count": opening_provenance["all_three_count"],
+        "opening_provenance_boundary_warning": opening_provenance["boundary_warning"],
+        "opening_provenance_weak": (
+            opening_provenance["available"] is False
+            or opening_provenance["semantic_count"] == 0
+            or opening_provenance["measurement_count"] == 0
+            or opening_provenance["host_count"] == 0
+        ),
         "open_items": open_items,
     }
+
+
+def _opening_provenance_summary(manifest: dict[str, Any]) -> dict[str, Any]:
+    raw = manifest.get("opening_provenance")
+    if not isinstance(raw, dict):
+        return {
+            "available": False,
+            "source_artifact": "",
+            "semantic_count": 0,
+            "measurement_count": 0,
+            "host_count": 0,
+            "all_three_count": 0,
+            "boundary_warning": OPENING_PROVENANCE_BOUNDARY_WARNING,
+        }
+    return {
+        "available": raw.get("available") is True,
+        "source_artifact": _str(raw.get("source_artifact")),
+        "semantic_count": _int(raw.get("semantic_count")),
+        "measurement_count": _int(raw.get("measurement_count")),
+        "host_count": _int(raw.get("host_count")),
+        "all_three_count": _int(raw.get("all_three_count")),
+        "boundary_warning": _str(raw.get("boundary_warning")),
+    }
+
+
+def _opening_provenance_summary_text(row: dict[str, Any]) -> str:
+    if not _bool(row.get("opening_provenance_available")):
+        return "unavailable"
+    return (
+        "semantic="
+        f"{_int(row.get('opening_provenance_semantic_count'))}, "
+        "measurement="
+        f"{_int(row.get('opening_provenance_measurement_count'))}, "
+        "host_wall="
+        f"{_int(row.get('opening_provenance_host_count'))}, "
+        "all_three="
+        f"{_int(row.get('opening_provenance_all_three_count'))}"
+    )
+
+
+def _opening_coverage_weak(row: dict[str, Any]) -> str:
+    return "yes" if _bool(row.get("opening_provenance_weak")) else "-"
 
 
 def _package_status(
@@ -715,6 +804,21 @@ def _bundle_summary(packages: list[dict[str, Any]]) -> dict[str, int]:
         "next_actor_manager_count": _next_actor_count(packages, "manager"),
         "next_actor_archive_count": _next_actor_count(packages, "archive"),
         "next_actor_done_count": _next_actor_count(packages, "done"),
+        "opening_provenance_weak_package_count": sum(
+            1 for row in packages if _bool(row.get("opening_provenance_weak"))
+        ),
+        "opening_provenance_semantic_count": sum(
+            _int(row.get("opening_provenance_semantic_count")) for row in packages
+        ),
+        "opening_provenance_measurement_count": sum(
+            _int(row.get("opening_provenance_measurement_count")) for row in packages
+        ),
+        "opening_provenance_host_count": sum(
+            _int(row.get("opening_provenance_host_count")) for row in packages
+        ),
+        "opening_provenance_all_three_count": sum(
+            _int(row.get("opening_provenance_all_three_count")) for row in packages
+        ),
     }
 
 
@@ -927,6 +1031,10 @@ def _int(raw: object) -> int:
 
 def _str(raw: object) -> str:
     return raw if isinstance(raw, str) else ""
+
+
+def _bool(raw: object) -> bool:
+    return raw is True
 
 
 def _html(raw: object) -> str:

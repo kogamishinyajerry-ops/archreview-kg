@@ -101,6 +101,8 @@ P66 起交接包会生成 `handoff_ready_runbook.json` / `.md`，并可用 `arch
 刷新；它把 quality、signoff、checklist、manager gate 汇成新手下一步命令，不写源 run。
 P67 起 `handoff-bundle-index` 会为每个包标出 `next_actor` 和下一动作命令，
 让负责人跨包看到当前应由 reviewer、manager 还是 archive 继续处理。
+P77 起 `handoff_bundle_index` 将聚合每个包的 opening provenance 计数（semantic /
+measurement / host_wall / all_three），并输出 weak coverage 包数量，供 manager 做 triage 时优先分派 reviewer，不把缺口当作合规失败。
 P76 起 `handoff_manifest.json`、`handoff_summary.md` 和包内 `index.html` 会显示
 Opening Provenance Coverage（semantic / measurement / host_wall / all_three）；
 这些计数只帮助接手 reviewer 判断哪些洞口证据面还要人工核对，不是合规结论。
@@ -169,6 +171,8 @@ P73 起 opening object 只有在 graph 明确提供 `opening_host_wall_id` / `op
 `Opening Provenance Consistency`，把 semantic、measurement、host 三个证据面合并成覆盖视图。
 这只是 reviewer 复核提示；缺失项不是失败，也不会触发合规结论。
 P75 起 `layout_ifc_export.json` / `.md` 会透传同一组 opening provenance coverage，
+P77 起 `handoff_bundle_index.json/.md/.html` 将跨包汇总 semantic、measurement、host_wall、all_three
+计数，并把任一缺口标记为 weak 包，直接作为 triage 提示。
 P76 起 handoff package 也会显示这些计数，方便交接时不打开 Studio 也能看到洞口证据覆盖。
 这些字段仍是 preview-only metadata，不证明 IFC/BIM 几何准确。
 
@@ -560,6 +564,7 @@ archkg clause readiness
 - P74：Opening provenance consistency。summary 和 Viewer/Studio 会把 Opening Semantics、Opening Measurements、Opening Host Wall Provenance 合并成 coverage 视图，帮助 reviewer 看到每个 opening 缺哪类证据；缺失信号只是复核提示，不是失败或合规判断。
 - P75：Opening provenance IFC summary。`layout_ifc_export.v1` 报告和 IFC Viewer 数据会显示 opening provenance coverage KPI；这只是 IFC preview metadata，不是 BIM 准确性或合规证明。
 - P76：Handoff opening provenance coverage。交接包的 manifest、summary 和静态 index 会显示 semantic / measurement / host_wall / all_three 计数，让新手 reviewer 在交接入口就能看到洞口证据覆盖；缺失项不是 package blocker。
+- P77：Bundle opening provenance triage。`handoff_bundle_index` 聚合每包的 opening provenance 计数与 weak 包数量，并在 Markdown/HTML bundle index 中暴露 triage 线索，用于负责人分派 reviewer，不改变 quality/signoff/checklist/manager/archive 语义。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
@@ -580,6 +585,7 @@ archkg clause readiness
 - P66：Ready-to-review runbook。包内 runbook 只做导航和命令提示，不纳入 archive checksum，不确认 candidate issue，也不替代人工复核。
 - P67：Bundle next-actor queue。跨包队列只读汇总，不写单包或源 run；它是调度提示，不是质量结论。
 - P76：Handoff opening provenance coverage。包内 opening provenance 计数只做复核导航，不改变 handoff quality、reviewer checklist、manager checklist 或 archive verification 的语义。
+- P77：Bundle opening provenance triage。handoff bundle index 的 opening provenance 聚合只是 triage 信号，不改变 package readiness、package quality、manager checklist 或合规结论。
 
 ---
 
