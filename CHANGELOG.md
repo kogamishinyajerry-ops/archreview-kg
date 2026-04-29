@@ -280,6 +280,15 @@ and keeps the no-OCR transparency warning.
   `Opening Semantics` summary so reviewers can audit why an opening is shown
   as `door_opening` or `window_opening` without treating it as wall-void
   geometry or a compliance finding.
+- P72-01 adds explicit opening measurement provenance to the 3D evidence
+  layer. Door and window opening objects now carry
+  `properties.opening_measurement` only when graph evidence provides explicit
+  fields such as `Door.width_m`, `Door.properties.height_m`,
+  `sill_height_m`, or `head_height_m`. Explicit opening heights replace the
+  corresponding default height assumption for that object; missing dimensions
+  remain explicit visualization assumptions. `layout_3d_summary.md` and
+  Viewer/Studio now show `Opening Measurements` as preview provenance only,
+  without promoting dimensions to rule-engine or compliance facts.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

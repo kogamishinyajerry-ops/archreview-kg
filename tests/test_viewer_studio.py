@@ -580,6 +580,8 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "Opening Semantics" in body
     assert "window_opening" in body
     assert "explicit graph evidence" in body
+    assert "Opening Measurements" in body
+    assert "measured opening provenance" in body
     assert "Layout IFC Preview" in body
     assert "layout.ifc 未导出" in body
     assert "IFC preview 不是审查级 BIM" in body

@@ -6,7 +6,7 @@ Updated: 2026-04-29
 
 Branch: `main`
 
-Latest completed commit before P71: `1a79420 feat(P70-01): harden layout ifc preview validation`
+Latest completed commit before P72: `b382975 feat(P71-01): add opening semantic provenance`
 
 Status:
 
@@ -61,14 +61,15 @@ Status:
 - P69-01 is complete: `archkg ifc export-layout` now explicitly exports optional `layout.ifc` preview artifacts from `layout_3d.json`, writes `layout_ifc_export.v1` reports, degrades cleanly when IfcOpenShell is missing, and surfaces optional IFC artifacts in Viewer/Studio, control sync, and handoff packages.
 - P70-01 is complete: `layout_3d` models explicit graph window evidence as `window_opening`, `layout.ifc` export maps it to `IfcWindow`, and regression coverage includes both fake-module and optional real-IfcOpenShell smoke paths.
 - P71-01 is complete: `layout_3d` now records `properties.opening_semantic` provenance for door/window openings, and both summary Markdown and Viewer/Studio expose Opening Semantics for reviewer audit.
+- P72-01 is complete: `layout_3d` now records `properties.opening_measurement` provenance for explicit graph opening dimensions, and both summary Markdown and Viewer/Studio expose Opening Measurements for reviewer audit.
 
 ## Current Phase
 
-P71-01: Opening semantic provenance.
+P72-01: Opening measurement provenance.
 
-P71 is complete. `layout_3d` now explains whether an opening semantic came from
-explicit graph evidence or the default Door entity type, while keeping opening
-geometry and compliance semantics unchanged.
+P72 is complete. `layout_3d` now records explicit opening width/height/sill/head
+dimension provenance when the graph carries source fields, while keeping missing
+dimensions as assumptions and keeping opening dimensions out of compliance logic.
 
 ## Key Decisions
 
@@ -123,8 +124,9 @@ geometry and compliance semantics unchanged.
 - P69 `layout.ifc` is a preview artifact derived from `layout_3d.json`; it does not certify arbitrary drawings, does not perform boolean opening subtraction/window modeling/multi-floor stacking, and must not be described as review-grade BIM.
 - P70 `window_opening` is an optional preview semantic in `layout_3d`; it is only built from explicit graph evidence and mapped to `IfcWindow` for preview export without changing rule-engine truth, review state, or compliance claims.
 - P71 opening semantic provenance is audit metadata only. It does not prove wall void geometry, window recognition accuracy, fire/smoke performance, sill height, or compliance.
+- P72 opening measurement provenance is audit metadata only. It records explicit graph fields such as `Door.width_m` or `Door.properties.height_m`, but does not infer missing dimensions, certify wall void geometry, or feed rule-engine compliance findings.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next major 3D step after P71 is to add measured opening dimensions or wall-host references only when the graph evidence carries explicit source fields. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.
+Next major 3D step after P72 is to add wall-host references for openings only when the graph can identify an explicit host wall/source segment. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.

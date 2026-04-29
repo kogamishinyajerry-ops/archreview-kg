@@ -1442,6 +1442,14 @@
       <code>window_opening</code>={{ layout_3d.opening_semantics.window_opening_count | default(0) }}.
       window_opening requires explicit graph evidence and remains preview-only.
     </div>
+    <div class="metric-note">
+      Opening Measurements:
+      <code>width_m</code>={{ layout_3d.opening_measurements.explicit_width_count | default(0) }},
+      <code>height_m</code>={{ layout_3d.opening_measurements.explicit_height_count | default(0) }},
+      <code>sill_height_m</code>={{ layout_3d.opening_measurements.explicit_sill_height_count | default(0) }},
+      <code>head_height_m</code>={{ layout_3d.opening_measurements.explicit_head_height_count | default(0) }}.
+      Only explicit graph evidence fields are shown as measured opening provenance.
+    </div>
     {% if layout_3d.opening_semantics.samples %}
       <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
         <table>
@@ -1453,6 +1461,23 @@
                 <td><code>{{ row.object_type }}</code></td>
                 <td>{{ row.source_property }}={{ row.source_value }}</td>
                 <td>{{ row.explicit }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_3d.opening_measurements.samples %}
+      <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object</th><th>field</th><th>value</th><th>source</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.opening_measurements.samples %}
+              <tr>
+                <td><code>{{ row.object_id }}</code></td>
+                <td><code>{{ row.field }}</code></td>
+                <td>{{ row.value }} {{ row.unit }}</td>
+                <td>{{ row.source_property }}</td>
               </tr>
             {% endfor %}
           </tbody>

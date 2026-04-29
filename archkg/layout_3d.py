@@ -43,6 +43,9 @@ Layout3DObjectType = Literal[
     "stair_placeholder",
     "dimension_anchor",
 ]
+OpeningMeasurementEntry = dict[str, float | str | bool]
+OpeningMeasurementMap = dict[str, OpeningMeasurementEntry]
+OPENING_MEASUREMENT_FIELDS = ("width_m", "height_m", "sill_height_m", "head_height_m")
 
 
 class Layout3DAssumption(BaseModel):
@@ -207,6 +210,29 @@ def render_layout_3d_summary_markdown(report: Layout3DReport) -> str:
             ),
             "",
             "> Opening semantics are reviewer navigation evidence only; they do not carve wall voids or create compliance findings.",
+            "",
+            "## Opening Measurements",
+            "",
+            "| Field | Explicit Count | Boundary |",
+            "|---|---:|---|",
+            (
+                f"| `width_m` | {report.summary.get('opening_measured_width_count', 0)} | "
+                "explicit `Door.width_m` only |"
+            ),
+            (
+                f"| `height_m` | {report.summary.get('opening_measured_height_count', 0)} | "
+                "explicit `Door.properties.height_m` only |"
+            ),
+            (
+                f"| `sill_height_m` | {report.summary.get('opening_measured_sill_height_count', 0)} | "
+                "explicit `Door.properties.sill_height_m` only |"
+            ),
+            (
+                f"| `head_height_m` | {report.summary.get('opening_measured_head_height_count', 0)} | "
+                "explicit `Door.properties.head_height_m` only |"
+            ),
+            "",
+            "> Opening measurements are preview provenance only; missing fields continue to use explicit visualization assumptions.",
         ]
     )
     lines.extend(["", "## Assumptions", ""])
@@ -361,10 +387,12 @@ def _objects_for_graph(
     for door in graph.doors:
         if _is_explicit_window_opening(door):
             obj = _window_opening_object(door, source)
-            _apply_assumption(obj, assumptions["A-WINDOW-OPENING-HEIGHT"])
+            if not _has_explicit_opening_measurement(obj, "height_m"):
+                _apply_assumption(obj, assumptions["A-WINDOW-OPENING-HEIGHT"])
         else:
             obj = _door_object(door, source)
-            _apply_assumption(obj, assumptions["A-DOOR-OPENING-HEIGHT"])
+            if not _has_explicit_opening_measurement(obj, "height_m"):
+                _apply_assumption(obj, assumptions["A-DOOR-OPENING-HEIGHT"])
         if "thickness_m" in obj.dimensions_m:
             _apply_assumption(obj, assumptions["A-WALL-THICKNESS"])
         objects.append(obj)
@@ -490,6 +518,14 @@ def _door_object(door: Door, source: _GraphSource) -> Layout3DObject:
     bbox_m = _bbox_m(door.bbox, source.graph.points_per_meter)
     x0, y0, x1, y1 = bbox_m
     width = door.width_m or max(x1 - x0, y1 - y0)
+    measurement = _opening_measurement_evidence(door)
+    height = _measurement_value(measurement, "height_m") or DEFAULT_DOOR_HEIGHT_M
+    properties: dict[str, Any] = {
+        "connects": [door.connects[0], door.connects[1]],
+        "opening_semantic": _opening_semantic_evidence(door),
+    }
+    if measurement:
+        properties["opening_measurement"] = measurement
     return Layout3DObject(
         object_id=f"{source.source_sheet_id}-door-opening-{door.id}",
         object_type="door_opening",
@@ -499,19 +535,16 @@ def _door_object(door: Door, source: _GraphSource) -> Layout3DObject:
         source_sheet_id=source.source_sheet_id,
         bbox_m=bbox_m,
         footprint=[(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)],
-        center_m=((x0 + x1) / 2, (y0 + y1) / 2, DEFAULT_DOOR_HEIGHT_M / 2),
+        center_m=((x0 + x1) / 2, (y0 + y1) / 2, height / 2),
         z_base_m=0.0,
-        height_m=DEFAULT_DOOR_HEIGHT_M,
+        height_m=height,
         dimensions_m={
             "width_m": width,
-            "height_m": DEFAULT_DOOR_HEIGHT_M,
+            "height_m": height,
             "thickness_m": DEFAULT_WALL_THICKNESS_M,
         },
         confidence=door.confidence,
-        properties={
-            "connects": [door.connects[0], door.connects[1]],
-            "opening_semantic": _opening_semantic_evidence(door),
-        },
+        properties=properties,
     )
 
 
@@ -546,10 +579,75 @@ def _opening_semantic_evidence(door: Door) -> dict[str, str | bool]:
     }
 
 
+def _opening_measurement_evidence(door: Door) -> OpeningMeasurementMap:
+    measurement: OpeningMeasurementMap = {}
+    width = _finite_measurement(door.width_m, allow_zero=False)
+    if width is not None:
+        measurement["width_m"] = _measurement_entry(width, "Door.width_m")
+    for field in ("height_m", "sill_height_m", "head_height_m"):
+        value = _finite_measurement(
+            door.properties.get(field),
+            allow_zero=field == "sill_height_m",
+        )
+        if value is not None:
+            measurement[field] = _measurement_entry(value, f"Door.properties.{field}")
+    return measurement
+
+
+def _measurement_entry(value: float, source_property: str) -> OpeningMeasurementEntry:
+    return {
+        "value": value,
+        "unit": "m",
+        "explicit": True,
+        "source_property": source_property,
+    }
+
+
+def _measurement_value(measurement: OpeningMeasurementMap, field: str) -> float | None:
+    entry = measurement.get(field)
+    if entry is None:
+        return None
+    return _finite_measurement(entry.get("value"), allow_zero=True)
+
+
+def _finite_measurement(raw: object, *, allow_zero: bool) -> float | None:
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        return None
+    value = float(raw)
+    if not math.isfinite(value):
+        return None
+    if allow_zero:
+        return value if value >= 0 else None
+    return value if value > 0 else None
+
+
+def _has_explicit_opening_measurement(obj: Layout3DObject, field: str) -> bool:
+    measurement = obj.properties.get("opening_measurement")
+    if not isinstance(measurement, Mapping):
+        return False
+    entry = measurement.get(field)
+    if not isinstance(entry, Mapping):
+        return False
+    return entry.get("explicit") is True and _finite_measurement(
+        entry.get("value"),
+        allow_zero=True,
+    ) is not None
+
+
 def _window_opening_object(door: Door, source: _GraphSource) -> Layout3DObject:
     bbox_m = _bbox_m(door.bbox, source.graph.points_per_meter)
     x0, y0, x1, y1 = bbox_m
     width = door.width_m or max(x1 - x0, y1 - y0)
+    measurement = _opening_measurement_evidence(door)
+    height = _measurement_value(measurement, "height_m") or DEFAULT_DOOR_HEIGHT_M
+    properties: dict[str, Any] = {
+        "connects": [door.connects[0], door.connects[1]],
+        "source_door_id": door.id,
+        "opening_kind": "window",
+        "opening_semantic": _opening_semantic_evidence(door),
+    }
+    if measurement:
+        properties["opening_measurement"] = measurement
     return Layout3DObject(
         object_id=f"{source.source_sheet_id}-window-opening-{door.id}",
         object_type="window_opening",
@@ -559,21 +657,16 @@ def _window_opening_object(door: Door, source: _GraphSource) -> Layout3DObject:
         source_sheet_id=source.source_sheet_id,
         bbox_m=bbox_m,
         footprint=[(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)],
-        center_m=((x0 + x1) / 2, (y0 + y1) / 2, DEFAULT_DOOR_HEIGHT_M / 2),
+        center_m=((x0 + x1) / 2, (y0 + y1) / 2, height / 2),
         z_base_m=0.0,
-        height_m=DEFAULT_DOOR_HEIGHT_M,
+        height_m=height,
         dimensions_m={
             "width_m": width,
-            "height_m": DEFAULT_DOOR_HEIGHT_M,
+            "height_m": height,
             "thickness_m": DEFAULT_WALL_THICKNESS_M,
         },
         confidence=door.confidence,
-        properties={
-            "connects": [door.connects[0], door.connects[1]],
-            "source_door_id": door.id,
-            "opening_kind": "window",
-            "opening_semantic": _opening_semantic_evidence(door),
-        },
+        properties=properties,
     )
 
 
@@ -698,6 +791,7 @@ def _scale_basis(graph: EntityGraph) -> dict[str, Any]:
 
 def _summary(objects: list[Layout3DObject]) -> dict[str, int | str]:
     counter = Counter(obj.object_type for obj in objects)
+    opening_measurements = _opening_measurement_counts(objects)
     return {
         "object_count": len(objects),
         "mesh_object_count": len([obj for obj in objects if _has_mesh(obj)]),
@@ -709,7 +803,22 @@ def _summary(objects: list[Layout3DObject]) -> dict[str, int | str]:
         "window_opening_count": int(counter.get("window_opening", 0)),
         "stair_placeholder_count": int(counter.get("stair_placeholder", 0)),
         "dimension_anchor_count": int(counter.get("dimension_anchor", 0)),
+        "opening_measured_width_count": opening_measurements["width_m"],
+        "opening_measured_height_count": opening_measurements["height_m"],
+        "opening_measured_sill_height_count": opening_measurements["sill_height_m"],
+        "opening_measured_head_height_count": opening_measurements["head_height_m"],
     }
+
+
+def _opening_measurement_counts(objects: list[Layout3DObject]) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    for obj in objects:
+        if obj.object_type not in {"door_opening", "window_opening"}:
+            continue
+        for field in OPENING_MEASUREMENT_FIELDS:
+            if _has_explicit_opening_measurement(obj, field):
+                counts[field] += 1
+    return counts
 
 
 def _bbox_m(

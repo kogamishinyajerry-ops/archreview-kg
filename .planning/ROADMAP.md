@@ -319,6 +319,14 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Add an `Opening Semantics` section to `layout_3d_summary.md` and Viewer/Studio so reviewers can audit door/window source semantics.
 - Guardrail: provenance explains preview semantics only; it does not add wall void geometry, neural recognition, rule-engine inputs, or compliance findings.
 
+### P72-01: Opening Measurement Provenance
+
+- Record `properties.opening_measurement` on `door_opening` and `window_opening` only when graph evidence carries explicit source fields.
+- Treat `Door.width_m`, `Door.properties.height_m`, `Door.properties.sill_height_m`, and `Door.properties.head_height_m` as measured preview provenance with source metadata and units.
+- When explicit `height_m` exists, use it for that opening object's 3D preview height and do not apply the corresponding default opening-height assumption to that object.
+- Add `Opening Measurements` counts and samples to `layout_3d_summary.md` and Viewer/Studio so reviewers can audit which dimensions were evidence-backed.
+- Guardrail: opening measurements remain preview provenance only; they are not rule-engine facts, wall-void geometry, fire/smoke/window compliance evidence, or BIM truth.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

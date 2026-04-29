@@ -39,6 +39,7 @@ def load_layout_3d_view(out_dir: Path) -> dict[str, Any]:
         "blocked_reasons": blocked_reasons,
         "object_samples": objects[:10],
         "opening_semantics": _opening_semantics(objects),
+        "opening_measurements": _opening_measurements(objects),
         "glb_available": (out_dir / "layout_3d.glb").exists(),
         "summary_available": (out_dir / "layout_3d_summary.md").exists(),
         "warning_text": (
@@ -64,6 +65,7 @@ def _missing_view(reason: str) -> dict[str, Any]:
         "blocked_reasons": [],
         "object_samples": [],
         "opening_semantics": _empty_opening_semantics(),
+        "opening_measurements": _empty_opening_measurements(),
         "glb_available": False,
         "summary_available": False,
         "warning_text": (
@@ -120,6 +122,63 @@ def _empty_opening_semantics() -> dict[str, Any]:
         "samples": [],
         "boundary_warning": (
             "window_opening is shown only when explicit graph evidence marks the opening as a window."
+        ),
+    }
+
+
+def _opening_measurements(objects: list[dict[str, Any]]) -> dict[str, Any]:
+    counts = {
+        "width_m": 0,
+        "height_m": 0,
+        "sill_height_m": 0,
+        "head_height_m": 0,
+    }
+    samples: list[dict[str, Any]] = []
+    for obj in objects:
+        object_type = _str(obj.get("object_type"))
+        if object_type not in {"door_opening", "window_opening"}:
+            continue
+        properties = _mapping(obj.get("properties"))
+        measurement = _mapping(properties.get("opening_measurement"))
+        for field in counts:
+            entry = _mapping(measurement.get(field))
+            if entry.get("explicit") is not True:
+                continue
+            value = entry.get("value")
+            if not isinstance(value, int | float) or isinstance(value, bool):
+                continue
+            counts[field] += 1
+            samples.append(
+                {
+                    "object_id": _str(obj.get("object_id")),
+                    "object_type": object_type,
+                    "source_entity_id": _str(obj.get("source_entity_id")),
+                    "field": field,
+                    "value": float(value),
+                    "unit": _str(entry.get("unit")),
+                    "explicit": True,
+                    "source_property": _str(entry.get("source_property")),
+                }
+            )
+    return {
+        **_empty_opening_measurements(),
+        "explicit_width_count": counts["width_m"],
+        "explicit_height_count": counts["height_m"],
+        "explicit_sill_height_count": counts["sill_height_m"],
+        "explicit_head_height_count": counts["head_height_m"],
+        "samples": samples[:8],
+    }
+
+
+def _empty_opening_measurements() -> dict[str, Any]:
+    return {
+        "explicit_width_count": 0,
+        "explicit_height_count": 0,
+        "explicit_sill_height_count": 0,
+        "explicit_head_height_count": 0,
+        "samples": [],
+        "boundary_warning": (
+            "Opening measurements are shown only from explicit graph evidence fields and remain preview-only."
         ),
     }
 
