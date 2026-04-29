@@ -577,6 +577,9 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "layout_3d.json" in body
     assert "layout_3d.glb" in body
     assert "默认值只用于 3D 辅助可视化" in body
+    assert "Opening Semantics" in body
+    assert "window_opening" in body
+    assert "explicit graph evidence" in body
     assert "Layout IFC Preview" in body
     assert "layout.ifc 未导出" in body
     assert "IFC preview 不是审查级 BIM" in body

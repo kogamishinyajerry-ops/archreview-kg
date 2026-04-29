@@ -190,6 +190,25 @@ def render_layout_3d_summary_markdown(report: Layout3DReport) -> str:
     ]
     for key, value in report.summary.items():
         lines.append(f"| `{key}` | {value} |")
+    lines.extend(
+        [
+            "",
+            "## Opening Semantics",
+            "",
+            "| Type | Count | Boundary |",
+            "|---|---:|---|",
+            (
+                f"| `door_opening` | {report.summary.get('door_opening_count', 0)} | "
+                "graph Door entity default |"
+            ),
+            (
+                f"| `window_opening` | {report.summary.get('window_opening_count', 0)} | "
+                "explicit graph evidence only |"
+            ),
+            "",
+            "> Opening semantics are reviewer navigation evidence only; they do not carve wall voids or create compliance findings.",
+        ]
+    )
     lines.extend(["", "## Assumptions", ""])
     if report.assumptions:
         for assumption in report.assumptions:
@@ -489,18 +508,42 @@ def _door_object(door: Door, source: _GraphSource) -> Layout3DObject:
             "thickness_m": DEFAULT_WALL_THICKNESS_M,
         },
         confidence=door.confidence,
-        properties={"connects": [door.connects[0], door.connects[1]]},
+        properties={
+            "connects": [door.connects[0], door.connects[1]],
+            "opening_semantic": _opening_semantic_evidence(door),
+        },
     )
 
 
 def _is_explicit_window_opening(door: Door) -> bool:
+    return _opening_semantic_evidence(door)["kind"] == "window_opening"
+
+
+def _opening_semantic_evidence(door: Door) -> dict[str, str | bool]:
     opening_kind = door.properties.get("opening_kind")
     if isinstance(opening_kind, str) and opening_kind.strip().lower() in {
         "window",
         "window_opening",
     }:
-        return True
-    return door.properties.get("is_window") is True
+        return {
+            "kind": "window_opening",
+            "explicit": True,
+            "source_property": "opening_kind",
+            "source_value": opening_kind,
+        }
+    if door.properties.get("is_window") is True:
+        return {
+            "kind": "window_opening",
+            "explicit": True,
+            "source_property": "is_window",
+            "source_value": True,
+        }
+    return {
+        "kind": "door_opening",
+        "explicit": False,
+        "source_property": "entity_type",
+        "source_value": door.type,
+    }
 
 
 def _window_opening_object(door: Door, source: _GraphSource) -> Layout3DObject:
@@ -529,6 +572,7 @@ def _window_opening_object(door: Door, source: _GraphSource) -> Layout3DObject:
             "connects": [door.connects[0], door.connects[1]],
             "source_door_id": door.id,
             "opening_kind": "window",
+            "opening_semantic": _opening_semantic_evidence(door),
         },
     )
 

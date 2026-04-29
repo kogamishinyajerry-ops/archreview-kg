@@ -6,7 +6,7 @@ Updated: 2026-04-29
 
 Branch: `main`
 
-Latest completed commit before P70: `215a5c6 feat(P69-01): add layout ifc export lane`
+Latest completed commit before P71: `1a79420 feat(P70-01): harden layout ifc preview validation`
 
 Status:
 
@@ -60,14 +60,15 @@ Status:
 - P68-01 is complete: full CLI and Studio review runs now generate `layout_3d.json`, `layout_3d_summary.md`, and `layout_3d.glb` from graph evidence; Viewer/Studio, workbench summaries, control sync, and handoff packages expose the 2.5D model as navigation evidence only.
 - P69-01 is complete: `archkg ifc export-layout` now explicitly exports optional `layout.ifc` preview artifacts from `layout_3d.json`, writes `layout_ifc_export.v1` reports, degrades cleanly when IfcOpenShell is missing, and surfaces optional IFC artifacts in Viewer/Studio, control sync, and handoff packages.
 - P70-01 is complete: `layout_3d` models explicit graph window evidence as `window_opening`, `layout.ifc` export maps it to `IfcWindow`, and regression coverage includes both fake-module and optional real-IfcOpenShell smoke paths.
+- P71-01 is complete: `layout_3d` now records `properties.opening_semantic` provenance for door/window openings, and both summary Markdown and Viewer/Studio expose Opening Semantics for reviewer audit.
 
 ## Current Phase
 
-P70-01: Layout IFC preview hardening and smoke validation.
+P71-01: Opening semantic provenance.
 
-P70 is complete. `layout_3d` now distinguishes explicit window openings from generic
-door openings, `window_opening` exports to `IfcWindow` in preview IFC, and optional
-IfcOpenShell smoke verification is available via guarded regression when installed.
+P71 is complete. `layout_3d` now explains whether an opening semantic came from
+explicit graph evidence or the default Door entity type, while keeping opening
+geometry and compliance semantics unchanged.
 
 ## Key Decisions
 
@@ -121,8 +122,9 @@ IfcOpenShell smoke verification is available via guarded regression when install
 - P68 layout_3d is a derived 2.5D navigation model only; it does not certify arbitrary drawings, replace 2D evidence, create BIM truth, or supply compliance inputs from default visualization dimensions.
 - P69 `layout.ifc` is a preview artifact derived from `layout_3d.json`; it does not certify arbitrary drawings, does not perform boolean opening subtraction/window modeling/multi-floor stacking, and must not be described as review-grade BIM.
 - P70 `window_opening` is an optional preview semantic in `layout_3d`; it is only built from explicit graph evidence and mapped to `IfcWindow` for preview export without changing rule-engine truth, review state, or compliance claims.
+- P71 opening semantic provenance is audit metadata only. It does not prove wall void geometry, window recognition accuracy, fire/smoke performance, sill height, or compliance.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next major 3D step after P70 is to start graph-backed opening/window semantics research for explicit evidence only, plus optional real IfcOpenShell smoke checks when the environment is stable. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.
+Next major 3D step after P71 is to add measured opening dimensions or wall-host references only when the graph evidence carries explicit source fields. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.

@@ -273,6 +273,13 @@ and keeps the no-OCR transparency warning.
   reports exported counts separately. Missing IfcOpenShell remains a clean
   non-blocking `dependency_missing` path; optional real IfcOpenShell smoke is
   added in regression tests with `importorskip("ifcopenshell")`.
+- P71-01 adds opening semantic provenance to the 3D evidence layer. Door and
+  window opening objects now carry `properties.opening_semantic` that records
+  whether the semantic came from explicit graph evidence or the default Door
+  entity type. `layout_3d_summary.md` and Viewer/Studio now show an
+  `Opening Semantics` summary so reviewers can audit why an opening is shown
+  as `door_opening` or `window_opening` without treating it as wall-void
+  geometry or a compliance finding.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

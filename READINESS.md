@@ -68,6 +68,9 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   `opening_kind: "window_opening"` 或 `is_window: true`）建模为 `window_opening`，
   并在 IFC preview 导出时映射为 `IfcWindow`。这仍是 preview / evidence 信号，不是
   规则引擎或合规输入。
+- P71 后 `layout_3d` 的 `door_opening` / `window_opening` 会携带
+  `properties.opening_semantic`，说明语义来自显式 graph evidence 还是默认 Door entity；
+  Viewer/Studio 和 summary 会显示 Opening Semantics 摘要，方便 reviewer 审计来源。
 
 复现该结论：
 
@@ -100,8 +103,9 @@ release-readiness status=evidence_ready blockers=0 warnings=0 active=7 real_acti
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
 P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 generated mixed-sheet-set 复杂回归样本，
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
-但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，per-sheet preview issues
-还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
+但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics
+只解释来源，不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
+且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
 
 ## 32 张规则的就绪度分布

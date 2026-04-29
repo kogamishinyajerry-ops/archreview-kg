@@ -1436,6 +1436,29 @@
         · <a href="layout_3d_summary.md" target="_blank">layout_3d_summary.md</a>
       {% endif %}
     </div>
+    <div class="metric-note">
+      Opening Semantics:
+      <code>door_opening</code>={{ layout_3d.opening_semantics.door_opening_count | default(0) }},
+      <code>window_opening</code>={{ layout_3d.opening_semantics.window_opening_count | default(0) }}.
+      window_opening requires explicit graph evidence and remains preview-only.
+    </div>
+    {% if layout_3d.opening_semantics.samples %}
+      <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object</th><th>type</th><th>source</th><th>explicit</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.opening_semantics.samples %}
+              <tr>
+                <td><code>{{ row.object_id }}</code></td>
+                <td><code>{{ row.object_type }}</code></td>
+                <td>{{ row.source_property }}={{ row.source_value }}</td>
+                <td>{{ row.explicit }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
     {% if layout_3d.assumptions %}
       <div class="table-wrap" style="max-height: 220px; margin-top: 12px;">
         <table>

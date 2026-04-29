@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-418%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-421%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -155,6 +155,9 @@ archkg ifc export-layout \
 P70 还要求在 `layout_3d` 中将明确窗口洞口（例如 `Door` 上有 `opening_kind: "window"` 或
 `is_window: true`）建模为 `window_opening`，并导出为 `IfcWindow`。这是一层轻量、可回退的
 graph-backed 语义增强；没有明确证据时仍保持 door placeholder，不会改变默认规则语义。
+P71 起 `layout_3d_summary.md` 和 Viewer/Studio 会显示 `Opening Semantics`，
+并在 opening object 的 `properties.opening_semantic` 中记录语义来源；它只帮助 reviewer
+审计 door/window opening 来源，不改变规则输出或 IFC preview 边界。
 
 ## Rule-Card Draft Authoring
 
@@ -538,6 +541,7 @@ archkg clause readiness
 - P68：Evidence 3D layout model。完整 CLI/Studio run 会基于 `sheet_graphs.json` 优先、`entity_graph.json` 兜底生成 `layout_3d.json` / `.glb` / summary；Viewer 和 handoff package 会展示/复制这些 2.5D 空间导航证据，但它不是 BIM、不是规范结论，也不进入规则引擎。
 - P69：Layout IFC export skeleton。`archkg ifc export-layout` 可从 `layout_3d.json` 显式生成 `layout.ifc` preview 和 `layout_ifc_export.v1` 报告；缺 IfcOpenShell 时清晰降级并不生成 IFC。Viewer 和 handoff package 只把它作为可选 preview artifact，不当作审查级 BIM 或合规结论。
 - P70：layout_3d 开始接受 explicit opening evidence 的窗口语义。`build_layout_3d` 在 `Door` 明确标为 window 时生成 `window_opening`，并映射为 IFC `IfcWindow`；`window_opening` 和 `door_opening` 都是 preview 语义，不变更规则引擎。完整可选的真实 IfcOpenShell smoke 也已加入回归套件。
+- P71：Opening semantic provenance。`door_opening` / `window_opening` 对象会记录 `properties.opening_semantic`，summary 和 Viewer/Studio 会显示 Opening Semantics；这只说明语义来源，不代表墙体开洞几何或合规结论。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。

@@ -312,6 +312,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Keep all optional artifacts (`layout.ifc`, `layout_ifc_export.json`, `layout_ifc_export.md`) in Viewer/Studio/handoff/control-sync as non-blocking `preview / evidence` signals only.
 - Guardrail: do not assert true geometry semantics such as boolean opening subtraction, wall void carving, multi-floor stacking, or rule-engine promotion from optional previews.
 
+### P71-01: Opening Semantic Provenance
+
+- Record `properties.opening_semantic` on `door_opening` and `window_opening` layout objects.
+- Distinguish explicit window evidence (`opening_kind` / `is_window`) from generic Door entity defaults without reclassifying ambiguous openings.
+- Add an `Opening Semantics` section to `layout_3d_summary.md` and Viewer/Studio so reviewers can audit door/window source semantics.
+- Guardrail: provenance explains preview semantics only; it does not add wall void geometry, neural recognition, rule-engine inputs, or compliance findings.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

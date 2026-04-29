@@ -86,11 +86,28 @@ def test_layout_3d_builds_window_openings_from_explicit_graph_evidence() -> None
     assert door.properties["connects"] == ["room-1", "corridor-1"]
     assert window.properties["opening_kind"] == "window"
     assert window.properties["connects"] == ["room-1", "corridor-1"]
+    assert door.properties["opening_semantic"] == {
+        "kind": "door_opening",
+        "explicit": False,
+        "source_property": "entity_type",
+        "source_value": "Door",
+    }
+    assert window.properties["opening_semantic"] == {
+        "kind": "window_opening",
+        "explicit": True,
+        "source_property": "opening_kind",
+        "source_value": "window",
+    }
 
     window_assumption = next(
         item for item in report.assumptions if item.field == "window_opening.height_m"
     )
     assert window.object_id in window_assumption.applies_to_object_ids
+
+    summary = render_layout_3d_summary_markdown(report)
+    assert "## Opening Semantics" in summary
+    assert "`window_opening` | 1 | explicit graph evidence only" in summary
+    assert "`door_opening` | 1 | graph Door entity default" in summary
 
 
 def test_layout_3d_blocks_without_graph_geometry() -> None:
@@ -141,6 +158,29 @@ def test_layout_3d_view_loader_reports_available_and_missing(tmp_path: Path) -> 
     assert view["object_count"] == report.summary["object_count"]
     assert view["glb_available"] is True
     assert view["summary_available"] is True
+
+
+def test_layout_3d_view_loader_exposes_opening_semantic_provenance(tmp_path: Path) -> None:
+    report = build_layout_3d(entity_graph=_entity_graph_with_window())
+    write_layout_3d(report, tmp_path / "layout_3d.json")
+
+    view = load_layout_3d_view(tmp_path)
+
+    assert view["opening_semantics"]["door_opening_count"] == 1
+    assert view["opening_semantics"]["window_opening_count"] == 1
+    assert view["opening_semantics"]["boundary_warning"] == (
+        "window_opening is shown only when explicit graph evidence marks the opening as a window."
+    )
+    samples = view["opening_semantics"]["samples"]
+    assert {
+        "object_id": "page-0-window-opening-window-1",
+        "object_type": "window_opening",
+        "source_entity_id": "window-1",
+        "kind": "window_opening",
+        "explicit": True,
+        "source_property": "opening_kind",
+        "source_value": "window",
+    } in samples
 
 
 def _sheet_graphs() -> SheetGraphsReport:
