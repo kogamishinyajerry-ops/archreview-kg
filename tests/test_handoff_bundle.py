@@ -153,6 +153,110 @@ def test_handoff_bundle_index_cli_writes_opening_provenance_summary(
     assert "Opening Provenance Coverage" in html
 
 
+def test_handoff_bundle_index_emits_opening_provenance_triage_queue(
+    tmp_path: Path,
+) -> None:
+    runs_root = tmp_path / "runs"
+    packages_root = tmp_path / "handoff-packages"
+    runs_root.mkdir()
+    packages_root.mkdir()
+
+    run_strong = runs_root / "strong"
+    run_weak = runs_root / "weak"
+    package_strong = packages_root / "pkg-strong"
+    package_weak = packages_root / "pkg-weak"
+    _write_minimal_run(run_strong)
+    _write_layout_ifc_with_opening_provenance(
+        run_strong,
+        {
+            "semantic_count": 2,
+            "measurement_count": 1,
+            "host_count": 2,
+            "all_three_count": 1,
+        },
+    )
+    write_handoff_package(run_strong, package_strong)
+    _write_minimal_run(run_weak)
+    _write_layout_ifc_with_opening_provenance(
+        run_weak,
+        {
+            "semantic_count": 1,
+            "measurement_count": 0,
+            "host_count": 1,
+            "all_three_count": 0,
+        },
+    )
+    write_handoff_package(run_weak, package_weak)
+
+    payload = build_handoff_bundle_index(packages_root)
+
+    queue = payload["opening_provenance_triage_queue"]
+    assert queue == [
+        {
+            "package_name": "pkg-weak",
+            "relative_package_dir": "pkg-weak",
+            "actor": "reviewer",
+            "action_id": "review_opening_provenance_coverage",
+            "title": "Review weak opening provenance coverage.",
+            "reason": "Opening provenance coverage is weak: missing measurement.",
+            "coverage": "semantic=1, measurement=0, host_wall=1, all_three=0",
+            "source_artifact": "layout_ifc_export.json",
+            "boundary_warning": (
+                "Opening provenance coverage is preview-only handoff guidance; "
+                "missing signals are review prompts, not compliance failures."
+            ),
+        }
+    ]
+    rows = {row["package_name"]: row for row in payload["packages"]}
+    assert rows["pkg-weak"]["package_status"] == "package_needs_info"
+    assert rows["pkg-weak"]["next_action_id"] == "run_handoff_quality"
+
+
+def test_handoff_bundle_index_markdown_html_show_opening_provenance_triage_queue(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    packages_root = tmp_path / "handoff-packages"
+    package_dir = packages_root / "pkg-missing-host"
+    packages_root.mkdir()
+    _write_minimal_run(run_dir)
+    _write_layout_ifc_with_opening_provenance(
+        run_dir,
+        {
+            "semantic_count": 3,
+            "measurement_count": 1,
+            "host_count": 0,
+            "all_three_count": 0,
+        },
+    )
+    write_handoff_package(run_dir, package_dir)
+
+    out_json = packages_root / "handoff_bundle_index.json"
+    out_md = packages_root / "handoff_bundle_index.md"
+    out_html = packages_root / "handoff_bundle_index.html"
+    write_handoff_bundle_index(
+        packages_root,
+        out=out_json,
+        markdown=out_md,
+        html_path=out_html,
+    )
+    payload = json.loads(out_json.read_text("utf-8"))
+
+    assert payload["opening_provenance_triage_queue"][0]["package_name"] == (
+        "pkg-missing-host"
+    )
+    markdown = out_md.read_text("utf-8")
+    assert "## Opening Provenance Triage Queue" in markdown
+    assert "| `pkg-missing-host` | reviewer | review_opening_provenance_coverage | semantic=3, measurement=1, host_wall=0, all_three=0 | Opening provenance coverage is weak: missing host_wall. |" in markdown
+    assert "preview-only handoff guidance" in markdown
+
+    html = out_html.read_text("utf-8")
+    assert "Opening Provenance Triage Queue" in html
+    assert "pkg-missing-host" in html
+    assert "missing host_wall" in html
+    assert "preview-only handoff guidance" in html
+
+
 def _write_layout_ifc_with_opening_provenance(
     run_dir: Path,
     counts: dict[str, int],

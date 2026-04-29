@@ -320,6 +320,13 @@ and keeps the no-OCR transparency warning.
   and `Weak Coverage` columns in both Markdown and HTML summaries for manager
   dispatch. It remains triage-only and does not alter package readiness,
   quality, signoff, manager, archive verification, or compliance semantics.
+- P78-01 adds a separate opening provenance review queue to
+  `archkg handoff-bundle-index`. Weak-coverage packages now appear in
+  `opening_provenance_triage_queue` with reviewer actor, reason, coverage tuple,
+  source artifact, and preview-only boundary warning, and the queue renders in
+  Markdown/HTML. The queue is separate from the normal package
+  `next_action_queue` and does not change readiness, quality, signoff, manager,
+  archive, or compliance semantics.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

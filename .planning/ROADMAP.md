@@ -362,6 +362,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Add Markdown/HTML bundle fields and table columns for each package's opening provenance tuple and weak-coverage status.
 - Keep weak coverage as dispatch guidance only: it does not change package readiness rules, issue status, or compliance semantics.
 
+### P78-01: Bundle Opening Provenance Review Queue
+
+- Add a structured `opening_provenance_triage_queue` to `archkg handoff-bundle-index` for packages with weak opening provenance coverage.
+- Include package name, reviewer actor, action id, coverage tuple, source artifact, reason, and preview-only boundary warning.
+- Render the same triage queue in bundle Markdown and HTML as a separate queue from the existing package `next_action_queue`.
+- Guardrail: opening provenance triage is reviewer assignment guidance only; it must not change package status, `next_action_queue`, quality/signoff/manager/archive semantics, or compliance claims.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

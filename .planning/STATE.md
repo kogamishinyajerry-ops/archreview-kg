@@ -6,7 +6,7 @@ Updated: 2026-04-29
 
 Branch: `main`
 
-Latest completed commit before P77: `86ddf2f feat(P76-01): surface opening provenance in handoff packages`
+Latest completed commit before P78: `12ebfe4 feat(P77-01): add bundle opening provenance triage`
 
 Status:
 
@@ -67,14 +67,15 @@ Status:
 - P75-01 is complete: optional `layout_ifc_export.v1` reports and IFC Viewer data now surface opening provenance coverage metadata from `layout_3d` without changing IFC preview boundaries.
 - P76-01 is complete: handoff packages now copy through opening provenance coverage into `handoff_manifest.json`, `handoff_summary.md`, and package `index.html` from `layout_ifc_export.json`.
 - P77-01 is complete: bundle index now surfaces per-package opening provenance coverage and weak-package counts for triage.
+- P78-01 is complete: bundle index now emits a separate `opening_provenance_triage_queue` for weak coverage packages and renders it in Markdown/HTML.
 
 ## Current Phase
 
-P77-01: Bundle opening provenance triage (complete).
+P78-01: Bundle opening provenance review queue (complete).
 
-P77 is complete. Bundle index now aggregates opening provenance coverage
-across multiple handoff packages and highlights weak coverage (missing semantic,
-measurement, or host-wall signals) as reviewable triage risk only.
+P78 is complete. Bundle index now has a dedicated opening provenance triage
+queue for reviewer assignment, separated from package readiness and the normal
+package `next_action_queue`.
 
 ## Key Decisions
 
@@ -136,9 +137,11 @@ measurement, or host-wall signals) as reviewable triage risk only.
 - P76 handoff opening provenance coverage is package navigation guidance only. It is not a package quality blocker, issue confirmation, BIM completeness test, or compliance signal.
 - P77 bundle opening provenance triage is review dispatch guidance only. Weak
   coverage is a triage signal for manager assignment, not a compliance failure.
+- P78 opening provenance triage queue is a secondary review-assignment queue only. It does not change `package_status`, normal `next_action_queue`, quality/signoff/manager/archive semantics, or compliance claims.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next adjacent step after P77 is P78+: continue bundle-level triage ergonomics and
-handoff reviewer visibility while preserving read-only dispatch semantics.
+Next adjacent step after P78 is P79+: connect opening provenance triage to
+package-local reviewer checklist guidance, still as optional preview-only review
+work and without mutating source run issue truth.

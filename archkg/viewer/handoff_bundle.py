@@ -55,6 +55,7 @@ def build_handoff_bundle_index(packages_root: Path) -> dict[str, Any]:
         "summary": summary,
         "packages": packages,
         "boundary_warning": BOUNDARY_WARNING,
+        "opening_provenance_triage_queue": _opening_provenance_triage_queue(packages),
         "next_action_queue": _bundle_next_action_queue(packages),
         "next_actions": _bundle_next_actions(packages),
     }
@@ -156,6 +157,30 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
             f"{_str(opening_weak)} |"
         )
     next_actions = _str_list(payload.get("next_actions"))
+    opening_triage_queue = _list_of_dicts(
+        payload.get("opening_provenance_triage_queue")
+    )
+    if opening_triage_queue:
+        lines.extend(
+            [
+                "",
+                "## Opening Provenance Triage Queue",
+                "",
+                OPENING_PROVENANCE_BOUNDARY_WARNING,
+                "",
+                "| Package | Actor | Action | Coverage | Reason |",
+                "|---|---|---|---|---|",
+            ]
+        )
+        for item in opening_triage_queue:
+            lines.append(
+                "| "
+                f"`{_str(item.get('package_name'))}` | "
+                f"{_str(item.get('actor'))} | "
+                f"{_str(item.get('action_id'))} | "
+                f"{_str(item.get('coverage'))} | "
+                f"{_str(item.get('reason'))} |"
+            )
     if next_actions:
         lines.extend(["", "## Next Actions", ""])
         lines.extend(f"- {item}" for item in next_actions)
@@ -166,6 +191,9 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
 def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
     summary = _dict(payload.get("summary"))
     packages = _list_of_dicts(payload.get("packages"))
+    opening_triage_queue = _list_of_dicts(
+        payload.get("opening_provenance_triage_queue")
+    )
     lines = [
         "<!doctype html>",
         '<html lang="en">',
@@ -239,12 +267,38 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
         f"{_html(OPENING_PROVENANCE_BOUNDARY_WARNING)}"
         "</p>",
         "</section>",
-        '<section class="panel">',
-        "<h2>Packages</h2>",
-        "<table>",
-        "<thead><tr><th>Package</th><th>Status</th><th>Next Actor</th><th>Next Action</th><th>Quality</th><th>Signoff</th><th>Manager</th><th>Archive Check</th><th>Checklist</th><th>Open Items</th><th>Opening Provenance</th><th>Weak Coverage</th></tr></thead>",
-        "<tbody>",
     ]
+    if opening_triage_queue:
+        lines.extend(
+            [
+                '<section class="panel">',
+                "<h2>Opening Provenance Triage Queue</h2>",
+                f"<p>{_html(OPENING_PROVENANCE_BOUNDARY_WARNING)}</p>",
+                "<table>",
+                "<thead><tr><th>Package</th><th>Actor</th><th>Action</th><th>Coverage</th><th>Reason</th></tr></thead>",
+                "<tbody>",
+            ]
+        )
+        for item in opening_triage_queue:
+            lines.append(
+                "<tr>"
+                f"<td>{_html(_str(item.get('package_name')))}</td>"
+                f"<td>{_html(_str(item.get('actor')))}</td>"
+                f"<td>{_html(_str(item.get('action_id')))}</td>"
+                f"<td>{_html(_str(item.get('coverage')))}</td>"
+                f"<td>{_html(_str(item.get('reason')))}</td>"
+                "</tr>"
+            )
+        lines.extend(["</tbody>", "</table>", "</section>"])
+    lines.extend(
+        [
+            '<section class="panel">',
+            "<h2>Packages</h2>",
+            "<table>",
+            "<thead><tr><th>Package</th><th>Status</th><th>Next Actor</th><th>Next Action</th><th>Quality</th><th>Signoff</th><th>Manager</th><th>Archive Check</th><th>Checklist</th><th>Open Items</th><th>Opening Provenance</th><th>Weak Coverage</th></tr></thead>",
+            "<tbody>",
+        ]
+    )
     for row in packages:
         package_name = _str(row.get("package_name"))
         index_path = _str(row.get("index_path"))
@@ -850,6 +904,47 @@ def _bundle_next_actions(packages: list[dict[str, Any]]) -> list[str]:
             f"{_int(package.get('checklist_open_item_count'))} reviewer checklist items"
         )
     return actions
+
+
+def _opening_provenance_triage_queue(
+    packages: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    queue: list[dict[str, str]] = []
+    for package in packages:
+        if not _bool(package.get("opening_provenance_weak")):
+            continue
+        reason = _opening_provenance_triage_reason(package)
+        queue.append(
+            {
+                "package_name": _str(package.get("package_name")),
+                "relative_package_dir": _str(package.get("relative_package_dir")),
+                "actor": "reviewer",
+                "action_id": "review_opening_provenance_coverage",
+                "title": "Review weak opening provenance coverage.",
+                "reason": reason,
+                "coverage": _opening_provenance_summary_text(package),
+                "source_artifact": _str(
+                    package.get("opening_provenance_source_artifact")
+                ),
+                "boundary_warning": OPENING_PROVENANCE_BOUNDARY_WARNING,
+            }
+        )
+    return queue
+
+
+def _opening_provenance_triage_reason(package: dict[str, Any]) -> str:
+    if not _bool(package.get("opening_provenance_available")):
+        return "Opening provenance coverage is unavailable."
+    missing: list[str] = []
+    if _int(package.get("opening_provenance_semantic_count")) == 0:
+        missing.append("semantic")
+    if _int(package.get("opening_provenance_measurement_count")) == 0:
+        missing.append("measurement")
+    if _int(package.get("opening_provenance_host_count")) == 0:
+        missing.append("host_wall")
+    if not missing:
+        return "Opening provenance coverage is weak."
+    return f"Opening provenance coverage is weak: missing {', '.join(missing)}."
 
 
 def _bundle_next_action_queue(packages: list[dict[str, Any]]) -> list[dict[str, str]]:
