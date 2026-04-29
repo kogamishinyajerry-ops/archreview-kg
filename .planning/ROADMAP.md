@@ -376,6 +376,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Keep checklist `items[]` and item counts unchanged so this guidance does not alter manager readiness or normal checklist completion gates.
 - Guardrail: package-local guidance must not mutate the source run, confirm issues, change `review_state.json`, or turn weak opening provenance into compliance failure.
 
+### P80-01: Ready Runbook Opening Provenance Guidance
+
+- Add optional `optional_review_actions` to `handoff_ready_runbook.json` when the package-local reviewer checklist already carries weak opening provenance guidance.
+- Render an `Optional Review Guidance` section in `handoff_ready_runbook.md` pointing novice reviewers to `artifacts/reviewer_task_checklist.md`.
+- Keep `next_actions`, required manager-intake steps, checklist counts, and package readiness unchanged.
+- Guardrail: ready-runbook opening provenance guidance is navigation only; it must not become a blocker, compliance finding, source-run mutation, or BIM completeness claim.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

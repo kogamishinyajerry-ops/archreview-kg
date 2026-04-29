@@ -1079,6 +1079,9 @@ def build_handoff_ready_runbook(package_dir: Path) -> dict[str, Any]:
             summary,
             reviewer_task_checklist,
         ),
+        "optional_review_actions": _ready_runbook_optional_review_actions(
+            reviewer_task_checklist
+        ),
         "manager_intake_command": (
             f"archkg handoff-manager-checklist {_shell_path(package_dir)} "
             '--manager <manager> --note "<manager intake note>"'
@@ -1141,6 +1144,20 @@ def render_handoff_ready_runbook_markdown(payload: dict[str, Any]) -> str:
                 lines.append(f"   - Evidence: {', '.join(evidence)}")
     else:
         lines.append("- None. Package is ready for manager intake.")
+    optional_actions = _list_of_dicts(payload.get("optional_review_actions"))
+    if optional_actions:
+        lines.extend(["", "## Optional Review Guidance", ""])
+        for index, action in enumerate(optional_actions, start=1):
+            lines.append(f"{index}. {_str(action.get('title'))}")
+            reason = _str(action.get("reason"))
+            if reason:
+                lines.append(f"   - Reason: {reason}")
+            artifact = _str(action.get("artifact"))
+            if artifact:
+                lines.append(f"   - Artifact: `{artifact}`")
+            warning = _str(action.get("boundary_warning"))
+            if warning:
+                lines.append(f"   - Boundary: {warning}")
     lines.extend(
         [
             "",
@@ -2102,6 +2119,38 @@ def _ready_runbook_checklist_actions(
             }
         )
     return actions
+
+
+def _ready_runbook_optional_review_actions(
+    reviewer_task_checklist: dict[str, Any],
+) -> list[dict[str, Any]]:
+    guidance = reviewer_task_checklist.get("opening_provenance_guidance")
+    if not isinstance(guidance, dict):
+        return []
+    if guidance.get("weak") is not True:
+        return []
+    return [
+        {
+            **_ready_runbook_action(
+                "review_opening_provenance_guidance",
+                "Review opening provenance guidance.",
+                _opening_provenance_guidance_reason(guidance),
+                "",
+            ),
+            "artifact": "artifacts/reviewer_task_checklist.md",
+            "boundary_warning": (
+                _str(guidance.get("boundary_warning"))
+                or OPENING_PROVENANCE_BOUNDARY_WARNING
+            ),
+        }
+    ]
+
+
+def _opening_provenance_guidance_reason(guidance: dict[str, Any]) -> str:
+    missing = _str_list(guidance.get("missing_signals"))
+    if not missing:
+        return "Opening provenance coverage is weak."
+    return f"Opening provenance coverage is weak: missing {', '.join(missing)}."
 
 
 def _ready_runbook_action(

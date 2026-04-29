@@ -334,6 +334,13 @@ and keeps the no-OCR transparency warning.
   `artifacts/reviewer_task_checklist.md`. The guidance does not add checklist
   items, change item counts, alter manager readiness, mutate source runs, or
   turn weak coverage into a compliance finding.
+- P80-01 surfaces package-local opening provenance guidance in the ready
+  runbook. `handoff_ready_runbook.json` now includes `optional_review_actions`
+  for weak opening provenance guidance and the Markdown runbook renders an
+  `Optional Review Guidance` section pointing to
+  `artifacts/reviewer_task_checklist.md`. The guidance does not populate
+  required `next_actions`, block manager intake, change package readiness,
+  mutate source runs, or turn weak coverage into a compliance finding.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

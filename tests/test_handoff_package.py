@@ -920,6 +920,82 @@ def test_handoff_ready_runbook_reports_ready_for_manager_intake(
     assert "ready_for_manager_intake" in html
 
 
+def test_handoff_ready_runbook_surfaces_opening_provenance_guidance_without_blocking(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    (run_dir / "layout_ifc_export.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "layout_ifc_export.v1",
+                "status": "exported",
+                "opening_provenance": {
+                    "semantic_count": 1,
+                    "measurement_count": 0,
+                    "host_count": 1,
+                    "all_three_count": 0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    write_handoff_package(run_dir, package_dir)
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-ready",
+        status="ready",
+        note="Ready with preview guidance.",
+    )
+    write_handoff_reviewer_task_checklist_update(
+        package_dir,
+        ordinal=1,
+        reviewer="reviewer-ready",
+        status="done",
+        note="Checklist complete.",
+        evidence_checked=["handoff_manifest.json"],
+    )
+    write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-ready",
+        note="Intake ready.",
+    )
+
+    runbook_path = write_handoff_ready_runbook(package_dir)
+
+    payload = json.loads(runbook_path.read_text("utf-8"))
+    assert payload["status"] == "ready_for_manager_intake"
+    assert payload["next_actions"] == []
+    assert payload["optional_review_actions"] == [
+        {
+            "id": "review_opening_provenance_guidance",
+            "title": "Review opening provenance guidance.",
+            "reason": "Opening provenance coverage is weak: missing measurement.",
+            "command": "",
+            "artifact": "artifacts/reviewer_task_checklist.md",
+            "boundary_warning": (
+                "Opening provenance coverage is preview-only handoff guidance; "
+                "missing signals are review prompts, not compliance failures."
+            ),
+        }
+    ]
+    steps = {
+        item["id"]: item["status"]
+        for item in payload["required_before_manager_intake"]
+    }
+    assert steps["manager_checklist"] == "done"
+
+    markdown = (package_dir / "handoff_ready_runbook.md").read_text("utf-8")
+    assert "## Optional Review Guidance" in markdown
+    assert "Review opening provenance guidance." in markdown
+    assert "missing measurement" in markdown
+    assert "artifacts/reviewer_task_checklist.md" in markdown
+
+
 def test_handoff_ready_runbook_cli_writes_status(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     package_dir = tmp_path / "handoff"

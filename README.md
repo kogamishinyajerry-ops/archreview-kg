@@ -2,7 +2,7 @@
 
 > 民建图纸自动审图引擎 — 32 张 GB 国标规则卡 + 实体图谱构建器 + 对抗训练 lane
 
-[![pytest](https://img.shields.io/badge/pytest-436%20passing-brightgreen)](#)
+[![pytest](https://img.shields.io/badge/pytest-437%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
 [![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
@@ -110,6 +110,8 @@ P78 起 bundle index 还会生成独立的 `opening_provenance_triage_queue`，
 把 weak coverage 包整理成 reviewer 复核队列；它和正常 `next_action_queue` 分开，不改变 package readiness。
 P79 起如果单包 opening provenance coverage 较弱，`artifacts/reviewer_task_checklist.json/.md`
 会增加 `opening_provenance_guidance` 指导区，说明缺哪些证据面；它不新增 checklist item，也不改变 manager gate。
+P80 起 `handoff_ready_runbook.json/.md` 会把同一 guidance 作为 optional review guidance 呈现，
+帮助新手 reviewer 找到包内 checklist guidance；它不进入 required `next_actions`，也不阻塞 manager intake。
 P68 起完整 review run 会生成 `layout_3d.json`、`layout_3d_summary.md` 和 `layout_3d.glb`，
 帮助 reviewer 从平面图 graph 证据理解房间、墙段、门洞、楼梯占位和尺寸锚点的 2.5D 空间关系；
 这不是 IFC/BIM 输出，也不会改变规则引擎结论。
@@ -573,6 +575,7 @@ archkg clause readiness
 - P77：Bundle opening provenance triage。`handoff_bundle_index` 聚合每包的 opening provenance 计数与 weak 包数量，并在 Markdown/HTML bundle index 中暴露 triage 线索，用于负责人分派 reviewer，不改变 quality/signoff/checklist/manager/archive 语义。
 - P78：Bundle opening provenance review queue。`handoff_bundle_index` 新增 `opening_provenance_triage_queue`，把 weak coverage 包单独列为 reviewer triage 项；它不改变原有 `next_action_queue` 或 package readiness。
 - P79：Package opening provenance checklist guidance。`handoff-package` 会在包内 reviewer checklist JSON/Markdown 增加 opening provenance guidance 指导区，但不增加 checklist item、不改变 checklist 计数或 manager readiness。
+- P80：Ready runbook opening provenance guidance。包内 `handoff_ready_runbook.json/.md` 会把 weak opening provenance guidance 显示为 optional review guidance，指向 `artifacts/reviewer_task_checklist.md`；它不写 required `next_actions`，不改变 manager gate 或 package readiness。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
@@ -596,6 +599,7 @@ archkg clause readiness
 - P77：Bundle opening provenance triage。handoff bundle index 的 opening provenance 聚合只是 triage 信号，不改变 package readiness、package quality、manager checklist 或合规结论。
 - P78：Bundle opening provenance review queue。`opening_provenance_triage_queue` 是额外 reviewer 分派队列，不写单包、不改 `next_action_queue`、不改变任何合规或移交状态。
 - P79：Package opening provenance checklist guidance。包内 checklist guidance 只补充复核提示，不新增 item、不改变 checklist 完成度、manager gate 或 source run。
+- P80：Ready runbook opening provenance guidance。包内 runbook 的 optional review guidance 只帮助定位 checklist guidance，不新增必做动作、不阻塞 manager intake、不改变 package readiness 或 source run。
 
 ---
 
