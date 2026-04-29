@@ -1263,6 +1263,54 @@ def handoff_ready_runbook_cmd(
     )
 
 
+@app.command("handoff-optional-guidance-note")
+def handoff_optional_guidance_note_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to annotate with optional guidance review notes.",
+    ),
+    reviewer: str = typer.Option(
+        ...,
+        "--reviewer",
+        help="Reviewer name or initials to record in the package-local note.",
+    ),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Optional guidance review status: reviewed, needs_info, or blocked.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Package-local note. This is not a compliance certificate or issue confirmation.",
+    ),
+) -> None:
+    """Write package-local optional guidance review notes."""
+    from archkg.viewer.handoff_package import write_handoff_optional_guidance_note
+
+    try:
+        note_path = write_handoff_optional_guidance_note(
+            package_dir,
+            reviewer=reviewer,
+            status=status,
+            note=note,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(note_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={note_path} "
+        f"reviewer={payload['reviewer']} status={payload['status']} "
+        f"optional_actions={payload['optional_action_count']}"
+    )
+
+
 @app.command("handoff-manager-checklist")
 def handoff_manager_checklist_cmd(
     package_dir: Path = typer.Argument(

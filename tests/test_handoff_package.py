@@ -1054,6 +1054,103 @@ def test_handoff_index_links_ready_runbook_opening_provenance_guidance(
     assert "artifacts/reviewer_task_checklist.md" in html
 
 
+def test_handoff_optional_guidance_note_cli_writes_package_local_closeout(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    package_dir = tmp_path / "handoff"
+    _write_minimal_run(run_dir)
+    (run_dir / "layout_ifc_export.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "layout_ifc_export.v1",
+                "status": "exported",
+                "opening_provenance": {
+                    "semantic_count": 1,
+                    "measurement_count": 0,
+                    "host_count": 1,
+                    "all_three_count": 0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    write_handoff_package(run_dir, package_dir)
+    quality = build_handoff_package_quality(package_dir)
+    write_handoff_package_quality_json(quality, package_dir / "handoff_quality.json")
+    write_handoff_package_quality_markdown(quality, package_dir / "handoff_quality.md")
+    write_handoff_reviewer_signoff(
+        package_dir,
+        reviewer="reviewer-ready",
+        status="ready",
+        note="Ready with optional guidance.",
+    )
+    write_handoff_reviewer_task_checklist_update(
+        package_dir,
+        ordinal=1,
+        reviewer="reviewer-ready",
+        status="done",
+        note="Checklist complete.",
+        evidence_checked=["handoff_manifest.json"],
+    )
+    write_handoff_manager_checklist(
+        package_dir,
+        manager="manager-ready",
+        note="Intake ready.",
+    )
+    runbook_path = write_handoff_ready_runbook(package_dir)
+    original_issues = (run_dir / "issues.json").read_text("utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "handoff-optional-guidance-note",
+            str(package_dir),
+            "--reviewer",
+            "reviewer-ready",
+            "--status",
+            "reviewed",
+            "--note",
+            "Checked optional opening provenance guidance; measurement gap remains a preview prompt.",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "handoff_optional_guidance_note.v1" in result.output
+    assert "status=reviewed" in result.output
+    assert (run_dir / "issues.json").read_text("utf-8") == original_issues
+    assert not (run_dir / "handoff_optional_guidance_note.json").exists()
+    payload = json.loads(
+        (package_dir / "handoff_optional_guidance_note.json").read_text("utf-8")
+    )
+    assert payload["schema_version"] == "handoff_optional_guidance_note.v1"
+    assert (
+        payload["mutation_policy"]
+        == "package_optional_guidance_note_only_no_source_run_mutation"
+    )
+    assert payload["reviewer"] == "reviewer-ready"
+    assert payload["status"] == "reviewed"
+    assert payload["optional_action_count"] == 1
+    assert payload["optional_actions"][0]["id"] == "review_opening_provenance_guidance"
+    assert payload["optional_actions"][0]["reason"] == (
+        "Opening provenance coverage is weak: missing measurement."
+    )
+    assert payload["candidate_issue_confirmation"] is False
+    assert "not a compliance certificate" in payload["boundary_warning"]
+    markdown = (package_dir / "handoff_optional_guidance_note.md").read_text("utf-8")
+    assert "Handoff Optional Guidance Note" in markdown
+    assert "measurement gap remains a preview prompt" in markdown
+    assert "review_opening_provenance_guidance" in markdown
+    html = (package_dir / "index.html").read_text("utf-8")
+    assert "Optional Guidance Review Note" in html
+    assert "measurement gap remains a preview prompt" in html
+    assert "handoff_optional_guidance_note.md" in html
+    manager = json.loads((package_dir / "handoff_manager_checklist.json").read_text("utf-8"))
+    assert manager["status"] == "manager_ready"
+    runbook = json.loads(runbook_path.read_text("utf-8"))
+    assert runbook["next_actions"] == []
+
+
 def test_handoff_ready_runbook_cli_writes_status(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     package_dir = tmp_path / "handoff"

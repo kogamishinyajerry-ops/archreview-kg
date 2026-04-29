@@ -6,7 +6,7 @@ Updated: 2026-04-30
 
 Branch: `main`
 
-Latest completed commit before P82: `10939b0 feat(P81-01): link runbook opening guidance from package index`
+Latest completed commit before P83: `ff00005 feat(P82-01): surface optional guidance in bundle index`
 
 Status:
 
@@ -72,15 +72,16 @@ Status:
 - P80-01 is complete: ready-runbook now surfaces package-local opening provenance guidance as optional review guidance, without changing required next actions or manager readiness.
 - P81-01 is complete: package-root static `index.html` now links to ready-runbook optional opening provenance guidance and the package-local checklist artifact, without changing readiness semantics.
 - P82-01 is complete: bundle indexes now show package-index optional guidance availability in a separate queue, without changing normal next-action routing.
+- P83-01 is complete: packages can now record package-local optional guidance review notes, without confirming candidate issues or changing readiness semantics.
 
 ## Current Phase
 
-P82-01: Bundle optional guidance visibility (complete).
+P83-01: Package optional guidance note (complete).
 
-P82 is complete. Bundle indexes now expose which packages have static index
-optional opening provenance guidance available, while keeping that visibility
-separate from normal `next_action_queue` and preserving package readiness
-semantics.
+P83 is complete. A novice reviewer can now write a package-local optional
+guidance review note that records optional guidance review status and note text
+without changing required `next_actions`, manager gates, source runs, or issue
+state.
 
 ## Key Decisions
 
@@ -147,10 +148,11 @@ semantics.
 - P80 ready-runbook opening provenance guidance is optional navigation only. It does not populate required `next_actions`, block manager intake, alter readiness gates, mutate source runs, or confirm issues.
 - P81 package index opening provenance guidance link is static navigation only. It does not add required actions, block manager intake, alter package readiness, mutate source runs, or confirm issues.
 - P82 bundle optional guidance visibility is manager navigation only. It does not change package status, `next_actor`, `next_action_queue`, manager intake, source runs, or compliance semantics.
+- P83 optional guidance note is package-local review documentation only. It does not confirm candidate issues, change `review_state.json`, mutate source runs, alter `next_actions`, or change manager intake.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next adjacent step after P82 is P83+: consider adding a novice-reviewer closeout
-note template for optional guidance review, still package-local and not a
-candidate issue confirmation.
+Next adjacent step after P83 is P84+: consider surfacing optional guidance note
+status in bundle indexes as reviewer-closeout visibility only, still separate
+from readiness and normal next-action routing.

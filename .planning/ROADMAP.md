@@ -397,6 +397,13 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Render that queue in bundle Markdown/HTML as manager visibility only, separate from `next_action_queue`.
 - Guardrail: bundle optional guidance visibility must not change package status, next actor, normal next actions, manager gates, or compliance semantics.
 
+### P83-01: Package Optional Guidance Note
+
+- Add `archkg handoff-optional-guidance-note` to write package-local `handoff_optional_guidance_note.json/.md`.
+- Capture reviewer, reviewed / needs_info / blocked status, free-form note, and ready-runbook optional guidance actions reviewed.
+- Render the note in package-root `index.html` without changing ready-runbook `next_actions`, manager checklist status, package readiness, or source-run artifacts.
+- Guardrail: optional guidance notes are review documentation only; they must not confirm candidate issues, mutate source runs, or become compliance findings.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

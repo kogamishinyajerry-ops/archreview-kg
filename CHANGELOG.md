@@ -355,6 +355,13 @@ and keeps the no-OCR transparency warning.
   to ready-runbook optional guidance. Markdown/HTML render the same queue for
   manager visibility. This does not alter package status, `next_actor`,
   `next_action_queue`, manager intake, source runs, or compliance semantics.
+- P83-01 adds package-local optional guidance review notes.
+  `archkg handoff-optional-guidance-note` writes
+  `handoff_optional_guidance_note.json/.md`, captures reviewer/status/note and
+  the ready-runbook optional actions reviewed, and refreshes package `index.html`.
+  The note is review documentation only; it does not confirm candidate issues,
+  mutate source runs, change `review_state.json`, alter manager intake, or
+  change package readiness.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

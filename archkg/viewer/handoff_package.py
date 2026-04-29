@@ -23,6 +23,7 @@ QUALITY_SCHEMA_VERSION = "handoff_package_quality.v1"
 SIGNOFF_SCHEMA_VERSION = "handoff_reviewer_signoff.v1"
 MANAGER_CHECKLIST_SCHEMA_VERSION = "handoff_manager_checklist.v1"
 READY_RUNBOOK_SCHEMA_VERSION = "handoff_ready_runbook.v1"
+OPTIONAL_GUIDANCE_NOTE_SCHEMA_VERSION = "handoff_optional_guidance_note.v1"
 ARCHIVE_MANIFEST_SCHEMA_VERSION = "handoff_archive_manifest.v1"
 ARCHIVE_VERIFICATION_SCHEMA_VERSION = "handoff_archive_verification.v1"
 
@@ -446,6 +447,7 @@ def write_handoff_index(
     reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     ready_runbook: dict[str, Any] | None = None,
+    optional_guidance_note: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
 ) -> Path:
@@ -465,6 +467,7 @@ def write_handoff_index(
             if ready_runbook is not None
             else _refresh_handoff_ready_runbook_if_possible(package_dir)
         ),
+        optional_guidance_note=optional_guidance_note,
         archive_manifest=archive_manifest,
         archive_verification=archive_verification,
     )
@@ -478,6 +481,7 @@ def render_handoff_index_html(
     reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     ready_runbook: dict[str, Any] | None = None,
+    optional_guidance_note: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
 ) -> str:
@@ -488,6 +492,9 @@ def render_handoff_index_html(
     )
     manager_checklist = manager_checklist if isinstance(manager_checklist, dict) else {}
     ready_runbook = ready_runbook if isinstance(ready_runbook, dict) else {}
+    optional_guidance_note = (
+        optional_guidance_note if isinstance(optional_guidance_note, dict) else {}
+    )
     archive_manifest = archive_manifest if isinstance(archive_manifest, dict) else {}
     archive_verification = (
         archive_verification if isinstance(archive_verification, dict) else {}
@@ -504,6 +511,9 @@ def render_handoff_index_html(
     )
     manager_status = _str(manager_checklist.get("status")) or "not_recorded"
     ready_runbook_status = _str(ready_runbook.get("status")) or "not_recorded"
+    optional_guidance_note_status = (
+        _str(optional_guidance_note.get("status")) or "not_recorded"
+    )
     archive_status = _str(archive_manifest.get("status")) or "not_recorded"
     archive_digest = _str(archive_manifest.get("package_digest")) or "not_recorded"
     archive_file_count = archive_manifest.get("file_count")
@@ -563,6 +573,11 @@ def render_handoff_index_html(
         ),
         _kpi("Manager", manager_status, _status_class(manager_status)),
         _kpi("Runbook", ready_runbook_status, _status_class(ready_runbook_status)),
+        _kpi(
+            "Optional Guidance Note",
+            optional_guidance_note_status,
+            _status_class(optional_guidance_note_status),
+        ),
         _kpi("Archive", archive_status, _status_class(archive_status)),
         _kpi(
             "Archive Check",
@@ -691,6 +706,15 @@ def render_handoff_index_html(
     lines.extend(
         [
             '<p><a href="handoff_ready_runbook.json">handoff_ready_runbook.json</a> · <a href="handoff_ready_runbook.md">handoff_ready_runbook.md</a></p>',
+            "</section>",
+            '<section class="panel">',
+            "<h2>Optional Guidance Review Note</h2>",
+            f"<p><b>Schema:</b> {_html(_str(optional_guidance_note.get('schema_version')) or 'not_recorded')}</p>",
+            f"<p><b>Reviewer:</b> {_html(_str(optional_guidance_note.get('reviewer')) or 'not_recorded')}</p>",
+            f"<p><b>Status:</b> <span class=\"pill\">{_html(optional_guidance_note_status)}</span></p>",
+            f"<p>{_html(_str(optional_guidance_note.get('note')) or 'No optional guidance review note recorded yet.')}</p>",
+            f"<p>{_html(_str(optional_guidance_note.get('boundary_warning')) or 'Optional guidance notes are package-local review documentation, not compliance certificates.')}</p>",
+            '<p><a href="handoff_optional_guidance_note.json">handoff_optional_guidance_note.json</a> · <a href="handoff_optional_guidance_note.md">handoff_optional_guidance_note.md</a></p>',
             "</section>",
             '<section class="panel">',
             "<h2>Manager Checklist</h2>",
@@ -870,6 +894,109 @@ def write_handoff_reviewer_task_checklist_update(
     )
     write_handoff_index(package_dir, reviewer_task_checklist=payload)
     return checklist_path
+
+
+def write_handoff_optional_guidance_note(
+    package_dir: Path,
+    *,
+    reviewer: str,
+    status: str,
+    note: str = "",
+) -> Path:
+    """Write a package-local closeout note for optional guidance review."""
+
+    package_dir = package_dir.resolve()
+    manifest = _load_manifest(package_dir / "handoff_manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise FileNotFoundError(f"handoff package manifest not found: {package_dir}")
+    normalized_status = _normalize_optional_guidance_note_status(status)
+    ready_runbook = _load_optional_json(package_dir / "handoff_ready_runbook.json") or {}
+    optional_actions = (
+        _list_of_dicts(ready_runbook.get("optional_review_actions"))
+        if ready_runbook.get("schema_version") == READY_RUNBOOK_SCHEMA_VERSION
+        else []
+    )
+    payload = {
+        "schema_version": OPTIONAL_GUIDANCE_NOTE_SCHEMA_VERSION,
+        "created_at": datetime.now(UTC).isoformat(),
+        "package_dir": str(package_dir),
+        "source_run_dir": _str(manifest.get("source_run_dir")),
+        "mutation_policy": "package_optional_guidance_note_only_no_source_run_mutation",
+        "reviewer": reviewer,
+        "status": normalized_status,
+        "note": note,
+        "runbook_path": "handoff_ready_runbook.json"
+        if (package_dir / "handoff_ready_runbook.json").is_file()
+        else "",
+        "optional_action_count": len(optional_actions),
+        "optional_actions": [
+            _optional_guidance_note_action(action) for action in optional_actions
+        ],
+        "candidate_issue_confirmation": False,
+        "boundary_warning": (
+            "Optional guidance note is package-local review documentation only; "
+            "it is not a compliance certificate, does not mutate source run "
+            "artifacts, and does not confirm candidate issues."
+        ),
+    }
+    path = package_dir / "handoff_optional_guidance_note.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    (package_dir / "handoff_optional_guidance_note.md").write_text(
+        render_handoff_optional_guidance_note_markdown(payload),
+        encoding="utf-8",
+    )
+    write_handoff_index(package_dir, optional_guidance_note=payload)
+    return path
+
+
+def render_handoff_optional_guidance_note_markdown(
+    payload: dict[str, Any],
+) -> str:
+    lines = [
+        "# Handoff Optional Guidance Note",
+        "",
+        f"Reviewer: `{_str(payload.get('reviewer'))}`",
+        f"Status: `{_str(payload.get('status'))}`",
+        f"Mutation policy: `{_str(payload.get('mutation_policy'))}`",
+        f"Candidate issue confirmation: `{payload.get('candidate_issue_confirmation')}`",
+        "",
+        _str(payload.get("boundary_warning")),
+        "",
+        "## Note",
+        "",
+        _str(payload.get("note")) or "-",
+        "",
+        "## Optional Actions Reviewed",
+        "",
+        "| Action | Reason | Artifact |",
+        "|---|---|---|",
+    ]
+    actions = _list_of_dicts(payload.get("optional_actions"))
+    if actions:
+        for action in actions:
+            lines.append(
+                "| "
+                f"`{_md_cell(_str(action.get('id')))}` | "
+                f"{_md_cell(_str(action.get('reason')))} | "
+                f"`{_md_cell(_str(action.get('artifact')))}` |"
+            )
+    else:
+        lines.append("| - | No optional guidance actions were recorded. | - |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _optional_guidance_note_action(action: dict[str, Any]) -> dict[str, str]:
+    return {
+        "id": _str(action.get("id")),
+        "title": _str(action.get("title")),
+        "reason": _str(action.get("reason")),
+        "artifact": _str(action.get("artifact")),
+        "boundary_warning": (
+            _str(action.get("boundary_warning"))
+            or OPENING_PROVENANCE_BOUNDARY_WARNING
+        ),
+    }
 
 
 def render_handoff_reviewer_signoff_markdown(payload: dict[str, Any]) -> str:
@@ -1550,6 +1677,7 @@ def _write_handoff_index_from_payloads(
     reviewer_task_checklist: dict[str, Any] | None = None,
     manager_checklist: dict[str, Any] | None = None,
     ready_runbook: dict[str, Any] | None = None,
+    optional_guidance_note: dict[str, Any] | None = None,
     archive_manifest: dict[str, Any] | None = None,
     archive_verification: dict[str, Any] | None = None,
 ) -> Path:
@@ -1576,6 +1704,11 @@ def _write_handoff_index_from_payloads(
         if ready_runbook is not None
         else _load_optional_json(package_dir / "handoff_ready_runbook.json")
     )
+    optional_guidance_note = (
+        optional_guidance_note
+        if optional_guidance_note is not None
+        else _load_optional_json(package_dir / "handoff_optional_guidance_note.json")
+    )
     archive_manifest = (
         archive_manifest
         if archive_manifest is not None
@@ -1595,6 +1728,7 @@ def _write_handoff_index_from_payloads(
             reviewer_task_checklist=reviewer_task_checklist,
             manager_checklist=manager_checklist,
             ready_runbook=ready_runbook,
+            optional_guidance_note=optional_guidance_note,
             archive_manifest=archive_manifest,
             archive_verification=archive_verification,
         ),
@@ -2369,6 +2503,7 @@ def _status_class(status: str) -> str:
         "archive_verified",
         "checklist_complete",
         "ready_for_manager_intake",
+        "reviewed",
     }:
         return "ok"
     if status in {
@@ -2412,6 +2547,17 @@ def _normalize_reviewer_task_status(status: str) -> str:
         raise ValueError(
             "reviewer task status must be one of: "
             + ", ".join(ALLOWED_REVIEWER_STATUSES)
+        )
+    return value
+
+
+def _normalize_optional_guidance_note_status(status: str) -> str:
+    value = status.strip().lower()
+    allowed = {"reviewed", "needs_info", "blocked"}
+    if value not in allowed:
+        raise ValueError(
+            "optional guidance note status must be one of: "
+            + ", ".join(sorted(allowed))
         )
     return value
 
@@ -2510,6 +2656,7 @@ __all__ = [
     "BOUNDARY_WARNINGS",
     "MANAGER_CHECKLIST_SCHEMA_VERSION",
     "MUTATION_POLICY",
+    "OPTIONAL_GUIDANCE_NOTE_SCHEMA_VERSION",
     "QUALITY_SCHEMA_VERSION",
     "READY_RUNBOOK_SCHEMA_VERSION",
     "SCHEMA_VERSION",
@@ -2523,6 +2670,7 @@ __all__ = [
     "render_handoff_archive_verification_markdown",
     "render_handoff_index_html",
     "render_handoff_manager_checklist_markdown",
+    "render_handoff_optional_guidance_note_markdown",
     "render_handoff_package_quality_markdown",
     "render_handoff_ready_runbook_markdown",
     "render_handoff_reviewer_signoff_markdown",
@@ -2531,6 +2679,7 @@ __all__ = [
     "write_handoff_archive_verification",
     "write_handoff_index",
     "write_handoff_manager_checklist",
+    "write_handoff_optional_guidance_note",
     "write_handoff_package",
     "write_handoff_package_quality_json",
     "write_handoff_package_quality_markdown",
