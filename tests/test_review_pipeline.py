@@ -23,6 +23,9 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
         "entity_graph.json",
         "drawing_understanding.json",
         "review_workbench.json",
+        "layout_3d.json",
+        "layout_3d.glb",
+        "layout_3d_summary.md",
         "sheet_graphs.json",
         "sheet_issues.json",
         "sheet_classification.json",
@@ -79,6 +82,18 @@ def test_review_end_to_end_flags_corridor_and_doors(sample_pdf: Path, tmp_path: 
     assert action_links["readiness_blockers"]["status"] == "attention"
     assert action_links["candidate_issues"]["artifact"] == "issues.json"
     assert action_links["review_state"]["artifact"] == "review_state.json"
+    assert action_links["layout_3d"]["artifact"] == "layout_3d.json"
+    assert action_links["layout_3d"]["target"] == "#panel-layout-3d"
+    assert workbench["summary"]["layout_3d_status"] in {"partial", "ready"}
+    assert workbench["summary"]["layout_3d_object_count"] > 0
+    layout_3d = json.loads((out_dir / "layout_3d.json").read_text("utf-8"))
+    assert layout_3d["schema_version"] == "layout_3d.v1"
+    assert layout_3d["source_artifact"] == "sheet_graphs.json"
+    assert layout_3d["model_status"] == "partial"
+    assert "默认值只用于 3D 辅助可视化" in (
+        out_dir / "layout_3d_summary.md"
+    ).read_text("utf-8")
+    assert (out_dir / "layout_3d.glb").stat().st_size > 1024
     review_ops = workbench["review_state_operations"]
     assert review_ops["mutation_policy"] == "primary_issues_json_only"
     assert "confirmed" in review_ops["allowed_statuses"]

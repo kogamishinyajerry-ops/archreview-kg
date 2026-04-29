@@ -58,6 +58,9 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   可刷新新手 reviewer 的下一步命令清单，直到 checklist 和 manager intake 闭环。
 - P67 后 `archkg handoff-bundle-index <packages-root>` 会输出 `next_action_queue`，
   并为每个包标出 next_actor / next_action_command，支持跨包分派 reviewer、manager、archive 下一步。
+- P68 后完整 CLI/Studio run 会写 `layout_3d.json`、`layout_3d_summary.md` 和
+  `layout_3d.glb`，把已识别的平面 graph 转成证据化 2.5D 空间导航模型；默认层高、墙厚、
+  板厚、门洞高度只用于可视化，并在 assumptions 中显式标出，不是 BIM 真值或合规判断输入。
 
 复现该结论：
 
@@ -86,11 +89,12 @@ archkg release-readiness \
 release-readiness status=evidence_ready blockers=0 warnings=0 active=7 real_active=3 known_gap=0
 ```
 
-这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列、按页 issue focus、只读交接包、包内复核备注、静态交接入口、负责人交接清单”
+这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列、按页 issue focus、2.5D 空间导航模型、只读交接包、包内复核备注、静态交接入口、负责人交接清单”
 组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
 P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 generated mixed-sheet-set 复杂回归样本，
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
-但 per-sheet preview issues 还没有进入主 lifecycle，且真实复杂图纸覆盖仍有限，所以仍不能宣称
+但 `layout_3d` 仍是从当前 graph 推导的辅助导航层，per-sheet preview issues 还没有进入主 lifecycle，
+且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
 
 ## 32 张规则的就绪度分布

@@ -286,6 +286,14 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Add a structured `next_action_queue` plus Markdown/HTML columns so managers can route work without opening every package.
 - Guardrail: the queue is read-only dispatch guidance; it does not mutate packages, source runs, primary `review_state.json`, candidate issues, package readiness, or compliance status.
 
+### P68: Evidence 3D Layout Model
+
+- Generate `layout_3d.json`, `layout_3d_summary.md`, and `layout_3d.glb` during full CLI and Studio review runs.
+- Build deterministic 2.5D primitives from `sheet_graphs.json` first and fall back to `entity_graph.json` when sheet graphs are unavailable.
+- Model floor slabs, room/corridor volumes, wall segments, door opening placeholders, stair placeholders, and dimension anchors as reviewer navigation evidence.
+- Render the 3D model status, object counts, assumptions, blocked reasons, and GLB links in Viewer/Studio and copy the artifacts into handoff packages.
+- Guardrail: `layout_3d` is an evidence/navigation layer only. Default heights/thicknesses are explicit assumptions for visualization and must not become rule-engine inputs, BIM truth, or compliance conclusions.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.
@@ -293,3 +301,4 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - No arbitrary-jurisdiction permit approval claims.
 - No benchmark promotion without reviewed expected inventory.
 - No IFC stack rewrite while IfcOpenShell/IfcTester can provide the first lane.
+- No arbitrary drawing PDF/raster to review-grade BIM claim from the v1 `layout_3d` model.

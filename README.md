@@ -46,6 +46,7 @@ archkg viewer -o out --source samples/sample_clean.pdf
 - `drawing_understanding.json` — 图纸理解摘要（图纸类型 / 可能设计对象 / typed component inventory / 空间、洞口、通行、尺寸证据清单）
 - `sheet_graphs.json` — 每个高置信 plan sheet 的独立 graph 证据输出；P39-01 不把多 plan 页合并进主规则结论
 - `sheet_issues.json` — 每个 plan sheet 的候选问题 preview；P39-02 不写入主 `issues.json` / `review_state.json`
+- `layout_3d.json` / `layout_3d_summary.md` / `layout_3d.glb` — 从 graph 证据生成的 2.5D 布局模型；只用于空间理解和复核导航，默认高度/厚度均写入 assumptions，不作为 BIM 真值或合规判断
 - `sheet_issue_review_queue.json` — 从 per-sheet preview 派生的有界人工审阅队列；preview id 不能用于 `archkg review-state`
 - `rule_input_readiness.json` — 每张规则卡在本次 run 中的输入就绪度（ready / missing_input / low_confidence / manual_only / not_applicable / unsupported_entity）
 - `sheet_classification.json` — 多页图纸 sheet 类型分类（plan / schedule / title / legend / detail / elevation / unknown），只做路由证据，不自动跳页
@@ -99,6 +100,9 @@ P66 起交接包会生成 `handoff_ready_runbook.json` / `.md`，并可用 `arch
 刷新；它把 quality、signoff、checklist、manager gate 汇成新手下一步命令，不写源 run。
 P67 起 `handoff-bundle-index` 会为每个包标出 `next_actor` 和下一动作命令，
 让负责人跨包看到当前应由 reviewer、manager 还是 archive 继续处理。
+P68 起完整 review run 会生成 `layout_3d.json`、`layout_3d_summary.md` 和 `layout_3d.glb`，
+帮助 reviewer 从平面图 graph 证据理解房间、墙段、门洞、楼梯占位和尺寸锚点的 2.5D 空间关系；
+这不是 IFC/BIM 输出，也不会改变规则引擎结论。
 
 ---
 
@@ -337,7 +341,7 @@ python -m pip install -e .
 uv pip install -e ".[dev]"  # pytest, ruff, mypy
 ```
 
-依赖：Python 3.11+ / Pydantic 2 / shapely / PyMuPDF / typer / Jinja2。可选
+依赖：Python 3.11+ / Pydantic 2 / shapely / PyMuPDF / typer / Jinja2 / trimesh。可选
 OCR 功能依赖 PaddleOCR (`uv pip install -e ".[ocr]"`)。
 
 ---
@@ -433,6 +437,9 @@ open handoff-packages/handoff_bundle_index.html
 # P62: 新手复核清单会随完整 review run 自动生成
 open out/reviewer_task_checklist.md
 
+# P68: 3D layout evidence 会随完整 review run 自动生成
+open out/layout_3d_summary.md
+
 # P64: 在交接包内记录单项 checklist 进度
 archkg handoff-checklist-update out-handoff --ordinal 1 --reviewer reviewer-name --status done --note "已核对边界" --evidence-checked handoff_manifest.json
 
@@ -452,6 +459,9 @@ archkg clause readiness
   并把后续路线收敛到 rule-input readiness、sheet 区域候选、issue lifecycle 和 IFC/IDS side lane。
 - [P32 后重大转向路线图](docs/strategy/2026-04-28-major-pivot-roadmap.md) —
   将项目主线从“扩大规则/识别数量”转为“证据优先的审图可信度平台”。
+- [P68 3D Layout 开源调研与实现路线](docs/research/2026-04-29-3d-layout-model-oss-survey.md) —
+  记录 floorplan-to-3D、room polygon reconstruction、CubiCasa、IfcOpenShell 和 trimesh 参考,
+  并把第一阶段收敛为 ArchReview-KG 自己的证据化 2.5D layout 模型。
 - [新手审图工程师第一小时 Playbook](docs/reviewer/novice-reviewer-playbook.md) —
   面向第一次接触本工具的审图工程师，说明如何从 Viewer / quickstart / readiness / review-state
   完成首轮复核和交接。
@@ -491,6 +501,7 @@ archkg clause readiness
 - P65：Manager checklist reviewer gate。`archkg handoff-manager-checklist` 会读取包内 reviewer checklist 完成度；未完成清单让 manager intake 保持 needs_info / blocked，不再把 quality+signoff ready 误当成交接清单已闭环。
 - P66：Ready-to-review runbook。交接包根目录新增 `handoff_ready_runbook.json/.md`，`archkg handoff-ready-runbook` 可刷新新手下一步动作；open checklist 会生成对应 `handoff-checklist-update` 命令，全部闭环后只剩 manager checklist 或进入 ready。
 - P67：Bundle next-actor queue。`archkg handoff-bundle-index` 现在输出 `next_action_queue`，并在每包行里展示 next_actor / next_action / next_action_command；负责人不用打开每个包也能分派下一步。
+- P68：Evidence 3D layout model。完整 CLI/Studio run 会基于 `sheet_graphs.json` 优先、`entity_graph.json` 兜底生成 `layout_3d.json` / `.glb` / summary；Viewer 和 handoff package 会展示/复制这些 2.5D 空间导航证据，但它不是 BIM、不是规范结论，也不进入规则引擎。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。

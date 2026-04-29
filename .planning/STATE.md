@@ -1,12 +1,12 @@
 # ArchReview-KG State
 
-Updated: 2026-04-28
+Updated: 2026-04-29
 
 ## Current Position
 
 Branch: `main`
 
-Latest completed commit before this replan: `d5395c7 docs(P32): research intelligent plan review landscape`
+Latest completed commit before P68: `f80b66b feat(P67-01): add bundle next actor queue`
 
 Status:
 
@@ -57,12 +57,13 @@ Status:
 - P65-01 is complete: `archkg handoff-manager-checklist` now reads package-local reviewer checklist status and requires the checklist to be complete before emitting `manager_ready`.
 - P66-01 is complete: handoff packages now include a ready-to-review runbook, and `archkg handoff-ready-runbook` refreshes novice next actions from package-local quality, signoff, checklist, and manager-intake state.
 - P67-01 is complete: `archkg handoff-bundle-index` now exposes per-package `next_actor` / `next_action_*` fields plus a structured `next_action_queue` for cross-package reviewer/manager/archive routing.
+- P68-01 is complete: full CLI and Studio review runs now generate `layout_3d.json`, `layout_3d_summary.md`, and `layout_3d.glb` from graph evidence; Viewer/Studio, workbench summaries, control sync, and handoff packages expose the 2.5D model as navigation evidence only.
 
 ## Current Phase
 
-P67: Bundle next-actor queue.
+P68: Evidence 3D layout model.
 
-P67 is complete. Bundle owners can scan one index to see whether each package needs reviewer work, manager intake, archive transfer/verification, or no action.
+P68 is complete. Reviewers can inspect a graph-derived 2.5D layout model for spatial orientation, while all default heights/thicknesses remain explicit assumptions and rule-engine output stays unchanged.
 
 ## Key Decisions
 
@@ -113,8 +114,9 @@ P67 is complete. Bundle owners can scan one index to see whether each package ne
 - P65 manager checklist reviewer gate is package-intake governance only; `manager_ready` still does not mean candidate issues are confirmed or the drawing is compliant.
 - P66 ready-to-review runbook is generated navigation guidance only; it is excluded from archive checksums because it refreshes as package-local state changes.
 - P67 bundle next-actor queue is a read-only dispatch surface; it does not mutate packages, source runs, issue states, or package readiness semantics.
+- P68 layout_3d is a derived 2.5D navigation model only; it does not certify arbitrary drawings, replace 2D evidence, create BIM truth, or supply compliance inputs from default visualization dimensions.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Move beyond P67 by tightening the static handoff index around a runbook-first reviewer flow or adding a compact reviewer dashboard for primary issue state closeout.
+Next major 3D step is IFC export or richer opening/window semantics after the `layout_3d.v1` evidence model has enough real-drawing benchmark coverage. Do not make neural floorplan reconstruction a hard dependency until it can be measured against reviewed expected inventory.

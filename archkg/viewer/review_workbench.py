@@ -30,6 +30,7 @@ def build_review_workbench(
     sheet_issues: Mapping[str, Any] | None = None,
     sheet_issue_review_queue: Mapping[str, Any] | None = None,
     sheet_region_candidates: Mapping[str, Any] | None = None,
+    layout_3d: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a stable summary for the review workbench."""
 
@@ -42,6 +43,7 @@ def build_review_workbench(
     sheet_issues = sheet_issues or {}
     sheet_issue_review_queue = sheet_issue_review_queue or {}
     sheet_region_candidates = sheet_region_candidates or {}
+    layout_3d = layout_3d or {}
 
     component_counts = _mapping(drawing_understanding.get("component_counts"))
     readiness_summary = _mapping(rule_readiness.get("summary"))
@@ -70,6 +72,10 @@ def build_review_workbench(
         "sheet_issue_count": _int(sheet_issues.get("issue_count")),
         "sheet_issue_queue_count": _int(
             sheet_issue_review_queue.get("queued_issue_count")
+        ),
+        "layout_3d_status": _str(layout_3d.get("model_status")) or "missing",
+        "layout_3d_object_count": _int(
+            _mapping(layout_3d.get("summary")).get("object_count")
         ),
     }
 
@@ -121,6 +127,15 @@ def build_review_workbench(
             "sheet_region_candidates.json",
             bool(sheet_region_candidates),
             f"{len(_list(sheet_region_candidates.get('candidates')))} candidate region(s)",
+        ),
+        _artifact_status(
+            "3D Layout Model",
+            "layout_3d.json",
+            bool(layout_3d),
+            (
+                f"{summary['layout_3d_status']} / "
+                f"{summary['layout_3d_object_count']} object(s)"
+            ),
         ),
         _artifact_status(
             "Issue 生命周期",
@@ -248,6 +263,7 @@ def refresh_review_workbench_from_run_dir(out_dir: Path) -> Path:
         sheet_region_candidates=_mapping(
             _read_json(out_dir / "sheet_region_candidates.json", {})
         ),
+        layout_3d=_mapping(_read_json(out_dir / "layout_3d.json", {})),
     )
     return write_review_workbench(payload, out_dir / "review_workbench.json")
 
@@ -325,6 +341,15 @@ def _action_links(summary: Mapping[str, Any]) -> list[dict[str, Any]]:
             "review",
             50,
             "需要人工确认 design/title/schedule/legend 候选区, 不默认裁剪。",
+        ),
+        _action_link(
+            "layout_3d",
+            "核对 3D layout",
+            "#panel-layout-3d",
+            "layout_3d.json",
+            "review" if _str(summary.get("layout_3d_status")) == "partial" else "ready",
+            55,
+            "核对 3D 辅助模型、GLB、默认高度/厚度 assumptions 和无法建模项。",
         ),
         _action_link(
             "candidate_issues",

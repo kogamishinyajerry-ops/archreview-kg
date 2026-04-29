@@ -573,6 +573,10 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "Sheet Graphs" in body
     assert "Sheet Issue Preview" in body
     assert "Sheet Issue Review Queue" in body
+    assert "3D Layout Model" in body
+    assert "layout_3d.json" in body
+    assert "layout_3d.glb" in body
+    assert "默认值只用于 3D 辅助可视化" in body
     assert "preview-only bounded bridge" in body
     assert "sheet_issue_review_queue.json" in body
     assert "平面图" in body
@@ -587,6 +591,7 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     (out_dir / "sheet_graphs.json").unlink()
     (out_dir / "sheet_issues.json").unlink()
     (out_dir / "review_workbench.json").unlink()
+    (out_dir / "layout_3d.json").unlink()
     index_path = _render_index(out_dir, SAMPLE_PDF)
     body = index_path.read_text("utf-8")
 
@@ -599,6 +604,7 @@ def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
     assert "缺失多页 graph 不代表没有其他 plan sheet" in body
     assert "sheet_issues.json 暂无数据" in body
     assert "缺失 per-sheet issue preview 不代表多页无候选问题" in body
+    assert "layout_3d.json 暂无数据" in body
 
 
 def test_standalone_viewer_renders_second_page_issue_focus(

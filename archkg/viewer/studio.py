@@ -396,6 +396,12 @@ def run_pipeline(
         build_rule_input_readiness,
         write_rule_input_readiness,
     )
+    from archkg.layout_3d import (
+        build_layout_3d,
+        export_layout_3d_glb,
+        write_layout_3d,
+        write_layout_3d_summary,
+    )
     from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
     from archkg.rules.sheet_issues import build_sheet_issues, write_sheet_issues
@@ -558,6 +564,10 @@ def run_pipeline(
         drawing_understanding,
         out_dir / "drawing_understanding.json",
     )
+    layout_3d = build_layout_3d(sheet_graphs=sheet_graphs, entity_graph=graph)
+    write_layout_3d(layout_3d, out_dir / "layout_3d.json")
+    write_layout_3d_summary(layout_3d, out_dir / "layout_3d_summary.md")
+    export_layout_3d_glb(layout_3d, out_dir / "layout_3d.glb")
 
     # Count entities from the in-memory typed graph directly so a future
     # serialisation shape change can't silently neuter the quality flags.
@@ -674,6 +684,7 @@ def run_pipeline(
             sheet_routing=routing.decision.model_dump(mode="json"),
             sheet_graphs=sheet_graphs.model_dump(mode="json"),
             sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+            layout_3d=layout_3d.model_dump(mode="json"),
         )
         write_review_workbench(review_workbench, out_dir / "review_workbench.json")
         reviewer_onboarding = build_reviewer_onboarding(
@@ -783,6 +794,7 @@ def run_pipeline(
         sheet_issues=sheet_issues.model_dump(mode="json"),
         sheet_issue_review_queue=sheet_issue_review_queue,
         sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+        layout_3d=layout_3d.model_dump(mode="json"),
     )
     write_review_workbench(review_workbench, out_dir / "review_workbench.json")
     reviewer_onboarding = build_reviewer_onboarding(
@@ -991,6 +1003,7 @@ def _render_viewer_index(
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
     from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
     from archkg.viewer.issue_focus import build_issue_focus_view
+    from archkg.viewer.layout_3d import load_layout_3d_view
     from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
     from archkg.viewer.preview_pages import load_preview_pages_view
     from archkg.viewer.review_diff import load_review_diff_view
@@ -1047,6 +1060,7 @@ def _render_viewer_index(
     sheet_issue_review_queue = load_sheet_issue_review_queue_view(out_dir)
     sheet_routing = load_sheet_routing_view(out_dir)
     sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
+    layout_3d = load_layout_3d_view(out_dir)
     preview_pages = load_preview_pages_view(out_dir)
     issue_focus = build_issue_focus_view(
         issues,
@@ -1081,6 +1095,7 @@ def _render_viewer_index(
         sheet_issue_review_queue=sheet_issue_review_queue,
         sheet_routing=sheet_routing,
         sheet_region_candidates=sheet_region_candidates,
+        layout_3d=layout_3d,
         preview_pages=preview_pages,
         issue_focus=issue_focus,
     )

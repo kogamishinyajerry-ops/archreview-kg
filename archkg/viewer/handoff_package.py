@@ -173,6 +173,24 @@ ARTIFACTS: tuple[HandoffArtifactSpec, ...] = (
         "Available source, annotated, and overlay preview pages.",
     ),
     HandoffArtifactSpec(
+        "layout_3d.json",
+        False,
+        "visual",
+        "Evidence-oriented 2.5D layout model for reviewer navigation.",
+    ),
+    HandoffArtifactSpec(
+        "layout_3d.glb",
+        False,
+        "visual",
+        "GLB preview generated from layout_3d.json assumptions.",
+    ),
+    HandoffArtifactSpec(
+        "layout_3d_summary.md",
+        False,
+        "visual",
+        "Human-readable 3D layout assumptions and blocked reasons.",
+    ),
+    HandoffArtifactSpec(
         "source_preview.png",
         False,
         "visual",

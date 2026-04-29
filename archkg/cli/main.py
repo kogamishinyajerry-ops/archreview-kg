@@ -117,6 +117,12 @@ def review(
         build_rule_input_readiness,
         write_rule_input_readiness,
     )
+    from archkg.layout_3d import (
+        build_layout_3d,
+        export_layout_3d_glb,
+        write_layout_3d,
+        write_layout_3d_summary,
+    )
     from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
     from archkg.rules.sheet_issues import build_sheet_issues, write_sheet_issues
@@ -312,6 +318,13 @@ def review(
         drawing_understanding,
         out / "drawing_understanding.json",
     )
+    layout_3d = build_layout_3d(sheet_graphs=sheet_graphs, entity_graph=graph)
+    layout_3d_path = write_layout_3d(layout_3d, out / "layout_3d.json")
+    layout_3d_summary_path = write_layout_3d_summary(
+        layout_3d,
+        out / "layout_3d_summary.md",
+    )
+    layout_3d_glb_path = export_layout_3d_glb(layout_3d, out / "layout_3d.glb")
 
     standards = load_standards()
     rules = load_rules(standards=standards)
@@ -363,6 +376,7 @@ def review(
         sheet_issues=sheet_issues.model_dump(mode="json"),
         sheet_issue_review_queue=sheet_issue_review_queue,
         sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+        layout_3d=layout_3d.model_dump(mode="json"),
     )
     review_workbench_path = write_review_workbench(
         review_workbench,
@@ -467,6 +481,9 @@ def review(
         reviewer_task_checklist_md_path=reviewer_task_checklist_md_path,
         sheet_candidates_path=sheet_candidates_path,
         sheet_candidates_overlay_path=sheet_candidates_overlay_path,
+        layout_3d_path=layout_3d_path,
+        layout_3d_glb_path=layout_3d_glb_path,
+        layout_3d_summary_path=layout_3d_summary_path,
     )
 
 
@@ -500,6 +517,9 @@ def _print_review_summary(
     reviewer_task_checklist_md_path: Path | None = None,
     sheet_candidates_path: Path | None = None,
     sheet_candidates_overlay_path: Path | None = None,
+    layout_3d_path: Path | None = None,
+    layout_3d_glb_path: Path | None = None,
+    layout_3d_summary_path: Path | None = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
@@ -653,6 +673,12 @@ def _print_review_summary(
         art.add_row("sheet region candidates", str(sheet_candidates_path))
     if sheet_candidates_overlay_path is not None:
         art.add_row("sheet region overlay", str(sheet_candidates_overlay_path))
+    if layout_3d_path is not None:
+        art.add_row("3D layout JSON", str(layout_3d_path))
+    if layout_3d_glb_path is not None:
+        art.add_row("3D layout GLB", str(layout_3d_glb_path))
+    if layout_3d_summary_path is not None:
+        art.add_row("3D layout summary", str(layout_3d_summary_path))
     art.add_row("issues JSON", str(out_dir / "issues.json"))
     art.add_row("annotated PDF", str(annotated_path))
     art.add_row("report MD", str(report_path))

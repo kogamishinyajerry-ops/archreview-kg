@@ -725,6 +725,7 @@
 {% set sheet_issues = sheet_issues | default({'available': false, 'sheets': [], 'warning_text': 'sheet_issues.json 暂无数据; 缺失 per-sheet issue preview 不代表多页无候选问题.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_routing = sheet_routing | default({'available': false, 'warning_text': 'sheet_routing.json 暂无数据; 缺失路由不代表已按 sheet 类型过滤.', 'unavailable_reason': 'missing'}, true) %}
 {% set sheet_region_candidates = sheet_region_candidates | default({'available': false, 'candidates': [], 'excluded_texts': [], 'warning_text': '候选区域暂无数据; 缺失 candidate artifact 不代表已裁剪或已确认.', 'unavailable_reason': 'missing'}, true) %}
+{% set layout_3d = layout_3d | default({'available': false, 'model_status': 'missing', 'summary': {}, 'assumptions': [], 'blocked_reasons': [], 'object_samples': [], 'glb_available': false, 'summary_available': false, 'warning_text': 'layout_3d.json 暂无数据; 缺失 3D layout 不代表图纸无法审查，也不代表 2D evidence 已完整。', 'unavailable_reason': 'missing'}, true) %}
 
 <header>
   <div>
@@ -1395,6 +1396,65 @@
     <div class="links">
       <a href="sheet_graphs.json" target="_blank">sheet_graphs.json</a>
     </div>
+  {% endif %}
+  <h3 id="panel-layout-3d">3D Layout Model</h3>
+  {% if not layout_3d.available %}
+    <div class="alert warn">
+      <strong>layout_3d.json 暂无数据</strong>：{{ layout_3d.warning_text }}
+      {{ layout_3d.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>3D evidence model</strong>：{{ layout_3d.warning_text }}
+      默认值只用于 3D 辅助可视化。
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi">
+        <div class="k">Status</div>
+        <div class="v">{{ layout_3d.model_status }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Objects</div>
+        <div class="v">{{ layout_3d.object_count }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Meshes</div>
+        <div class="v">{{ layout_3d.mesh_object_count }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Assumptions</div>
+        <div class="v">{{ layout_3d.assumption_count }}</div>
+      </div>
+    </div>
+    <div class="links">
+      <a href="layout_3d.json" target="_blank">layout_3d.json</a>
+      {% if layout_3d.glb_available %}
+        · <a href="layout_3d.glb" target="_blank">layout_3d.glb</a>
+      {% endif %}
+      {% if layout_3d.summary_available %}
+        · <a href="layout_3d_summary.md" target="_blank">layout_3d_summary.md</a>
+      {% endif %}
+    </div>
+    {% if layout_3d.assumptions %}
+      <div class="table-wrap" style="max-height: 220px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>field</th><th>value</th><th>reason</th><th>objects</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.assumptions %}
+              <tr>
+                <td><code>{{ row.field }}</code></td>
+                <td>{{ row.value }} {{ row.unit }}</td>
+                <td>{{ row.reason }}</td>
+                <td>{{ row.applies_to_object_ids | length }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_3d.blocked_reasons %}
+      <div class="metric-note">未建模项：{{ layout_3d.blocked_reasons | join(' / ') }}</div>
+    {% endif %}
   {% endif %}
   <h3>Sheet Issue Preview</h3>
   {% if not sheet_issues.available %}

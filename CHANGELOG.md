@@ -250,6 +250,14 @@ and keeps the no-OCR transparency warning.
   now records `next_actor`, `next_action_*`, and a structured
   `next_action_queue` so managers can see whether reviewer, manager, archive,
   or no one should act next without opening every package.
+- P68-01 adds an evidence-oriented 2.5D layout model. Full CLI and Studio
+  review runs now write `layout_3d.json`, `layout_3d_summary.md`, and
+  `layout_3d.glb` from `sheet_graphs.json` first and `entity_graph.json` as a
+  fallback. Viewer/Studio surfaces show status, object counts, assumptions,
+  blocked reasons, and GLB links, while handoff packages copy the artifacts as
+  read-only evidence. The model is for spatial navigation only; default
+  heights/thicknesses remain explicit assumptions and are not rule-engine facts
+  or BIM truth.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead
