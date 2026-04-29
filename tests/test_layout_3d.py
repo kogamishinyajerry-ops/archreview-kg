@@ -189,6 +189,45 @@ def test_layout_3d_records_explicit_opening_measurements_without_height_assumpti
     assert "`head_height_m` | 1 | explicit `Door.properties.head_height_m` only" in summary
 
 
+def test_layout_3d_records_explicit_opening_host_wall_provenance() -> None:
+    report = build_layout_3d(entity_graph=_entity_graph_with_opening_host_provenance())
+
+    door = next(obj for obj in report.objects if obj.object_type == "door_opening")
+    window = next(obj for obj in report.objects if obj.object_type == "window_opening")
+
+    assert door.properties["opening_host"] == {
+        "host_wall_id": "wall-1",
+        "source_property": "Door.properties.opening_host_wall_id",
+        "explicit": True,
+        "source_segment_property": "Door.properties.opening_host_wall_segment",
+        "source_segment": {
+            "p0": [0.0, 0.0],
+            "p1": [0.0, 1.5],
+        },
+    }
+    assert window.properties["opening_host"] == {
+        "host_wall_id": "wall-2",
+        "source_property": "Door.properties.opening_host_wall_id",
+        "explicit": True,
+        "source_segment_property": "Door.properties.opening_host_wall_segment",
+        "source_segment": {
+            "p0": [1.0, 0.0],
+            "p1": [1.0, 2.5],
+        },
+    }
+    assert report.summary["opening_host_wall_count"] == 2
+    assert report.summary["opening_host_segment_count"] == 2
+
+
+def test_layout_3d_no_opening_host_wall_provenance_without_explicit_host_fields() -> None:
+    report = build_layout_3d(entity_graph=_entity_graph_with_window())
+
+    for obj in report.objects:
+        if obj.object_type not in {"door_opening", "window_opening"}:
+            continue
+        assert "opening_host" not in obj.properties
+
+
 def test_layout_3d_blocks_without_graph_geometry() -> None:
     report = build_layout_3d(entity_graph=_empty_graph())
 
@@ -286,6 +325,34 @@ def test_layout_3d_view_loader_exposes_opening_measurement_provenance(tmp_path: 
         "explicit": True,
         "source_property": "Door.properties.height_m",
     } in measurements["samples"]
+
+
+def test_layout_3d_view_loader_exposes_opening_host_wall_provenance(tmp_path: Path) -> None:
+    report = build_layout_3d(entity_graph=_entity_graph_with_opening_host_provenance())
+    write_layout_3d(report, tmp_path / "layout_3d.json")
+
+    view = load_layout_3d_view(tmp_path)
+
+    hosts = view["opening_wall_hosts"]
+    assert hosts["explicit_host_wall_count"] == 2
+    assert hosts["explicit_host_segment_count"] == 2
+    assert hosts["boundary_warning"] == (
+        "Opening host-wall provenance is shown only when the graph provides explicit host wall "
+        "or source-segment evidence."
+    )
+    assert {
+        "object_id": "page-0-door-opening-door-2",
+        "object_type": "door_opening",
+        "source_entity_id": "door-2",
+        "host_wall_id": "wall-1",
+        "source_property": "Door.properties.opening_host_wall_id",
+        "source_segment": {
+            "p0": [0.0, 0.0],
+            "p1": [0.0, 1.5],
+        },
+        "explicit": True,
+        "source_segment_property": "Door.properties.opening_host_wall_segment",
+    } in hosts["samples"]
 
 
 def _sheet_graphs() -> SheetGraphsReport:
@@ -513,6 +580,82 @@ def _entity_graph_with_measured_openings() -> EntityGraph:
                 bbox=(92.0, -4.0, 138.0, 5.0),
                 width_m=0.92,
                 properties={"height_m": 2.2, "sill_height_m": 0.0},
+                connects=("room-1", "corridor-1"),
+            ),
+        ],
+        corridors=[
+            Corridor(
+                id="corridor-1",
+                page_index=0,
+                bbox=(0.0, 150.0, 200.0, 210.0),
+                polygon=[
+                    (0.0, 150.0),
+                    (200.0, 150.0),
+                    (200.0, 210.0),
+                    (0.0, 210.0),
+                    (0.0, 150.0),
+                ],
+            )
+        ],
+        dimensions=[
+            Dimension(
+                id="dim-1",
+                page_index=0,
+                bbox=(15.0, 215.0, 75.0, 235.0),
+                text="4.0 m",
+                value_m=4.0,
+                unit="m",
+            )
+        ],
+        stairs=[],
+    )
+
+
+def _entity_graph_with_opening_host_provenance() -> EntityGraph:
+    return EntityGraph(
+        source_pdf="synthetic-opening-host.pdf",
+        points_per_meter=50.0,
+        page_index=0,
+        page_width_pt=400.0,
+        page_height_pt=260.0,
+        rooms=[
+            Room(
+                id="room-1",
+                page_index=0,
+                bbox=(0.0, 0.0, 200.0, 150.0),
+                polygon=[
+                    (0.0, 0.0),
+                    (200.0, 0.0),
+                    (200.0, 150.0),
+                    (0.0, 150.0),
+                    (0.0, 0.0),
+                ],
+                area_m2=12.0,
+                label="bedroom",
+            )
+        ],
+        doors=[
+            Door(
+                id="door-2",
+                page_index=0,
+                bbox=(92.0, -4.0, 138.0, 5.0),
+                width_m=0.92,
+                connects=("room-1", "corridor-1"),
+                properties={
+                    "opening_host_wall_id": "wall-1",
+                    "opening_host_wall_segment": "0.0,0.0;0.0,1.5",
+                },
+            ),
+            Door(
+                id="window-1",
+                page_index=0,
+                bbox=(40.0, -6.0, 100.0, 5.0),
+                width_m=1.2,
+                properties={
+                    "opening_kind": "window",
+                    "opening_host_wall_id": "wall-2",
+                    "opening_host_wall_segment": "1.0,0.0;1.0,2.5",
+                },
                 connects=("room-1", "corridor-1"),
             ),
         ],

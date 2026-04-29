@@ -40,6 +40,7 @@ def load_layout_3d_view(out_dir: Path) -> dict[str, Any]:
         "object_samples": objects[:10],
         "opening_semantics": _opening_semantics(objects),
         "opening_measurements": _opening_measurements(objects),
+        "opening_wall_hosts": _opening_wall_hosts(objects),
         "glb_available": (out_dir / "layout_3d.glb").exists(),
         "summary_available": (out_dir / "layout_3d_summary.md").exists(),
         "warning_text": (
@@ -66,6 +67,7 @@ def _missing_view(reason: str) -> dict[str, Any]:
         "object_samples": [],
         "opening_semantics": _empty_opening_semantics(),
         "opening_measurements": _empty_opening_measurements(),
+        "opening_wall_hosts": _empty_opening_wall_hosts(),
         "glb_available": False,
         "summary_available": False,
         "warning_text": (
@@ -179,6 +181,56 @@ def _empty_opening_measurements() -> dict[str, Any]:
         "samples": [],
         "boundary_warning": (
             "Opening measurements are shown only from explicit graph evidence fields and remain preview-only."
+        ),
+    }
+
+
+def _opening_wall_hosts(objects: list[dict[str, Any]]) -> dict[str, Any]:
+    counts = {"host_wall": 0, "source_segment": 0}
+    samples: list[dict[str, Any]] = []
+    for obj in objects:
+        object_type = _str(obj.get("object_type"))
+        if object_type not in {"door_opening", "window_opening"}:
+            continue
+        properties = _mapping(obj.get("properties"))
+        host = _mapping(properties.get("opening_host"))
+        host_wall_id = host.get("host_wall_id")
+        if not (isinstance(host_wall_id, str) and host_wall_id.strip()):
+            continue
+        counts["host_wall"] += 1
+        source_segment = host.get("source_segment")
+        if _mapping(source_segment):
+            counts["source_segment"] += 1
+        samples.append(
+            {
+                "object_id": _str(obj.get("object_id")),
+                "object_type": object_type,
+                "source_entity_id": _str(obj.get("source_entity_id")),
+                "host_wall_id": host_wall_id,
+                "source_property": _str(host.get("source_property")),
+                "source_segment": source_segment if _mapping(source_segment) else None,
+                "explicit": bool(host.get("explicit")),
+                "source_segment_property": _str(host.get("source_segment_property")),
+            }
+        )
+    return {
+        "explicit_host_wall_count": counts["host_wall"],
+        "explicit_host_segment_count": counts["source_segment"],
+        "boundary_warning": (
+            "Opening host-wall provenance is shown only when the graph provides explicit host wall "
+            "or source-segment evidence."
+        ),
+        "samples": samples[:8],
+    }
+
+
+def _empty_opening_wall_hosts() -> dict[str, Any]:
+    return {
+        "explicit_host_wall_count": 0,
+        "explicit_host_segment_count": 0,
+        "samples": [],
+        "boundary_warning": (
+            "Opening host-wall provenance is shown only when explicit host wall or source-segment evidence exists."
         ),
     }
 

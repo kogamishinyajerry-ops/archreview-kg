@@ -46,6 +46,8 @@ Layout3DObjectType = Literal[
 OpeningMeasurementEntry = dict[str, float | str | bool]
 OpeningMeasurementMap = dict[str, OpeningMeasurementEntry]
 OPENING_MEASUREMENT_FIELDS = ("width_m", "height_m", "sill_height_m", "head_height_m")
+OPENING_HOST_WALL_ID_KEYS = ("opening_host_wall_id", "host_wall_id")
+OPENING_HOST_SEGMENT_KEYS = ("opening_host_wall_segment", "host_wall_segment")
 
 
 class Layout3DAssumption(BaseModel):
@@ -233,6 +235,21 @@ def render_layout_3d_summary_markdown(report: Layout3DReport) -> str:
             ),
             "",
             "> Opening measurements are preview provenance only; missing fields continue to use explicit visualization assumptions.",
+            "",
+            "## Opening Host Wall Provenance",
+            "",
+            "| Field | Explicit Count | Boundary |",
+            "|---|---:|---|",
+            (
+                f"| `host_wall_id` | {report.summary.get('opening_host_wall_count', 0)} | "
+                "explicit `Door.properties.opening_host_wall_id` only |"
+            ),
+            (
+                f"| `host_wall_segment` | {report.summary.get('opening_host_segment_count', 0)} | "
+                "explicit `Door.properties.opening_host_wall_segment` only |"
+            ),
+            "",
+            "> Opening host-wall provenance is navigation metadata only; it does not imply boolean wall carving or compliance input.",
         ]
     )
     lines.extend(["", "## Assumptions", ""])
@@ -526,6 +543,9 @@ def _door_object(door: Door, source: _GraphSource) -> Layout3DObject:
     }
     if measurement:
         properties["opening_measurement"] = measurement
+    host_provenance = _opening_host_wall_provenance(door)
+    if host_provenance:
+        properties["opening_host"] = host_provenance
     return Layout3DObject(
         object_id=f"{source.source_sheet_id}-door-opening-{door.id}",
         object_type="door_opening",
@@ -603,6 +623,114 @@ def _measurement_entry(value: float, source_property: str) -> OpeningMeasurement
     }
 
 
+def _opening_host_wall_provenance(door: Door) -> dict[str, Any]:
+    host_wall_id, host_property = _first_property_str(door.properties, OPENING_HOST_WALL_ID_KEYS)
+    if host_wall_id is None:
+        return {}
+    source_property = f"Door.properties.{host_property}"
+    provenance: dict[str, Any] = {
+        "host_wall_id": host_wall_id,
+        "source_property": source_property,
+        "explicit": True,
+    }
+    segment = _opening_host_wall_segment(door.properties)
+    if segment is not None:
+        provenance["source_segment"] = segment
+        provenance["source_segment_property"] = _source_property_for_host_segment(door.properties)
+    return provenance
+
+
+def _first_property_str(
+    raw_properties: dict[str, float | int | str | bool],
+    candidates: tuple[str, ...],
+) -> tuple[str | None, str]:
+    for candidate in candidates:
+        raw = raw_properties.get(candidate)
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip(), candidate
+    return None, ""
+
+
+def _source_property_for_host_segment(raw_properties: dict[str, float | int | str | bool]) -> str:
+    for candidate in OPENING_HOST_SEGMENT_KEYS:
+        if candidate in raw_properties and isinstance(raw_properties.get(candidate), (dict, list, tuple)):
+            return f"Door.properties.{candidate}"
+    return "Door.properties.opening_host_wall_segment"
+
+
+def _opening_host_wall_segment(
+    raw_properties: dict[str, float | int | str | bool],
+) -> dict[str, list[float]] | None:
+    segment_property = _first_property_mapping(raw_properties, OPENING_HOST_SEGMENT_KEYS)
+    if segment_property is None:
+        return None
+    return segment_property
+
+
+def _first_property_mapping(
+    raw_properties: dict[str, float | int | str | bool],
+    candidates: tuple[str, ...],
+) -> dict[str, list[float]] | None:
+    for candidate in candidates:
+        raw = raw_properties.get(candidate)
+        parsed = _normalize_host_segment(raw)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _normalize_host_segment(raw: object) -> dict[str, list[float]] | None:
+    if isinstance(raw, Mapping):
+        p0_raw = raw.get("p0")
+        p1_raw = raw.get("p1")
+    elif (
+        isinstance(raw, (list, tuple))
+        and len(raw) == 2
+        and isinstance(raw[0], (list, tuple))
+        and isinstance(raw[1], (list, tuple))
+    ):
+        p0_raw, p1_raw = raw
+    elif isinstance(raw, str):
+        raw_points = raw.split(";", maxsplit=1)
+        if len(raw_points) != 2:
+            return None
+        p0_raw = _parse_host_segment_point(raw_points[0])
+        p1_raw = _parse_host_segment_point(raw_points[1])
+        if p0_raw is None or p1_raw is None:
+            return None
+    else:
+        return None
+
+    p0 = _point_as_floats(p0_raw)
+    p1 = _point_as_floats(p1_raw)
+    if p0 is None or p1 is None:
+        return None
+    return {"p0": p0, "p1": p1}
+
+
+def _point_as_floats(raw: object) -> list[float] | None:
+    if not (isinstance(raw, (list, tuple)) and len(raw) == 2):
+        return None
+    point = []
+    for value in raw:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        if not math.isfinite(float(value)):
+            return None
+        point.append(float(value))
+    return point
+
+
+def _parse_host_segment_point(raw: str) -> tuple[float, float] | None:
+    parts = [part.strip() for part in raw.split(",", maxsplit=2)]
+    if len(parts) != 2:
+        return None
+    try:
+        return (float(parts[0]), float(parts[1]))
+    except ValueError:
+        return None
+
+
 def _measurement_value(measurement: OpeningMeasurementMap, field: str) -> float | None:
     entry = measurement.get(field)
     if entry is None:
@@ -648,6 +776,9 @@ def _window_opening_object(door: Door, source: _GraphSource) -> Layout3DObject:
     }
     if measurement:
         properties["opening_measurement"] = measurement
+    host_provenance = _opening_host_wall_provenance(door)
+    if host_provenance:
+        properties["opening_host"] = host_provenance
     return Layout3DObject(
         object_id=f"{source.source_sheet_id}-window-opening-{door.id}",
         object_type="window_opening",
@@ -792,6 +923,7 @@ def _scale_basis(graph: EntityGraph) -> dict[str, Any]:
 def _summary(objects: list[Layout3DObject]) -> dict[str, int | str]:
     counter = Counter(obj.object_type for obj in objects)
     opening_measurements = _opening_measurement_counts(objects)
+    opening_host_counts = _opening_host_counts(objects)
     return {
         "object_count": len(objects),
         "mesh_object_count": len([obj for obj in objects if _has_mesh(obj)]),
@@ -807,6 +939,8 @@ def _summary(objects: list[Layout3DObject]) -> dict[str, int | str]:
         "opening_measured_height_count": opening_measurements["height_m"],
         "opening_measured_sill_height_count": opening_measurements["sill_height_m"],
         "opening_measured_head_height_count": opening_measurements["head_height_m"],
+        "opening_host_wall_count": opening_host_counts["host_wall"],
+        "opening_host_segment_count": opening_host_counts["host_segment"],
     }
 
 
@@ -819,6 +953,25 @@ def _opening_measurement_counts(objects: list[Layout3DObject]) -> Counter[str]:
             if _has_explicit_opening_measurement(obj, field):
                 counts[field] += 1
     return counts
+
+
+def _opening_host_counts(objects: list[Layout3DObject]) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for obj in objects:
+        if obj.object_type not in {"door_opening", "window_opening"}:
+            continue
+        raw_host = obj.properties.get("opening_host")
+        host: dict[str, Any] = raw_host if isinstance(raw_host, dict) else {}
+        if _has_opening_host(host):
+            counts["host_wall"] += 1
+            if isinstance(host.get("source_segment"), Mapping):
+                counts["host_segment"] += 1
+    return {"host_wall": int(counts["host_wall"]), "host_segment": int(counts["host_segment"])}
+
+
+def _has_opening_host(host: dict[str, Any]) -> bool:
+    host_wall_id = host.get("host_wall_id")
+    return isinstance(host_wall_id, str) and bool(host_wall_id.strip())
 
 
 def _bbox_m(
