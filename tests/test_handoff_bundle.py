@@ -530,6 +530,99 @@ def test_handoff_bundle_index_summarizes_optional_guidance_note_closeout(
     assert "note is invalid" in html
 
 
+def test_handoff_bundle_index_writes_manager_triage_digest_without_changing_queues(
+    tmp_path: Path,
+) -> None:
+    runs_root = tmp_path / "runs"
+    packages_root = tmp_path / "handoff-packages"
+    runs_root.mkdir()
+    packages_root.mkdir()
+
+    run_required = runs_root / "run-required"
+    run_guidance = runs_root / "run-guidance"
+    package_required = packages_root / "pkg-required"
+    package_guidance = packages_root / "pkg-guidance"
+
+    _write_minimal_run(run_required)
+    _write_layout_ifc_with_opening_provenance(
+        run_required,
+        {
+            "semantic_count": 2,
+            "measurement_count": 2,
+            "host_count": 1,
+            "all_three_count": 1,
+        },
+    )
+    write_handoff_package(run_required, package_required)
+
+    _write_minimal_run(run_guidance)
+    _write_layout_ifc_with_opening_provenance(
+        run_guidance,
+        {
+            "semantic_count": 1,
+            "measurement_count": 0,
+            "host_count": 1,
+            "all_three_count": 0,
+        },
+    )
+    write_handoff_package(run_guidance, package_guidance)
+    write_handoff_optional_guidance_note(
+        package_guidance,
+        reviewer="reviewer-guidance",
+        status="needs_info",
+        note="Need to confirm opening dimensions.",
+    )
+
+    out_json = packages_root / "handoff_bundle_index.json"
+    out_md = packages_root / "handoff_bundle_index.md"
+    out_html = packages_root / "handoff_bundle_index.html"
+    write_handoff_bundle_index(
+        packages_root,
+        out=out_json,
+        markdown=out_md,
+        html_path=out_html,
+    )
+    payload = json.loads(out_json.read_text("utf-8"))
+
+    next_action_queue_before = list(payload["next_action_queue"])
+    digest = payload["manager_triage_digest"]
+
+    assert digest["schema_version"] == "manager_triage_digest.v1"
+    assert digest["mutation_policy"] == "bundle_digest_only_no_package_mutation"
+    assert digest["queue_counts"] == {
+        "next_action_queue": 2,
+        "opening_provenance_triage_queue": 1,
+        "package_index_optional_guidance_queue": 1,
+        "optional_guidance_note_closeout_queue": 1,
+        "total": 5,
+    }
+    assert [
+        (item["source_queue"], item["category"], item["severity"])
+        for item in digest["items"]
+    ] == [
+        ("next_action_queue", "required_next_action", "needs_info"),
+        ("next_action_queue", "required_next_action", "needs_info"),
+        ("opening_provenance_triage_queue", "opening_provenance", "guidance"),
+        ("package_index_optional_guidance_queue", "optional_guidance", "guidance"),
+        ("optional_guidance_note_closeout_queue", "optional_guidance_note", "needs_info"),
+    ]
+    assert {item["package_name"] for item in digest["items"]} == {
+        "pkg-required",
+        "pkg-guidance",
+    }
+    assert payload["next_action_queue"] == next_action_queue_before
+
+    markdown = out_md.read_text("utf-8")
+    assert "## Manager Triage Digest" in markdown
+    assert "bundle_digest_only_no_package_mutation" in markdown
+    assert "| `pkg-guidance` | optional_guidance_note | needs_info |" in markdown
+
+    html = out_html.read_text("utf-8")
+    assert "Manager Triage Digest" in html
+    assert "optional_guidance_note" in html
+    assert "bundle digest summarizes existing queues only" in html
+
+
 def _write_layout_ifc_with_opening_provenance(
     run_dir: Path,
     counts: dict[str, int],

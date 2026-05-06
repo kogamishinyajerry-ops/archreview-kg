@@ -122,6 +122,8 @@ P83 起 reviewer 可用 `archkg handoff-optional-guidance-note` 在包内写
 P84 起 `handoff_bundle_index` 会继续按包聚合 optional guidance note 的 `reviewed/needs_info/blocked/not_recorded/invalid`，
 并输出独立 `optional_guidance_note_closeout_queue` 供 manager triage 使用；它不改变 readiness、routing、source run 或
 issues 生命周期语义。
+P85 起 `handoff_bundle_index` 还会写 `manager_triage_digest`，把 required next actions、opening provenance triage、
+package-index optional guidance 和 optional guidance note closeout 合成一个 manager 可读摘要；它只汇总现有队列，不改变队列、状态或合规语义。
 P68 起完整 review run 会生成 `layout_3d.json`、`layout_3d_summary.md` 和 `layout_3d.glb`，
 帮助 reviewer 从平面图 graph 证据理解房间、墙段、门洞、楼梯占位和尺寸锚点的 2.5D 空间关系；
 这不是 IFC/BIM 输出，也不会改变规则引擎结论。
@@ -589,6 +591,8 @@ archkg clause readiness
 - P81：Package index opening provenance guidance link。包根 `index.html` 会在 Runbook 面板显示 optional guidance 导航，链接到 `handoff_ready_runbook.md#optional-review-guidance` 和 `artifacts/reviewer_task_checklist.md`；它只是静态导航，不改变 readiness。
 - P82：Bundle optional guidance visibility。`handoff_bundle_index` 会输出 `package_index_optional_guidance_queue`，让负责人看到哪些包已有 index-level optional guidance 入口；它不改变 `next_action_queue`、next actor 或 package readiness。
 - P83：Package optional guidance note。`archkg handoff-optional-guidance-note` 会在包内写 `handoff_optional_guidance_note.json/.md` 并刷新 index；它只记录 optional guidance 复核备注，不确认 candidate issue、不改变 manager gate 或 package readiness。
+- P84：Bundle optional guidance note closeout。`handoff_bundle_index` 会汇总 optional guidance note 的 reviewed / needs_info / blocked / not_recorded / invalid 状态，并输出独立 `optional_guidance_note_closeout_queue`；它不改变 readiness、routing、source run 或 issue lifecycle。
+- P85：Bundle manager triage digest。`handoff_bundle_index` 会写 `manager_triage_digest`，把现有四类队列合成一个 manager 摘要；它不替代原队列、不写单包、不改 readiness / routing / source run / issue lifecycle。
 - P47：Sheet preview review bridge。完整审图 run 新增 `sheet_issue_review_queue.json`，报告、Viewer、workbench 和 release gate 均识别它；该队列只指导人工检查 per-sheet preview，不允许把 preview id 直接写入主 `review_state.json`。
 - P48/P58：Real-project handoff package。`archkg handoff-package <run-dir> -o <package-dir>` 把 quickstart、report、workbench、readiness、主 issues/review_state、per-sheet preview queue、diff/readiness gate、preview manifest 引用的 source/annotated/entity overlay 页图等复制成只读交接包，生成 `handoff_manifest.json` 与 `handoff_summary.md`，不写回原 run。若 `preview_pages.json` 引用的页图缺失，handoff quality 会阻塞。
 - P49：Handoff package quality gate。`archkg handoff-check <package-dir>` 检查交接包 schema、copy-only 策略、必需 artifact、复制文件存在性和边界提醒，输出 `handoff_package_quality.v1`，缺关键证据时返回 `not_ready`。
@@ -618,6 +622,8 @@ archkg clause readiness
 - P83：Package optional guidance note。包内 optional guidance note 只是 reviewer 复核记录，不写源 run、不确认 issue、不改变 `review_state.json`、manager intake 或 package readiness。
 - P84：Bundle optional guidance note closeout。`handoff_bundle_index` 会汇总 optional guidance note 的 reviewed / needs_info / blocked / not_recorded / invalid 计数，
 并输出 `optional_guidance_note_closeout_queue` 供 manager triage 使用；这仅为可见性，不改变 readiness、routing、source run、`issues.json` 或 `review_state.json`。
+- P85：Bundle manager triage digest。bundle 会新增 `manager_triage_digest`，把 `next_action_queue`、`opening_provenance_triage_queue`、
+`package_index_optional_guidance_queue` 和 `optional_guidance_note_closeout_queue` 汇成一个只读 manager 摘要；它不改变原队列、package readiness 或任何合规语义。
 
 ---
 

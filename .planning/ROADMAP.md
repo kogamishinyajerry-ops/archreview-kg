@@ -418,6 +418,14 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Render the same closeout summary and queue in bundle Markdown/HTML for manager visibility.
 - Guardrail: optional guidance note closeout is reviewer/manager visibility only; it must not change `package_status`, `next_actor`, `next_action_queue`, manager checklist, archive checks, source runs, `issues.json`, `review_state.json`, or compliance semantics.
 
+### P85-01: Bundle Manager Triage Digest (complete)
+
+- Complete: `handoff_bundle_index.v1` now includes derived `manager_triage_digest` with queue counts and compact items across required next actions, opening provenance triage, package-index optional guidance, and optional guidance note closeout.
+- Add a derived `manager_triage_digest` to `handoff_bundle_index.v1` that summarizes existing bundle queues in one manager-facing digest.
+- Include counts and compact items for the primary `next_action_queue`, `opening_provenance_triage_queue`, `package_index_optional_guidance_queue`, and `optional_guidance_note_closeout_queue`.
+- Render `Manager Triage Digest` in bundle Markdown/HTML without removing existing queue sections.
+- Guardrail: the digest is read-only navigation only; it must not mutate packages, change `package_status`, `next_actor`, `next_action_queue`, manager checklist, archive checks, source runs, `issues.json`, `review_state.json`, or compliance semantics.
+
 ## Explicit Not-Build List
 
 - No full Solibri/BIMcollab clone.

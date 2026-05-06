@@ -369,6 +369,13 @@ and keeps the no-OCR transparency warning.
   `optional_guidance_note_closeout_queue`, and renders it in bundle Markdown/HTML
   for manager triage. This is visibility-only and does not change readiness,
   routing, source-run artifacts, `issues.json`, or `review_state.json`.
+- P85-01 adds a bundle manager triage digest. `handoff_bundle_index` now writes
+  `manager_triage_digest`, a derived read-only summary over the existing
+  `next_action_queue`, `opening_provenance_triage_queue`,
+  `package_index_optional_guidance_queue`, and
+  `optional_guidance_note_closeout_queue`. It renders in bundle Markdown/HTML
+  without replacing queues or changing readiness, routing, source runs,
+  `issues.json`, or `review_state.json`.
 - P42-01 adds re-run issue diff tracking. `archkg review-diff BEFORE_RUN
   AFTER_RUN -o AFTER_RUN/review_diff.json` compares primary `issues.json`
   candidates with stable rule/clause/page/spatial/evidence fingerprints instead

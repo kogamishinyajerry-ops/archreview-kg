@@ -35,6 +35,13 @@ OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING = (
     "Optional guidance closeout is manager triage visibility only; "
     "note states do not change package readiness."
 )
+MANAGER_TRIAGE_DIGEST_SCHEMA_VERSION = "manager_triage_digest.v1"
+MANAGER_TRIAGE_DIGEST_MUTATION_POLICY = "bundle_digest_only_no_package_mutation"
+MANAGER_TRIAGE_DIGEST_WARNING = (
+    "This bundle digest summarizes existing queues only; it is manager "
+    "navigation, not package readiness, issue confirmation, or compliance "
+    "evidence."
+)
 
 
 def build_handoff_bundle_index(packages_root: Path) -> dict[str, Any]:
@@ -52,6 +59,10 @@ def build_handoff_bundle_index(packages_root: Path) -> dict[str, Any]:
         for package_dir in _discover_package_dirs(packages_root)
     ]
     summary = _bundle_summary(packages)
+    opening_triage_queue = _opening_provenance_triage_queue(packages)
+    index_guidance_queue = _package_index_optional_guidance_queue(packages)
+    optional_guidance_note_queue = _optional_guidance_note_closeout_queue(packages)
+    next_action_queue = _bundle_next_action_queue(packages)
     return {
         "schema_version": SCHEMA_VERSION,
         "created_at": datetime.now(UTC).isoformat(),
@@ -61,14 +72,16 @@ def build_handoff_bundle_index(packages_root: Path) -> dict[str, Any]:
         "summary": summary,
         "packages": packages,
         "boundary_warning": BOUNDARY_WARNING,
-        "opening_provenance_triage_queue": _opening_provenance_triage_queue(packages),
-        "package_index_optional_guidance_queue": (
-            _package_index_optional_guidance_queue(packages)
+        "manager_triage_digest": _manager_triage_digest(
+            next_action_queue=next_action_queue,
+            opening_triage_queue=opening_triage_queue,
+            index_guidance_queue=index_guidance_queue,
+            optional_guidance_note_queue=optional_guidance_note_queue,
         ),
-        "optional_guidance_note_closeout_queue": (
-            _optional_guidance_note_closeout_queue(packages)
-        ),
-        "next_action_queue": _bundle_next_action_queue(packages),
+        "opening_provenance_triage_queue": opening_triage_queue,
+        "package_index_optional_guidance_queue": index_guidance_queue,
+        "optional_guidance_note_closeout_queue": optional_guidance_note_queue,
+        "next_action_queue": next_action_queue,
         "next_actions": _bundle_next_actions(packages),
     }
 
@@ -110,6 +123,7 @@ def write_handoff_bundle_index(
 def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
     summary = _dict(payload.get("summary"))
     opening_weak_count = _int(summary.get("opening_provenance_weak_package_count"))
+    manager_digest = _dict(payload.get("manager_triage_digest"))
     lines = [
         "# ArchReview-KG Handoff Bundle Index",
         "",
@@ -185,6 +199,39 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
     optional_guidance_note_queue = _list_of_dicts(
         payload.get("optional_guidance_note_closeout_queue")
     )
+    manager_digest_items = _list_of_dicts(manager_digest.get("items"))
+    if manager_digest_items:
+        queue_counts = _dict(manager_digest.get("queue_counts"))
+        lines.extend(
+            [
+                "",
+                "## Manager Triage Digest",
+                "",
+                f"Mutation policy: `{_str(manager_digest.get('mutation_policy'))}`",
+                "",
+                _str(manager_digest.get("boundary_warning")),
+                "",
+                f"- Total digest items: `{_int(queue_counts.get('total'))}`",
+                f"- Required next actions: `{_int(queue_counts.get('next_action_queue'))}`",
+                f"- Opening provenance triage: `{_int(queue_counts.get('opening_provenance_triage_queue'))}`",
+                f"- Package index optional guidance: `{_int(queue_counts.get('package_index_optional_guidance_queue'))}`",
+                f"- Optional guidance note closeout: `{_int(queue_counts.get('optional_guidance_note_closeout_queue'))}`",
+                "",
+                "| Package | Category | Severity | Actor | Source | Title | Reason |",
+                "|---|---|---|---|---|---|---|",
+            ]
+        )
+        for item in manager_digest_items:
+            lines.append(
+                "| "
+                f"`{_str(item.get('package_name'))}` | "
+                f"{_str(item.get('category'))} | "
+                f"{_str(item.get('severity'))} | "
+                f"{_str(item.get('actor'))} | "
+                f"{_str(item.get('source_queue'))} | "
+                f"{_str(item.get('title'))} | "
+                f"{_str(item.get('reason'))} |"
+            )
     if opening_triage_queue:
         lines.extend(
             [
@@ -258,6 +305,9 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
 def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
     summary = _dict(payload.get("summary"))
     packages = _list_of_dicts(payload.get("packages"))
+    manager_digest = _dict(payload.get("manager_triage_digest"))
+    manager_digest_items = _list_of_dicts(manager_digest.get("items"))
+    manager_digest_counts = _dict(manager_digest.get("queue_counts"))
     opening_triage_queue = _list_of_dicts(
         payload.get("opening_provenance_triage_queue")
     )
@@ -351,6 +401,11 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
             )
             else "ok",
         ),
+        _kpi(
+            "Manager Digest",
+            str(_int(manager_digest_counts.get("total"))),
+            "warn" if _int(manager_digest_counts.get("total")) else "ok",
+        ),
         "</section>",
         '<section class="panel">',
         "<h2>Bundle Boundary</h2>",
@@ -371,6 +426,37 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
         "</p>",
         "</section>",
     ]
+    if manager_digest_items:
+        lines.extend(
+            [
+                '<section class="panel">',
+                "<h2>Manager Triage Digest</h2>",
+                f"<p><b>Mutation policy:</b> {_html(_str(manager_digest.get('mutation_policy')))}</p>",
+                f"<p>{_html(_str(manager_digest.get('boundary_warning')))}</p>",
+                "<p>"
+                f"Required next actions={_int(manager_digest_counts.get('next_action_queue'))}, "
+                f"Opening provenance triage={_int(manager_digest_counts.get('opening_provenance_triage_queue'))}, "
+                f"Package index optional guidance={_int(manager_digest_counts.get('package_index_optional_guidance_queue'))}, "
+                f"Optional guidance note closeout={_int(manager_digest_counts.get('optional_guidance_note_closeout_queue'))}"
+                "</p>",
+                "<table>",
+                "<thead><tr><th>Package</th><th>Category</th><th>Severity</th><th>Actor</th><th>Source</th><th>Title</th><th>Reason</th></tr></thead>",
+                "<tbody>",
+            ]
+        )
+        for item in manager_digest_items:
+            lines.append(
+                "<tr>"
+                f"<td>{_html(_str(item.get('package_name')))}</td>"
+                f"<td>{_html(_str(item.get('category')))}</td>"
+                f"<td>{_html(_str(item.get('severity')))}</td>"
+                f"<td>{_html(_str(item.get('actor')))}</td>"
+                f"<td>{_html(_str(item.get('source_queue')))}</td>"
+                f"<td>{_html(_str(item.get('title')))}</td>"
+                f"<td>{_html(_str(item.get('reason')))}</td>"
+                "</tr>"
+            )
+        lines.extend(["</tbody>", "</table>", "</section>"])
     if opening_triage_queue:
         lines.extend(
             [
@@ -1247,6 +1333,126 @@ def _bundle_next_actions(packages: list[dict[str, Any]]) -> list[str]:
             f"{_int(package.get('checklist_open_item_count'))} reviewer checklist items"
         )
     return actions
+
+
+def _manager_triage_digest(
+    *,
+    next_action_queue: list[dict[str, Any]],
+    opening_triage_queue: list[dict[str, Any]],
+    index_guidance_queue: list[dict[str, Any]],
+    optional_guidance_note_queue: list[dict[str, Any]],
+) -> dict[str, Any]:
+    items: list[dict[str, str]] = []
+    items.extend(
+        _manager_digest_item_from_next_action(item) for item in next_action_queue
+    )
+    items.extend(
+        _manager_digest_item_from_opening_triage(item)
+        for item in opening_triage_queue
+    )
+    items.extend(
+        _manager_digest_item_from_index_guidance(item)
+        for item in index_guidance_queue
+    )
+    items.extend(
+        _manager_digest_item_from_optional_note(item)
+        for item in optional_guidance_note_queue
+    )
+    return {
+        "schema_version": MANAGER_TRIAGE_DIGEST_SCHEMA_VERSION,
+        "mutation_policy": MANAGER_TRIAGE_DIGEST_MUTATION_POLICY,
+        "boundary_warning": MANAGER_TRIAGE_DIGEST_WARNING,
+        "queue_counts": {
+            "next_action_queue": len(next_action_queue),
+            "opening_provenance_triage_queue": len(opening_triage_queue),
+            "package_index_optional_guidance_queue": len(index_guidance_queue),
+            "optional_guidance_note_closeout_queue": len(
+                optional_guidance_note_queue
+            ),
+            "total": len(items),
+        },
+        "items": items,
+    }
+
+
+def _manager_digest_item_from_next_action(item: dict[str, Any]) -> dict[str, str]:
+    return {
+        "package_name": _str(item.get("package_name")),
+        "relative_package_dir": _str(item.get("relative_package_dir")),
+        "category": "required_next_action",
+        "actor": _str(item.get("actor")),
+        "title": _str(item.get("title")) or _str(item.get("action_id")),
+        "reason": _str(item.get("reason")),
+        "severity": _manager_digest_required_severity(item),
+        "source_queue": "next_action_queue",
+        "command": _str(item.get("command")),
+        "path": "",
+    }
+
+
+def _manager_digest_item_from_opening_triage(item: dict[str, Any]) -> dict[str, str]:
+    return {
+        "package_name": _str(item.get("package_name")),
+        "relative_package_dir": _str(item.get("relative_package_dir")),
+        "category": "opening_provenance",
+        "actor": _str(item.get("actor")) or "reviewer",
+        "title": _str(item.get("title")) or "Review opening provenance.",
+        "reason": _str(item.get("reason")),
+        "severity": "guidance",
+        "source_queue": "opening_provenance_triage_queue",
+        "command": "",
+        "path": _str(item.get("source_artifact")),
+    }
+
+
+def _manager_digest_item_from_index_guidance(item: dict[str, Any]) -> dict[str, str]:
+    return {
+        "package_name": _str(item.get("package_name")),
+        "relative_package_dir": _str(item.get("relative_package_dir")),
+        "category": "optional_guidance",
+        "actor": "reviewer",
+        "title": "Review package optional guidance.",
+        "reason": _str(item.get("reason")),
+        "severity": "guidance",
+        "source_queue": "package_index_optional_guidance_queue",
+        "command": "",
+        "path": _str(item.get("runbook_path")) or _str(item.get("index_path")),
+    }
+
+
+def _manager_digest_item_from_optional_note(item: dict[str, Any]) -> dict[str, str]:
+    return {
+        "package_name": _str(item.get("package_name")),
+        "relative_package_dir": _str(item.get("relative_package_dir")),
+        "category": "optional_guidance_note",
+        "actor": "reviewer",
+        "title": "Review optional guidance note closeout.",
+        "reason": _str(item.get("reason")),
+        "severity": _manager_digest_optional_note_severity(item),
+        "source_queue": "optional_guidance_note_closeout_queue",
+        "command": "",
+        "path": _str(item.get("note_path")),
+    }
+
+
+def _manager_digest_required_severity(item: dict[str, Any]) -> str:
+    text = " ".join(
+        [
+            _str(item.get("action_id")),
+            _str(item.get("title")),
+            _str(item.get("reason")),
+        ]
+    ).lower()
+    if any(marker in text for marker in ["blocked", "invalid", "drift", "not_ready"]):
+        return "blocker"
+    return "needs_info"
+
+
+def _manager_digest_optional_note_severity(item: dict[str, Any]) -> str:
+    status = _str(item.get("status"))
+    if status in {"blocked", "invalid"}:
+        return "blocker"
+    return "needs_info"
 
 
 def _opening_provenance_triage_queue(

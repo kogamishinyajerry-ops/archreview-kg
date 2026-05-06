@@ -103,6 +103,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   记录 optional guidance review closeout；它不是 candidate issue confirmation。
 - P84 后 bundle summary 还会聚合 optional guidance note 的 closeout 状态（reviewed / needs_info / blocked / not_recorded / invalid），
   并输出 `optional_guidance_note_closeout_queue` 供 manager triage 使用；这只是可见性，不改变 readiness / routing / source run / `review_state.json`。
+- P85 后 bundle summary 还会写 `manager_triage_digest`，把 required next actions、opening provenance triage、
+  package-index optional guidance 和 optional guidance note closeout 合成一个 manager 摘要；它只汇总现有队列，不改变 readiness / routing / source run / `review_state.json`。
 
 复现该结论：
 
@@ -137,9 +139,9 @@ P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 ge
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
 但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics、
 Opening Measurements、Opening Host Wall Provenance 和 Opening Provenance Consistency
-只解释来源与覆盖；P75-P84 把同一组 coverage / optional-guidance 透传到 IFC export summary、handoff package、
+只解释来源与覆盖；P75-P85 把同一组 coverage / optional-guidance 透传到 IFC export summary、handoff package、
 bundle summary、独立 triage queue、包内 reviewer checklist guidance、ready-runbook optional guidance、package index navigation、bundle optional-guidance visibility、package-local optional guidance note 和
-package optional guidance note closeout，
+package optional guidance note closeout、manager triage digest，
 但仍不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
 且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。
@@ -430,6 +432,10 @@ P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别�
   不改变 `next_action_queue`、next actor、manager intake、package readiness、source run 或图纸合规状态。
 - P83 起，package-local optional guidance note 只记录 reviewer closeout，
   不确认 candidate issue、不改变 `review_state.json`、manager intake、package readiness、source run 或图纸合规状态。
+- P84 起，bundle optional guidance note closeout 只做 manager 可见性，
+  不改变 readiness、routing、source run、`issues.json`、`review_state.json` 或图纸合规状态。
+- P85 起，manager triage digest 只把现有 bundle queues 归并为 manager 导航摘要，
+  不替代 `next_action_queue`、不新增 gate、不改变 package readiness、source run 或图纸合规状态。
 
 repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 

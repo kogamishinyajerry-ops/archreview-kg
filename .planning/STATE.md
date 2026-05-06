@@ -6,7 +6,7 @@ Updated: 2026-05-06
 
 Branch: `main`
 
-Latest completed commit before P84 planning: `6a97e28 feat(P83-01): add optional guidance review note`
+Latest completed commit before P85: `5632f52 feat(P84-01): add bundle optional guidance note closeout`
 
 Status:
 
@@ -74,16 +74,18 @@ Status:
 - P82-01 is complete: bundle indexes now show package-index optional guidance availability in a separate queue, without changing normal next-action routing.
 - P83-01 is complete: packages can now record package-local optional guidance review notes, without confirming candidate issues or changing readiness semantics.
 - P84-01 is complete: bundle indexes now aggregate package-local optional guidance note closeout status (reviewed / needs_info / blocked / not_recorded / invalid) as manager visibility only, without changing readiness, routing, source-run, or issue lifecycle semantics.
+- P85-01 is complete: bundle indexes now include a derived manager triage digest over existing queues, without changing package readiness, routing, source-run, or issue lifecycle semantics.
 
 ## Current Phase
 
-P84-01: Bundle optional guidance note closeout (complete).
+P85-01: Bundle manager triage digest (complete).
 
-P84 should let a manager scan a bundle and see which packages have optional
-guidance notes recorded, which are reviewed, and which still need information or
-are blocked. This is closeout visibility only and must stay separate from
-`package_status`, `next_actor`, `next_action_queue`, manager checklist status,
-source runs, `issues.json`, and `review_state.json`.
+P85 gives a manager one compact read-only digest over the bundle's
+existing queues: primary `next_action_queue`, opening provenance triage,
+package-index optional guidance, and optional guidance note closeout. The digest
+is navigation only and must stay separate from `package_status`, `next_actor`,
+`next_action_queue`, manager checklist status, source runs, `issues.json`, and
+`review_state.json`.
 
 ## Key Decisions
 
@@ -152,12 +154,11 @@ source runs, `issues.json`, and `review_state.json`.
 - P82 bundle optional guidance visibility is manager navigation only. It does not change package status, `next_actor`, `next_action_queue`, manager intake, source runs, or compliance semantics.
 - P83 optional guidance note is package-local review documentation only. It does not confirm candidate issues, change `review_state.json`, mutate source runs, alter `next_actions`, or change manager intake.
 - P84 optional guidance note closeout visibility is bundle-level manager navigation only. Missing, needs_info, or blocked note states must not change package readiness, normal routing, source runs, issue lifecycle, or compliance semantics.
+- P85 manager triage digest is derived navigation only. It must not replace the source queues, add gates, mutate packages, or redefine readiness/routing/compliance semantics.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Execute P84-01 with `codex-5.3-spark` as a bounded implementation slice. Start
-with RED tests in `tests/test_handoff_bundle.py`, then extend
-`archkg/viewer/handoff_bundle.py` to aggregate package-local
-`handoff_optional_guidance_note.json` without mutating packages or changing
-bundle readiness/routing semantics.
+Next adjacent step after P85 is P86+: consider adding a package/bundle manager
+handoff closeout note only if it remains package-local or bundle-index-local and
+does not change readiness, source-run, or issue lifecycle semantics.
