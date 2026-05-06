@@ -1,12 +1,12 @@
 # ArchReview-KG State
 
-Updated: 2026-04-30
+Updated: 2026-05-06
 
 ## Current Position
 
 Branch: `main`
 
-Latest completed commit before P83: `ff00005 feat(P82-01): surface optional guidance in bundle index`
+Latest completed commit before P84 planning: `6a97e28 feat(P83-01): add optional guidance review note`
 
 Status:
 
@@ -73,15 +73,17 @@ Status:
 - P81-01 is complete: package-root static `index.html` now links to ready-runbook optional opening provenance guidance and the package-local checklist artifact, without changing readiness semantics.
 - P82-01 is complete: bundle indexes now show package-index optional guidance availability in a separate queue, without changing normal next-action routing.
 - P83-01 is complete: packages can now record package-local optional guidance review notes, without confirming candidate issues or changing readiness semantics.
+- P84-01 is planned: bundle indexes should aggregate package-local optional guidance note closeout status as manager visibility only, without changing readiness, routing, source-run, or issue lifecycle semantics.
 
 ## Current Phase
 
-P83-01: Package optional guidance note (complete).
+P84-01: Bundle optional guidance note closeout (planned).
 
-P83 is complete. A novice reviewer can now write a package-local optional
-guidance review note that records optional guidance review status and note text
-without changing required `next_actions`, manager gates, source runs, or issue
-state.
+P84 should let a manager scan a bundle and see which packages have optional
+guidance notes recorded, which are reviewed, and which still need information or
+are blocked. This is closeout visibility only and must stay separate from
+`package_status`, `next_actor`, `next_action_queue`, manager checklist status,
+source runs, `issues.json`, and `review_state.json`.
 
 ## Key Decisions
 
@@ -149,10 +151,13 @@ state.
 - P81 package index opening provenance guidance link is static navigation only. It does not add required actions, block manager intake, alter package readiness, mutate source runs, or confirm issues.
 - P82 bundle optional guidance visibility is manager navigation only. It does not change package status, `next_actor`, `next_action_queue`, manager intake, source runs, or compliance semantics.
 - P83 optional guidance note is package-local review documentation only. It does not confirm candidate issues, change `review_state.json`, mutate source runs, alter `next_actions`, or change manager intake.
+- P84 optional guidance note closeout visibility is bundle-level manager navigation only. Missing, needs_info, or blocked note states must not change package readiness, normal routing, source runs, issue lifecycle, or compliance semantics.
 - Notion content can lag unless every phase closeout records commit and validation.
 
 ## Next Action
 
-Next adjacent step after P83 is P84+: consider surfacing optional guidance note
-status in bundle indexes as reviewer-closeout visibility only, still separate
-from readiness and normal next-action routing.
+Execute P84-01 with `codex-5.3-spark` as a bounded implementation slice. Start
+with RED tests in `tests/test_handoff_bundle.py`, then extend
+`archkg/viewer/handoff_bundle.py` to aggregate package-local
+`handoff_optional_guidance_note.json` without mutating packages or changing
+bundle readiness/routing semantics.
