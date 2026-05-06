@@ -404,10 +404,16 @@ Goal: make the tool useful for repeated human review, not just CLI artifacts.
 - Render the note in package-root `index.html` without changing ready-runbook `next_actions`, manager checklist status, package readiness, or source-run artifacts.
 - Guardrail: optional guidance notes are review documentation only; they must not confirm candidate issues, mutate source runs, or become compliance findings.
 
-### P84-01: Bundle Optional Guidance Note Closeout
+### P84-01: Bundle Optional Guidance Note Closeout (complete)
+
+- Complete: `archkg handoff-bundle-index` now reads package-local
+  `handoff_optional_guidance_note.json` per handoff package, summarizes note
+  status counts (`reviewed`, `needs_info`, `blocked`, `not_recorded`,
+  `invalid`), and renders an independent
+  `optional_guidance_note_closeout_queue` in bundle JSON/Markdown/HTML.
 
 - Extend `archkg handoff-bundle-index` to read package-local `handoff_optional_guidance_note.json` from each handoff package.
-- Summarize note availability and status counts across the bundle: reviewed, needs_info, blocked, missing, and invalid.
+- Summarize note availability and status counts across the bundle: reviewed, needs_info, blocked, not_recorded, and invalid.
 - Emit a separate optional guidance note closeout queue for packages that expose package-index optional guidance but have no note yet, or whose note is needs_info / blocked.
 - Render the same closeout summary and queue in bundle Markdown/HTML for manager visibility.
 - Guardrail: optional guidance note closeout is reviewer/manager visibility only; it must not change `package_status`, `next_actor`, `next_action_queue`, manager checklist, archive checks, source runs, `issues.json`, `review_state.json`, or compliance semantics.

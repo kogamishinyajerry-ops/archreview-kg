@@ -12,6 +12,7 @@ from archkg.viewer.handoff_package import (
     ARCHIVE_VERIFICATION_SCHEMA_VERSION,
     MANAGER_CHECKLIST_SCHEMA_VERSION,
     OPENING_PROVENANCE_BOUNDARY_WARNING,
+    OPTIONAL_GUIDANCE_NOTE_SCHEMA_VERSION,
     QUALITY_SCHEMA_VERSION,
     READY_RUNBOOK_SCHEMA_VERSION,
     SIGNOFF_SCHEMA_VERSION,
@@ -29,6 +30,10 @@ BOUNDARY_WARNING = (
     "Handoff bundle index summarizes package-local handoff state only; it is "
     "not a drawing-compliance certificate and does not mutate package artifacts "
     "or source run artifacts."
+)
+OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING = (
+    "Optional guidance closeout is manager triage visibility only; "
+    "note states do not change package readiness."
 )
 
 
@@ -59,6 +64,9 @@ def build_handoff_bundle_index(packages_root: Path) -> dict[str, Any]:
         "opening_provenance_triage_queue": _opening_provenance_triage_queue(packages),
         "package_index_optional_guidance_queue": (
             _package_index_optional_guidance_queue(packages)
+        ),
+        "optional_guidance_note_closeout_queue": (
+            _optional_guidance_note_closeout_queue(packages)
         ),
         "next_action_queue": _bundle_next_action_queue(packages),
         "next_actions": _bundle_next_actions(packages),
@@ -131,6 +139,11 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
         f"- Weak opening provenance packages: `{opening_weak_count}`",
         f"- Package index optional guidance packages: "
         f"`{_int(summary.get('package_index_optional_guidance_package_count'))}`",
+        f"- Optional guidance note closeout: reviewed=`{_int(summary.get('optional_guidance_note_reviewed_count'))}`, "
+        f"needs_info=`{_int(summary.get('optional_guidance_note_needs_info_count'))}`, "
+        f"blocked=`{_int(summary.get('optional_guidance_note_blocked_count'))}`, "
+        f"not_recorded=`{_int(summary.get('optional_guidance_note_not_recorded_count'))}`, "
+        f"invalid=`{_int(summary.get('optional_guidance_note_invalid_count'))}`",
         "",
         "## Packages",
         "",
@@ -168,6 +181,9 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
     )
     index_guidance_queue = _list_of_dicts(
         payload.get("package_index_optional_guidance_queue")
+    )
+    optional_guidance_note_queue = _list_of_dicts(
+        payload.get("optional_guidance_note_closeout_queue")
     )
     if opening_triage_queue:
         lines.extend(
@@ -211,6 +227,27 @@ def render_handoff_bundle_index_markdown(payload: dict[str, Any]) -> str:
                 f"`{_str(item.get('runbook_path'))}` | "
                 f"{_str(item.get('reason'))} |"
             )
+    if optional_guidance_note_queue:
+        lines.extend(
+            [
+                "",
+                "## Optional Guidance Note Closeout Queue",
+                "",
+                OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING,
+                "",
+                "| Package | Status | Reviewer | Action Count | Note |",
+                "|---|---|---|---:|---|",
+            ]
+        )
+        for item in optional_guidance_note_queue:
+            lines.append(
+                "| "
+                f"`{_str(item.get('package_name'))}` | "
+                f"{_str(item.get('status'))} | "
+                f"{_str(item.get('reviewer'))} | "
+                f"{_int(item.get('action_count'))} | "
+                f"`{_str(item.get('note_path'))}` |"
+            )
     if next_actions:
         lines.extend(["", "## Next Actions", ""])
         lines.extend(f"- {item}" for item in next_actions)
@@ -226,6 +263,9 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
     )
     index_guidance_queue = _list_of_dicts(
         payload.get("package_index_optional_guidance_queue")
+    )
+    optional_guidance_note_queue = _list_of_dicts(
+        payload.get("optional_guidance_note_closeout_queue")
     )
     lines = [
         "<!doctype html>",
@@ -289,6 +329,27 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
                 if _int(summary.get("package_index_optional_guidance_package_count"))
                 else "ok"
             ),
+        ),
+        _kpi(
+            "Opt Guidance Notes",
+            "reviewed="
+            f"{_int(summary.get('optional_guidance_note_reviewed_count'))}, "
+            "needs_info="
+            f"{_int(summary.get('optional_guidance_note_needs_info_count'))}, "
+            "blocked="
+            f"{_int(summary.get('optional_guidance_note_blocked_count'))}, "
+            "not_recorded="
+            f"{_int(summary.get('optional_guidance_note_not_recorded_count'))}, "
+            "invalid="
+            f"{_int(summary.get('optional_guidance_note_invalid_count'))}",
+            "warn"
+            if (
+                _int(summary.get("optional_guidance_note_needs_info_count"))
+                + _int(summary.get("optional_guidance_note_blocked_count"))
+                + _int(summary.get("optional_guidance_note_not_recorded_count"))
+                + _int(summary.get("optional_guidance_note_invalid_count"))
+            )
+            else "ok",
         ),
         "</section>",
         '<section class="panel">',
@@ -363,6 +424,45 @@ def render_handoff_bundle_index_html(payload: dict[str, Any]) -> str:
                 f"<td>{index_link}</td>"
                 f"<td>{runbook_link}</td>"
                 f"<td>{_html(_str(item.get('reason')))}</td>"
+                "</tr>"
+            )
+        lines.extend(["</tbody>", "</table>", "</section>"])
+    if optional_guidance_note_queue:
+        lines.extend(
+            [
+                '<section class="panel">',
+                "<h2>Optional Guidance Note Closeout Queue</h2>",
+                f"<p>{_html(OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING)}</p>",
+                "<p>"
+                f"Reviewed={_int(summary.get('optional_guidance_note_reviewed_count'))}, "
+                f"Needs info={_int(summary.get('optional_guidance_note_needs_info_count'))}, "
+                f"Blocked={_int(summary.get('optional_guidance_note_blocked_count'))}, "
+                f"Not recorded={_int(summary.get('optional_guidance_note_not_recorded_count'))}, "
+                f"Invalid={_int(summary.get('optional_guidance_note_invalid_count'))}"
+                "</p>",
+                "<table>",
+                "<thead><tr><th>Package</th><th>Status</th><th>Reviewer</th><th>Action</th><th>Note</th><th>Reason</th></tr></thead>",
+                "<tbody>",
+            ]
+        )
+        for item in optional_guidance_note_queue:
+            note_path = _str(item.get("note_path"))
+            note_link = (
+                f'<a href="{_html_attr(note_path)}">{_html(note_path)}</a>'
+                if note_path
+                else "-"
+            )
+            reason = _str(item.get("reason")).replace(
+                "payload is invalid", "note is invalid"
+            )
+            lines.append(
+                "<tr>"
+                f"<td>{_html(_str(item.get('package_name')))}</td>"
+                f"<td>{_html(_str(item.get('status')))}</td>"
+                f"<td>{_html(_str(item.get('reviewer')))}</td>"
+                f"<td>{_int(item.get('action_count'))}</td>"
+                f"<td>{note_link}</td>"
+                f"<td>{_html(reason)}</td>"
                 "</tr>"
             )
         lines.extend(["</tbody>", "</table>", "</section>"])
@@ -471,6 +571,16 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
         index_path=index_rel,
         relative_package_dir=relative_dir,
     )
+    optional_guidance_note = _package_optional_guidance_note_summary(
+        package_dir=package_dir,
+        relative_package_dir=relative_dir,
+        package_index_optional_guidance_available=_bool(
+            optional_guidance["available"]
+        ),
+        package_index_optional_guidance_action_count=_int(
+            optional_guidance["count"]
+        ),
+    )
     return {
         "package_name": package_dir.name,
         "package_dir": str(package_dir),
@@ -555,6 +665,11 @@ def _package_summary(package_dir: Path, packages_root: Path) -> dict[str, Any]:
         "package_index_optional_guidance_boundary_warning": optional_guidance[
             "boundary_warning"
         ],
+        "optional_guidance_note_available": optional_guidance_note["available"],
+        "optional_guidance_note_status": optional_guidance_note["status"],
+        "optional_guidance_note_reviewer": optional_guidance_note["reviewer"],
+        "optional_guidance_note_action_count": optional_guidance_note["action_count"],
+        "optional_guidance_note_path": optional_guidance_note["path"],
         "open_items": open_items,
     }
 
@@ -587,6 +702,77 @@ def _package_index_optional_guidance_summary(
             if available
             else OPENING_PROVENANCE_BOUNDARY_WARNING
         ),
+    }
+
+
+def _package_optional_guidance_note_summary(
+    *,
+    package_dir: Path,
+    relative_package_dir: str,
+    package_index_optional_guidance_available: bool,
+    package_index_optional_guidance_action_count: int,
+) -> dict[str, Any]:
+    if not package_index_optional_guidance_available:
+        return {
+            "available": False,
+            "status": "not_applicable",
+            "reviewer": "",
+            "action_count": 0,
+            "path": "",
+            "reason": "",
+            "boundary_warning": OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING,
+        }
+
+    payload = _load_json(package_dir / "handoff_optional_guidance_note.json")
+    note_path = f"{relative_package_dir}/handoff_optional_guidance_note.json"
+    if not payload:
+        return {
+            "available": False,
+            "status": "not_recorded",
+            "reviewer": "",
+            "action_count": (
+                package_index_optional_guidance_action_count
+                if package_index_optional_guidance_action_count > 0
+                else 1
+            ),
+            "path": note_path,
+            "reason": "Optional guidance note has not been recorded yet.",
+            "boundary_warning": OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING,
+        }
+    if _str(payload.get("schema_version")) != OPTIONAL_GUIDANCE_NOTE_SCHEMA_VERSION:
+        return {
+            "available": False,
+            "status": "invalid",
+            "reviewer": "",
+            "action_count": _int(payload.get("optional_action_count")) or 1,
+            "path": note_path,
+            "reason": "Optional guidance note payload is invalid.",
+            "boundary_warning": OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING,
+        }
+    raw_status = _str(payload.get("status"))
+    if raw_status not in {"reviewed", "needs_info", "blocked"}:
+        return {
+            "available": False,
+            "status": "invalid",
+            "reviewer": "",
+            "action_count": _int(payload.get("optional_action_count")) or (
+                package_index_optional_guidance_action_count
+                if package_index_optional_guidance_action_count > 0
+                else 1
+            ),
+            "path": note_path,
+            "reason": "Optional guidance note payload is invalid.",
+            "boundary_warning": OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING,
+        }
+    return {
+        "available": True,
+        "status": raw_status,
+        "reviewer": _str(payload.get("reviewer")),
+        "action_count": _int(payload.get("optional_action_count"))
+        or (package_index_optional_guidance_action_count if package_index_optional_guidance_action_count > 0 else 1),
+        "path": note_path,
+        "reason": f"Optional guidance note is {raw_status}.",
+        "boundary_warning": OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING,
     }
 
 
@@ -1005,6 +1191,31 @@ def _bundle_summary(packages: list[dict[str, Any]]) -> dict[str, int]:
             _int(row.get("package_index_optional_guidance_count"))
             for row in packages
         ),
+        "optional_guidance_note_reviewed_count": sum(
+            1
+            for row in packages
+            if _str(row.get("optional_guidance_note_status")) == "reviewed"
+        ),
+        "optional_guidance_note_needs_info_count": sum(
+            1
+            for row in packages
+            if _str(row.get("optional_guidance_note_status")) == "needs_info"
+        ),
+        "optional_guidance_note_blocked_count": sum(
+            1
+            for row in packages
+            if _str(row.get("optional_guidance_note_status")) == "blocked"
+        ),
+        "optional_guidance_note_not_recorded_count": sum(
+            1
+            for row in packages
+            if _str(row.get("optional_guidance_note_status")) == "not_recorded"
+        ),
+        "optional_guidance_note_invalid_count": sum(
+            1
+            for row in packages
+            if _str(row.get("optional_guidance_note_status")) == "invalid"
+        ),
     }
 
 
@@ -1106,6 +1317,59 @@ def _package_index_optional_guidance_queue(
             }
         )
     return queue
+
+
+def _optional_guidance_note_closeout_queue(
+    packages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    status_priority = {
+        "needs_info": 0,
+        "blocked": 1,
+        "not_recorded": 2,
+        "invalid": 3,
+    }
+    queue = []
+    for package in packages:
+        status = _str(package.get("optional_guidance_note_status"))
+        if status not in status_priority:
+            continue
+        queue.append(
+            {
+                "package_name": _str(package.get("package_name")),
+                "relative_package_dir": _str(package.get("relative_package_dir")),
+                "status": status,
+                "reviewer": (
+                    _str(package.get("optional_guidance_note_reviewer"))
+                    if status in {"needs_info", "blocked"}
+                    else ""
+                ),
+                "action_count": _int(
+                    package.get("optional_guidance_note_action_count")
+                ),
+                "note_path": _str(package.get("optional_guidance_note_path")),
+                "reason": (
+                    "Optional guidance note is needs_info."
+                    if status == "needs_info"
+                    else (
+                        "Optional guidance note is blocked."
+                        if status == "blocked"
+                        else (
+                            "Optional guidance note has not been recorded yet."
+                            if status == "not_recorded"
+                            else "Optional guidance note payload is invalid."
+                        )
+                    )
+                ),
+                "boundary_warning": OPTIONAL_GUIDANCE_NOTE_CLOSEOUT_WARNING,
+            }
+        )
+    return sorted(
+        queue,
+        key=lambda row: (
+            status_priority.get(_str(row.get("status")), 999),
+            _str(row.get("package_name")),
+        ),
+    )
 
 
 def _bundle_next_action_queue(packages: list[dict[str, Any]]) -> list[dict[str, str]]:

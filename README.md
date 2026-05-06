@@ -119,6 +119,9 @@ guidance 入口，并输出独立 `package_index_optional_guidance_queue`；它�
 P83 起 reviewer 可用 `archkg handoff-optional-guidance-note` 在包内写
 `handoff_optional_guidance_note.json/.md`，记录 optional guidance 已复核、需补信息或阻塞；
 它不是 issue confirmation，也不改变 manager intake。
+P84 起 `handoff_bundle_index` 会继续按包聚合 optional guidance note 的 `reviewed/needs_info/blocked/not_recorded/invalid`，
+并输出独立 `optional_guidance_note_closeout_queue` 供 manager triage 使用；它不改变 readiness、routing、source run 或
+issues 生命周期语义。
 P68 起完整 review run 会生成 `layout_3d.json`、`layout_3d_summary.md` 和 `layout_3d.glb`，
 帮助 reviewer 从平面图 graph 证据理解房间、墙段、门洞、楼梯占位和尺寸锚点的 2.5D 空间关系；
 这不是 IFC/BIM 输出，也不会改变规则引擎结论。
@@ -613,6 +616,8 @@ archkg clause readiness
 - P81：Package index opening provenance guidance link。包根静态 index 的 optional guidance 入口只做导航，不新增 required action、不改变 manager intake、package readiness 或 source run。
 - P82：Bundle optional guidance visibility。bundle 的 package-index optional guidance 队列只是负责人可见性，不写单包、不改 `next_action_queue`、不改变 package readiness 或 source run。
 - P83：Package optional guidance note。包内 optional guidance note 只是 reviewer 复核记录，不写源 run、不确认 issue、不改变 `review_state.json`、manager intake 或 package readiness。
+- P84：Bundle optional guidance note closeout。`handoff_bundle_index` 会汇总 optional guidance note 的 reviewed / needs_info / blocked / not_recorded / invalid 计数，
+并输出 `optional_guidance_note_closeout_queue` 供 manager triage 使用；这仅为可见性，不改变 readiness、routing、source run、`issues.json` 或 `review_state.json`。
 
 ---
 

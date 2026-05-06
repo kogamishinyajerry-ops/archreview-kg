@@ -73,11 +73,11 @@ Status:
 - P81-01 is complete: package-root static `index.html` now links to ready-runbook optional opening provenance guidance and the package-local checklist artifact, without changing readiness semantics.
 - P82-01 is complete: bundle indexes now show package-index optional guidance availability in a separate queue, without changing normal next-action routing.
 - P83-01 is complete: packages can now record package-local optional guidance review notes, without confirming candidate issues or changing readiness semantics.
-- P84-01 is planned: bundle indexes should aggregate package-local optional guidance note closeout status as manager visibility only, without changing readiness, routing, source-run, or issue lifecycle semantics.
+- P84-01 is complete: bundle indexes now aggregate package-local optional guidance note closeout status (reviewed / needs_info / blocked / not_recorded / invalid) as manager visibility only, without changing readiness, routing, source-run, or issue lifecycle semantics.
 
 ## Current Phase
 
-P84-01: Bundle optional guidance note closeout (planned).
+P84-01: Bundle optional guidance note closeout (complete).
 
 P84 should let a manager scan a bundle and see which packages have optional
 guidance notes recorded, which are reviewed, and which still need information or

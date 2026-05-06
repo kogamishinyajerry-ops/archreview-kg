@@ -101,6 +101,8 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
   并输出独立 `package_index_optional_guidance_queue`；它不改变正常 next action queue。
 - P83 后 reviewer 可以在交接包内写 `handoff_optional_guidance_note.json/.md`，
   记录 optional guidance review closeout；它不是 candidate issue confirmation。
+- P84 后 bundle summary 还会聚合 optional guidance note 的 closeout 状态（reviewed / needs_info / blocked / not_recorded / invalid），
+  并输出 `optional_guidance_note_closeout_queue` 供 manager triage 使用；这只是可见性，不改变 readiness / routing / source run / `review_state.json`。
 
 复现该结论：
 
@@ -135,8 +137,9 @@ P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 ge
 使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
 但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics、
 Opening Measurements、Opening Host Wall Provenance 和 Opening Provenance Consistency
-只解释来源与覆盖；P75-P83 把同一组 coverage 透传到 IFC export summary、handoff package、
-bundle summary、独立 triage queue、包内 reviewer checklist guidance、ready-runbook optional guidance、package index navigation、bundle optional-guidance visibility 和 package-local optional guidance notes，
+只解释来源与覆盖；P75-P84 把同一组 coverage / optional-guidance 透传到 IFC export summary、handoff package、
+bundle summary、独立 triage queue、包内 reviewer checklist guidance、ready-runbook optional guidance、package index navigation、bundle optional-guidance visibility、package-local optional guidance note 和
+package optional guidance note closeout，
 但仍不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
 且真实复杂图纸覆盖仍有限，所以仍不能宣称
 “已能处理任意复杂真实设计图并自动精准纠错”。

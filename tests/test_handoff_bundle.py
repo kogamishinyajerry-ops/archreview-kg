@@ -10,7 +10,10 @@ from archkg.viewer.handoff_bundle import (
     build_handoff_bundle_index,
     write_handoff_bundle_index,
 )
-from archkg.viewer.handoff_package import write_handoff_package
+from archkg.viewer.handoff_package import (
+    write_handoff_optional_guidance_note,
+    write_handoff_package,
+)
 
 
 def test_handoff_bundle_index_aggregates_opening_provenance_counts(
@@ -337,6 +340,196 @@ def test_handoff_bundle_index_surfaces_package_index_optional_guidance(
     assert "missing measurement" in html
 
 
+def test_handoff_bundle_index_summarizes_optional_guidance_note_closeout(
+    tmp_path: Path,
+) -> None:
+    runs_root = tmp_path / "runs"
+    packages_root = tmp_path / "handoff-packages"
+    runs_root.mkdir()
+    packages_root.mkdir()
+
+    run_reviewed = runs_root / "run-reviewed"
+    run_needs = runs_root / "run-needs"
+    run_blocked = runs_root / "run-blocked"
+    run_missing = runs_root / "run-missing"
+    run_invalid = runs_root / "run-invalid"
+    run_strong = runs_root / "run-strong"
+
+    package_reviewed = packages_root / "pkg-reviewed"
+    package_needs = packages_root / "pkg-needs"
+    package_blocked = packages_root / "pkg-blocked"
+    package_missing = packages_root / "pkg-missing"
+    package_invalid = packages_root / "pkg-invalid"
+    package_strong = packages_root / "pkg-strong"
+
+    for run_dir in [
+        run_reviewed,
+        run_needs,
+        run_blocked,
+        run_missing,
+        run_invalid,
+    ]:
+        _write_minimal_run(run_dir)
+        _write_layout_ifc_with_opening_provenance(
+            run_dir,
+            {
+                "semantic_count": 1,
+                "measurement_count": 0,
+                "host_count": 1,
+                "all_three_count": 0,
+            },
+        )
+    _write_minimal_run(run_strong)
+    _write_layout_ifc_with_opening_provenance(
+        run_strong,
+        {
+            "semantic_count": 2,
+            "measurement_count": 2,
+            "host_count": 1,
+            "all_three_count": 1,
+        },
+    )
+
+    write_handoff_package(run_reviewed, package_reviewed)
+    write_handoff_optional_guidance_note(
+        package_reviewed,
+        reviewer="reviewer-reviewed",
+        status="reviewed",
+        note="Optional guidance reviewed.",
+    )
+    write_handoff_package(run_needs, package_needs)
+    write_handoff_optional_guidance_note(
+        package_needs,
+        reviewer="reviewer-needs",
+        status="needs_info",
+        note="Needs further documentation.",
+    )
+    write_handoff_package(run_blocked, package_blocked)
+    write_handoff_optional_guidance_note(
+        package_blocked,
+        reviewer="reviewer-blocked",
+        status="blocked",
+        note="Missing section labels.",
+    )
+    write_handoff_package(run_missing, package_missing)
+    write_handoff_package(run_invalid, package_invalid)
+    write_handoff_package(run_strong, package_strong)
+    _write_invalid_optional_guidance_note(package_invalid)
+
+    out_json = packages_root / "handoff_bundle_index.json"
+    out_md = packages_root / "handoff_bundle_index.md"
+    out_html = packages_root / "handoff_bundle_index.html"
+    write_handoff_bundle_index(
+        packages_root,
+        out=out_json,
+        markdown=out_md,
+        html_path=out_html,
+    )
+    payload = json.loads(out_json.read_text("utf-8"))
+
+    summary = payload["summary"]
+    assert summary["optional_guidance_note_reviewed_count"] == 1
+    assert summary["optional_guidance_note_needs_info_count"] == 1
+    assert summary["optional_guidance_note_blocked_count"] == 1
+    assert summary["optional_guidance_note_not_recorded_count"] == 1
+    assert summary["optional_guidance_note_invalid_count"] == 1
+
+    rows = {row["package_name"]: row for row in payload["packages"]}
+    assert rows["pkg-reviewed"]["optional_guidance_note_available"] is True
+    assert rows["pkg-reviewed"]["optional_guidance_note_status"] == "reviewed"
+    assert rows["pkg-reviewed"]["optional_guidance_note_reviewer"] == "reviewer-reviewed"
+    assert rows["pkg-reviewed"]["optional_guidance_note_action_count"] == 1
+    assert rows["pkg-reviewed"]["optional_guidance_note_path"] == (
+        "pkg-reviewed/handoff_optional_guidance_note.json"
+    )
+
+    assert rows["pkg-needs"]["optional_guidance_note_status"] == "needs_info"
+    assert rows["pkg-needs"]["optional_guidance_note_reviewer"] == "reviewer-needs"
+    assert rows["pkg-blocked"]["optional_guidance_note_status"] == "blocked"
+    assert rows["pkg-blocked"]["optional_guidance_note_reviewer"] == "reviewer-blocked"
+    assert rows["pkg-missing"]["optional_guidance_note_status"] == "not_recorded"
+    assert rows["pkg-missing"]["optional_guidance_note_reviewer"] == ""
+    assert rows["pkg-invalid"]["optional_guidance_note_status"] == "invalid"
+    assert rows["pkg-strong"]["optional_guidance_note_available"] is False
+    assert rows["pkg-strong"]["optional_guidance_note_status"] == "not_applicable"
+
+    queue = payload["optional_guidance_note_closeout_queue"]
+    assert queue == [
+        {
+            "package_name": "pkg-needs",
+            "relative_package_dir": "pkg-needs",
+            "status": "needs_info",
+            "reviewer": "reviewer-needs",
+            "action_count": 1,
+            "note_path": "pkg-needs/handoff_optional_guidance_note.json",
+            "reason": "Optional guidance note is needs_info.",
+            "boundary_warning": (
+                "Optional guidance closeout is manager triage visibility only; "
+                "note states do not change package readiness."
+            ),
+        },
+        {
+            "package_name": "pkg-blocked",
+            "relative_package_dir": "pkg-blocked",
+            "status": "blocked",
+            "reviewer": "reviewer-blocked",
+            "action_count": 1,
+            "note_path": "pkg-blocked/handoff_optional_guidance_note.json",
+            "reason": "Optional guidance note is blocked.",
+            "boundary_warning": (
+                "Optional guidance closeout is manager triage visibility only; "
+                "note states do not change package readiness."
+            ),
+        },
+        {
+            "package_name": "pkg-missing",
+            "relative_package_dir": "pkg-missing",
+            "status": "not_recorded",
+            "reviewer": "",
+            "action_count": 1,
+            "note_path": "pkg-missing/handoff_optional_guidance_note.json",
+            "reason": "Optional guidance note has not been recorded yet.",
+            "boundary_warning": (
+                "Optional guidance closeout is manager triage visibility only; "
+                "note states do not change package readiness."
+            ),
+        },
+        {
+            "package_name": "pkg-invalid",
+            "relative_package_dir": "pkg-invalid",
+            "status": "invalid",
+            "reviewer": "",
+            "action_count": 1,
+            "note_path": "pkg-invalid/handoff_optional_guidance_note.json",
+            "reason": "Optional guidance note payload is invalid.",
+            "boundary_warning": (
+                "Optional guidance closeout is manager triage visibility only; "
+                "note states do not change package readiness."
+            ),
+        },
+    ]
+
+    markdown = out_md.read_text("utf-8")
+    assert (
+        "Optional guidance note closeout: reviewed=`1`, needs_info=`1`, blocked=`1`, "
+        "not_recorded=`1`, invalid=`1`"
+    ) in markdown
+    assert "## Optional Guidance Note Closeout Queue" in markdown
+    assert (
+        "| `pkg-needs` | needs_info | reviewer-needs | 1 | "
+        "`pkg-needs/handoff_optional_guidance_note.json` |" in markdown
+    )
+    assert (
+        "| `pkg-missing` | not_recorded |  | 1 | "
+        "`pkg-missing/handoff_optional_guidance_note.json` |" in markdown
+    )
+
+    html = out_html.read_text("utf-8")
+    assert "Optional Guidance Note Closeout Queue" in html
+    assert "pkg-invalid" in html
+    assert "note is invalid" in html
+
+
 def _write_layout_ifc_with_opening_provenance(
     run_dir: Path,
     counts: dict[str, int],
@@ -397,3 +590,18 @@ def _write_minimal_run(run_dir: Path) -> None:
     (run_dir / "annotated.pdf").write_bytes(b"%PDF-1.7\n")
     (run_dir / "layout_3d.glb").write_bytes(b"glb bytes")
     (run_dir / "layout.ifc").write_text("IFC preview\n", encoding="utf-8")
+
+
+def _write_invalid_optional_guidance_note(package_dir: Path) -> None:
+    (package_dir / "handoff_optional_guidance_note.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "handoff_optional_guidance_note.v1",
+                "status": "not_reviewed",
+                "reviewer": "reviewer-invalid",
+                "note": "invalid status",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
