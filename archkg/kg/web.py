@@ -25,76 +25,426 @@ from flask import Flask, jsonify, request
 from archkg.kg.feedback import add_feedback
 from archkg.kg.store import KGStore, default_db_path
 
-INDEX_HTML = """<!doctype html>
-<html lang=\"en\">
+INDEX_HTML = r"""<!doctype html>
+<html lang="en">
 <head>
-  <meta charset=\"utf-8\">
+  <meta charset="utf-8">
   <title>ArchReview-KG Workbench</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; background: #f8fafc; }
-    header { background: #1f2937; color: white; padding: 12px 24px; }
-    main { padding: 16px 24px; }
-    h1 { font-size: 18px; margin: 0; }
-    h2 { font-size: 14px; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 24px; }
-    table { border-collapse: collapse; width: 100%; background: white; }
-    th, td { border-bottom: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; font-size: 13px; }
-    th { background: #f1f5f9; font-weight: 600; color: #1e293b; }
-    tr:hover { background: #f1f5f9; cursor: pointer; }
-    pre { background: white; padding: 12px; border: 1px solid #e5e7eb; font-size: 12px; overflow: auto; }
-    nav a { color: white; margin-right: 16px; text-decoration: none; font-size: 13px; }
-    nav a:hover { text-decoration: underline; }
-    .status { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 600; }
-    .candidate { background: #fef3c7; color: #92400e; }
-    .confirmed { background: #d1fae5; color: #065f46; }
-    .rejected { background: #fee2e2; color: #991b1b; }
-    .needs_info { background: #dbeafe; color: #1e40af; }
+    :root {
+      --bg: #f5f5f7; --surface: #ffffff; --border: #d2d2d7;
+      --text: #1d1d1f; --muted: #6e6e73; --accent: #0071e3; --accent-dim: #e8f1fc;
+      --ok: #28a745; --warn: #ff9500; --bad: #ff3b30; --info: #5e5ce6;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+           margin: 0; padding: 0; background: var(--bg); color: var(--text);
+           font-size: 14px; line-height: 1.5; }
+    header { background: #1d1d1f; color: white; padding: 14px 28px;
+             display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+    header .brand { display: flex; align-items: center; gap: 12px; }
+    header .logo { width: 28px; height: 28px; border-radius: 6px; background: linear-gradient(135deg, #0071e3 0%, #5e5ce6 100%); }
+    nav a { color: rgba(255,255,255,0.85); margin-left: 20px; text-decoration: none; font-size: 13px; }
+    nav a:hover { color: white; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 20px 28px; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+             overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .panel-h { padding: 12px 16px; border-bottom: 1px solid var(--border);
+               font-size: 12px; font-weight: 600; color: var(--muted);
+               text-transform: uppercase; letter-spacing: 0.06em;
+               display: flex; align-items: center; justify-content: space-between; }
+    .panel-h .meta { font-weight: 400; text-transform: none; letter-spacing: 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 14px; text-align: left; font-size: 13px;
+             border-bottom: 1px solid #f0f0f3; }
+    th { background: #fafafa; font-weight: 600; color: var(--muted); font-size: 11px;
+         text-transform: uppercase; letter-spacing: 0.06em; }
+    tbody tr { cursor: pointer; transition: background 0.1s; }
+    tbody tr:hover { background: var(--accent-dim); }
+    tbody tr.active { background: var(--accent-dim); }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 12px;
+              font-size: 11px; font-weight: 600; }
+    .status.candidate { background: rgba(255, 149, 0, 0.15); color: #b25800; }
+    .status.confirmed { background: rgba(40, 167, 69, 0.15); color: #1d6f30; }
+    .status.rejected  { background: rgba(255, 59, 48, 0.15); color: #b51910; }
+    .status.needs_info{ background: rgba(94, 92, 230, 0.15); color: #3530a8; }
+    .status.resolved  { background: rgba(0, 113, 227, 0.15); color: #004b96; }
+    .status.superseded{ background: rgba(110, 110, 115, 0.15); color: #3a3a3c; }
+    /* Issue drawer */
+    .drawer-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+                   opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10; }
+    .drawer-mask.open { opacity: 1; pointer-events: auto; }
+    .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 560px;
+              background: var(--surface); border-left: 1px solid var(--border);
+              box-shadow: -8px 0 24px rgba(0,0,0,0.12);
+              transform: translateX(100%); transition: transform 0.25s ease;
+              z-index: 11; overflow-y: auto; }
+    .drawer.open { transform: translateX(0); }
+    .drawer-h { padding: 18px 22px; border-bottom: 1px solid var(--border);
+                position: sticky; top: 0; background: var(--surface); z-index: 1; }
+    .drawer-h .close { position: absolute; top: 18px; right: 22px;
+                       background: none; border: none; font-size: 22px;
+                       color: var(--muted); cursor: pointer; }
+    .drawer-h h3 { margin: 0 0 6px 0; font-size: 16px; font-weight: 600; }
+    .drawer-h .sub { color: var(--muted); font-size: 12px; font-family: ui-monospace, "SF Mono", monospace; }
+    .drawer-body { padding: 18px 22px; }
+    .drawer-body .row { display: grid; grid-template-columns: 110px 1fr; gap: 12px;
+                        padding: 8px 0; border-bottom: 1px solid #f0f0f3; }
+    .drawer-body .row .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .drawer-body .row .v { font-size: 13px; word-break: break-word; }
+    .drawer-body .row .v code { background: #f5f5f7; padding: 1px 5px; border-radius: 4px;
+                                font-family: ui-monospace, "SF Mono", monospace; font-size: 12px; }
+    .evidence { background: #1d1d1f; color: #f5f5f7; padding: 14px;
+                border-radius: 8px; font-family: ui-monospace, "SF Mono", monospace;
+                font-size: 11px; white-space: pre-wrap; overflow-x: auto;
+                max-height: 220px; overflow-y: auto; }
+    .feedback-h { margin: 22px 0 10px 0; font-size: 12px; color: var(--muted);
+                  text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+    .feedback-list { list-style: none; padding: 0; margin: 0; }
+    .feedback-list li { padding: 8px 0; border-bottom: 1px solid #f0f0f3; font-size: 13px;
+                        display: flex; gap: 8px; align-items: baseline; }
+    .feedback-list .who { font-family: ui-monospace, "SF Mono", monospace; font-size: 12px;
+                         color: var(--muted); min-width: 130px; }
+    .feedback-list .what { font-weight: 500; }
+    .feedback-list .when { font-size: 11px; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+    .actions { display: flex; gap: 8px; margin: 18px 0 8px 0; }
+    .btn { padding: 8px 14px; font-size: 13px; font-weight: 500; border-radius: 8px;
+           border: 1px solid var(--border); background: var(--surface); cursor: pointer;
+           transition: all 0.1s; }
+    .btn:hover { background: #f5f5f7; }
+    .btn.confirm { border-color: var(--ok); color: var(--ok); }
+    .btn.confirm:hover { background: var(--ok); color: white; }
+    .btn.reject { border-color: var(--bad); color: var(--bad); }
+    .btn.reject:hover { background: var(--bad); color: white; }
+    .btn.needs_info { border-color: var(--info); color: var(--info); }
+    .btn.needs_info:hover { background: var(--info); color: white; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+             background: #1d1d1f; color: white; padding: 10px 18px; border-radius: 8px;
+             font-size: 13px; opacity: 0; transition: all 0.2s; z-index: 20;
+             box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .empty { padding: 28px; color: var(--muted); text-align: center; font-size: 13px; }
+    .full-row { grid-column: 1 / -1; }
+    .badge-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge-row span { background: #f5f5f7; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>ArchReview-KG Workbench</h1>
+    <div class="brand">
+      <div class="logo"></div>
+      <h1>ArchReview-KG Workbench</h1>
+    </div>
     <nav>
-      <a href=\"#projects\">Projects</a>
-      <a href=\"#heatmap\">Heatmap</a>
-      <a href=\"/api/projects\">Raw JSON</a>
+      <a href="#projects">Projects</a>
+      <a href="#heatmap">Rule Heatmap</a>
+      <a href="/api/projects" target="_blank">Raw API</a>
     </nav>
   </header>
-  <main>
-    <h2 id=\"projects\">Projects</h2>
-    <table id=\"projects_table\"><thead><tr><th>Slug</th><th>Name</th><th>Drawings</th><th>Issues</th></tr></thead><tbody></tbody></table>
 
-    <h2 id=\"heatmap\">Rule Trigger Heatmap</h2>
-    <table id=\"heatmap_table\"><thead><tr><th>Rule</th><th>Total</th><th>Confirmed</th><th>Rejected</th><th>Candidate</th></tr></thead><tbody></tbody></table>
+  <div class="layout">
+    <section class="panel">
+      <div class="panel-h">
+        <span>Projects</span>
+        <span class="meta" id="proj_meta">loading…</span>
+      </div>
+      <table id="projects_table">
+        <thead><tr><th>Slug</th><th>Name</th><th style="text-align:right">Drawings</th><th style="text-align:right">Issues</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-    <h2 id=\"issue_detail\">Selected issue</h2>
-    <pre id=\"issue_pre\">(click an issue row in the future Drawings drilldown — out of scope for the M5.D smoke set)</pre>
-  </main>
+    <section class="panel">
+      <div class="panel-h">
+        <span>Rule Trigger Heatmap</span>
+        <span class="meta" id="heat_meta">loading…</span>
+      </div>
+      <table id="heatmap_table">
+        <thead><tr><th>Rule</th><th style="text-align:right">Total</th><th style="text-align:right">Confirmed</th><th style="text-align:right">Rejected</th><th style="text-align:right">Candidate</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="panel full-row" id="issues_panel" style="grid-column: 1 / -1; display: none;">
+      <div class="panel-h">
+        <span>Issues for project <code id="issues_slug"></code></span>
+        <span class="meta" id="issues_meta"></span>
+      </div>
+      <table id="issues_table">
+        <thead><tr><th>#</th><th>Rule</th><th>Severity</th><th>Status</th><th>Message</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <div class="drawer-mask" id="mask"></div>
+  <aside class="drawer" id="drawer">
+    <div class="drawer-h">
+      <button class="close" aria-label="close" onclick="closeDrawer()">×</button>
+      <h3 id="d_title">Issue</h3>
+      <div class="sub" id="d_sub"></div>
+    </div>
+    <div class="drawer-body" id="d_body"></div>
+  </aside>
+
+  <div class="toast" id="toast"></div>
+
   <script>
-    async function fetchJSON(url) {
-      const res = await fetch(url);
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    async function fetchJSON(url, opts) {
+      const res = await fetch(url, opts);
+      if (!res.ok) throw new Error(`${url} → ${res.status}`);
       return await res.json();
     }
+
+    function toast(msg) {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1800);
+    }
+
+    function statusBadge(s) {
+      return `<span class="status ${s}">${s}</span>`;
+    }
+
+    let projectsData = [];
+    let currentSlug = null;
+
     async function loadProjects() {
-      const data = await fetchJSON('/api/projects');
-      const tbody = document.querySelector('#projects_table tbody');
+      projectsData = await fetchJSON('/api/projects');
+      const tbody = $('#projects_table tbody');
       tbody.innerHTML = '';
-      for (const p of data) {
+      let totalIssues = 0;
+      for (const p of projectsData) {
+        totalIssues += p.issue_count;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.slug}</td><td>${p.name || ''}</td><td>${p.drawing_count}</td><td>${p.issue_count}</td>`;
+        tr.dataset.slug = p.slug;
+        tr.innerHTML = `<td><code>${p.slug}</code></td><td>${p.name || ''}</td>
+                        <td style="text-align:right">${p.drawing_count}</td>
+                        <td style="text-align:right">${p.issue_count}</td>`;
+        tr.onclick = () => openProject(p.slug);
         tbody.appendChild(tr);
       }
+      $('#proj_meta').textContent = `${projectsData.length} projects · ${totalIssues} issues`;
     }
+
     async function loadHeatmap() {
       const data = await fetchJSON('/api/heatmap');
-      const tbody = document.querySelector('#heatmap_table tbody');
+      const tbody = $('#heatmap_table tbody');
       tbody.innerHTML = '';
+      let totalRules = 0;
+      let totalCandidate = 0, totalConfirmed = 0, totalRejected = 0;
       for (const row of data) {
+        totalRules++;
+        totalCandidate += row.candidate;
+        totalConfirmed += row.confirmed;
+        totalRejected += row.rejected;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${row.rule_id}</td><td>${row.total}</td><td>${row.confirmed}</td><td>${row.rejected}</td><td>${row.candidate}</td>`;
+        tr.innerHTML = `<td><code>${row.rule_id}</code></td>
+                        <td style="text-align:right">${row.total}</td>
+                        <td style="text-align:right; color: var(--ok); font-weight: 600">${row.confirmed}</td>
+                        <td style="text-align:right; color: var(--bad); font-weight: 600">${row.rejected}</td>
+                        <td style="text-align:right; color: var(--warn); font-weight: 600">${row.candidate}</td>`;
         tbody.appendChild(tr);
       }
+      $('#heat_meta').textContent = `${totalRules} rules · ${totalConfirmed} confirmed · ${totalRejected} rejected · ${totalCandidate} candidate`;
     }
-    loadProjects(); loadHeatmap();
+
+    async function openProject(slug) {
+      currentSlug = slug;
+      $$('#projects_table tbody tr').forEach((tr) => {
+        tr.classList.toggle('active', tr.dataset.slug === slug);
+      });
+      const data = await fetchJSON(`/api/projects/${slug}/issues`);
+      const panel = $('#issues_panel');
+      panel.style.display = 'block';
+      $('#issues_slug').textContent = slug;
+      const tbody = panel.querySelector('tbody');
+      tbody.innerHTML = '';
+      const counts = { candidate: 0, confirmed: 0, rejected: 0, needs_info: 0, resolved: 0, superseded: 0 };
+      for (const i of data.issues) {
+        counts[i.status] = (counts[i.status] || 0) + 1;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><code>${i.source_issue_id || i.id}</code></td>
+                        <td><code>${i.rule_id || '<none>'}</code></td>
+                        <td>${i.severity || ''}</td>
+                        <td>${statusBadge(i.status)}</td>
+                        <td>${(i.message || '').slice(0, 120)}</td>`;
+        tr.onclick = () => openIssue(i.id);
+        tbody.appendChild(tr);
+      }
+      const parts = Object.entries(counts).filter(([_,v]) => v>0)
+        .map(([k,v]) => `${v} ${k}`).join(' · ');
+      $('#issues_meta').textContent = `${data.issues.length} issues · ${parts}`;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function openIssue(id) {
+      const data = await fetchJSON(`/api/issues/${id}`);
+      $('#d_title').innerHTML = `${statusBadge(data.status)} <code>${data.rule_id || ''}</code>`;
+      $('#d_sub').textContent = `issue #${data.source_issue_id || data.id} · project ${data.project_slug}`;
+      const body = $('#d_body');
+      const ev = data.evidence ? JSON.stringify(data.evidence, null, 2) : '(no evidence payload)';
+      const fbList = (data.feedback_events || []).map((fe) => {
+        const when = fe.created_at ? new Date(fe.created_at).toISOString().slice(0,16).replace('T',' ') : '';
+        return `<li><span class="who">${fe.reviewer_id || '<system>'}</span>
+                    <span class="what">${fe.event_type}</span>
+                    <span class="when">${when}</span></li>`;
+      }).join('');
+      body.innerHTML = `
+        <div class="row"><div class="k">Severity</div><div class="v">${data.severity || ''}</div></div>
+        <div class="row"><div class="k">Source</div><div class="v"><code>${data.source_path || '(unspecified)'}</code></div></div>
+        <div class="row"><div class="k">Message</div><div class="v">${data.message || ''}</div></div>
+        <div class="row"><div class="k">Bbox</div><div class="v"><code>${data.bbox ? JSON.stringify(data.bbox) : '—'}</code></div></div>
+        <div class="feedback-h">Evidence</div>
+        <pre class="evidence">${ev}</pre>
+        <div class="feedback-h">Reviewer feedback (${(data.feedback_events||[]).length})</div>
+        <ul class="feedback-list">${fbList || '<li style="color:var(--muted)">no events yet</li>'}</ul>
+        <div class="feedback-h">Record verdict</div>
+        <div class="actions">
+          <button class="btn confirm" onclick="postFeedback(${data.id}, 'confirm')">✓ Confirm</button>
+          <button class="btn reject" onclick="postFeedback(${data.id}, 'reject')">✗ Reject</button>
+          <button class="btn needs_info" onclick="postFeedback(${data.id}, 'needs_info')">? Needs info</button>
+        </div>
+      `;
+      $('#mask').classList.add('open');
+      $('#drawer').classList.add('open');
+    }
+
+    function closeDrawer() {
+      $('#mask').classList.remove('open');
+      $('#drawer').classList.remove('open');
+    }
+
+    async function postFeedback(issueId, eventType) {
+      try {
+        await fetchJSON(`/api/issues/${issueId}/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reviewer: 'demo-reviewer-live', event: eventType }),
+        });
+        toast(`Recorded: ${eventType}`);
+        await openIssue(issueId);  // refresh detail
+        if (currentSlug) await openProject(currentSlug);  // refresh list status
+      } catch (e) {
+        toast(`Error: ${e.message}`);
+      }
+    }
+
+    $('#mask').onclick = closeDrawer;
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+
+    // ----- Auto-driven demo (?demo=1) for the M6 screencapture --------------
+    // Sequences a deterministic walkthrough so ffmpeg AVFoundation can capture
+    // real product interaction without a human at the keyboard.
+    function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+    function flashRow(tr, ms) {
+      tr.classList.add('active');
+      tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return sleep(ms);
+    }
+
+    function captionOverlay(text, ms) {
+      let el = document.querySelector('#demo-caption');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'demo-caption';
+        el.style.cssText = 'position:fixed;left:50%;bottom:32px;transform:translateX(-50%);' +
+          'background:rgba(29,29,31,0.92);color:white;padding:14px 24px;border-radius:12px;' +
+          'font-size:18px;font-weight:500;letter-spacing:0.01em;z-index:30;' +
+          'box-shadow:0 8px 24px rgba(0,0,0,0.28);max-width:900px;text-align:center;' +
+          'opacity:0;transition:opacity 0.3s;';
+        document.body.appendChild(el);
+      }
+      el.textContent = text;
+      el.style.opacity = '1';
+      return sleep(ms).then(() => { el.style.opacity = '0'; });
+    }
+
+    async function runDemo() {
+      await sleep(1200);
+      await captionOverlay('ArchReview-KG Workbench — 33 plans, 148 issues, 25 rules', 4000);
+      await sleep(600);
+
+      // Highlight the target project row, then click it.
+      const targetSlug = 'cambridge-343medford-overview';
+      const row = document.querySelector(`#projects_table tbody tr[data-slug="${targetSlug}"]`);
+      if (row) {
+        await captionOverlay('Drill into a project to see its issues', 3500);
+        await flashRow(row, 1200);
+        row.click();
+        await sleep(2200);
+      }
+
+      // Scroll heatmap into view to show rule coverage, then come back.
+      $('#heatmap_table').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      await captionOverlay('Rule heatmap — over-detection visible on door & corridor width', 4500);
+      await sleep(1500);
+
+      // Scroll back to issues panel and open the first needs_info issue.
+      const issuesPanel = $('#issues_panel');
+      issuesPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      await sleep(1500);
+      const issueRows = document.querySelectorAll('#issues_table tbody tr');
+      let targetIssueRow = null;
+      for (const tr of issueRows) {
+        if (tr.textContent.includes('needs_info') || tr.textContent.includes('candidate')) {
+          targetIssueRow = tr; break;
+        }
+      }
+      if (targetIssueRow) {
+        await captionOverlay('Every issue cites the rule, the evidence, and the lifecycle', 4000);
+        await flashRow(targetIssueRow, 1500);
+        targetIssueRow.click();
+        await sleep(3200);
+      }
+
+      await captionOverlay('Evidence: measured value vs. clause threshold — verifiable on disk', 4500);
+      await sleep(2000);
+      await captionOverlay('Reviewer feedback events are preserved — disagreements are not overwritten', 5000);
+      await sleep(1500);
+
+      // Record a confirm verdict — real POST to /api/issues/<id>/feedback.
+      const confirmBtn = document.querySelector('#drawer .btn.confirm');
+      if (confirmBtn) {
+        await captionOverlay('Record a verdict — writes a new feedback_event in the KG', 3800);
+        confirmBtn.click();
+        await sleep(2800);
+      }
+
+      await captionOverlay('Verdict recorded. Status updated. Audit trail preserved.', 4000);
+      await sleep(2000);
+      closeDrawer();
+      await sleep(900);
+
+      // Return to top for closing shot.
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      await captionOverlay('Open source. Offline. Honest. Every finding traces to its evidence.', 5500);
+      await sleep(2500);
+      await captionOverlay('archreview-kg · M6 product demo', 3500);
+    }
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('demo') === '1') {
+      // Wait for the project + heatmap tables to be populated before starting.
+      const start = async () => {
+        // Poll for projects to load
+        for (let i = 0; i < 50; i++) {
+          if (document.querySelectorAll('#projects_table tbody tr').length > 0) break;
+          await sleep(120);
+        }
+        runDemo();
+      };
+      start();
+    }
+
+    loadProjects();
+    loadHeatmap();
   </script>
 </body>
 </html>"""
@@ -141,6 +491,37 @@ def create_app(db_path: Path | None = None) -> Flask:
                 ).fetchall()
             ]
         return jsonify({"project": slug, "drawings": drawings})
+
+    @app.get("/api/projects/<slug>/issues")
+    def project_issues(slug: str) -> Any:
+        with _store() as store:
+            row = store._conn.execute(
+                "SELECT id FROM project WHERE slug = ?", (slug,)
+            ).fetchone()
+            if not row:
+                return jsonify({"error": "project not found", "slug": slug}), 404
+            project_id = int(row["id"])
+            issues = [
+                {
+                    "id": int(r["id"]),
+                    "source_issue_id": r["source_issue_id"],
+                    "rule_id": r["rule_label"],
+                    "status": r["status"],
+                    "severity": r["severity"],
+                    "message": r["message"],
+                }
+                for r in store._conn.execute(
+                    "SELECT i.id, i.source_issue_id, i.status, i.severity, i.message, "
+                    "r.rule_id AS rule_label "
+                    "FROM issue i "
+                    "JOIN run rn ON i.run_id = rn.id "
+                    "LEFT JOIN rule r ON i.rule_id = r.id "
+                    "WHERE rn.project_id = ? "
+                    "ORDER BY i.id",
+                    (project_id,),
+                ).fetchall()
+            ]
+        return jsonify({"project": slug, "issues": issues})
 
     @app.get("/api/heatmap")
     def heatmap() -> Any:

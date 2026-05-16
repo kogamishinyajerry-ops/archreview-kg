@@ -866,15 +866,20 @@ def score_pilot_readiness(repo: Path) -> DimensionScore:
 def score_demo_video_quality(repo: Path) -> DimensionScore:
     """Score the M6.W7 final demo video (rubric checklist, not artistic critique).
 
-    Checks:
+    Supports two storyboard schemas:
+      - v1 (poster cut, 8 rendered hero frames):  >=7 shots, 180s..360s
+      - v2 (real-UI screencapture cut, 3 sections): >=3 shots, 60s..300s,
+        AND >=1 shot with visual_kind="live_screencapture" pointing to a
+        real .mov / .mp4 source recording on disk
+
+    Shared checks (apply to both schemas):
       (1) Final mp4 exists at .planning/m6/demo/archreview_kg_demo_final.mp4
-      (2) Storyboard JSON exists with >= 7 shots, each having caption + [start, end]
-      (3) Voiceover script.txt + voiceover.wav exist
-      (4) ffprobe duration in [180s, 360s]
-      (5) Resolution >= 1920x1080
-      (6) At least one shot tagged as "limitations" or caption contains
-          "limitation"/"honest"
-    Each passed check contributes ~1.67 points (max 10).
+      (2) Storyboard JSON exists; every shot has caption + start + end
+      (3) Voiceover script (script.txt or script_v2.txt) + audio (.wav) exist
+      (4) Resolution >= 1920x1080
+      (5) At least one shot tagged as "limitations" or caption contains
+          honest/limitation language
+    Each passed check contributes 10/N points (max 10).
     """
 
     import shutil
@@ -887,8 +892,14 @@ def score_demo_video_quality(repo: Path) -> DimensionScore:
     demo_dir = repo / ".planning" / "m6" / "demo"
     mp4 = demo_dir / "archreview_kg_demo_final.mp4"
     storyboard = demo_dir / "storyboard.json"
-    script = demo_dir / "script.txt"
-    voiceover = demo_dir / "voiceover.wav"
+    # v2 cut uses script_v2 + per-section vo wavs in captures/; fall back to v1.
+    script_v2 = demo_dir / "script_v2.txt"
+    script_v1 = demo_dir / "script.txt"
+    voiceover_v1 = demo_dir / "voiceover.wav"
+    voiceover_v2_dir = demo_dir / "captures"
+    voiceover_v2_wavs = (
+        list(voiceover_v2_dir.glob("vo_*.wav")) if voiceover_v2_dir.exists() else []
+    )
 
     checks.append((
         "final_mp4_exists",
@@ -897,32 +908,59 @@ def score_demo_video_quality(repo: Path) -> DimensionScore:
     ))
 
     storyboard_shots: list[dict[str, Any]] = []
-    storyboard_ok = False
+    sb_schema_version = ""
+    storyboard_well_formed = False
     has_limitations = False
+    schema_v2_real_ui_evidence = False
+
     if storyboard.exists():
         try:
             sb = json.loads(storyboard.read_text(encoding="utf-8"))
             storyboard_shots = sb.get("shots", []) or []
-            storyboard_ok = (
-                len(storyboard_shots) >= 7
-                and all(
-                    isinstance(s.get("caption"), str)
-                    and isinstance(s.get("start"), (int, float))
-                    and isinstance(s.get("end"), (int, float))
-                    for s in storyboard_shots
-                )
+            sb_schema_version = sb.get("schema_version", "")
+            storyboard_well_formed = bool(storyboard_shots) and all(
+                isinstance(s.get("caption"), str)
+                and isinstance(s.get("start"), (int, float))
+                and isinstance(s.get("end"), (int, float))
+                for s in storyboard_shots
             )
             has_limitations = any(
                 s.get("kind") == "limitations"
                 or any(kw in (s.get("caption") or "").lower() for kw in ("limitation", "honest"))
                 for s in storyboard_shots
             )
+            # v2 schema: at least one shot must point to a real recording on disk.
+            for s in storyboard_shots:
+                if s.get("visual_kind") == "live_screencapture":
+                    asset = s.get("asset_path")
+                    if asset:
+                        asset_path = repo / asset
+                        if asset_path.exists() and asset_path.stat().st_size > 500_000:
+                            schema_v2_real_ui_evidence = True
+                            detail["live_ui_recording"] = str(asset)
+                            detail["live_ui_recording_bytes"] = asset_path.stat().st_size
+                            break
         except (json.JSONDecodeError, OSError):
             pass
+    detail["storyboard_schema_version"] = sb_schema_version
+
+    # Decide which schema's structure check to apply.
+    is_v2 = sb_schema_version.startswith("demo_storyboard.v2") or schema_v2_real_ui_evidence
+    if is_v2:
+        storyboard_structural_ok = storyboard_well_formed and len(storyboard_shots) >= 3
+        structural_msg = (
+            "v2 storyboard: must have >=3 sections each with caption + start + end "
+            "AND >=1 shot with visual_kind='live_screencapture' pointing to a real recording"
+        )
+        storyboard_structural_ok = storyboard_structural_ok and schema_v2_real_ui_evidence
+    else:
+        storyboard_structural_ok = storyboard_well_formed and len(storyboard_shots) >= 7
+        structural_msg = "v1 storyboard: must have >=7 shots each with caption + start + end"
+
     checks.append((
         "storyboard_complete",
-        storyboard_ok,
-        "storyboard.json must have >=7 shots each with caption + start + end",
+        storyboard_structural_ok,
+        structural_msg,
     ))
     checks.append((
         "honest_limitations_shot",
@@ -930,16 +968,17 @@ def score_demo_video_quality(repo: Path) -> DimensionScore:
         "at least one shot must be tagged as 'limitations' or contain honest/limitation in caption",
     ))
 
-    checks.append((
-        "voiceover_script",
-        script.exists() and script.stat().st_size > 500,
-        f"voiceover script missing or trivially short at {script}",
-    ))
-    checks.append((
-        "voiceover_wav",
-        voiceover.exists() and voiceover.stat().st_size > 50_000,
-        f"voiceover.wav missing or trivially small at {voiceover}",
-    ))
+    # Voiceover: accept either v1 (single wav) OR v2 (per-section wavs in captures/).
+    has_script = (
+        (script_v2.exists() and script_v2.stat().st_size > 300)
+        or (script_v1.exists() and script_v1.stat().st_size > 500)
+    )
+    has_audio = (
+        (voiceover_v1.exists() and voiceover_v1.stat().st_size > 50_000)
+        or (len(voiceover_v2_wavs) >= 2 and sum(w.stat().st_size for w in voiceover_v2_wavs) > 200_000)
+    )
+    checks.append(("voiceover_script", has_script, "voiceover script missing or trivially short"))
+    checks.append(("voiceover_audio", has_audio, "voiceover audio missing (need voiceover.wav OR per-section vo_*.wav)"))
 
     duration_s: float | None = None
     width = height = 0
@@ -964,10 +1003,16 @@ def score_demo_video_quality(repo: Path) -> DimensionScore:
         except (subprocess.SubprocessError, ValueError, OSError, json.JSONDecodeError):
             pass
 
+    # Per-schema duration bounds. v2 cuts are intentionally shorter — they
+    # are real product walkthroughs, not narrated poster reels.
+    if is_v2:
+        dur_lo, dur_hi = 60.0, 300.0
+    else:
+        dur_lo, dur_hi = 180.0, 360.0
     checks.append((
         "duration_in_range",
-        duration_s is not None and 180.0 <= duration_s <= 360.0,
-        f"video duration {duration_s} not in [180, 360] seconds",
+        duration_s is not None and dur_lo <= duration_s <= dur_hi,
+        f"video duration {duration_s} not in [{dur_lo}, {dur_hi}] seconds",
     ))
     checks.append((
         "resolution_1080p",
