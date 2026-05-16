@@ -2706,6 +2706,135 @@ def kg_seed_demo_feedback(
     )
 
 
+@kg_app.command("label-record")
+def kg_label_record(
+    issue_id: int = typer.Argument(..., help="KG-internal issue id."),
+    event: str = typer.Argument(..., help="confirm / reject / needs_info / resolve / supersede / comment"),
+    reviewer: str = typer.Option(..., "--reviewer", "-r", help="Reviewer ID (free-form string)."),
+    reviewer_class: str = typer.Option(
+        "project_internal",
+        "--reviewer-class",
+        "-c",
+        help=(
+            "Honest classification: synthetic / project_internal / independent_third_party. "
+            "Default project_internal (you are dogfooding the tool yourself). Synthetic prefixes "
+            "(demo-reviewer-*, smoke-runner, synthetic-*) cannot be elevated to independent."
+        ),
+    ),
+    note: str = typer.Option("", "--note", help="Free-form note attached to the label."),
+    db: Path = typer.Option(Path(".archkg") / "kg.db", "--db", help="KG database path."),
+) -> None:
+    """Record one per-instance reviewer label (M7.W5)."""
+
+    from archkg.kg import KGStore
+    from archkg.kg.instance_label import VALID_REVIEWER_CLASSES, record_instance_label
+
+    if reviewer_class not in VALID_REVIEWER_CLASSES:
+        raise typer.BadParameter(
+            f"--reviewer-class must be one of {VALID_REVIEWER_CLASSES}; got {reviewer_class!r}"
+        )
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        try:
+            fb_id = record_instance_label(
+                store,
+                issue_id=issue_id,
+                reviewer_id=reviewer,
+                event_type=event,
+                reviewer_class=reviewer_class,
+                note=note,
+            )
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+    typer.echo(
+        f"recorded instance_label feedback_event id={fb_id} "
+        f"(issue={issue_id}, event={event}, reviewer={reviewer}, class={reviewer_class})"
+    )
+
+
+@kg_app.command("label-list")
+def kg_label_list(
+    db: Path = typer.Option(Path(".archkg") / "kg.db", "--db", help="KG database path."),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """List all instance_label events with reviewer attribution."""
+
+    import json as _json
+
+    from archkg.kg import KGStore
+    from archkg.kg.instance_label import label_provenance_counts, list_instance_labels
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        events = list_instance_labels(store)
+        counts = label_provenance_counts(store)
+    if json_out:
+        typer.echo(
+            _json.dumps(
+                {"counts": counts, "events": [e.to_dict() for e in events]},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+    typer.echo(
+        f"{counts['instance_label_event_count']} instance_label events · "
+        f"{counts['project_internal_reviewer_count']} project_internal · "
+        f"{counts['independent_third_party_reviewer_count']} independent_third_party · "
+        f"any_independent_review={counts['any_independent_review']}"
+    )
+    for ev in events:
+        typer.echo(
+            f"  fe={ev.feedback_event_id} issue={ev.issue_id} "
+            f"reviewer={ev.reviewer_id} ({ev.reviewer_class}) "
+            f"event={ev.event_type} @ {ev.created_at}"
+        )
+
+
+@kg_app.command("label-batch")
+def kg_label_batch(
+    jsonl_path: Path = typer.Argument(
+        ..., help="JSONL file: one {issue_id, reviewer_id, event_type, [reviewer_class, note]} per line."
+    ),
+    db: Path = typer.Option(Path(".archkg") / "kg.db", "--db", help="KG database path."),
+    default_reviewer_class: str = typer.Option(
+        "project_internal",
+        "--default-reviewer-class",
+        help="Used when a row omits reviewer_class.",
+    ),
+) -> None:
+    """Bulk import per-instance labels from a JSONL file."""
+
+    import json as _json
+
+    from archkg.kg import KGStore
+    from archkg.kg.instance_label import VALID_REVIEWER_CLASSES, batch_import
+
+    if default_reviewer_class not in VALID_REVIEWER_CLASSES:
+        raise typer.BadParameter(f"unknown --default-reviewer-class: {default_reviewer_class}")
+    if not jsonl_path.exists():
+        raise typer.BadParameter(f"jsonl file not found: {jsonl_path}")
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    rows: list[dict[str, Any]] = []
+    with open(jsonl_path, encoding="utf-8") as f:
+        for ln, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            try:
+                rows.append(_json.loads(line))
+            except _json.JSONDecodeError as exc:
+                raise typer.BadParameter(f"line {ln} is not JSON: {exc}") from exc
+    with KGStore(db, create=False) as store:
+        fb_ids = batch_import(
+            store, rows, default_reviewer_class=default_reviewer_class
+        )
+    typer.echo(f"imported {len(fb_ids)} instance_label events from {jsonl_path}")
+
+
 @kg_app.command("quality")
 def kg_quality(
     db: Path = typer.Option(

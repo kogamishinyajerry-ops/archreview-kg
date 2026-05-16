@@ -215,6 +215,18 @@ def test_recognition_quality_disclosure_probe_never_silently_fails() -> None:
         raise AssertionError(
             f"label_provenance probe silently failed: {prov['status']}"
         )
-    for key in ("synthetic_reviewer_count", "human_reviewer_count",
-                "synthetic_label_share", "note"):
+    # M7.W5 expanded the schema: synthetic_reviewer_count plus per-class
+    # human-validated counts (project_internal vs independent_third_party).
+    # The old single "human_reviewer_count" field was replaced by the
+    # finer-grained split. Probe must still surface all of them.
+    for key in (
+        "synthetic_reviewer_count",
+        "project_internal_reviewer_count",
+        "independent_third_party_reviewer_count",
+        "instance_label_event_count",
+        "synthetic_label_share",
+        "any_independent_review",
+        "label_bonus",
+        "note",
+    ):
         assert key in prov, f"label_provenance missing field: {key}"
