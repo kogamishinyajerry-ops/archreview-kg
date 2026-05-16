@@ -1,86 +1,62 @@
 {
-  "schema_version": "demo_storyboard.v1",
-  "title": "ArchReview-KG Demo — M6 Cut",
-  "total_duration_s": 283.37,
+  "schema_version": "demo_storyboard.v2",
+  "title": "ArchReview-KG Product Demo — M6 Real-UI Cut",
+  "total_duration_s": 86.4,
   "voice": "Samantha (macOS say) @ 180 wpm",
-  "shot_silence_gap_s": 0.8,
+  "inter_section_silence_s": 0.6,
+  "cut_kind": "real_ui_screencapture",
+  "source_recording": ".planning/m6/demo/captures/raw_ui_demo.mov",
+  "source_recording_native_resolution": "3456x2234",
+  "source_recording_native_duration_s": 75.0,
   "shots": [
     {
       "index": 1,
       "kind": "title",
       "caption": "ArchReview-KG — Evidence-First Plan Review",
       "start": 0.0,
-      "end": 17.92,
-      "duration": 17.92,
-      "voiceover_source_shot_id": "SHOT_1"
+      "end": 19.8,
+      "duration": 19.8,
+      "voiceover_source_shot_id": "SHOT_INTRO",
+      "visual_kind": "rendered_card",
+      "asset_path": ".planning/m6/demo/cards/title.png"
     },
     {
       "index": 2,
-      "kind": "problem",
-      "caption": "Manual code review is slow and lacks a paper trail",
-      "start": 18.72,
-      "end": 56.48,
-      "duration": 37.76,
-      "voiceover_source_shot_id": "SHOT_2"
+      "kind": "product_demo",
+      "caption": "Live workbench — project drilldown, issue drawer, evidence, verdict",
+      "start": 19.4,
+      "end": 59.7,
+      "duration": 40.3,
+      "voiceover_source_shot_id": "SHOT_DEMO_BODY",
+      "visual_kind": "live_screencapture",
+      "asset_path": ".planning/m6/demo/captures/raw_ui_demo.mov",
+      "slice_start_s": 8.0,
+      "ui_interactions": [
+        "load home view (33 projects + 25-rule heatmap)",
+        "drill into cambridge-343medford-overview (52 issues)",
+        "open issue ISS-e42e840f RC-DOOR-WIDTH detail drawer",
+        "inspect evidence JSON (measured 0.72m vs threshold 0.90m)",
+        "review 20 prior feedback events",
+        "POST verdict (confirm) -> heatmap count ticks 28 -> 29 confirmed",
+        "close drawer, return to top"
+      ]
     },
     {
       "index": 3,
-      "kind": "recognition",
-      "caption": "One command: archkg review on a real Cambridge MA PDF",
-      "start": 57.28,
-      "end": 90.11,
-      "duration": 32.83,
-      "voiceover_source_shot_id": "SHOT_3"
-    },
-    {
-      "index": 4,
-      "kind": "lifecycle",
-      "caption": "Issues lifecycle: candidate → confirmed / rejected / superseded",
-      "start": 90.91,
-      "end": 121.27,
-      "duration": 30.36,
-      "voiceover_source_shot_id": "SHOT_4"
-    },
-    {
-      "index": 5,
-      "kind": "quality",
-      "caption": "Per-rule precision, recall, calibration — audited by archreview-test-judge",
-      "start": 122.07,
-      "end": 161.31,
-      "duration": 39.24,
-      "voiceover_source_shot_id": "SHOT_5"
-    },
-    {
-      "index": 6,
-      "kind": "pilot",
-      "caption": "Deploy in 5 minutes: docker compose up, or archkg-pilot init",
-      "start": 162.11,
-      "end": 196.86,
-      "duration": 34.75,
-      "voiceover_source_shot_id": "SHOT_6"
-    },
-    {
-      "index": 7,
       "kind": "limitations",
-      "caption": "Honest limitations — over-detection, count-level recall, MA-only sourcing",
-      "start": 197.66,
-      "end": 246.04,
-      "duration": 48.38,
-      "voiceover_source_shot_id": "SHOT_7"
-    },
-    {
-      "index": 8,
-      "kind": "closing",
-      "caption": "Open source. AI-narrated. Next: real reviewer labels + M7",
-      "start": 246.84,
-      "end": 283.37,
-      "duration": 36.53,
-      "voiceover_source_shot_id": "SHOT_8"
+      "caption": "Honest limitations — recogniser inspectable, AI advisor NOT exposed, pilot only",
+      "start": 59.3,
+      "end": 84.7,
+      "duration": 25.4,
+      "voiceover_source_shot_id": "SHOT_CLOSING",
+      "visual_kind": "rendered_card",
+      "asset_path": ".planning/m6/demo/cards/closing.png"
     }
   ],
   "notes": [
-    "Storyboard generated alongside voiceover.wav; per-shot durations are exact TTS render times measured via ffprobe.",
-    "Each shot's start/end define when its caption + screen-capture clip play in the final mp4 (M6.W7).",
-    "kind='limitations' marks the honest-residuals shot the test-judge requires."
+    "v2 cut: replaces the M6.W5 poster-frame rendering with real ffmpeg AVFoundation screencapture of the actual Flask web UI at http://127.0.0.1:8765/?demo=1.",
+    "The UI demo is driven by an auto-demo JavaScript block in INDEX_HTML that fires when ?demo=1 is set. Reproducible without a human at the keyboard.",
+    "Heatmap confirmed-count visibly ticks from 28 -> 29 during the recording because the demo's confirm-button click POSTs a real feedback_event to the live SQLite KG.",
+    "shot 3 (closing) absorbs the limitations content from the M6.W5 v1 storyboard: recogniser inspectability, separate review_state artifact, AI-advisor-not-exposed, 5-minute docker pilot path."
   ]
 }

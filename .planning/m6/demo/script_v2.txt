@@ -1,0 +1,8 @@
+SHOT_INTRO
+ArchReview-KG. An evidence-first plan review platform. Knowledge graph of thirty-three real plan drawings. One hundred forty-eight issues across twenty-five national-code rules. Every finding traces back to its evidence. Every reviewer verdict is preserved. Watch the workbench drive itself, on a laptop, with no network.
+
+SHOT_DEMO_BODY
+The home view shows two panels. On the left, the project list — thirty-three plans, one hundred forty-eight issues. On the right, the rule trigger heatmap — twenty-five rules with per-rule confirmed, rejected, and candidate counts. Click a project to drill into its issues. Each issue cites the rule that triggered, the clause that was violated, and the measured value against the threshold. Reviewer feedback events are preserved — twenty separate verdicts on this single corridor-width finding, and the disagreements are not overwritten. Record a verdict, and a new feedback event hits the knowledge graph. Watch the confirmed count tick from twenty-eight to twenty-nine — that's a real database write, not a mock.
+
+SHOT_CLOSING
+Open source. Offline. Honest. The recogniser is rule-based and inspectable. The reviewer verdicts live in a separate artifact, never overwriting the recognizer's raw output. AI advisor features are deliberately not exposed in this pilot. What you just watched is exactly what an evaluator gets when they clone the repository and run docker compose up. Thanks for watching. Next milestone: real human reviewer labels.
