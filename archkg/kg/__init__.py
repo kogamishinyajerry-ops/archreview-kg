@@ -8,6 +8,7 @@ Schema is versioned via `schema_version` table. Migrations are forward-only.
 """
 
 from archkg.kg.calibration import CalibrationBin, build_calibration_report
+from archkg.kg.calibrator import CalibrationResult, calibrate_db, calibrate_issue_confidence
 from archkg.kg.feedback import (
     EVENT_TYPES,
     RulePrior,
@@ -26,6 +27,7 @@ __all__ = [
     "EVENT_TYPES",
     "INGESTABLE_ARTIFACTS",
     "CalibrationBin",
+    "CalibrationResult",
     "IngestResult",
     "KGStore",
     "KGStoreError",
@@ -33,6 +35,8 @@ __all__ = [
     "RulePrior",
     "add_feedback",
     "build_calibration_report",
+    "calibrate_db",
+    "calibrate_issue_confidence",
     "create_app",
     "feedback_loop_synthetic_test",
     "has_ingestable_artifact",

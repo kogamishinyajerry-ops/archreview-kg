@@ -2602,6 +2602,10 @@ def kg_seed_demo_feedback(
     For each issue with a confidence value, the seeded outcome distribution
     matches the confidence midpoint so calibration is honestly measurable.
     Issues with confidence None get the --confidence argument applied.
+
+    Each issue receives feedback from 5 synthetic reviewers ("panel review")
+    so that low-N rules accumulate enough samples for the per-rule prior to
+    converge.
     """
 
     import random
@@ -2611,6 +2615,13 @@ def kg_seed_demo_feedback(
     if not db.exists():
         raise typer.BadParameter(f"KG db not found at {db}")
     rng = random.Random(42)  # deterministic seeding
+    panel = (
+        "demo-reviewer-alice",
+        "demo-reviewer-bob",
+        "demo-reviewer-carol",
+        "demo-reviewer-dan",
+        "demo-reviewer-eve",
+    )
     with KGStore(db, create=False) as store:
         rows = store._conn.execute(
             "SELECT i.id, i.source_issue_id, i.confidence, p.slug "
@@ -2634,7 +2645,7 @@ def kg_seed_demo_feedback(
         # Wipe pre-existing demo feedback to keep the synthetic precision honest
         store._conn.execute(
             "DELETE FROM feedback_event WHERE reviewer_id IN ("
-            "SELECT id FROM reviewer WHERE reviewer_id = 'demo-reviewer'"
+            "SELECT id FROM reviewer WHERE reviewer_id LIKE 'demo-reviewer%'"
             ")"
         )
         # Re-read confidences after the fill
@@ -2652,11 +2663,22 @@ def kg_seed_demo_feedback(
             # Probabilistic outcome: with prob == conf the reviewer confirms.
             # When target_precision != conf, blend: outcome_p = (conf + target_precision) / 2.
             outcome_p = (conf + target_precision) / 2.0
-            event = "confirm" if rng.random() < outcome_p else "reject"
-            add_feedback(store, issue_id=r["id"], reviewer_id="demo-reviewer", event_type=event)
-            events_added += 1
-            if event == "confirm":
-                n_conf += 1
+            # Each issue gets a 5-reviewer panel; outcomes drawn from
+            # Bernoulli(outcome_p) deterministically per reviewer.
+            # update_issue_status=False so issue.status keeps reflecting the
+            # source review_state.json snapshot rather than the last panelist.
+            for reviewer in panel:
+                event = "confirm" if rng.random() < outcome_p else "reject"
+                add_feedback(
+                    store,
+                    issue_id=r["id"],
+                    reviewer_id=reviewer,
+                    event_type=event,
+                    update_issue_status=False,
+                )
+                events_added += 1
+                if event == "confirm":
+                    n_conf += 1
     typer.echo(
         f"seeded {events_added} feedback events ({n_conf} confirm / "
         f"{events_added - n_conf} reject) across {len(rows)} demo issues; "
@@ -2708,6 +2730,40 @@ def kg_quality(
         rc = f"{r['recall']:.2f}" if r["recall"] is not None else "n/a"
         typer.echo(
             f"  {r['rule_id']:<40} p={p} r={rc} (tp={r['tp']} fp={r['fp']} detected={r['detected']})"
+        )
+
+
+@kg_app.command("calibrate")
+def kg_calibrate(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Apply per-rule Beta-posterior calibration to issue.confidence."""
+
+    import json as _json
+
+    from archkg.kg import calibrate_db
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    summary = calibrate_db(db, dry_run=dry_run)
+    if json_out:
+        typer.echo(_json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+    typer.echo(
+        f"calibrated {summary['rules_calibrated']} rule(s); "
+        f"updated {summary['issues_updated']} issue(s) "
+        f"(dry_run={summary['dry_run']})"
+    )
+    for r in summary["results"][:30]:
+        typer.echo(
+            f"  {r['rule_id']:<45} posterior_mean={r['posterior_mean']:.3f} "
+            f"(samples={r['feedback_sample_size']}, issues_updated={r['issues_updated']})"
         )
 
 
