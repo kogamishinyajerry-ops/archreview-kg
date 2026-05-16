@@ -1,0 +1,86 @@
+{
+  "schema_version": "demo_storyboard.v1",
+  "title": "ArchReview-KG Demo — M6 Cut",
+  "total_duration_s": 283.37,
+  "voice": "Samantha (macOS say) @ 180 wpm",
+  "shot_silence_gap_s": 0.8,
+  "shots": [
+    {
+      "index": 1,
+      "kind": "title",
+      "caption": "ArchReview-KG — Evidence-First Plan Review",
+      "start": 0.0,
+      "end": 17.92,
+      "duration": 17.92,
+      "voiceover_source_shot_id": "SHOT_1"
+    },
+    {
+      "index": 2,
+      "kind": "problem",
+      "caption": "Manual code review is slow and lacks a paper trail",
+      "start": 18.72,
+      "end": 56.48,
+      "duration": 37.76,
+      "voiceover_source_shot_id": "SHOT_2"
+    },
+    {
+      "index": 3,
+      "kind": "recognition",
+      "caption": "One command: archkg review on a real Cambridge MA PDF",
+      "start": 57.28,
+      "end": 90.11,
+      "duration": 32.83,
+      "voiceover_source_shot_id": "SHOT_3"
+    },
+    {
+      "index": 4,
+      "kind": "lifecycle",
+      "caption": "Issues lifecycle: candidate → confirmed / rejected / superseded",
+      "start": 90.91,
+      "end": 121.27,
+      "duration": 30.36,
+      "voiceover_source_shot_id": "SHOT_4"
+    },
+    {
+      "index": 5,
+      "kind": "quality",
+      "caption": "Per-rule precision, recall, calibration — audited by archreview-test-judge",
+      "start": 122.07,
+      "end": 161.31,
+      "duration": 39.24,
+      "voiceover_source_shot_id": "SHOT_5"
+    },
+    {
+      "index": 6,
+      "kind": "pilot",
+      "caption": "Deploy in 5 minutes: docker compose up, or archkg-pilot init",
+      "start": 162.11,
+      "end": 196.86,
+      "duration": 34.75,
+      "voiceover_source_shot_id": "SHOT_6"
+    },
+    {
+      "index": 7,
+      "kind": "limitations",
+      "caption": "Honest limitations — over-detection, count-level recall, MA-only sourcing",
+      "start": 197.66,
+      "end": 246.04,
+      "duration": 48.38,
+      "voiceover_source_shot_id": "SHOT_7"
+    },
+    {
+      "index": 8,
+      "kind": "closing",
+      "caption": "Open source. AI-narrated. Next: real reviewer labels + M7",
+      "start": 246.84,
+      "end": 283.37,
+      "duration": 36.53,
+      "voiceover_source_shot_id": "SHOT_8"
+    }
+  ],
+  "notes": [
+    "Storyboard generated alongside voiceover.wav; per-shot durations are exact TTS render times measured via ffprobe.",
+    "Each shot's start/end define when its caption + screen-capture clip play in the final mp4 (M6.W7).",
+    "kind='limitations' marks the honest-residuals shot the test-judge requires."
+  ]
+}
