@@ -66,7 +66,23 @@ def _load_expected_counts(repo: Path) -> dict[str, int]:
     out: dict[str, int] = {}
     if not suite_root.is_dir():
         return out
-    for expect_path in suite_root.rglob("*_expected.json"):
+    # Scan all JSON files referenced as `expect` artifacts; this covers both
+    # the `*_expected.json` convention and the legacy bare-name fixtures
+    # (e.g. sample_clean_full.json) declared in suite_manifest.json.
+    candidates: list[Path] = list(suite_root.rglob("*_expected.json"))
+    manifest_path = suite_root / "suite_manifest.json"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for case in manifest.get("cases", []) or []:
+                expect = case.get("expect")
+                if isinstance(expect, str):
+                    candidate = suite_root / expect
+                    if candidate.exists() and candidate not in candidates:
+                        candidates.append(candidate)
+        except (json.JSONDecodeError, OSError):
+            pass
+    for expect_path in candidates:
         try:
             data = json.loads(expect_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
@@ -76,6 +92,9 @@ def _load_expected_counts(repo: Path) -> dict[str, int]:
         rule_counts = data.get("expected_rule_counts") or data.get("rule_counts")
         if isinstance(rule_counts, Mapping):
             for rid, count in rule_counts.items():
+                # Skip leading-underscore meta keys like "_note".
+                if isinstance(rid, str) and rid.startswith("_"):
+                    continue
                 if isinstance(count, int):
                     out[rid] = out.get(rid, 0) + count
     return out
