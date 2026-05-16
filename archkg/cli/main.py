@@ -2352,6 +2352,99 @@ def kg_init(
     )
 
 
+@kg_app.command("ingest")
+def kg_ingest(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    project: str = typer.Option(..., "--project", "-p", help="Project slug."),
+    project_name: str | None = typer.Option(None, "--project-name"),
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Ingest a run directory's artifacts into the KG (idempotent)."""
+
+    import json as _json
+
+    from archkg.kg import KGStore, ingest_run
+
+    store = KGStore(db)
+    try:
+        result = ingest_run(
+            store,
+            run_dir=run_dir,
+            project_slug=project,
+            project_name=project_name,
+        )
+    except FileNotFoundError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if json_out:
+        typer.echo(_json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        return
+    counts = result.counts
+    typer.echo(
+        f"ingested {run_dir} project={project} run_id={result.run_id} "
+        f"drawing_id={result.drawing_id}"
+    )
+    typer.echo(
+        f"  entities={counts['entities']} issues={counts['issues']} "
+        f"sheets={counts['sheets']} rules_added={counts['rules_added']} "
+        f"clauses_added={counts['clauses_added']}"
+    )
+    for warning in result.warnings:
+        typer.echo(f"  warning: {warning}")
+
+
+@kg_app.command("ingest-suite")
+def kg_ingest_suite(
+    repo: Path = typer.Option(
+        Path(__file__).resolve().parents[2],
+        "--repo",
+        help="Repo root (defaults to detected archreview-kg root).",
+    ),
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+) -> None:
+    """Bulk-ingest every benchmark suite run directory in `samples/`.
+
+    Project slug is derived from the run-dir parent (e.g. `real`, `generated`,
+    `toy`) combined with the dir name.
+    """
+
+    from archkg.kg import KGStore, has_ingestable_artifact, ingest_run
+
+    suite_root = repo / "samples" / "understanding_benchmarks"
+    if not suite_root.is_dir():
+        raise typer.BadParameter(f"benchmark suite root missing: {suite_root}")
+
+    store = KGStore(db)
+    candidates = [p for p in suite_root.rglob("*_run") if p.is_dir() and has_ingestable_artifact(p)]
+    typer.echo(f"found {len(candidates)} ingestable run dirs under {suite_root}")
+    ingested = 0
+    for run_dir in sorted(candidates):
+        # Project slug: <category>-<run_dir_name without _run suffix>
+        category = run_dir.parent.name
+        base = run_dir.name.removesuffix("_run")
+        slug = f"{category}-{base}"
+        try:
+            result = ingest_run(store, run_dir=run_dir, project_slug=slug)
+        except FileNotFoundError:
+            typer.echo(f"  SKIP {run_dir} (no ingestable artifact)")
+            continue
+        ingested += 1
+        typer.echo(
+            f"  OK {run_dir.relative_to(repo)} -> project={slug} "
+            f"entities={result.counts['entities']} issues={result.counts['issues']}"
+        )
+    typer.echo(f"ingested {ingested} run dirs")
+
+
 @kg_app.command("status")
 def kg_status(
     db: Path = typer.Option(

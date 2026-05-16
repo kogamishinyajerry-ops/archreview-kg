@@ -280,10 +280,30 @@ def score_kg_coverage(repo: Path) -> DimensionScore:
             notes=notes,
         )
 
-    # Count expected runs from samples + benchmark suite
-    fixture_runs = list(repo.glob("tests/fixtures/**/issues.json"))
-    benchmark_runs = list((repo / "samples" / "understanding_benchmarks").glob("**/issues.json"))
-    expected = len(fixture_runs) + len(benchmark_runs)
+    # Count expected ingestable runs: any directory ending in `_run` (or
+    # otherwise plausibly a run dir) that has at least one of the ingestable
+    # artifacts. We import the canonical list from archkg.kg.
+    from archkg.kg.ingest import INGESTABLE_ARTIFACTS
+
+    candidates: list[Path] = []
+    suite_root = repo / "samples" / "understanding_benchmarks"
+    if suite_root.is_dir():
+        candidates.extend(p for p in suite_root.rglob("*_run") if p.is_dir())
+    fixture_root = repo / "tests" / "fixtures"
+    if fixture_root.is_dir():
+        candidates.extend(p for p in fixture_root.rglob("*_run") if p.is_dir())
+        candidates.extend(p for p in fixture_root.rglob("issues.json") if p.is_file())
+    # De-dupe and keep only those with at least one ingestable artifact
+    seen: set[Path] = set()
+    ingestable: list[Path] = []
+    for p in candidates:
+        path = p.parent if p.is_file() else p
+        if path in seen:
+            continue
+        if any((path / name).exists() for name in INGESTABLE_ARTIFACTS):
+            ingestable.append(path)
+            seen.add(path)
+    expected = len(ingestable)
     if expected == 0:
         detail["status"] = "no_fixture_runs_found"
         notes.append("no fixture run dirs to ingest; cannot score coverage")
