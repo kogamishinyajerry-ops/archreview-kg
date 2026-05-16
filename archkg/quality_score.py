@@ -536,10 +536,13 @@ def score_calibration(repo: Path) -> DimensionScore:
             detail=detail,
             notes=notes,
         )
-    rep = build_calibration_report()
-    if not rep.get("bins"):
-        detail["status"] = "no_bin_samples"
-        notes.append("no confidence bins have enough samples; score 0")
+    from archkg.kg.store import default_db_path
+
+    rep = build_calibration_report(default_db_path(repo))
+    detail.update(rep)
+    mad = rep.get("mean_abs_deviation")
+    if mad is None:
+        notes.append(f"calibration unmeasurable: {rep.get('status', 'unknown')}")
         return DimensionScore(
             dimension="calibration",
             score=0.0,
@@ -547,8 +550,6 @@ def score_calibration(repo: Path) -> DimensionScore:
             detail=detail,
             notes=notes,
         )
-    detail.update(rep)
-    mad = rep.get("mean_abs_deviation", 1.0)
     # 10 pts at MAD <= 0.04; 0 pts at MAD >= 0.20
     if mad <= 0.04:
         points = 10.0

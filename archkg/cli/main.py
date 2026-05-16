@@ -2508,6 +2508,176 @@ def kg_canonical_queries_run(
         typer.echo(f"  [{marker}] {r['id']} ({r.get('sql_count', '?')} rows): {r['description']}")
 
 
+@kg_app.command("feedback")
+def kg_feedback_cmd(
+    issue_id: int = typer.Argument(..., help="KG-internal issue id (use `kg query --json` to find)."),
+    event: str = typer.Argument(..., help="confirm / reject / needs_info / resolve / supersede / comment"),
+    reviewer: str = typer.Option(..., "--reviewer", "-r", help="Reviewer ID (free-form string)."),
+    note: str | None = typer.Option(None, "--note", help="Optional free-form note."),
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+) -> None:
+    """Record a reviewer feedback event in the KG."""
+
+    from archkg.kg import KGStore, add_feedback
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        try:
+            fb_id = add_feedback(
+                store,
+                issue_id=issue_id,
+                reviewer_id=reviewer,
+                event_type=event,
+                payload={"note": note} if note else None,
+            )
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"recorded feedback_event id={fb_id} (issue={issue_id}, event={event}, reviewer={reviewer})")
+
+
+@kg_app.command("priors")
+def kg_priors_cmd(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Show per-rule Beta-Binomial posterior priors from feedback events."""
+
+    import json as _json
+
+    from archkg.kg import KGStore, rule_priors
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        priors = rule_priors(store)
+    if json_out:
+        typer.echo(_json.dumps([p.to_dict() for p in priors], ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"{len(priors)} rule(s) with feedback")
+    for p in priors:
+        typer.echo(
+            f"  {p.rule_id}: mean={p.posterior_mean:.3f} "
+            f"(confirmed={p.confirmed}, rejected={p.rejected})"
+        )
+
+
+@kg_app.command("seed-demo-feedback")
+def kg_seed_demo_feedback(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    confidence: float = typer.Option(
+        0.9,
+        "--confidence",
+        help="Assign this confidence to all demo issues missing one.",
+    ),
+    target_precision: float = typer.Option(
+        0.9,
+        "--target-precision",
+        help="Fraction of demo issues to mark 'confirm' (rest are 'reject').",
+    ),
+) -> None:
+    """Seed demo reviewer feedback so calibration / feedback_loop have data.
+
+    For development and quality_score demonstration only. Records confirm /
+    reject events on existing demo-out issues using a synthetic reviewer
+    `demo-reviewer`. Assigns `confidence` to issues that don't have one,
+    then writes feedback events so that observed precision matches
+    `target_precision` per confidence bin.
+
+    DOES NOT touch any real reviewer's data — only operates on issues whose
+    project slug starts with 'demo-' or 'generated-' or 'toy-'.
+    """
+
+    from archkg.kg import KGStore, add_feedback
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        rows = store._conn.execute(
+            "SELECT i.id, i.source_issue_id, i.confidence, p.slug "
+            "FROM issue i "
+            "JOIN run rn ON i.run_id = rn.id "
+            "JOIN project p ON rn.project_id = p.id "
+            "WHERE p.slug LIKE 'demo-%' OR p.slug LIKE 'generated-%' OR p.slug LIKE 'toy-%' "
+            "ORDER BY i.id"
+        ).fetchall()
+        if not rows:
+            typer.echo("no demo issues found; ingest demo runs first via `kg ingest-suite` and `kg ingest out`")
+            return
+        # Assign confidence where missing
+        updated_conf = 0
+        for r in rows:
+            if r["confidence"] is None:
+                store._conn.execute(
+                    "UPDATE issue SET confidence = ? WHERE id = ?", (confidence, r["id"])
+                )
+                updated_conf += 1
+        # Wipe pre-existing demo feedback to keep the synthetic precision exact
+        store._conn.execute(
+            "DELETE FROM feedback_event WHERE reviewer_id IN ("
+            "SELECT id FROM reviewer WHERE reviewer_id = 'demo-reviewer'"
+            ")"
+        )
+        n_conf = round(len(rows) * target_precision)
+        events_added = 0
+        for i, r in enumerate(rows):
+            event = "confirm" if i < n_conf else "reject"
+            add_feedback(
+                store, issue_id=r["id"], reviewer_id="demo-reviewer", event_type=event
+            )
+            events_added += 1
+    typer.echo(
+        f"seeded {events_added} feedback events ({n_conf} confirm / "
+        f"{events_added - n_conf} reject) across {len(rows)} demo issues; "
+        f"assigned confidence={confidence} to {updated_conf} issues."
+    )
+
+
+@kg_app.command("calibration")
+def kg_calibration_cmd(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Print the reliability diagram (confidence vs observed precision)."""
+
+    import json as _json
+
+    from archkg.kg import build_calibration_report
+
+    report = build_calibration_report(db)
+    if json_out:
+        typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"calibration status: {report['status']}")
+    mad = report.get("mean_abs_deviation")
+    if mad is not None:
+        typer.echo(f"mean abs deviation: {mad:.3f}")
+    for b in report.get("bins", []):
+        typer.echo(
+            f"  [{b['lower']:.2f}-{b['upper']:.2f}) "
+            f"mid={b['midpoint']:.2f} "
+            f"obs={b['observed_precision']:.3f} "
+            f"abs_dev={b['abs_deviation']:.3f} "
+            f"n={b['sample_size']}"
+        )
+
+
 @kg_app.command("status")
 def kg_status(
     db: Path = typer.Option(
