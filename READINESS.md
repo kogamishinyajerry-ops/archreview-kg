@@ -10,6 +10,7 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - 30/30 国标条款都有规则卡（数据完整 ✅）
 - 但 32 张规则中**只有 4 张能在任何 PDF 上直接自动判定违规**（≈ 12.5%）
 - 其余规则需要 ProjectMeta 完整、graph builder 扩展、或本就是人工核对清单
+- **真实公开 PDF benchmark 仅 3 张**（Medfield, MA 市政住宅图纸 A-1 / A-2 / 全套）；目前未覆盖更广泛的真实图纸源（不同司法管辖、不同建筑类型）。M5 蓝图把这一缺口列为 `real_pdf_breadth` 评分维度，当前得分 2/10，达到 9 需要 ≥15 个独立真实公开 PDF（详见 `.planning/m5/M5-STATUS.md`）。
 - P43 后，成熟度主指标改为 `archkg release-readiness`：用 benchmark suite、代表性 run artifacts、
   review state 和 re-run diff 证据判断能否演示；P45 后当前 packaged suite 可在代表性 run
   artifacts 完整时进入 `evidence_ready`。这个状态仍只适用于已 benchmark 的图纸类别，不是任意复杂
