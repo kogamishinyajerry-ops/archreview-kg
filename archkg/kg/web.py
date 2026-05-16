@@ -151,6 +151,21 @@ INDEX_HTML = r"""<!doctype html>
     .viewport-header .bbox-count { font-weight: 600; color: var(--text); }
     .viewport-header code { font-family: ui-monospace, "SF Mono", monospace; font-size: 11px; }
     .viewport-empty { padding: 60px 28px; text-align: center; color: var(--muted); font-size: 13px; }
+    /* M7.W2 filter chips + sort */
+    .filter-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+                  border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+            border-radius: 999px; border: 1px solid var(--border); cursor: pointer;
+            font-size: 12px; user-select: none; transition: all 0.1s;
+            background: var(--surface); color: var(--text); }
+    .chip:hover { background: var(--accent-dim); border-color: var(--accent); }
+    .chip.on { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
+    .chip .n { font-variant-numeric: tabular-nums; opacity: 0.8; }
+    .chip.on .n { opacity: 1; }
+    .sort-dropdown { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .sort-dropdown select { padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);
+                            background: var(--surface); color: var(--text); font-size: 12px; }
+    tr.hidden-by-filter { display: none; }
   </style>
 </head>
 <body>
@@ -215,6 +230,24 @@ INDEX_HTML = r"""<!doctype html>
       <div class="panel-h">
         <span>Issues for project <code id="issues_slug"></code></span>
         <span class="meta" id="issues_meta"></span>
+      </div>
+      <div class="filter-bar" id="filter_bar">
+        <span class="chip on" data-status="all">all <span class="n" id="chip_all_n">0</span></span>
+        <span class="chip" data-status="candidate">candidate <span class="n" id="chip_candidate_n">0</span></span>
+        <span class="chip" data-status="confirmed">confirmed <span class="n" id="chip_confirmed_n">0</span></span>
+        <span class="chip" data-status="rejected">rejected <span class="n" id="chip_rejected_n">0</span></span>
+        <span class="chip" data-status="needs_info">needs_info <span class="n" id="chip_needs_info_n">0</span></span>
+        <span class="chip" data-status="resolved">resolved <span class="n" id="chip_resolved_n">0</span></span>
+        <span class="chip" data-status="superseded">superseded <span class="n" id="chip_superseded_n">0</span></span>
+        <div class="sort-dropdown">
+          <span>sort</span>
+          <select id="issue_sort">
+            <option value="id">by id</option>
+            <option value="severity">by severity</option>
+            <option value="rule">by rule_id</option>
+            <option value="status">by status</option>
+          </select>
+        </div>
       </div>
       <table id="issues_table">
         <thead><tr><th>#</th><th>Rule</th><th>Severity</th><th>Status</th><th>Message</th></tr></thead>
@@ -307,6 +340,80 @@ INDEX_HTML = r"""<!doctype html>
     let issueRowByIssueId = new Map();   // issue_id -> <tr>
     let bboxRectByIssueId = new Map();   // issue_id -> <rect>
 
+    // Issue queue state (M7.W2).
+    let currentIssues = [];
+    let currentFilter = 'all';
+    let currentSort = 'id';
+
+    const SEVERITY_ORDER = { error: 0, warning: 1, info: 2, '': 3, null: 3 };
+
+    function sortIssues(rows, key) {
+      const k = key || 'id';
+      return [...rows].sort((a, b) => {
+        if (k === 'severity') {
+          return (SEVERITY_ORDER[a.severity ?? ''] ?? 99) - (SEVERITY_ORDER[b.severity ?? ''] ?? 99) || a.id - b.id;
+        }
+        if (k === 'rule')   return (a.rule_id || '').localeCompare(b.rule_id || '') || a.id - b.id;
+        if (k === 'status') return (a.status || '').localeCompare(b.status || '') || a.id - b.id;
+        return a.id - b.id;
+      });
+    }
+
+    function renderIssueRows() {
+      const tbody = $('#issues_panel tbody');
+      tbody.innerHTML = '';
+      issueRowByIssueId = new Map();
+      const sorted = sortIssues(currentIssues, currentSort);
+      let visible = 0;
+      for (const i of sorted) {
+        const tr = document.createElement('tr');
+        tr.dataset.issueId = String(i.id);
+        tr.dataset.status = i.status;
+        tr.innerHTML = `<td><code>${i.source_issue_id || i.id}</code></td>
+                        <td><code>${i.rule_id || '<none>'}</code></td>
+                        <td>${i.severity || ''}</td>
+                        <td>${statusBadge(i.status)}</td>
+                        <td>${(i.message || '').slice(0, 120)}</td>`;
+        tr.onclick = () => { highlightBboxForIssue(i.id); openIssue(i.id); };
+        tr.onmouseenter = () => highlightBboxForIssue(i.id, /*scroll=*/false);
+        tr.onmouseleave = () => unhighlightAllBboxes();
+        if (currentFilter !== 'all' && i.status !== currentFilter) {
+          tr.classList.add('hidden-by-filter');
+        } else {
+          visible++;
+        }
+        tbody.appendChild(tr);
+        issueRowByIssueId.set(i.id, tr);
+      }
+      // Also dim/hide bboxes that aren't visible.
+      bboxRectByIssueId.forEach((rect, issueId) => {
+        const row = issueRowByIssueId.get(issueId);
+        if (row && row.classList.contains('hidden-by-filter')) {
+          rect.style.display = 'none';
+        } else {
+          rect.style.display = '';
+        }
+      });
+      const total = currentIssues.length;
+      $('#issues_meta').textContent =
+        currentFilter === 'all'
+          ? `${total} issues · sort ${currentSort}`
+          : `${visible} of ${total} issues · filter ${currentFilter} · sort ${currentSort}`;
+    }
+
+    function setIssueFilter(status) {
+      currentFilter = status;
+      $$('#filter_bar .chip').forEach((c) => c.classList.toggle('on', c.dataset.status === status));
+      renderIssueRows();
+    }
+
+    function bindFilterBar() {
+      $$('#filter_bar .chip').forEach((c) => {
+        c.onclick = () => setIssueFilter(c.dataset.status);
+      });
+      $('#issue_sort').onchange = (e) => { currentSort = e.target.value; renderIssueRows(); };
+    }
+
     async function openProject(slug) {
       currentSlug = slug;
       $$('#projects_table tbody tr').forEach((tr) => {
@@ -317,28 +424,20 @@ INDEX_HTML = r"""<!doctype html>
       const panel = $('#issues_panel');
       panel.style.display = 'block';
       $('#issues_slug').textContent = slug;
-      const tbody = panel.querySelector('tbody');
-      tbody.innerHTML = '';
-      issueRowByIssueId = new Map();
+      currentIssues = data.issues || [];
+      // Update chip counts
       const counts = { candidate: 0, confirmed: 0, rejected: 0, needs_info: 0, resolved: 0, superseded: 0 };
-      for (const i of data.issues) {
-        counts[i.status] = (counts[i.status] || 0) + 1;
-        const tr = document.createElement('tr');
-        tr.dataset.issueId = String(i.id);
-        tr.innerHTML = `<td><code>${i.source_issue_id || i.id}</code></td>
-                        <td><code>${i.rule_id || '<none>'}</code></td>
-                        <td>${i.severity || ''}</td>
-                        <td>${statusBadge(i.status)}</td>
-                        <td>${(i.message || '').slice(0, 120)}</td>`;
-        tr.onclick = () => { highlightBboxForIssue(i.id); openIssue(i.id); };
-        tr.onmouseenter = () => highlightBboxForIssue(i.id, /*scroll=*/false);
-        tr.onmouseleave = () => unhighlightAllBboxes();
-        tbody.appendChild(tr);
-        issueRowByIssueId.set(i.id, tr);
+      for (const i of currentIssues) counts[i.status] = (counts[i.status] || 0) + 1;
+      $('#chip_all_n').textContent = currentIssues.length;
+      for (const [k, v] of Object.entries(counts)) {
+        const el = document.getElementById(`chip_${k}_n`);
+        if (el) el.textContent = v;
       }
-      const parts = Object.entries(counts).filter(([_,v]) => v>0)
-        .map(([k,v]) => `${v} ${k}`).join(' · ');
-      $('#issues_meta').textContent = `${data.issues.length} issues · ${parts}`;
+      // Reset filter to "all"
+      currentFilter = 'all';
+      $$('#filter_bar .chip').forEach((c) => c.classList.toggle('on', c.dataset.status === 'all'));
+      renderIssueRows();
+      bindFilterBar();
       // Load drawing viewport
       await loadViewportForProject(slug);
       $('#viewport_panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
