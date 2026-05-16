@@ -4,7 +4,7 @@
 
 [![pytest](https://img.shields.io/badge/pytest-440%20passing-brightgreen)](#)
 [![rules](https://img.shields.io/badge/rules-32%2F32%20covered-brightgreen)](#)
-[![adversarial](https://img.shields.io/badge/F1-1.00%20on%20100--case%20battery-brightgreen)](#)
+[![adversarial](https://img.shields.io/badge/F1%201.00%20%E2%80%94%20adversarial%20battery%20only-yellowgreen)](#)
 [![version](https://img.shields.io/badge/version-1.2.1-blue)](CHANGELOG.md)
 
 ArchReview-KG 把上传的 PDF 平面图自动转成实体图谱（房间 / 户门 / 走廊 / 尺寸标注），

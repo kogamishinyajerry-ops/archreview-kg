@@ -195,3 +195,26 @@ def test_compute_with_invalid_only_dimension() -> None:
     report = compute_quality_score(REPO_ROOT, skip_slow=True, only=only)  # type: ignore[arg-type]
     assert len(report["dimensions"]) == 1
     assert report["dimensions"][0]["dimension"] == "code_quality"
+
+
+def test_recognition_quality_disclosure_probe_never_silently_fails() -> None:
+    """Judge round-2 finding: label_provenance probe used wrong column and
+    silently degraded to `status: probe_failed`. CI must catch any future
+    regression where the disclosure breaks while the dimension still scores 10.
+    """
+    report = compute_quality_score(REPO_ROOT, skip_slow=True, only=["recognition_quality"])  # type: ignore[arg-type]
+    dim = report["dimensions"][0]
+    if not dim["measurable"]:
+        # KG missing in a fresh checkout is fine — disclosure has no probe target
+        return
+    prov = dim["detail"].get("label_provenance")
+    assert prov is not None, "recognition_quality.detail.label_provenance is missing"
+    # Either the probe succeeded (all 4 fields present), or it MUST surface a
+    # status. Silent-success-with-no-fields is not allowed.
+    if "status" in prov and prov["status"].startswith("probe_failed"):
+        raise AssertionError(
+            f"label_provenance probe silently failed: {prov['status']}"
+        )
+    for key in ("synthetic_reviewer_count", "human_reviewer_count",
+                "synthetic_label_share", "note"):
+        assert key in prov, f"label_provenance missing field: {key}"

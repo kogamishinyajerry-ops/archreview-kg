@@ -74,21 +74,24 @@ def q3_issue_count_by_status(store: KGStore) -> list[tuple[Any, ...]]:
     return sorted(rows.items(), key=lambda kv: (-kv[1], kv[0]))
 
 
-def q4_top_rule_clause_pairs(store: KGStore) -> list[tuple[Any, ...]]:
-    """Top 5 (rule_id, clause_id) pairs by issue count."""
-    rows: dict[tuple[str, str], int] = {}
+def q4_top_rules_by_reject_event(store: KGStore) -> list[tuple[Any, ...]]:
+    """Top 3 rules by reject-type feedback_event count.
+
+    Distinct from Q7 (which uses issue.status='rejected' — the final
+    aggregated state). This counts per-event rejects so a rule with many
+    contested low-confidence detections surfaces here even if some issues
+    eventually closed as confirmed/needs_info.
+    """
+    counts: dict[str, int] = {}
     for row in store._conn.execute(
-        "SELECT r.rule_id AS rule, COALESCE(c.clause_id, '<none>') AS clause "
-        "FROM issue i "
+        "SELECT r.rule_id AS rid FROM feedback_event fe "
+        "JOIN issue i ON fe.issue_id = i.id "
         "JOIN rule r ON i.rule_id = r.id "
-        "LEFT JOIN clause c ON c.clause_id = ("
-        "  SELECT json_extract(i.evidence_json, '$.clause_id')"
-        ")"
+        "WHERE fe.event_type = 'reject'"
     ).fetchall():
-        key = (row["rule"], row["clause"])
-        rows[key] = rows.get(key, 0) + 1
-    ordered = sorted(rows.items(), key=lambda kv: (-kv[1], kv[0]))
-    return [((r, c), n) for (r, c), n in ordered[:5]]
+        counts[row["rid"]] = counts.get(row["rid"], 0) + 1
+    ordered = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    return ordered[:3]
 
 
 def q5_confirmed_issues_across_projects(store: KGStore) -> list[tuple[Any, ...]]:
@@ -193,12 +196,15 @@ CANONICAL_QUERIES: tuple[Query, ...] = (
     ),
     Query(
         id="Q4",
-        description="Top 5 (rule_id, clause_id) pairs by issue count.",
-        # Implemented in Python only; SQL path mirrors expected_fn to keep the
-        # two-path comparison meaningful (this query is intentionally a
-        # Python-vs-Python sanity check until we add a normalised clause edge).
-        sql="SELECT 'python_only' AS marker WHERE 0",  # always empty
-        expected_fn=lambda store: [],  # Python expected also empty until issue→clause edge implemented
+        description="Top 3 rules by reject-type feedback_event count (rule_id, n).",
+        sql=(
+            "SELECT r.rule_id, COUNT(*) AS n FROM feedback_event fe "
+            "JOIN issue i ON fe.issue_id = i.id "
+            "JOIN rule r ON i.rule_id = r.id "
+            "WHERE fe.event_type = 'reject' "
+            "GROUP BY r.rule_id ORDER BY n DESC, r.rule_id LIMIT 3"
+        ),
+        expected_fn=q4_top_rules_by_reject_event,
     ),
     Query(
         id="Q5",

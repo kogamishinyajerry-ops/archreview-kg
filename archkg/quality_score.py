@@ -472,6 +472,45 @@ def score_recognition_quality(repo: Path) -> DimensionScore:
     detail.update(pq)
     p = pq.get("weighted_precision") or 0.0
     r = pq.get("weighted_recall") or 0.0
+    # Surface synthetic-vs-real reviewer split so the headline P/R cannot
+    # be skimmed without seeing the label provenance. Judge round-1 finding.
+    try:
+        import sqlite3
+
+        from archkg.kg.store import default_db_path as _ddp
+
+        conn = sqlite3.connect(str(_ddp(repo)))
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute("SELECT reviewer_id FROM reviewer")
+        reviewer_ids = [row["reviewer_id"] for row in cur.fetchall()]
+        conn.close()
+        synthetic_prefixes = ("demo-reviewer", "smoke-runner", "synthetic-")
+        synthetic = [
+            rid for rid in reviewer_ids
+            if any(rid == p or rid.startswith(p + "-") or rid.startswith(p) for p in synthetic_prefixes)
+        ]
+        human = [rid for rid in reviewer_ids if rid not in synthetic]
+        detail["label_provenance"] = {
+            "synthetic_reviewer_count": len(synthetic),
+            "human_reviewer_count": len(human),
+            "synthetic_reviewer_prefixes": list(synthetic_prefixes),
+            "synthetic_label_share": (
+                len(synthetic) / len(reviewer_ids) if reviewer_ids else 0.0
+            ),
+            "note": (
+                "weighted_precision / weighted_recall are computed against ALL "
+                "reviewer events; until human_reviewer_count > 0 the headline "
+                "numbers reflect synthetic Beta-Binomial labels, not field data."
+            ),
+        }
+        if not human:
+            notes.append(
+                "label provenance: 100% synthetic reviewers ("
+                + ", ".join(synthetic_prefixes)
+                + "); P/R is sound math but not human-validated yet"
+            )
+    except Exception as exc:  # pragma: no cover — disclosure is best-effort
+        detail["label_provenance"] = {"status": f"probe_failed: {exc!r}"}
     # Linear scaling: 0 at (p=0, r=0); 10 at (p>=0.85 AND r>=0.75)
     p_score = min(1.0, p / 0.85) * 5.0
     r_score = min(1.0, r / 0.75) * 5.0
@@ -1001,15 +1040,15 @@ def compute_quality_score(
     min_score = min((d.score for d in dim_results), default=0.0)
     n = len(dim_results)
     average_score = sum_score / n if n else 0.0
-    # Overall: weakest dimension dominates. Take the lower of (sum) and (min * 10).
-    overall = min(sum_score, min_score * 10.0)
+    # Overall: weakest dimension dominates. Take the lower of
+    #   (sum_score)               - total points earned
+    #   (min_score * n)           - if every dim hit the weakest score
+    # so a single weak dim can drag the score down, but a perfect row
+    # always normalises to 100. (Earlier `min_score * 10` was a 10-dim
+    # hard-coded ceiling that became a 12-dim under-shoot.)
+    overall = min(sum_score, min_score * n)
     # Normalise to 0-100 regardless of dim count (M5: 10 dims, M6: 12 dims).
-    expected_max = 10.0 * len(DIMENSIONS)
-    if n != len(DIMENSIONS):
-        # Subset of dims requested via `only`: scale by selected count.
-        overall = (overall / (10.0 * n)) * 100.0 if n else 0.0
-    else:
-        overall = (overall / expected_max) * 100.0
+    overall = (overall / (10.0 * n)) * 100.0 if n else 0.0
 
     # 99+ check. M6 expanded to 12 dims; >= 9 of 12 must be at 10.0 (was 7 of 10).
     # Threshold scales as ceil(0.7 * n).
@@ -1028,7 +1067,7 @@ def compute_quality_score(
         "ninety_nine_plus": ninety_nine_plus,
         "dimensions": [d.to_dict() for d in dim_results],
         "scoring_meta": {
-            "rule": "overall = min(sum, weakest_dimension * 10); 99+ requires all >= 9 AND >= 7 dims == 10",
+            "rule": "overall = min(sum, weakest_dimension * n_dims) normalised to 0-100; 99+ requires all >= 9 AND >= ceil(0.75 * n_dims) dims == 10",
             "dimensions_scored": n,
             "skip_slow_code_quality": skip_slow,
         },
