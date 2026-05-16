@@ -2725,6 +2725,53 @@ def kg_calibration_cmd(
         )
 
 
+@kg_app.command("serve")
+def kg_serve(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    host: str = typer.Option("127.0.0.1", "--host"),
+    port: int = typer.Option(8765, "--port"),
+) -> None:
+    """Run the local KG web UI (Flask). No external network exposure by default."""
+
+    from archkg.kg import create_app
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db} — run `archkg kg init` first")
+    app = create_app(db)
+    typer.echo(f"serving KG workbench on http://{host}:{port} (db={db})")
+    app.run(host=host, port=port, debug=False)
+
+
+@kg_app.command("smoke")
+def kg_smoke(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Run the 5 web-UI smoke flows against the local KG and print timings."""
+
+    import json as _json
+
+    from archkg.kg import run_e2e_smoke
+
+    report = run_e2e_smoke(db)
+    if json_out:
+        typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    passed = sum(1 for f in report["flows"] if f["passed"])
+    typer.echo(f"{passed}/{len(report['flows'])} flows passed")
+    for f in report["flows"]:
+        marker = "OK" if f["passed"] else "FAIL"
+        typer.echo(f"  [{marker}] {f['name']} status={f['status_code']} elapsed_ms={f['p95_ms']}")
+
+
 @kg_app.command("status")
 def kg_status(
     db: Path = typer.Option(
