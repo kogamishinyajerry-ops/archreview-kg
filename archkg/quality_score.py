@@ -542,8 +542,15 @@ def score_calibration(repo: Path) -> DimensionScore:
     rep = build_calibration_report(default_db_path(repo))
     detail.update(rep)
     mad = rep.get("mean_abs_deviation")
-    if mad is None:
-        notes.append(f"calibration unmeasurable: {rep.get('status', 'unknown')}")
+    bins_used = rep.get("bins_used_for_mad", 0)
+    # MAD over a single bin is vacuous (cannot detect miscalibration across
+    # the confidence range). Require >= 3 bins with min_samples to score >0.
+    min_bins_for_mad = 3
+    if mad is None or bins_used < min_bins_for_mad:
+        notes.append(
+            f"calibration unmeasurable: bins_used={bins_used} < {min_bins_for_mad} "
+            f"(status={rep.get('status', 'unknown')}). Single-bin MAD is vacuous."
+        )
         return DimensionScore(
             dimension="calibration",
             score=0.0,

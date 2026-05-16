@@ -221,6 +221,26 @@ def ingest_run(
             entity_db_id = entity_id_by_source.get(ent_ids[0]) if ent_ids else None
             page_index = int(issue.get("page_index", 0) or 0)
             sheet_db_id = sheets_by_page.get(page_index)
+            # Propagate confidence: use issue.confidence if explicit, else the
+            # max entity confidence among linked entities (issue can only be
+            # as confident as its most-confident grounding entity), else None.
+            issue_conf: float | None = issue.get("confidence")
+            if issue_conf is None and ent_ids:
+                ent_confs = [
+                    store._conn.execute(
+                        "SELECT confidence FROM entity WHERE id = ?",
+                        (entity_id_by_source[eid],),
+                    ).fetchone()
+                    for eid in ent_ids
+                    if eid in entity_id_by_source
+                ]
+                vals = [
+                    float(r["confidence"])
+                    for r in ent_confs
+                    if r is not None and r["confidence"] is not None
+                ]
+                if vals:
+                    issue_conf = max(vals)
             _upsert_issue(
                 store,
                 run_id=run_id,
@@ -232,6 +252,7 @@ def ingest_run(
                 message=issue.get("message"),
                 bbox=issue.get("bbox"),
                 evidence=issue.get("evidence"),
+                confidence=issue_conf,
             )
             inserted_issues += 1
 
@@ -395,32 +416,34 @@ def _upsert_issue(
     message: str | None,
     bbox: Any,
     evidence: Any,
+    confidence: float | None = None,
 ) -> int:
     """Insert or replace an issue row, keyed by (run_id, source_issue_id)."""
-    with store._conn:
-        # Delete existing first for idempotency. source_issue_id within a run
-        # should be unique by ArchReview-KG convention.
-        if source_issue_id:
-            store._conn.execute(
-                "DELETE FROM issue WHERE run_id = ? AND source_issue_id = ?",
-                (run_id, source_issue_id),
-            )
-        cur = store._conn.execute(
-            "INSERT INTO issue(run_id, sheet_id, rule_id, entity_id, source_issue_id, "
-            "severity, message, bbox_json, evidence_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (
-                run_id,
-                sheet_id,
-                rule_id,
-                entity_id,
-                source_issue_id,
-                severity,
-                message,
-                json.dumps(bbox, ensure_ascii=False) if bbox is not None else None,
-                json.dumps(evidence, ensure_ascii=False) if evidence is not None else None,
-            ),
+    # Delete existing first for idempotency. source_issue_id within a run
+    # should be unique by ArchReview-KG convention.
+    if source_issue_id:
+        store._conn.execute(
+            "DELETE FROM issue WHERE run_id = ? AND source_issue_id = ?",
+            (run_id, source_issue_id),
         )
-        return int(cur.lastrowid or 0)
+    cur = store._conn.execute(
+        "INSERT INTO issue(run_id, sheet_id, rule_id, entity_id, source_issue_id, "
+        "severity, message, bbox_json, evidence_json, confidence) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            run_id,
+            sheet_id,
+            rule_id,
+            entity_id,
+            source_issue_id,
+            severity,
+            message,
+            json.dumps(bbox, ensure_ascii=False) if bbox is not None else None,
+            json.dumps(evidence, ensure_ascii=False) if evidence is not None else None,
+            confidence,
+        ),
+    )
+    return int(cur.lastrowid or 0)
 
 
 def reset_run_data(store: KGStore, run_id: int) -> None:

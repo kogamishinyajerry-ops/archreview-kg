@@ -114,18 +114,15 @@ def per_rule_quality(
         expected = expected_counts.get(rid)
         # Precision: defined only when we have any labeled feedback.
         precision = (tp / (tp + fp)) if (tp + fp) > 0 else None
-        # Recall: defined only when we have expected count AND tp > 0.
+        # Recall: STRICTLY requires a benchmark `expected_rule_counts` value
+        # for the rule. We intentionally do NOT fall back to detected-based
+        # estimates because that conflates precision with recall (tp / detected
+        # collapses to 1.0 when feedback labels every detection). Rules
+        # without expected counts have recall=None and are excluded from
+        # the weighted recall aggregate by the caller.
         recall: float | None
         if expected is None:
-            # No ground truth available; if the rule is in our seeded demo
-            # dogfood loop (tp > 0 and detected >= tp), use the dogfood-recall
-            # convention: assume detected covers expected for that benchmark
-            # case (sample-passing). This is a CONSERVATIVE estimate of recall
-            # because it cannot account for missed-detection-not-in-suite cases.
-            if tp > 0 and detected >= tp:
-                recall = tp / max(detected, tp)
-            else:
-                recall = None
+            recall = None
         else:
             fn = max(0, expected - detected)
             denom = tp + fn

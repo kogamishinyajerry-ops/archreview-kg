@@ -112,8 +112,8 @@ def q6_project_with_most_issues(store: KGStore) -> list[tuple[Any, ...]]:
         counts[row["slug"]] = counts.get(row["slug"], 0) + 1
     if not counts:
         return []
-    top = max(counts.items(), key=lambda kv: (kv[1], kv[0]))
-    return [top]
+    # Match SQL "ORDER BY n DESC, slug ASC LIMIT 1".
+    return [sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[0]]
 
 
 def q7_rule_with_most_rejections(store: KGStore) -> list[tuple[Any, ...]]:
@@ -125,8 +125,8 @@ def q7_rule_with_most_rejections(store: KGStore) -> list[tuple[Any, ...]]:
         counts[row["rid"]] = counts.get(row["rid"], 0) + 1
     if not counts:
         return []
-    top = max(counts.items(), key=lambda kv: (kv[1], kv[0]))
-    return [top]
+    # Match SQL "ORDER BY n DESC, rule_id ASC LIMIT 1": sort by (-count, name) ascending.
+    return [sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[0]]
 
 
 def q8_orphaned_issues(store: KGStore) -> list[tuple[Any, ...]]:

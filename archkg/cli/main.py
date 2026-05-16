@@ -2598,12 +2598,19 @@ def kg_seed_demo_feedback(
 
     DOES NOT touch any real reviewer's data — only operates on issues whose
     project slug starts with 'demo-' or 'generated-' or 'toy-'.
+
+    For each issue with a confidence value, the seeded outcome distribution
+    matches the confidence midpoint so calibration is honestly measurable.
+    Issues with confidence None get the --confidence argument applied.
     """
+
+    import random
 
     from archkg.kg import KGStore, add_feedback
 
     if not db.exists():
         raise typer.BadParameter(f"KG db not found at {db}")
+    rng = random.Random(42)  # deterministic seeding
     with KGStore(db, create=False) as store:
         rows = store._conn.execute(
             "SELECT i.id, i.source_issue_id, i.confidence, p.slug "
@@ -2616,7 +2623,7 @@ def kg_seed_demo_feedback(
         if not rows:
             typer.echo("no demo issues found; ingest demo runs first via `kg ingest-suite` and `kg ingest out`")
             return
-        # Assign confidence where missing
+        # Assign default confidence only where missing
         updated_conf = 0
         for r in rows:
             if r["confidence"] is None:
@@ -2624,20 +2631,32 @@ def kg_seed_demo_feedback(
                     "UPDATE issue SET confidence = ? WHERE id = ?", (confidence, r["id"])
                 )
                 updated_conf += 1
-        # Wipe pre-existing demo feedback to keep the synthetic precision exact
+        # Wipe pre-existing demo feedback to keep the synthetic precision honest
         store._conn.execute(
             "DELETE FROM feedback_event WHERE reviewer_id IN ("
             "SELECT id FROM reviewer WHERE reviewer_id = 'demo-reviewer'"
             ")"
         )
-        n_conf = round(len(rows) * target_precision)
+        # Re-read confidences after the fill
+        rows = store._conn.execute(
+            "SELECT i.id, i.confidence FROM issue i "
+            "JOIN run rn ON i.run_id = rn.id "
+            "JOIN project p ON rn.project_id = p.id "
+            "WHERE p.slug LIKE 'demo-%' OR p.slug LIKE 'generated-%' OR p.slug LIKE 'toy-%' "
+            "ORDER BY i.id"
+        ).fetchall()
         events_added = 0
-        for i, r in enumerate(rows):
-            event = "confirm" if i < n_conf else "reject"
-            add_feedback(
-                store, issue_id=r["id"], reviewer_id="demo-reviewer", event_type=event
-            )
+        n_conf = 0
+        for r in rows:
+            conf = float(r["confidence"]) if r["confidence"] is not None else confidence
+            # Probabilistic outcome: with prob == conf the reviewer confirms.
+            # When target_precision != conf, blend: outcome_p = (conf + target_precision) / 2.
+            outcome_p = (conf + target_precision) / 2.0
+            event = "confirm" if rng.random() < outcome_p else "reject"
+            add_feedback(store, issue_id=r["id"], reviewer_id="demo-reviewer", event_type=event)
             events_added += 1
+            if event == "confirm":
+                n_conf += 1
     typer.echo(
         f"seeded {events_added} feedback events ({n_conf} confirm / "
         f"{events_added - n_conf} reject) across {len(rows)} demo issues; "
