@@ -1,0 +1,720 @@
+{
+  "schema_version": "rule_input_readiness.v1",
+  "summary": {
+    "ready": 2,
+    "missing_input": 23,
+    "low_confidence": 0,
+    "manual_only": 0,
+    "not_applicable": 0,
+    "unsupported_entity": 7
+  },
+  "rules": [
+    {
+      "rule_id": "RC-CORRIDOR-WIDTH",
+      "source_clause_ids": [
+        "GB50096-5.7.2"
+      ],
+      "applies_to": "Corridor",
+      "severity": "error",
+      "status": "ready",
+      "required_inputs": [
+        "min_width_m"
+      ],
+      "available_inputs": [
+        "min_width_m"
+      ],
+      "missing_inputs": [],
+      "entity_count": 2,
+      "candidate_entity_ids": [
+        "corridor-7a2ecdd8",
+        "corridor-b471e6c0"
+      ],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph+ocr_diagnostics",
+      "reason": "all required entity inputs are present"
+    },
+    {
+      "rule_id": "RC-DOOR-WIDTH",
+      "source_clause_ids": [
+        "GB50016-5.5.30"
+      ],
+      "applies_to": "Door",
+      "severity": "error",
+      "status": "unsupported_entity",
+      "required_inputs": [
+        "width_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "width_m"
+      ],
+      "entity_count": 0,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph",
+      "reason": "this run contains no Door entities"
+    },
+    {
+      "rule_id": "RC-ELEVATOR-REQUIRED",
+      "source_clause_ids": [
+        "GB50096-6.4.1"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "floors",
+        "height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "floors",
+        "height_m"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-EVAC-STAIR-TYPE-33M",
+      "source_clause_ids": [
+        "GB50016-5.5.27"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "height_m"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-CLOSED-STAIRWELL-21M",
+      "source_clause_ids": [
+        "GB50016-5.5.27"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "height_m"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-7F",
+      "source_clause_ids": [
+        "GB50096-6.6.1"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "floors"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "floors"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+      "source_clause_ids": [
+        "GB50096-6.6.3"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "floors"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "floors"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-REFUGE-LAYER-100M",
+      "source_clause_ids": [
+        "GB50016-5.5.31"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "height_m"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+      "source_clause_ids": [
+        "GB50096-6.4.7",
+        "GB50096-6.4.1"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "floors",
+        "height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "floors",
+        "height_m"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+      "source_clause_ids": [
+        "GB50096-6.6.4",
+        "GB50096-6.6.1"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "floors"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "floors"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+      "source_clause_ids": [
+        "GB50016-5.5.29"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "fire_class",
+        "height_class"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "fire_class",
+        "height_class"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-BEDROOM-AREA",
+      "source_clause_ids": [
+        "GB50096-5.3.1"
+      ],
+      "applies_to": "Room",
+      "severity": "error",
+      "status": "missing_input",
+      "required_inputs": [
+        "area_m2",
+        "label"
+      ],
+      "available_inputs": [
+        "area_m2"
+      ],
+      "missing_inputs": [
+        "label"
+      ],
+      "entity_count": 8,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph+ocr_diagnostics",
+      "reason": "required inputs are not available on any single Room entity"
+    },
+    {
+      "rule_id": "RC-LIVING-BEDROOM-NETHEIGHT-2.4",
+      "source_clause_ids": [
+        "GB50096-5.5.2"
+      ],
+      "applies_to": "Room",
+      "severity": "error",
+      "status": "missing_input",
+      "required_inputs": [
+        "label",
+        "net_height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "label",
+        "net_height_m"
+      ],
+      "entity_count": 8,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph+ocr_diagnostics",
+      "reason": "required inputs are not available on any single Room entity"
+    },
+    {
+      "rule_id": "RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1",
+      "source_clause_ids": [
+        "GB50096-5.5.3"
+      ],
+      "applies_to": "Room",
+      "severity": "error",
+      "status": "missing_input",
+      "required_inputs": [
+        "label",
+        "pitched_roof",
+        "majority_net_height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "label",
+        "pitched_roof",
+        "majority_net_height_m"
+      ],
+      "entity_count": 8,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph+ocr_diagnostics",
+      "reason": "required inputs are not available on any single Room entity"
+    },
+    {
+      "rule_id": "RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0",
+      "source_clause_ids": [
+        "GB50352-6.3.3"
+      ],
+      "applies_to": "Room",
+      "severity": "error",
+      "status": "missing_input",
+      "required_inputs": [
+        "label",
+        "level",
+        "net_height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "label",
+        "level",
+        "net_height_m"
+      ],
+      "entity_count": 8,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph+ocr_diagnostics",
+      "reason": "required inputs are not available on any single Room entity"
+    },
+    {
+      "rule_id": "RC-NO-LIVING-IN-BASEMENT",
+      "source_clause_ids": [
+        "GB50352-6.4.7"
+      ],
+      "applies_to": "Room",
+      "severity": "error",
+      "status": "missing_input",
+      "required_inputs": [
+        "label",
+        "level"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "label",
+        "level"
+      ],
+      "entity_count": 8,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph+ocr_diagnostics",
+      "reason": "required inputs are not available on any single Room entity"
+    },
+    {
+      "rule_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+      "source_clause_ids": [
+        "GB50763-3.5.1"
+      ],
+      "applies_to": "Corridor",
+      "severity": "error",
+      "status": "ready",
+      "required_inputs": [
+        "min_width_m"
+      ],
+      "available_inputs": [
+        "min_width_m"
+      ],
+      "missing_inputs": [],
+      "entity_count": 2,
+      "candidate_entity_ids": [
+        "corridor-7a2ecdd8",
+        "corridor-b471e6c0"
+      ],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph+ocr_diagnostics",
+      "reason": "all required entity inputs are present"
+    },
+    {
+      "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+      "source_clause_ids": [
+        "GB50096-5.6.2"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+      "source_clause_ids": [
+        "GB50096-5.6.3"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+      "source_clause_ids": [
+        "GB50096-5.8.1"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+      "source_clause_ids": [
+        "GB50096-6.1.2"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+      "source_clause_ids": [
+        "GB50096-6.2.4"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+      "source_clause_ids": [
+        "GB50352-6.7.3"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+      "source_clause_ids": [
+        "GB50352-6.7.4"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-STAIR-FLIGHT-WIDTH-1.10",
+      "source_clause_ids": [
+        "GB50096-6.3.1"
+      ],
+      "applies_to": "Stair",
+      "severity": "info",
+      "status": "unsupported_entity",
+      "required_inputs": [
+        "flight_width_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "flight_width_m"
+      ],
+      "entity_count": 0,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph",
+      "reason": "this run contains no Stair entities"
+    },
+    {
+      "rule_id": "RC-STAIR-TREAD-WIDTH-0.26",
+      "source_clause_ids": [
+        "GB50096-6.3.2",
+        "GB50096-6.3.3"
+      ],
+      "applies_to": "Stair",
+      "severity": "error",
+      "status": "unsupported_entity",
+      "required_inputs": [
+        "tread_width_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "tread_width_m"
+      ],
+      "entity_count": 0,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph",
+      "reason": "this run contains no Stair entities"
+    },
+    {
+      "rule_id": "RC-STAIR-RISER-HEIGHT-0.175",
+      "source_clause_ids": [
+        "GB50096-6.3.2",
+        "GB50096-6.3.3"
+      ],
+      "applies_to": "Stair",
+      "severity": "error",
+      "status": "unsupported_entity",
+      "required_inputs": [
+        "riser_height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "riser_height_m"
+      ],
+      "entity_count": 0,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph",
+      "reason": "this run contains no Stair entities"
+    },
+    {
+      "rule_id": "RC-STAIR-HANDRAIL-0.90",
+      "source_clause_ids": [
+        "GB50096-6.3.2"
+      ],
+      "applies_to": "Stair",
+      "severity": "error",
+      "status": "unsupported_entity",
+      "required_inputs": [
+        "handrail_height_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "handrail_height_m"
+      ],
+      "entity_count": 0,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph",
+      "reason": "this run contains no Stair entities"
+    },
+    {
+      "rule_id": "RC-STAIR-WELL-WIDTH-0.11",
+      "source_clause_ids": [
+        "GB50096-6.3.5"
+      ],
+      "applies_to": "Stair",
+      "severity": "info",
+      "status": "unsupported_entity",
+      "required_inputs": [
+        "well_width_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "well_width_m"
+      ],
+      "entity_count": 0,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph",
+      "reason": "this run contains no Stair entities"
+    },
+    {
+      "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+      "source_clause_ids": [
+        "GB50352-6.8.4"
+      ],
+      "applies_to": "Project",
+      "severity": "info",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    },
+    {
+      "rule_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "source_clause_ids": [
+        "GB50763-3.5.3"
+      ],
+      "applies_to": "Door",
+      "severity": "info",
+      "status": "unsupported_entity",
+      "required_inputs": [
+        "width_m"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "width_m"
+      ],
+      "entity_count": 0,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "entity_graph",
+      "reason": "this run contains no Door entities"
+    },
+    {
+      "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+      "source_clause_ids": [
+        "GB50763-7.4.3"
+      ],
+      "applies_to": "Project",
+      "severity": "error",
+      "status": "missing_input",
+      "required_inputs": [
+        "building_type",
+        "total_units",
+        "accessible_units"
+      ],
+      "available_inputs": [],
+      "missing_inputs": [
+        "building_type",
+        "total_units",
+        "accessible_units"
+      ],
+      "entity_count": null,
+      "candidate_entity_ids": [],
+      "low_confidence_entity_ids": [],
+      "source": "project_meta",
+      "reason": "needs --project-meta to evaluate"
+    }
+  ]
+}

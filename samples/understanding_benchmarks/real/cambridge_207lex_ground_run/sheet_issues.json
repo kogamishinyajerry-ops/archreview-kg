@@ -1,0 +1,115 @@
+{
+  "schema_version": "sheet_issues.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-207lex-page07-ground.pdf",
+  "sheet_count": 1,
+  "issue_count": 1,
+  "preview_only": true,
+  "review_state_linked": false,
+  "sheets": [
+    {
+      "page_index": 0,
+      "issue_count": 1,
+      "skipped_rule_count": 18,
+      "issues": [
+        {
+          "issue_id": "ISS-52a08194",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-8b09db4a"
+          ],
+          "bbox": [
+            344.5,
+            270.5,
+            344.5,
+            320.0
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.99 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.99 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.99,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        }
+      ],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-ELEVATOR-REQUIRED",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EVAC-STAIR-TYPE-33M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CLOSED-STAIRWELL-21M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+          "reason": "needs --project-meta to evaluate"
+        }
+      ]
+    }
+  ]
+}

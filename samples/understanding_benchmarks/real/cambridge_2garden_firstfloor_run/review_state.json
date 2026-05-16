@@ -1,0 +1,32 @@
+{
+  "schema_version": "issue_review_state.v1",
+  "run_id": "cambridge-2garden-page17-firstfloor",
+  "generated_at": "2026-05-16T08:18:00Z",
+  "summary": {
+    "candidate": 2
+  },
+  "items": [
+    {
+      "issue_id": "ISS-32a2b0b2",
+      "rule_card_id": "RC-CORRIDOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page17-firstfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:00Z",
+      "updated_at": "2026-05-16T08:18:00Z"
+    },
+    {
+      "issue_id": "ISS-b7debba6",
+      "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page17-firstfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:00Z",
+      "updated_at": "2026-05-16T08:18:00Z"
+    }
+  ]
+}

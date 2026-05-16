@@ -1,0 +1,24 @@
+{
+  "schema_version": "sheet_classification.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-343medford-page07-firstfloor.pdf",
+  "summary": {
+    "plan": 1
+  },
+  "pages": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 4 keyword signal(s)",
+      "evidence_texts": [
+        "Powder Room",
+        "Powder Room",
+        "FIRST FLOOR PLAN",
+        "FIRST FLOOR PLAN"
+      ],
+      "line_count": 7077,
+      "text_count": 109
+    }
+  ]
+}

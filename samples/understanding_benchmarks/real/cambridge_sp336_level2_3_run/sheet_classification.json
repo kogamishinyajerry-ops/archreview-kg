@@ -1,0 +1,21 @@
+{
+  "schema_version": "sheet_classification.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-sp336-page10-level2-3.pdf",
+  "summary": {
+    "detail": 1
+  },
+  "pages": [
+    {
+      "page_index": 0,
+      "sheet_type": "detail",
+      "confidence": 0.67,
+      "eligible_for_graph": false,
+      "reason": "classified from 1 keyword signal(s)",
+      "evidence_texts": [
+        "FOR DECK DETAILS"
+      ],
+      "line_count": 14196,
+      "text_count": 97
+    }
+  ]
+}

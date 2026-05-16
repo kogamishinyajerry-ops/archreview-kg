@@ -1,0 +1,26 @@
+{
+  "schema_version": "sheet_classification.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-2garden-page17-firstfloor.pdf",
+  "summary": {
+    "plan": 1
+  },
+  "pages": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "confidence": 0.91,
+      "eligible_for_graph": true,
+      "reason": "classified from 3 keyword signal(s)",
+      "evidence_texts": [
+        "ROOM 1",
+        "TOILET ROOM",
+        "ROOM",
+        "BASEMENT PLAN",
+        "ROOM 1",
+        "ROOM 2"
+      ],
+      "line_count": 13652,
+      "text_count": 87
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": "sheet_classification.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-2garden-page26-existing-firstfloor.pdf",
+  "summary": {
+    "plan": 1
+  },
+  "pages": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 7 keyword signal(s)",
+      "evidence_texts": [
+        "LIVING / DINING",
+        "LIVING",
+        "BEDROOM",
+        "BEDROOM",
+        "BEDROOM",
+        "FIRST FLOOR PLAN"
+      ],
+      "line_count": 9580,
+      "text_count": 179
+    }
+  ]
+}

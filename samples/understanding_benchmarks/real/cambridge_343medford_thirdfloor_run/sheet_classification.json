@@ -1,0 +1,26 @@
+{
+  "schema_version": "sheet_classification.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-343medford-page09-thirdfloor.pdf",
+  "summary": {
+    "plan": 1
+  },
+  "pages": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 4 keyword signal(s)",
+      "evidence_texts": [
+        "Master Bedroom",
+        "Master Bedroom",
+        "Master Bathroom",
+        "Master Bathroom",
+        "THIRD FLOOR PLAN",
+        "THIRD FLOOR PLAN"
+      ],
+      "line_count": 7559,
+      "text_count": 87
+    }
+  ]
+}

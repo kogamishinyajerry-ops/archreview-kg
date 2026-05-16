@@ -1,0 +1,90 @@
+{
+  "schema_version": "sheet_issues.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-sp336-page11-level4.pdf",
+  "sheet_count": 1,
+  "issue_count": 0,
+  "preview_only": true,
+  "review_state_linked": false,
+  "sheets": [
+    {
+      "page_index": 0,
+      "issue_count": 0,
+      "skipped_rule_count": 18,
+      "issues": [],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-ELEVATOR-REQUIRED",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EVAC-STAIR-TYPE-33M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CLOSED-STAIRWELL-21M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+          "reason": "needs --project-meta to evaluate"
+        }
+      ]
+    }
+  ]
+}

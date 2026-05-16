@@ -1,0 +1,115 @@
+{
+  "schema_version": "sheet_issues.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-2garden-page26-existing-firstfloor.pdf",
+  "sheet_count": 1,
+  "issue_count": 1,
+  "preview_only": true,
+  "review_state_linked": false,
+  "sheets": [
+    {
+      "page_index": 0,
+      "issue_count": 1,
+      "skipped_rule_count": 18,
+      "issues": [
+        {
+          "issue_id": "ISS-0439bba2",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-bc96fe47"
+          ],
+          "bbox": [
+            213.0,
+            195.0,
+            360.0,
+            322.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 4.61 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 4.61 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 4.6113800000000005,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        }
+      ],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-ELEVATOR-REQUIRED",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EVAC-STAIR-TYPE-33M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CLOSED-STAIRWELL-21M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+          "reason": "needs --project-meta to evaluate"
+        }
+      ]
+    }
+  ]
+}

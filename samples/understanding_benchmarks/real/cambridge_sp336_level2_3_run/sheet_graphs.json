@@ -1,0 +1,15 @@
+{
+  "schema_version": "sheet_graphs.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-sp336-page10-level2-3.pdf",
+  "graph_count": 0,
+  "confidence_floor": 0.5,
+  "graphs": [],
+  "skipped_pages": [
+    {
+      "page_index": 0,
+      "sheet_type": "detail",
+      "confidence": 0.67,
+      "reason": "not a confident graph-eligible plan page"
+    }
+  ]
+}

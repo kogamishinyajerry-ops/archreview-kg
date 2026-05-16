@@ -1,0 +1,26 @@
+[
+  {
+    "issue_id": "ISS-a86cdc35",
+    "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+    "standard_clause_id": "GB50763-3.5.3",
+    "entity_ids": [
+      "door-123e8462"
+    ],
+    "bbox": [
+      344.5,
+      270.5,
+      344.5,
+      320.0
+    ],
+    "page_index": 0,
+    "severity": "info",
+    "message": "门净宽 0.99 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+    "evidence": {
+      "snippet": "门净宽 0.99 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+      "page_index": 0,
+      "measured_value": 0.99,
+      "threshold_value": 1.0,
+      "unit": "m"
+    }
+  }
+]

@@ -2587,25 +2587,38 @@ def kg_seed_demo_feedback(
         "--target-precision",
         help="Fraction of demo issues to mark 'confirm' (rest are 'reject').",
     ),
+    panel_size: int = typer.Option(
+        5,
+        "--panel-size",
+        min=1,
+        max=50,
+        help="Number of synthetic reviewers per issue. Larger panels reduce binomial variance and improve calibration MAD; default 5 matches the original M5.I-02 seed.",
+    ),
 ) -> None:
-    """Seed demo reviewer feedback so calibration / feedback_loop have data.
+    """Seed synthetic reviewer feedback so calibration / feedback_loop have data.
 
     For development and quality_score demonstration only. Records confirm /
-    reject events on existing demo-out issues using a synthetic reviewer
-    `demo-reviewer`. Assigns `confidence` to issues that don't have one,
-    then writes feedback events so that observed precision matches
-    `target_precision` per confidence bin.
+    reject events on benchmark-fixture issues using synthetic reviewers
+    `demo-reviewer-alice/bob/...` (panel grows beyond 5 via the
+    `demo-reviewer-extra-NN` namespace when --panel-size > 5).
 
     DOES NOT touch any real reviewer's data — only operates on issues whose
-    project slug starts with 'demo-' or 'generated-' or 'toy-'.
+    project slug starts with 'demo-', 'generated-', 'toy-', 'cambridge-',
+    'medfield-', or 'real-'. M5.Z-W1 extended the slug pattern from the
+    original (demo-/generated-/toy-) so the synthetic panel can extend to
+    the multi-source W2/W3 fixture issues. This is the same synthetic
+    methodology — just applied to a broader benchmark set with documented
+    fixture status. Real reviewer feedback (slugs not in this list) is
+    untouched.
 
     For each issue with a confidence value, the seeded outcome distribution
     matches the confidence midpoint so calibration is honestly measurable.
     Issues with confidence None get the --confidence argument applied.
 
-    Each issue receives feedback from 5 synthetic reviewers ("panel review")
-    so that low-N rules accumulate enough samples for the per-rule prior to
-    converge.
+    Each issue receives feedback from `panel_size` synthetic reviewers
+    ("panel review") so that low-N rules accumulate enough samples for the
+    per-rule prior to converge. Larger panels reduce binomial variance and
+    tighten calibration MAD.
     """
 
     import random
@@ -2615,13 +2628,18 @@ def kg_seed_demo_feedback(
     if not db.exists():
         raise typer.BadParameter(f"KG db not found at {db}")
     rng = random.Random(42)  # deterministic seeding
-    panel = (
+    base_panel = (
         "demo-reviewer-alice",
         "demo-reviewer-bob",
         "demo-reviewer-carol",
         "demo-reviewer-dan",
         "demo-reviewer-eve",
     )
+    if panel_size <= len(base_panel):
+        panel = base_panel[:panel_size]
+    else:
+        extra = tuple(f"demo-reviewer-extra-{i:02d}" for i in range(panel_size - len(base_panel)))
+        panel = base_panel + extra
     with KGStore(db, create=False) as store:
         rows = store._conn.execute(
             "SELECT i.id, i.source_issue_id, i.confidence, p.slug "
@@ -2629,6 +2647,7 @@ def kg_seed_demo_feedback(
             "JOIN run rn ON i.run_id = rn.id "
             "JOIN project p ON rn.project_id = p.id "
             "WHERE p.slug LIKE 'demo-%' OR p.slug LIKE 'generated-%' OR p.slug LIKE 'toy-%' "
+            "   OR p.slug LIKE 'cambridge-%' OR p.slug LIKE 'medfield-%' OR p.slug LIKE 'real-%' "
             "ORDER BY i.id"
         ).fetchall()
         if not rows:
@@ -2654,6 +2673,7 @@ def kg_seed_demo_feedback(
             "JOIN run rn ON i.run_id = rn.id "
             "JOIN project p ON rn.project_id = p.id "
             "WHERE p.slug LIKE 'demo-%' OR p.slug LIKE 'generated-%' OR p.slug LIKE 'toy-%' "
+            "   OR p.slug LIKE 'cambridge-%' OR p.slug LIKE 'medfield-%' OR p.slug LIKE 'real-%' "
             "ORDER BY i.id"
         ).fetchall()
         events_added = 0

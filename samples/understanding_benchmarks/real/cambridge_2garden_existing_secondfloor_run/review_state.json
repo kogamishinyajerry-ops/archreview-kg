@@ -1,0 +1,87 @@
+{
+  "schema_version": "issue_review_state.v1",
+  "run_id": "cambridge-2garden-page27-existing-secondfloor",
+  "generated_at": "2026-05-16T08:18:08Z",
+  "summary": {
+    "candidate": 7
+  },
+  "items": [
+    {
+      "issue_id": "ISS-74dfae0a",
+      "rule_card_id": "RC-DOOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page27-existing-secondfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:08Z",
+      "updated_at": "2026-05-16T08:18:08Z"
+    },
+    {
+      "issue_id": "ISS-52b4b0d1",
+      "rule_card_id": "RC-DOOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page27-existing-secondfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:08Z",
+      "updated_at": "2026-05-16T08:18:08Z"
+    },
+    {
+      "issue_id": "ISS-c0b9bcfa",
+      "rule_card_id": "RC-BEDROOM-AREA",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page27-existing-secondfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:08Z",
+      "updated_at": "2026-05-16T08:18:08Z"
+    },
+    {
+      "issue_id": "ISS-c2b6fab4",
+      "rule_card_id": "RC-BEDROOM-AREA",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page27-existing-secondfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:08Z",
+      "updated_at": "2026-05-16T08:18:08Z"
+    },
+    {
+      "issue_id": "ISS-f79b393a",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page27-existing-secondfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:08Z",
+      "updated_at": "2026-05-16T08:18:08Z"
+    },
+    {
+      "issue_id": "ISS-bd9c8b2c",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page27-existing-secondfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:08Z",
+      "updated_at": "2026-05-16T08:18:08Z"
+    },
+    {
+      "issue_id": "ISS-43c93cd8",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-2garden-page27-existing-secondfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:18:08Z",
+      "updated_at": "2026-05-16T08:18:08Z"
+    }
+  ]
+}
