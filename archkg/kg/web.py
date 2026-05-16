@@ -235,7 +235,45 @@ def create_app(db_path: Path | None = None) -> Flask:
                 return jsonify({"error": str(exc)}), 400
         return jsonify({"feedback_event_id": fb_id})
 
+    # M6.W4 — pilot deployment error handlers. Surface 404/500 as friendly
+    # JSON for API routes and an HTML stub for the SPA root.
+    @app.errorhandler(404)
+    def _not_found(err):  # type: ignore[no-untyped-def]
+        from flask import request as _request
+
+        if _request.path.startswith("/api/"):
+            return jsonify({"error": "not_found", "detail": str(err)}), 404
+        return _error_response(
+            "Not Found",
+            404,
+            "请求的资源不存在 / Requested resource not found.",
+        )
+
+    @app.errorhandler(500)
+    def _server_error(err):  # type: ignore[no-untyped-def]
+        return _error_response(
+            "Internal Server Error",
+            500,
+            "服务器内部错误，请查看终端日志 / Internal error; check the server log.",
+        )
+
     return app
+
+
+def _error_response(title: str, status: int, message: str):  # type: ignore[no-untyped-def]
+    """Render a minimal HTML error page for the pilot UI (M6.W4)."""
+
+    body = (
+        "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
+        f"<title>{title}</title>"
+        "<style>body{font-family:-apple-system,system-ui,sans-serif;"
+        "max-width:560px;margin:80px auto;padding:0 24px;color:#1d1d1f}"
+        "h1{font-size:2rem;margin-bottom:0.5rem}p{color:#86868b;line-height:1.5}"
+        "a{color:#0071e3;text-decoration:none}a:hover{text-decoration:underline}</style>"
+        f"</head><body><h1>{status} — {title}</h1><p>{message}</p>"
+        "<p><a href='/'>← 返回首页 / Back to home</a></p></body></html>"
+    )
+    return body, status, {"Content-Type": "text/html; charset=utf-8"}
 
 
 def _time_flow(name: str, fn: Any) -> dict[str, Any]:

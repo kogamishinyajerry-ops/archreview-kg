@@ -772,7 +772,7 @@ def score_pilot_readiness(repo: Path) -> DimensionScore:
     pilot_script = repo / "bin" / "archkg-pilot"
     checks.append((
         "pilot_init_script",
-        pilot_script.exists() and pilot_script.stat().st_mode & 0o111,
+        pilot_script.exists() and bool(pilot_script.stat().st_mode & 0o111),
         f"bin/archkg-pilot missing or not executable at {pilot_script}",
     ))
 
@@ -1013,7 +1013,7 @@ def compute_quality_score(
 
     # 99+ check. M6 expanded to 12 dims; >= 9 of 12 must be at 10.0 (was 7 of 10).
     # Threshold scales as ceil(0.7 * n).
-    min_perfect_dims = max(1, int(round(0.75 * len(DIMENSIONS))))
+    min_perfect_dims = max(1, round(0.75 * len(DIMENSIONS)))
     ninety_nine_plus = (
         n == len(DIMENSIONS)
         and all(d.score >= 9.0 for d in dim_results)
