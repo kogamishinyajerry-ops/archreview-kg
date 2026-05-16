@@ -26,6 +26,179 @@ from archkg.kg.feedback import add_feedback
 from archkg.kg.pdf_render import render_page, resolve_pdf_for_drawing
 from archkg.kg.store import KGStore, default_db_path
 
+DISAGREEMENT_HTML = r"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ArchReview-KG · Disagreement Inspector</title>
+  <style>
+    :root {
+      --bg: #0b0b0f; --surface: #1c1c1e; --border: #2c2c2e;
+      --text: #f5f5f7; --muted: #98989d; --accent: #0a84ff;
+      --ok: #34c759; --warn: #ff9f0a; --bad: #ff453a; --info: #5e5ce6;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+           margin: 0; background: var(--bg); color: var(--text); font-size: 13px; }
+    header { background: #000; padding: 18px 28px; border-bottom: 1px solid var(--border);
+             display: flex; align-items: center; justify-content: space-between; }
+    h1 { margin: 0; font-size: 16px; font-weight: 600; }
+    .issue-title { font-size: 22px; font-weight: 600; text-align: center; padding: 24px 0 6px; }
+    .issue-sub { text-align: center; color: var(--muted); font-size: 13px; padding-bottom: 24px; }
+    .compass { display: grid; grid-template-columns: 1fr 480px 1fr; grid-template-rows: 1fr 1fr; gap: 20px;
+               padding: 0 32px; min-height: 540px; align-items: stretch; }
+    .compass .central { grid-row: 1 / span 2; align-self: center; text-align: center; }
+    .compass .central img, .compass .central svg { max-width: 100%; max-height: 480px; display: block;
+              margin: 0 auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+    .compass .central .crop-caption { margin-top: 8px; color: var(--muted); font-size: 11px; }
+    .rev-card { background: var(--surface); border: 1px solid var(--border);
+                border-radius: 12px; padding: 16px; align-self: stretch; }
+    .rev-card.kind-needs_info { border-color: var(--info); }
+    .rev-card.kind-confirm    { border-color: var(--ok); }
+    .rev-card.kind-reject     { border-color: var(--bad); }
+    .rev-card.kind-confirmed_override, .rev-card.kind-override, .rev-card.kind-supersede { border-color: #af52de; }
+    .rev-card .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .rev-card .avatar { width: 26px; height: 26px; border-radius: 50%; display: flex;
+                        align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: white; }
+    .rev-card .name { font-weight: 600; font-family: ui-monospace, "SF Mono", monospace; }
+    .rev-card .kind { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .rev-card .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; margin-top: 6px; font-weight: 600; }
+    .pill.needs_info { background: rgba(94,92,230,0.15); color: var(--info); }
+    .pill.confirm    { background: rgba(52,199,89,0.15); color: var(--ok); }
+    .pill.reject     { background: rgba(255,69,58,0.15); color: var(--bad); }
+    .pill.confirmed_override, .pill.override, .pill.supersede { background: rgba(175,82,222,0.15); color: #af52de; }
+    .rev-card .when { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: ui-monospace, "SF Mono", monospace; }
+    .rev-card .payload { margin-top: 10px; background: #0b0b0f; border: 1px solid #2c2c2e;
+                         padding: 8px; border-radius: 6px; font-family: ui-monospace, "SF Mono", monospace;
+                         font-size: 11px; white-space: pre-wrap; word-break: break-word; color: #f5f5f7; }
+    .ledger { margin: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+              overflow: hidden; }
+    .ledger-h { padding: 14px 18px; font-size: 11px; color: var(--muted); text-transform: uppercase;
+                letter-spacing: 0.08em; border-bottom: 1px solid var(--border); font-weight: 600; }
+    .ledger-h small { color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400; }
+    table.ledger-tbl { width: 100%; border-collapse: collapse; }
+    table.ledger-tbl th, table.ledger-tbl td { padding: 8px 16px; text-align: left; font-size: 12px;
+                                                border-bottom: 1px solid #2c2c2e; }
+    table.ledger-tbl th { background: #1c1c1e; color: var(--muted); font-size: 11px;
+                          text-transform: uppercase; letter-spacing: 0.05em; }
+    .quote { margin: 36px 32px; text-align: center; font-size: 22px; color: var(--text);
+             font-style: italic; }
+    .quote-sub { margin: 8px 32px 36px; text-align: center; font-size: 13px; color: var(--muted); }
+    a.back { color: var(--accent); text-decoration: none; font-size: 13px; }
+    a.back:hover { text-decoration: underline; }
+    .compass.empty { padding: 60px; text-align: center; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Disagreement Inspector</h1>
+    <a class="back" id="back_link" href="/">← back to workbench</a>
+  </header>
+  <div class="issue-title" id="issue_title">loading…</div>
+  <div class="issue-sub" id="issue_sub"></div>
+
+  <div class="compass" id="compass">loading…</div>
+
+  <div class="ledger">
+    <div class="ledger-h">Audit ledger <small>· review_state.json — append-only · never overwritten</small></div>
+    <table class="ledger-tbl">
+      <thead><tr><th>event_id</th><th>timestamp</th><th>reviewer_id</th><th>class</th><th>event_type</th><th>payload</th></tr></thead>
+      <tbody id="ledger_tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="quote">“Two reviewers can disagree, and that disagreement is preserved.”</div>
+  <div class="quote-sub">Confidence calibration learns from rejections without losing the underlying detection.</div>
+
+  <script>
+    const issueId = location.pathname.match(/\/issues\/(\d+)\//)?.[1];
+
+    function shortAvatar(name) {
+      const letter = (name || '?').slice(0, 1).toUpperCase();
+      const colors = { D: '#34c759', S: '#5e5ce6', E: '#ff9f0a', J: '#af52de', K: '#0a84ff' };
+      const bg = colors[letter] || '#666';
+      return `<div class="avatar" style="background:${bg}">${letter}</div>`;
+    }
+
+    function renderCompass(data) {
+      const compass = document.getElementById('compass');
+      compass.innerHTML = '';
+      // Group events by event_type, pick the latest representative event per type.
+      const by_type = new Map();
+      for (const e of data.events) {
+        const arr = by_type.get(e.event_type) || [];
+        arr.push(e);
+        by_type.set(e.event_type, arr);
+      }
+      const ordered_types = ['needs_info', 'confirm', 'reject', 'supersede', 'comment'];
+      const reps = [];
+      for (const t of ordered_types) {
+        const arr = by_type.get(t);
+        if (arr && arr.length) {
+          reps.push({ type: t, event: arr[arr.length - 1], total: arr.length });
+        }
+      }
+      // Add up to 4 representatives + 1 central PDF crop slot.
+      const slots = reps.slice(0, 4);
+      const positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+      // Build NW, NE, central, SW, SE structure with placeholders if fewer than 4 types.
+      const card = (rep, pos) => {
+        if (!rep) return `<div></div>`;
+        const e = rep.event;
+        const kind = rep.type === 'confirm' && (e.payload?.supersedes || (e.payload?.rationale || '').toLowerCase().includes('override')) ? 'confirmed_override' : rep.type;
+        const when = e.created_at ? new Date(e.created_at).toISOString().slice(0, 16).replace('T', ' ') : '';
+        const payload = e.payload ? JSON.stringify(e.payload, null, 2) : '{}';
+        return `<div class="rev-card kind-${kind}">
+          <div class="head">
+            ${shortAvatar(e.reviewer_id)}
+            <div>
+              <div class="name">${e.reviewer_id || '<system>'}</div>
+              <div class="kind">${e.reviewer_class || 'unclassified'} · ${rep.total} event(s)</div>
+            </div>
+          </div>
+          <span class="pill ${kind}">${rep.type}</span>
+          <div class="when">${when}</div>
+          <div class="payload">${payload}</div>
+        </div>`;
+      };
+      const central = data.crop_available
+        ? `<div class="central">
+             <img src="/api/issues/${data.issue_id}/crop.png" alt="PDF evidence crop">
+             <div class="crop-caption">PDF evidence crop · bbox [${data.bbox?.map((v)=>v.toFixed(1)).join(', ') ?? '—'}]</div>
+           </div>`
+        : `<div class="central"><div style="padding:60px;background:var(--surface);border-radius:12px;color:var(--muted);font-size:12px">no PDF crop available for this issue</div></div>`;
+      compass.innerHTML = card(slots[0], 'NW') + central + card(slots[1], 'NE') + card(slots[2], 'SW') + card(slots[3], 'SE');
+      // Audit ledger
+      const tbody = document.getElementById('ledger_tbody');
+      tbody.innerHTML = '';
+      const sorted = [...data.events].sort((a, b) => b.id - a.id);
+      for (const e of sorted) {
+        const tr = document.createElement('tr');
+        const when = e.created_at ? new Date(e.created_at).toISOString().slice(0, 19).replace('T', ' ') : '';
+        const payload = e.payload ? JSON.stringify(e.payload).slice(0, 80) : '{}';
+        tr.innerHTML = `<td><code>evt-${String(e.id).slice(-4)}</code></td>
+                        <td><code>${when}</code></td>
+                        <td><code>${e.reviewer_id || '<system>'}</code></td>
+                        <td>${e.reviewer_class || 'unclassified'}</td>
+                        <td><span class="pill ${e.event_type}">${e.event_type}</span></td>
+                        <td><code>${payload}</code></td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function load() {
+      const d = await fetch(`/api/issues/${issueId}/disagreement`).then((r) => r.json());
+      document.getElementById('issue_title').innerHTML =
+        `Issue ${d.source_issue_id || d.issue_id} · <code>${d.rule_id || ''}</code>`;
+      document.getElementById('issue_sub').textContent =
+        `${d.message || ''} · ${d.events.length} feedback events · ${d.distinct_event_types} distinct verdicts`;
+      renderCompass(d);
+    }
+    load();
+  </script>
+</body>
+</html>"""
+
 QUALITY_HTML = r"""<!doctype html>
 <html lang="en">
 <head>
@@ -873,6 +1046,12 @@ INDEX_HTML = r"""<!doctype html>
           <button class="btn reject" onclick="postFeedback(${data.id}, 'reject')">✗ Reject</button>
           <button class="btn needs_info" onclick="postFeedback(${data.id}, 'needs_info')">? Needs info</button>
         </div>
+        <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 12px;">
+          <a href="/issues/${data.id}/disagreement" target="_blank" style="color: var(--accent); text-decoration: none">
+            → Open disagreement inspector
+          </a>
+          <span style="color: var(--muted); margin-left: 8px;">(4-corner reviewer view + audit ledger)</span>
+        </div>
       `;
       $('#mask').classList.add('open');
       $('#drawer').classList.add('open');
@@ -1024,6 +1203,163 @@ def create_app(db_path: Path | None = None) -> Flask:
     @app.get("/quality")
     def quality_dashboard() -> tuple[str, int, dict[str, str]]:
         return QUALITY_HTML, 200, {"Content-Type": "text/html; charset=utf-8"}
+
+    @app.get("/issues/<int:issue_id>/disagreement")
+    def issue_disagreement_page(issue_id: int) -> tuple[str, int, dict[str, str]]:
+        del issue_id  # served by client-side fetch
+        return DISAGREEMENT_HTML, 200, {"Content-Type": "text/html; charset=utf-8"}
+
+    @app.get("/api/issues/<int:issue_id>/disagreement")
+    def issue_disagreement_data(issue_id: int) -> Any:
+        with _store() as store:
+            irow = store._conn.execute(
+                "SELECT i.*, r.rule_id AS rule_label, p.slug AS project_slug, "
+                "d.id AS drawing_id "
+                "FROM issue i "
+                "JOIN run rn ON i.run_id = rn.id "
+                "JOIN project p ON rn.project_id = p.id "
+                "LEFT JOIN drawing d ON rn.drawing_id = d.id "
+                "LEFT JOIN rule r ON i.rule_id = r.id "
+                "WHERE i.id = ?",
+                (issue_id,),
+            ).fetchone()
+            if not irow:
+                return jsonify({"error": "issue not found", "id": issue_id}), 404
+            fb_rows = store._conn.execute(
+                "SELECT fe.id, fe.event_type, fe.created_at, fe.payload_json, rv.reviewer_id "
+                "FROM feedback_event fe LEFT JOIN reviewer rv ON fe.reviewer_id = rv.id "
+                "WHERE fe.issue_id = ? ORDER BY fe.id",
+                (issue_id,),
+            ).fetchall()
+        events: list[dict[str, Any]] = []
+        distinct_types: set[str] = set()
+        for fr in fb_rows:
+            try:
+                payload = json.loads(fr["payload_json"] or "{}")
+            except json.JSONDecodeError:
+                payload = {}
+            distinct_types.add(fr["event_type"])
+            events.append(
+                {
+                    "id": int(fr["id"]),
+                    "event_type": fr["event_type"],
+                    "reviewer_id": fr["reviewer_id"],
+                    "reviewer_class": payload.get("reviewer_class") or (
+                        "synthetic"
+                        if (fr["reviewer_id"] or "").startswith(("demo-reviewer", "smoke-runner", "synthetic-"))
+                        else "project_internal"
+                        if fr["reviewer_id"]
+                        else "unclassified"
+                    ),
+                    "created_at": fr["created_at"],
+                    "payload": payload,
+                }
+            )
+        bbox = json.loads(irow["bbox_json"]) if irow["bbox_json"] else None
+        # Probe whether a PDF crop is available (drawing has a resolvable source PDF).
+        crop_available = False
+        if irow["drawing_id"] and bbox:
+            with _store() as store:
+                drow = store._conn.execute(
+                    "SELECT d.source_path AS source_path, p.slug AS slug "
+                    "FROM drawing d JOIN project p ON d.project_id = p.id "
+                    "WHERE d.id = ?",
+                    (int(irow["drawing_id"]),),
+                ).fetchone()
+            if drow:
+                repo_root = Path(app.config["KG_DB_PATH"]).parent.parent
+                crop_available = bool(
+                    resolve_pdf_for_drawing(repo_root, drow["slug"], drow["source_path"])
+                )
+        return jsonify(
+            {
+                "issue_id": int(irow["id"]),
+                "source_issue_id": irow["source_issue_id"],
+                "rule_id": irow["rule_label"],
+                "project_slug": irow["project_slug"],
+                "status": irow["status"],
+                "message": irow["message"],
+                "bbox": bbox,
+                "drawing_id": irow["drawing_id"],
+                "events": events,
+                "distinct_event_types": len(distinct_types),
+                "crop_available": crop_available,
+            }
+        )
+
+    @app.get("/api/issues/<int:issue_id>/crop.png")
+    def issue_crop_png(issue_id: int) -> Any:
+        with _store() as store:
+            irow = store._conn.execute(
+                "SELECT i.bbox_json, i.evidence_json, i.run_id, "
+                "rn.drawing_id AS drawing_id, p.slug AS slug, d.source_path AS source_path "
+                "FROM issue i "
+                "JOIN run rn ON i.run_id = rn.id "
+                "JOIN project p ON rn.project_id = p.id "
+                "LEFT JOIN drawing d ON rn.drawing_id = d.id "
+                "WHERE i.id = ?",
+                (issue_id,),
+            ).fetchone()
+        if not irow:
+            return jsonify({"error": "issue not found", "id": issue_id}), 404
+        try:
+            bbox = json.loads(irow["bbox_json"] or "null")
+            ev = json.loads(irow["evidence_json"] or "{}")
+        except json.JSONDecodeError:
+            return jsonify({"error": "bbox not parseable"}), 500
+        if not bbox or len(bbox) < 4:
+            return jsonify({"error": "no bbox on this issue"}), 404
+        repo_root = Path(app.config["KG_DB_PATH"]).parent.parent
+        pdf = resolve_pdf_for_drawing(repo_root, irow["slug"], irow["source_path"])
+        if not pdf:
+            return jsonify({"error": "no committed source PDF"}), 404
+        page_index = int(ev.get("page_index", 0))
+        try:
+            rp = render_page(pdf, page_index)
+        except (IndexError, FileNotFoundError) as exc:
+            return jsonify({"error": str(exc)}), 404
+        # Crop bbox region with a ~10% padding around it for context.
+        x0, y0, x1, y1 = (float(v) for v in bbox[:4])
+        pdf_w, pdf_h = rp.page_width_pts, rp.page_height_pts
+        pad_x = max(60.0, (x1 - x0) * 0.4)
+        pad_y = max(60.0, (y1 - y0) * 0.4)
+        cx0 = max(0.0, x0 - pad_x)
+        cy0 = max(0.0, y0 - pad_y)
+        cx1 = min(pdf_w, x1 + pad_x)
+        cy1 = min(pdf_h, y1 + pad_y)
+        # Scale to image pixel space.
+        sx = rp.image_width_px / pdf_w
+        sy = rp.image_height_px / pdf_h
+        # Render the cropped region using PIL on the cached PNG.
+        try:
+            from io import BytesIO
+
+            from PIL import Image, ImageDraw
+
+            with Image.open(BytesIO(rp.image_bytes)) as im:
+                px_box = (int(cx0 * sx), int(cy0 * sy), int(cx1 * sx), int(cy1 * sy))
+                crop = im.crop(px_box).convert("RGB")
+                draw = ImageDraw.Draw(crop)
+                # Overlay the bbox itself in red, inside the crop's local coords.
+                local_x0 = int((x0 - cx0) * sx)
+                local_y0 = int((y0 - cy0) * sy)
+                local_x1 = int((x1 - cx0) * sx)
+                local_y1 = int((y1 - cy0) * sy)
+                for offset in range(4):
+                    draw.rectangle(
+                        (local_x0 - offset, local_y0 - offset, local_x1 + offset, local_y1 + offset),
+                        outline=(255, 59, 48),
+                    )
+                buf = BytesIO()
+                crop.save(buf, format="PNG", optimize=True)
+                img_bytes = buf.getvalue()
+        except Exception as exc:  # pragma: no cover — Pillow op shouldn't fail in practice
+            return jsonify({"error": "crop failed", "detail": repr(exc)}), 500
+        return Response(
+            img_bytes,
+            mimetype="image/png",
+            headers={"Cache-Control": "public, max-age=3600"},
+        )
 
     @app.get("/api/quality/score")
     def quality_score() -> Any:
