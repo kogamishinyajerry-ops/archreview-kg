@@ -1,0 +1,40 @@
+{
+  "schema_version": "real_drawing_fixture_provenance.v1",
+  "case_id": "medfield-a0-basement",
+  "fixture_kind": "real_public_pdf",
+  "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+  "retrieved_at": "2026-04-27",
+  "source_access_note": "Shared source with medfield-a1-first-floor, medfield-a2-second-floor, and medfield-full-plan-set-multi-plan-intake. HTTP GET on the same CivicPlus document endpoint produced a 9-page PDF. Per-sheet split landed as part of M5.Z-W2 (2026-05-16).",
+  "source_pdf": {
+    "committed": false,
+    "local_path_used_for_annotation": "tmp/p28-real/medfield-floorplans-elevations.pdf",
+    "page_count": 9,
+    "file_size_bytes_at_retrieval": 1297119,
+    "split_local_pdf_path": "tmp/p86-medfield-split/medfield-a0-basement.pdf"
+  },
+  "selected_sheet": {
+    "pdf_page_number_1_based": 3,
+    "sheet_number": "A-0",
+    "drawing_name": "Basement Floor Plan",
+    "project_title": "New Construction: 16 Unit Apartment Building, Hillside Village",
+    "render_used_for_annotation": "tmp/p28-real/page-03.png"
+  },
+  "committed_artifacts": {
+    "current_recognition_payload": "samples/understanding_benchmarks/real/medfield_a0_basement_run/drawing_understanding.json",
+    "manual_expected_inventory": "samples/understanding_benchmarks/real/medfield_a0_basement_expected.json"
+  },
+  "current_recognizer_observation": {
+    "run_parameters": {
+      "points_per_meter": 50.0,
+      "min_room_area_m2": 3.0
+    },
+    "rooms": 17,
+    "doors": 9,
+    "corridors": 4,
+    "stairs": 0,
+    "dimensions": 47,
+    "interpretation": "Real residential basement plan; recognizer parses spatial/openings/horizontal/dimension signals. No vertical-circulation expected on this sheet."
+  },
+  "shared_source_acknowledgment": "This case shares its source PDF with medfield-a1-first-floor, medfield-a2-second-floor, medfield-full-plan-set-multi-plan-intake, and the four other A-x sheets. The real_pdf_breadth scoring dimension counts each active sheet as one independent active case, but the underlying jurisdiction/architect/style bias is shared. M5.Z-W3 will lift breadth toward multi-source diversity.",
+  "fixture_status_at_landing": "active"
+}

@@ -88,6 +88,56 @@
       "expect": "generated/multi_plan_expected.json",
       "provenance": "generated/multi_plan_provenance.json",
       "notes": "Deterministic two-page plan set created by duplicating sample_clean.pdf. This locks sheet_graphs.json and sheet_issues.json behavior without promoting per-sheet preview issues into primary issues.json."
+    },
+    {
+      "case_id": "medfield-a0-basement",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a0_basement_run",
+      "expect": "real/medfield_a0_basement_expected.json",
+      "provenance": "real/medfield_a0_basement_provenance.json",
+      "notes": "M5.Z-W2: A-0 Basement Floor Plan from the same 9-page Medfield PDF. Shared-source bias with other medfield-* cases is acknowledged explicitly in provenance. Recognizer parses 4 of 5 evidence signals (no vertical-circulation on this sheet)."
+    },
+    {
+      "case_id": "medfield-a3-third-floor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a3_third_floor_run",
+      "expect": "real/medfield_a3_third_floor_expected.json",
+      "provenance": "real/medfield_a3_third_floor_provenance.json",
+      "notes": "M5.Z-W2: A-3 Third Floor Plan from the same 9-page Medfield PDF. Same shared-source bias as A-0; recognizer parses all 5 evidence signals."
+    },
+    {
+      "case_id": "medfield-a4-roof",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a4_roof_run",
+      "expect": "real/medfield_a4_roof_expected.json",
+      "provenance": "real/medfield_a4_roof_provenance.json",
+      "notes": "M5.Z-W2: A-4 Roof Plan from the same 9-page Medfield PDF. Honest known_gap — the plan-tuned recognizer falsely identifies 25 'rooms' and 8 'corridors' from roof outline geometry. Needs a roof-aware semantic layer before promotion."
+    },
+    {
+      "case_id": "medfield-a5-elevations",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a5_elevations_run",
+      "expect": "real/medfield_a5_elevations_expected.json",
+      "provenance": "real/medfield_a5_elevations_provenance.json",
+      "notes": "M5.Z-W2: A-5 Elevations from the same 9-page Medfield PDF. Honest known_gap — elevations are not plan views; recognizer cannot honestly produce residential-room evidence from side elevations."
+    },
+    {
+      "case_id": "medfield-a6-sections",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a6_sections_run",
+      "expect": "real/medfield_a6_sections_expected.json",
+      "provenance": "real/medfield_a6_sections_provenance.json",
+      "notes": "M5.Z-W2: A-6 Sections from the same 9-page Medfield PDF. Honest known_gap — sections are not plan views; recognizer cannot honestly identify residential rooms from sectional cuts."
     }
   ]
 }

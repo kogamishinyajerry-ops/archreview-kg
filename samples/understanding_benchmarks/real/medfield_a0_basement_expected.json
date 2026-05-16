@@ -1,0 +1,37 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "medfield-a0-basement-manual-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "建筑平面图",
+  "component_counts": {
+    "rooms": {"min": 10, "max": 30},
+    "doors": {"min": 4, "max": 20},
+    "corridors": {"min": 1, "max": 6},
+    "dimensions": {"min": 6}
+  },
+  "required_semantic_kinds": [
+    "door_opening",
+    "horizontal_circulation",
+    "dimension_annotation"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "openings",
+    "horizontal_circulation",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_horizontal_circulation": true,
+    "has_dimension_evidence": true
+  },
+  "notes_for_reviewer": [
+    "Basement floor plan for the same 16-unit Medfield apartment building as A-1/A-2.",
+    "No vertical-circulation signal is required for this case: stair geometry is rendered upstairs and the basement sheet shows only landings/clipped runs.",
+    "Mechanical / storage rooms dominate; residential bedroom labels are not expected at significant counts."
+  ]
+}

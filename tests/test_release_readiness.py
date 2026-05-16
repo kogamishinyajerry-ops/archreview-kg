@@ -144,13 +144,19 @@ def test_packaged_suite_can_be_evidence_ready_with_representative_run(
 
     result = build_release_readiness(suite, run_dir=run_dir)
 
-    assert result["status"] == "evidence_ready"
-    assert result["suite"]["active_count"] == 7
+    # M5.Z-W2 split Medfield page 3/6/7/8/9 into 2 active + 3 known_gap.
+    # Honest known_gaps (A-4 roof, A-5 elevations, A-6 sections) prevent
+    # evidence_ready and degrade to demo_ready_with_known_gaps until the
+    # recognizer grows roof/elevation/section semantics. real_active_count
+    # rises 3 → 5; generated_active_count unchanged.
+    assert result["status"] == "demo_ready_with_known_gaps"
+    assert result["suite"]["active_count"] == 9
     assert result["suite"]["pending_count"] == 0
-    assert result["suite"]["known_gap_count"] == 0
-    assert result["suite"]["real_active_count"] == 3
+    assert result["suite"]["known_gap_count"] == 3
+    assert result["suite"]["real_active_count"] == 5
     assert result["suite"]["generated_active_count"] == 3
-    assert result["warnings"] == []
+    # Warnings are plain strings, not dicts; the known_gap warning surfaces here
+    assert any("known_gap" in str(w) for w in result["warnings"])
 
 
 def test_release_readiness_markdown_includes_gate_tables(tmp_path: Path) -> None:

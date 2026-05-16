@@ -1,0 +1,30 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "medfield-a5-elevations-known-gap-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑立面图",
+  "likely_design_contains": "立面图",
+  "component_counts": {
+    "rooms": {"exact": 0},
+    "doors": {"exact": 0},
+    "corridors": {"max": 0},
+    "dimensions": {"min": 3}
+  },
+  "required_semantic_kinds": [
+    "elevation_view",
+    "facade_geometry"
+  ],
+  "required_evidence_signals": [
+    "elevation_layout"
+  ],
+  "required_benchmark_signals": {
+    "has_dimension_evidence": true
+  },
+  "notes_for_reviewer": [
+    "Elevations are vertical projections, not plan views. They have no residential rooms or interior corridors.",
+    "The plan-tuned recognizer is expected to FAIL this benchmark by falsely identifying 21 rooms, 9 doors, and 16 corridors.",
+    "This fixture is a documented known_gap: elevations require a separate parser. Promotion to active blocked on that work."
+  ]
+}
