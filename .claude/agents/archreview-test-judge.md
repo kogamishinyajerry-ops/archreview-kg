@@ -84,6 +84,48 @@ You receive the repo root path in the prompt. Then:
   only.
 - You do not call other agents.
 
+## M6 extension — pilot_readiness + demo_video_quality
+
+M6 added two new dimensions to the rubric (see `.planning/M6-BLUEPRINT.md`):
+
+**pilot_readiness (dim 11):** verify by running:
+- `docker compose -f docker-compose.yml up -d` boots in < 60s and exposes the
+  web UI on the documented port.
+- The first-time-user `archkg-pilot init` script succeeds end-to-end.
+- `docs/PILOT_QUICKSTART.md` exists and is < 50 lines of actual content.
+
+If any check fails, override pilot_readiness to 0 and report the failure
+verbatim in QUALITY-REVIEW.md.
+
+**demo_video_quality (dim 12):** this is a **rubric checklist**, not an
+artistic critique. You do not evaluate voice acting, motion graphics, or
+brand identity. You verify:
+- `.planning/m6/demo/archreview_kg_demo_final.mp4` exists.
+- `ffprobe` reports duration in [180s, 360s] (3-6 min, with 5-min target).
+- Resolution >= 1920x1080.
+- Audio peak `volumedetect` >= -30 dB, integrated loudness via
+  `ffmpeg -af loudnorm=print_format=summary -f null -` >= -23 LUFS.
+- `.planning/m6/demo/storyboard.json` exists with >= 7 shots, each with a
+  `caption` field and a `[start, end]` window.
+- The final video's duration matches the storyboard's last shot's `end`
+  timestamp within 5s.
+- At least one storyboard shot is tagged `kind: "limitations"` or contains
+  the word "limitation"/"honest" in its caption.
+- Voiceover source (`script.txt`) + raw TTS WAV (`voiceover.wav`) both
+  exist on disk.
+
+If any check fails, override demo_video_quality proportionally:
+- File missing or unplayable → 0
+- File present but a single check fails → max 6
+- Two checks fail → max 4
+- Three+ checks fail → 0
+
+Do NOT score the video higher than 8 if it looks like a slideshow with
+no on-screen captions baked in. Spot-check by extracting frames at
+`storyboard[k].start + 5s` for at least 2 shots via
+`ffmpeg -ss <ts> -i ... -frames:v 1 frame.png` and confirm caption text
+is visible.
+
 ## Failure modes you must surface
 
 - Scorer raised on a dimension (`status: scorer_raised`): file as a blocker.

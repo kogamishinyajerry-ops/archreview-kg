@@ -29,9 +29,13 @@ def test_schema_version_pinned() -> None:
     assert SCHEMA_VERSION == "quality_score.v1"
 
 
-def test_dimensions_are_ten() -> None:
-    assert len(DIMENSIONS) == 10
-    assert len(set(DIMENSIONS)) == 10  # unique
+def test_dimensions_are_twelve() -> None:
+    # M6 expanded the rubric from 10 → 12 dimensions, adding pilot_readiness
+    # and demo_video_quality. Pre-M6 test asserted 10.
+    assert len(DIMENSIONS) == 12
+    assert len(set(DIMENSIONS)) == 12  # unique
+    assert "pilot_readiness" in DIMENSIONS
+    assert "demo_video_quality" in DIMENSIONS
 
 
 def test_dimension_score_to_dict_round_trip() -> None:
@@ -178,8 +182,8 @@ def test_scorer_does_not_raise_on_unknown_state(tmp_path: Path) -> None:
     empty.mkdir()
     report = compute_quality_score(empty, skip_slow=True)
     assert report["overall_score"] == 0.0
-    # All dimensions present even if all 0
-    assert len(report["dimensions"]) == 10
+    # All dimensions present even if all 0 (M6: 12 dims, was 10 pre-M6).
+    assert len(report["dimensions"]) == 12
 
 
 def test_compute_with_invalid_only_dimension() -> None:

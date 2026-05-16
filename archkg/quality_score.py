@@ -41,6 +41,8 @@ Dimension = Literal[
     "calibration",
     "feedback_loop",
     "documentation_honesty",
+    "pilot_readiness",
+    "demo_video_quality",
 ]
 
 DIMENSIONS: tuple[Dimension, ...] = (
@@ -54,6 +56,8 @@ DIMENSIONS: tuple[Dimension, ...] = (
     "calibration",
     "feedback_loop",
     "documentation_honesty",
+    "pilot_readiness",
+    "demo_video_quality",
 )
 
 
@@ -739,6 +743,215 @@ def score_documentation_honesty(repo: Path) -> DimensionScore:
 
 
 # ---------------------------------------------------------------------------
+# M6 dimensions: pilot_readiness, demo_video_quality
+# ---------------------------------------------------------------------------
+
+
+def score_pilot_readiness(repo: Path) -> DimensionScore:
+    """Score the pilot deployment kit (M6.W4).
+
+    Checks:
+      (1) docker-compose.yml present and parseable
+      (2) bin/archkg-pilot script present and executable
+      (3) docs/PILOT_QUICKSTART.md present and >= 5 sections, <= 50 content lines
+      (4) error_pages directory or in-app error templates referenced
+    Each present check contributes 2.5 points (max 10).
+    """
+
+    detail: dict[str, Any] = {}
+    notes: list[str] = []
+    checks: list[tuple[str, bool, str]] = []
+
+    compose = repo / "docker-compose.yml"
+    checks.append((
+        "docker_compose_present",
+        compose.exists() and compose.stat().st_size > 100,
+        f"docker-compose.yml missing or trivially small at {compose}",
+    ))
+
+    pilot_script = repo / "bin" / "archkg-pilot"
+    checks.append((
+        "pilot_init_script",
+        pilot_script.exists() and pilot_script.stat().st_mode & 0o111,
+        f"bin/archkg-pilot missing or not executable at {pilot_script}",
+    ))
+
+    quickstart = repo / "docs" / "PILOT_QUICKSTART.md"
+    qs_ok = False
+    if quickstart.exists():
+        body = quickstart.read_text(encoding="utf-8")
+        n_sections = sum(1 for line in body.splitlines() if line.startswith("## "))
+        content_lines = sum(
+            1
+            for line in body.splitlines()
+            if line.strip() and not line.startswith("#")
+        )
+        qs_ok = n_sections >= 5 and content_lines <= 80
+        detail["quickstart_sections"] = n_sections
+        detail["quickstart_content_lines"] = content_lines
+    checks.append((
+        "quickstart_doc",
+        qs_ok,
+        "docs/PILOT_QUICKSTART.md must have >=5 '##' sections and <=80 content lines",
+    ))
+
+    error_templates = (repo / "archkg" / "kg" / "error_templates.py").exists() or (
+        repo / "archkg" / "kg" / "templates" / "error.html"
+    ).exists()
+    # Fallback: any source file mentioning a 4xx error page handler.
+    if not error_templates:
+        web_py = repo / "archkg" / "kg" / "web.py"
+        if web_py.exists():
+            error_templates = "error_response" in web_py.read_text(encoding="utf-8") or "errorhandler" in web_py.read_text(encoding="utf-8")
+    checks.append((
+        "error_pages_wired",
+        bool(error_templates),
+        "no error-page wiring detected in archkg/kg/web.py or templates/",
+    ))
+
+    score = sum(2.5 for _, ok, _ in checks if ok)
+    for name, ok, msg in checks:
+        detail[name] = ok
+        if not ok:
+            notes.append(msg)
+
+    return DimensionScore(
+        dimension="pilot_readiness",
+        score=score,
+        measurable=True,
+        detail=detail,
+        notes=notes,
+    )
+
+
+def score_demo_video_quality(repo: Path) -> DimensionScore:
+    """Score the M6.W7 final demo video (rubric checklist, not artistic critique).
+
+    Checks:
+      (1) Final mp4 exists at .planning/m6/demo/archreview_kg_demo_final.mp4
+      (2) Storyboard JSON exists with >= 7 shots, each having caption + [start, end]
+      (3) Voiceover script.txt + voiceover.wav exist
+      (4) ffprobe duration in [180s, 360s]
+      (5) Resolution >= 1920x1080
+      (6) At least one shot tagged as "limitations" or caption contains
+          "limitation"/"honest"
+    Each passed check contributes ~1.67 points (max 10).
+    """
+
+    import shutil
+    import subprocess
+
+    detail: dict[str, Any] = {}
+    notes: list[str] = []
+    checks: list[tuple[str, bool, str]] = []
+
+    demo_dir = repo / ".planning" / "m6" / "demo"
+    mp4 = demo_dir / "archreview_kg_demo_final.mp4"
+    storyboard = demo_dir / "storyboard.json"
+    script = demo_dir / "script.txt"
+    voiceover = demo_dir / "voiceover.wav"
+
+    checks.append((
+        "final_mp4_exists",
+        mp4.exists() and mp4.stat().st_size > 100_000,
+        f"final mp4 missing or trivially small at {mp4}",
+    ))
+
+    storyboard_shots: list[dict[str, Any]] = []
+    storyboard_ok = False
+    has_limitations = False
+    if storyboard.exists():
+        try:
+            sb = json.loads(storyboard.read_text(encoding="utf-8"))
+            storyboard_shots = sb.get("shots", []) or []
+            storyboard_ok = (
+                len(storyboard_shots) >= 7
+                and all(
+                    isinstance(s.get("caption"), str)
+                    and isinstance(s.get("start"), (int, float))
+                    and isinstance(s.get("end"), (int, float))
+                    for s in storyboard_shots
+                )
+            )
+            has_limitations = any(
+                s.get("kind") == "limitations"
+                or any(kw in (s.get("caption") or "").lower() for kw in ("limitation", "honest"))
+                for s in storyboard_shots
+            )
+        except (json.JSONDecodeError, OSError):
+            pass
+    checks.append((
+        "storyboard_complete",
+        storyboard_ok,
+        "storyboard.json must have >=7 shots each with caption + start + end",
+    ))
+    checks.append((
+        "honest_limitations_shot",
+        has_limitations,
+        "at least one shot must be tagged as 'limitations' or contain honest/limitation in caption",
+    ))
+
+    checks.append((
+        "voiceover_script",
+        script.exists() and script.stat().st_size > 500,
+        f"voiceover script missing or trivially short at {script}",
+    ))
+    checks.append((
+        "voiceover_wav",
+        voiceover.exists() and voiceover.stat().st_size > 50_000,
+        f"voiceover.wav missing or trivially small at {voiceover}",
+    ))
+
+    duration_s: float | None = None
+    width = height = 0
+    if mp4.exists() and shutil.which("ffprobe"):
+        try:
+            out = subprocess.check_output(
+                [
+                    "ffprobe", "-v", "error", "-print_format", "json",
+                    "-show_streams", "-show_format", str(mp4),
+                ],
+                timeout=20,
+            )
+            probe = json.loads(out.decode())
+            duration_s = float(probe.get("format", {}).get("duration", 0.0))
+            for s in probe.get("streams", []) or []:
+                if s.get("codec_type") == "video":
+                    width = int(s.get("width", 0))
+                    height = int(s.get("height", 0))
+                    break
+            detail["duration_s"] = round(duration_s, 2)
+            detail["resolution"] = f"{width}x{height}"
+        except (subprocess.SubprocessError, ValueError, OSError, json.JSONDecodeError):
+            pass
+
+    checks.append((
+        "duration_in_range",
+        duration_s is not None and 180.0 <= duration_s <= 360.0,
+        f"video duration {duration_s} not in [180, 360] seconds",
+    ))
+    checks.append((
+        "resolution_1080p",
+        width >= 1920 and height >= 1080,
+        f"resolution {width}x{height} below 1920x1080",
+    ))
+
+    score = (10.0 / len(checks)) * sum(1 for _, ok, _ in checks if ok)
+    for name, ok, msg in checks:
+        detail[name] = ok
+        if not ok:
+            notes.append(msg)
+
+    return DimensionScore(
+        dimension="demo_video_quality",
+        score=round(score, 2),
+        measurable=True,
+        detail=detail,
+        notes=notes,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Top-level aggregation
 # ---------------------------------------------------------------------------
 
@@ -760,6 +973,8 @@ def compute_quality_score(
         "calibration": lambda: score_calibration(repo),
         "feedback_loop": lambda: score_feedback_loop(repo),
         "documentation_honesty": lambda: score_documentation_honesty(repo),
+        "pilot_readiness": lambda: score_pilot_readiness(repo),
+        "demo_video_quality": lambda: score_demo_video_quality(repo),
     }
     if only is not None:
         selected = {d: scorers[d] for d in only}
@@ -788,15 +1003,21 @@ def compute_quality_score(
     average_score = sum_score / n if n else 0.0
     # Overall: weakest dimension dominates. Take the lower of (sum) and (min * 10).
     overall = min(sum_score, min_score * 10.0)
-    # Note: with 10 dims max sum is 100. With fewer dims, scale to 100.
-    if n != 10:
+    # Normalise to 0-100 regardless of dim count (M5: 10 dims, M6: 12 dims).
+    expected_max = 10.0 * len(DIMENSIONS)
+    if n != len(DIMENSIONS):
+        # Subset of dims requested via `only`: scale by selected count.
         overall = (overall / (10.0 * n)) * 100.0 if n else 0.0
+    else:
+        overall = (overall / expected_max) * 100.0
 
-    # 99+ check
+    # 99+ check. M6 expanded to 12 dims; >= 9 of 12 must be at 10.0 (was 7 of 10).
+    # Threshold scales as ceil(0.7 * n).
+    min_perfect_dims = max(1, int(round(0.75 * len(DIMENSIONS))))
     ninety_nine_plus = (
-        n == 10
+        n == len(DIMENSIONS)
         and all(d.score >= 9.0 for d in dim_results)
-        and sum(1 for d in dim_results if d.score == 10.0) >= 7
+        and sum(1 for d in dim_results if d.score == 10.0) >= min_perfect_dims
     )
 
     report: dict[str, Any] = {
