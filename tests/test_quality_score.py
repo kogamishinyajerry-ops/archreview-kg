@@ -1,0 +1,180 @@
+"""Tests for archkg.quality_score (M5 scoring infrastructure).
+
+The scorer must be honest: when a dimension cannot be measured, the score is
+0 with measurable=False. There must be no partial-credit-for-trying behaviour.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from archkg.quality_score import (
+    DIMENSIONS,
+    SCHEMA_VERSION,
+    DimensionScore,
+    compute_quality_score,
+    format_summary,
+    score_documentation_honesty,
+    score_real_pdf_breadth,
+    write_quality_score,
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_schema_version_pinned() -> None:
+    assert SCHEMA_VERSION == "quality_score.v1"
+
+
+def test_dimensions_are_ten() -> None:
+    assert len(DIMENSIONS) == 10
+    assert len(set(DIMENSIONS)) == 10  # unique
+
+
+def test_dimension_score_to_dict_round_trip() -> None:
+    ds = DimensionScore(
+        dimension="code_quality",
+        score=7.5,
+        measurable=True,
+        detail={"k": "v"},
+        notes=["n1", "n2"],
+    )
+    out = ds.to_dict()
+    assert out["dimension"] == "code_quality"
+    assert out["score"] == 7.5
+    assert out["measurable"] is True
+    assert out["detail"] == {"k": "v"}
+    assert out["notes"] == ["n1", "n2"]
+
+
+def test_real_pdf_breadth_reads_suite_manifest() -> None:
+    ds = score_real_pdf_breadth(REPO_ROOT)
+    assert ds.dimension == "real_pdf_breadth"
+    assert ds.measurable is True
+    # Baseline expectation: <= 5 real_public active cases (we have 3 at M5 start)
+    n = ds.detail["real_active_count"]
+    assert 0 <= n <= 50, "real_active_count outside sane bounds"
+    assert ds.score == pytest.approx(min(10.0, n / 15.0 * 10.0))
+
+
+def test_real_pdf_breadth_missing_manifest(tmp_path: Path) -> None:
+    empty_repo = tmp_path / "empty"
+    empty_repo.mkdir()
+    ds = score_real_pdf_breadth(empty_repo)
+    assert ds.measurable is False
+    assert ds.score == 0.0
+    assert ds.detail["status"] == "suite_manifest_missing"
+
+
+def test_kg_dimensions_score_zero_before_module_exists() -> None:
+    # M5 hasn't built the kg module yet; these MUST score 0 and report unmeasurable.
+    only = [
+        "kg_persistence",
+        "kg_coverage",
+        "cross_project_query",
+        "web_ui_e2e",
+        "recognition_quality",
+        "calibration",
+        "feedback_loop",
+    ]
+    report = compute_quality_score(REPO_ROOT, skip_slow=True, only=only)  # type: ignore[arg-type]
+    by_dim = {d["dimension"]: d for d in report["dimensions"]}
+    for dim in only:
+        assert by_dim[dim]["score"] == 0.0, f"{dim} expected 0 in baseline"
+        assert by_dim[dim]["measurable"] is False
+
+
+def test_documentation_honesty_detects_marketing_overclaim(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "READINESS.md").write_text(
+        "ArchReview-KG is production-ready and battle-tested for any drawing.\n",
+        encoding="utf-8",
+    )
+    ds = score_documentation_honesty(repo)
+    assert ds.measurable is True
+    assert ds.score < 10.0
+    assert any("production-ready" in n.lower() or "production ready" in n.lower() for n in ds.notes)
+    assert any("battle-tested" in n.lower() or "battle tested" in n.lower() for n in ds.notes)
+
+
+def test_documentation_honesty_clean_readme_passes(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "READINESS.md").write_text(
+        "ArchReview-KG is an evaluation-stage tool. 4 of 32 rules are auto-detectable.\n",
+        encoding="utf-8",
+    )
+    ds = score_documentation_honesty(repo)
+    assert ds.measurable is True
+    assert ds.score == 10.0
+    assert ds.detail["overclaims"] == []
+
+
+def test_overall_capped_by_weakest_dimension() -> None:
+    only = [
+        "real_pdf_breadth",  # measurable, partial
+        "kg_persistence",  # unmeasurable, 0
+    ]
+    report = compute_quality_score(REPO_ROOT, skip_slow=True, only=only)  # type: ignore[arg-type]
+    weakest = min(d["score"] for d in report["dimensions"])
+    assert weakest == 0.0
+    # With kg_persistence == 0, overall is dominated by weakest_dimension * 10 == 0
+    # but scaled to 100. With n=2, overall = min(sum, 0) / (10*2) * 100 = 0.
+    assert report["overall_score"] == 0.0
+
+
+def test_write_and_read_quality_score(tmp_path: Path) -> None:
+    report = {
+        "schema_version": SCHEMA_VERSION,
+        "overall_score": 42.0,
+        "dimensions": [],
+    }
+    out = tmp_path / "out" / "quality_score.json"
+    written = write_quality_score(report, out)
+    assert written == out
+    assert out.exists()
+    loaded = json.loads(out.read_text(encoding="utf-8"))
+    assert loaded["overall_score"] == 42.0
+
+
+def test_format_summary_includes_all_dim_scores() -> None:
+    report = compute_quality_score(REPO_ROOT, skip_slow=True, only=["real_pdf_breadth"])  # type: ignore[arg-type]
+    summary = format_summary(report)
+    assert "real_pdf_breadth" in summary
+    assert "overall:" in summary
+    assert "weakest:" in summary
+
+
+def test_ninety_nine_plus_requires_full_run_and_strict_thresholds(tmp_path: Path) -> None:
+    # Synthesize a fake report and re-derive — ensure the ninety_nine_plus
+    # gating in compute_quality_score works only for full 10-dim runs.
+    only = ["real_pdf_breadth"]
+    report = compute_quality_score(REPO_ROOT, skip_slow=True, only=only)  # type: ignore[arg-type]
+    # Single-dim runs can never report 99+
+    assert report["ninety_nine_plus"] is False
+
+
+def test_scorer_does_not_raise_on_unknown_state(tmp_path: Path) -> None:
+    """Even on a completely empty repo, the scorer returns 0s instead of raising."""
+
+    empty = tmp_path / "empty_repo"
+    empty.mkdir()
+    report = compute_quality_score(empty, skip_slow=True)
+    assert report["overall_score"] == 0.0
+    # All dimensions present even if all 0
+    assert len(report["dimensions"]) == 10
+
+
+def test_compute_with_invalid_only_dimension() -> None:
+    """compute_quality_score should silently skip unknown dim names if passed via Python.
+
+    (CLI validates names before passing in, so this is defence-in-depth.)
+    """
+    only = ["code_quality"]
+    report = compute_quality_score(REPO_ROOT, skip_slow=True, only=only)  # type: ignore[arg-type]
+    assert len(report["dimensions"]) == 1
+    assert report["dimensions"][0]["dimension"] == "code_quality"

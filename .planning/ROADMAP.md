@@ -1,6 +1,32 @@
 # ArchReview-KG Roadmap After P32
 
-Updated: 2026-04-28
+Updated: 2026-05-16 (M5 added)
+
+## Milestone M5: Knowledge Graph as Product (planned 2026-05-16)
+
+See `.planning/M5-BLUEPRINT.md` for the full blueprint, 10-dimension scoring
+rubric, and exit gate. M5 is the active milestone — M2/M3/M4 phases below
+remain historical reference for completed P33-P85 work.
+
+Goal: cross-project queryable architectural review knowledge platform with
+honest per-rule precision/recall and reviewer feedback calibration. Gated
+by an `archreview-test-judge` agent that scores 10 dimensions out of 100;
+exit at >= 99 with no dimension < 9.
+
+Phase clusters:
+
+- M5.F — Test agent + scoring infrastructure (built first).
+- M5.A — KG persistence (SQLite).
+- M5.B — KG schema, lineage, versioning.
+- M5.C — Query layer + CLI.
+- M5.D — Web UI for KG browsing.
+- M5.E — Recognition quality integration (AUTODETECTABLE 4/32 → >= 15/32, real PDFs 3 → >= 15).
+- M5.G — Active feedback loop and calibration.
+- M5.Z — Iterate until score >= 99.
+
+Process discipline: no new handoff bundle navigation fields during M5 unless
+coupled with a measured recognition or KG improvement. P78-P85 pattern is
+explicitly frozen.
 
 ## Milestone M2: Evidence-First Plan Review Platform
 

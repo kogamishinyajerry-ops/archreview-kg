@@ -2328,5 +2328,65 @@ def control_sync(
             typer.echo(f"notion: {notion.get('status')} - {notion.get('reason')}")
 
 
+@app.command("quality-score")
+def quality_score_cmd(
+    repo: Path = typer.Option(
+        Path(__file__).resolve().parents[2],
+        "--repo",
+        help="Repository root (defaults to detected archreview-kg root).",
+    ),
+    out: Path = typer.Option(
+        Path("quality_score.json"),
+        "-o",
+        "--out",
+        help="Where to write quality_score.json.",
+    ),
+    skip_slow: bool = typer.Option(
+        False,
+        "--skip-slow/--full",
+        help="Skip pytest in code_quality dimension (faster, partial score).",
+    ),
+    only: str | None = typer.Option(
+        None,
+        "--only",
+        help="Comma-separated dimension names to score (default: all 10).",
+    ),
+    quiet: bool = typer.Option(False, "--quiet"),
+) -> None:
+    """Compute the M5 10-dimension quality score and write quality_score.json.
+
+    See `.planning/M5-BLUEPRINT.md` for the scoring rubric. This is the entry
+    point used by the `archreview-test-judge` subagent.
+    """
+
+    import json as _json
+
+    from archkg.quality_score import (
+        DIMENSIONS,
+        compute_quality_score,
+        format_summary,
+        write_quality_score,
+    )
+
+    only_set: tuple[str, ...] | None
+    if only:
+        names = tuple(s.strip() for s in only.split(",") if s.strip())
+        invalid = [n for n in names if n not in DIMENSIONS]
+        if invalid:
+            raise typer.BadParameter(f"unknown dimensions: {invalid}")
+        only_set = names
+    else:
+        only_set = None
+
+    report = compute_quality_score(repo, skip_slow=skip_slow, only=only_set)  # type: ignore[arg-type]
+    written = write_quality_score(report, out)
+    if not quiet:
+        typer.echo(format_summary(report))
+        typer.echo("")
+        typer.echo(f"wrote {written}")
+    else:
+        typer.echo(_json.dumps({"overall_score": report["overall_score"], "path": str(written)}))
+
+
 if __name__ == "__main__":
     app()
