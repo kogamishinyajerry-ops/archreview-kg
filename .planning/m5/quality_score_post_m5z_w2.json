@@ -39,7 +39,7 @@
             "........................................................................ [ 81%]",
             "........................................................................ [ 95%]",
             "........................                                                 [100%]",
-            "527 passed, 1 skipped in 36.11s"
+            "527 passed, 1 skipped in 38.43s"
           ]
         }
       },
@@ -79,10 +79,10 @@
             "entity": 15,
             "issue": 32,
             "reviewer": 7,
-            "feedback_event": 203,
+            "feedback_event": 206,
             "edge": 0
           },
-          "query_p95_ms": 0.008,
+          "query_p95_ms": 0.012,
           "db_path": "/Users/Zhuanz/archreview-kg/.archkg/kg.db"
         }
       },
@@ -369,37 +369,37 @@
         "flows": [
           {
             "name": "index_html",
-            "p95_ms": 0.915,
+            "p95_ms": 1.18,
             "passed": true,
             "status_code": 200
           },
           {
             "name": "project_list",
-            "p95_ms": 1.163,
+            "p95_ms": 1.604,
             "passed": true,
             "status_code": 200
           },
           {
             "name": "project_drawings",
-            "p95_ms": 0.948,
+            "p95_ms": 1.346,
             "passed": true,
             "status_code": 200
           },
           {
             "name": "heatmap",
-            "p95_ms": 1.096,
+            "p95_ms": 1.326,
             "passed": true,
             "status_code": 200
           },
           {
             "name": "issue_detail",
-            "p95_ms": 1.102,
+            "p95_ms": 1.848,
             "passed": true,
             "status_code": 200
           },
           {
             "name": "annotate_feedback",
-            "p95_ms": 1.475,
+            "p95_ms": 1.919,
             "passed": true,
             "status_code": 200
           }
@@ -478,7 +478,7 @@
             "rule_id": "RC-CORRIDOR-WIDTH",
             "tp": 5,
             "fp": 0,
-            "detected": 49,
+            "detected": 52,
             "expected": 1,
             "precision": 1.0,
             "recall": 1.0,
