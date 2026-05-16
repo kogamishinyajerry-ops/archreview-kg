@@ -1,0 +1,37 @@
+{
+  "schema_version": "real_drawing_fixture_provenance.v1",
+  "case_id": "cambridge-sp336-level5",
+  "fixture_kind": "real_public_pdf",
+  "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+  "retrieved_at": "2026-05-16",
+  "source_access_note": "Anonymous HTTP GET from cambridgema.gov on 2026-05-16 as part of M5.Z-W3 multi-source acquisition. Source PDF page 12 (Cambridge St Mixed-Use (sp336) — Level 5 Plan) extracted as standalone single-page PDF.",
+  "source_pdf": {
+    "committed": false,
+    "local_path_used_for_annotation": "tmp/p86-multisrc/cambridge-sp336.pdf",
+    "page_number_extracted": 12
+  },
+  "selected_sheet": {
+    "pdf_page_number_1_based": 12,
+    "sheet_label": "Level 5 Plan",
+    "project_title": "Cambridge St Mixed-Use (sp336)",
+    "render_used_for_annotation": "tmp/p86-multisrc/pages/cambridge-sp336-page12-level5.pdf"
+  },
+  "committed_artifacts": {
+    "current_recognition_payload": "samples/understanding_benchmarks/real/cambridge_sp336_level5_run/drawing_understanding.json",
+    "manual_expected_inventory": "samples/understanding_benchmarks/real/cambridge_sp336_level5_expected.json"
+  },
+  "current_recognizer_observation": {
+    "run_parameters": {
+      "points_per_meter": 50.0,
+      "min_room_area_m2": 3.0
+    },
+    "rooms": 11,
+    "doors": 0,
+    "corridors": 2,
+    "stairs": 0,
+    "dimensions": 67,
+    "interpretation": "Active recognition: Cambridge St Mixed-Use (sp336) Level 5 Plan — 11 rooms, 0 doors, 2 corridors, 67 dimensions. Residential plan parses honestly."
+  },
+  "jurisdiction_bias_acknowledgment": "M5.Z-W3 sourced this case from Cambridge, MA. Combined with the 5 Medfield, MA cases from earlier waves, the active real_public_pdf set is now MA-biased (single US state). Multi-state diversity remains a known honest gap; further sourcing passes could target Portland OR, Austin TX, or DC.",
+  "fixture_status_at_landing": "active"
+}

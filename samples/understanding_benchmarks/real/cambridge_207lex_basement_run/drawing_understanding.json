@@ -1,0 +1,471 @@
+{
+  "schema_version": "drawing_understanding.v2",
+  "drawing_type": "建筑平面图",
+  "likely_design": "建筑平面图",
+  "summary": "建筑平面图。识别到 1 个空间、0 个门/洞口、0 条走廊、2 个楼梯/垂直交通对象、24 条尺寸证据。 多页 sheet graph 证据汇总: 1 个空间、0 个门/洞口、0 条走廊、24 条尺寸证据。",
+  "component_counts": {
+    "lines": 640,
+    "texts": 87,
+    "rooms": 1,
+    "doors": 0,
+    "corridors": 0,
+    "stairs": 2,
+    "dimensions": 24,
+    "ocr_texts": 0
+  },
+  "text_inventory": {
+    "room_label_counts": {},
+    "door_or_opening_size_label_counts": {},
+    "major_dimension_texts": []
+  },
+  "drawing_profile": {
+    "understanding_level": "multi_sheet_component_inventory",
+    "evidence_signals": [
+      "spatial_layout",
+      "vertical_circulation",
+      "dimension_evidence",
+      "per_sheet_graphs"
+    ],
+    "review_note": "识别档案用于衡量图纸内容理解, 不是规范判定。"
+  },
+  "benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": false,
+    "has_horizontal_circulation": false,
+    "has_vertical_circulation": true,
+    "has_dimension_evidence": true,
+    "has_ocr_text": false
+  },
+  "component_inventory": [
+    {
+      "id": "room-8c4e90c7",
+      "category": "space",
+      "semantic_kind": "unclassified_space",
+      "label": "空间",
+      "label_zh": "未分类",
+      "metric_text": "3.1 m²",
+      "confidence_band": "medium",
+      "evidence_source": "graph",
+      "bbox_text": "764.0, 326.0, 941.0, 575.0",
+      "uncertain": true
+    },
+    {
+      "id": "vertical-text-1",
+      "category": "vertical_circulation",
+      "semantic_kind": "stair",
+      "label": "UP",
+      "label_zh": "楼梯方向标注",
+      "metric_text": "文本提示 UP",
+      "confidence_band": "medium",
+      "evidence_source": "text_hint",
+      "bbox_text": "447.5, 542.3, 456.2, 549.3",
+      "uncertain": true
+    },
+    {
+      "id": "vertical-text-2",
+      "category": "vertical_circulation",
+      "semantic_kind": "stair",
+      "label": "FLOOR DECK, STAIR +",
+      "label_zh": "楼梯文字标注",
+      "metric_text": "文本提示 FLOOR DECK, STAIR +",
+      "confidence_band": "medium",
+      "evidence_source": "text_hint",
+      "bbox_text": "518.0, 61.9, 620.5, 72.4",
+      "uncertain": true
+    },
+    {
+      "id": "dim-e2f6af1c",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "7'-1",
+      "label_zh": "",
+      "metric_text": "7.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "685.8, 442.2, 697.1, 448.8",
+      "uncertain": false
+    },
+    {
+      "id": "dim-2f2c8337",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "1",
+      "label_zh": "",
+      "metric_text": "1.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "697.1, 441.2, 699.4, 445.9",
+      "uncertain": false
+    },
+    {
+      "id": "dim-2b88ff34",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "2",
+      "label_zh": "",
+      "metric_text": "2.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "697.0, 445.1, 699.3, 449.8",
+      "uncertain": false
+    },
+    {
+      "id": "dim-78e045ce",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "2X10 FRAMING",
+      "label_zh": "",
+      "metric_text": "2.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "683.9, 449.2, 726.5, 455.8",
+      "uncertain": false
+    },
+    {
+      "id": "dim-ca6560ef",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "6'-4\" TO B.O. BEAM",
+      "label_zh": "",
+      "metric_text": "6.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "704.9, 411.4, 758.2, 418.0",
+      "uncertain": false
+    },
+    {
+      "id": "dim-d7c1a091",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "H20",
+      "label_zh": "",
+      "metric_text": "20.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "905.5, 435.4, 916.3, 442.0",
+      "uncertain": false
+    },
+    {
+      "id": "dim-1fd8b19d",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "60A EA",
+      "label_zh": "",
+      "metric_text": "60.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "775.9, 544.8, 795.9, 551.3",
+      "uncertain": false
+    },
+    {
+      "id": "dim-e248d6c5",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "UP 5R",
+      "label_zh": "",
+      "metric_text": "5.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "739.6, 511.7, 758.2, 518.7",
+      "uncertain": false
+    },
+    {
+      "id": "dim-1a42bfcd",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "36\" AFF",
+      "label_zh": "",
+      "metric_text": "36.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "658.5, 545.7, 679.9, 552.2",
+      "uncertain": false
+    },
+    {
+      "id": "dim-652cd9ac",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "1",
+      "label_zh": "",
+      "metric_text": "1.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "242.9, 688.6, 252.5, 707.9",
+      "uncertain": false
+    },
+    {
+      "id": "dim-63d43cea",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "1/4\" = 1'-0\"",
+      "label_zh": "",
+      "metric_text": "1.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "271.2, 701.6, 301.9, 708.6",
+      "uncertain": false
+    },
+    {
+      "id": "dim-00ac54f9",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "OPENING FOR NEW 3'-0 DOOR",
+      "label_zh": "",
+      "metric_text": "3.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "520.9, 675.4, 660.5, 686.0",
+      "uncertain": false
+    }
+  ],
+  "components": {
+    "spaces": [
+      {
+        "id": "room-8c4e90c7",
+        "component": "空间",
+        "category": "space",
+        "semantic_kind": "unclassified_space",
+        "label": null,
+        "label_zh": "未分类",
+        "area_m2": 3.0832,
+        "area_text": "3.1 m²",
+        "metric_text": "3.1 m²",
+        "bbox_text": "764.0, 326.0, 941.0, 575.0",
+        "confidence": 0.6,
+        "confidence_band": "medium",
+        "uncertain": true,
+        "evidence_source": "graph"
+      }
+    ],
+    "openings": [],
+    "circulation": [],
+    "vertical_circulation": [
+      {
+        "id": "vertical-text-1",
+        "component": "楼梯/垂直交通",
+        "category": "vertical_circulation",
+        "semantic_kind": "stair",
+        "label": "UP",
+        "label_zh": "楼梯方向标注",
+        "metric_text": "文本提示 UP",
+        "bbox_text": "447.5, 542.3, 456.2, 549.3",
+        "page_index": 0,
+        "confidence": 0.62,
+        "confidence_band": "medium",
+        "uncertain": true,
+        "evidence_source": "text_hint"
+      },
+      {
+        "id": "vertical-text-2",
+        "component": "楼梯/垂直交通",
+        "category": "vertical_circulation",
+        "semantic_kind": "stair",
+        "label": "FLOOR DECK, STAIR +",
+        "label_zh": "楼梯文字标注",
+        "metric_text": "文本提示 FLOOR DECK, STAIR +",
+        "bbox_text": "518.0, 61.9, 620.5, 72.4",
+        "page_index": 0,
+        "confidence": 0.7,
+        "confidence_band": "medium",
+        "uncertain": true,
+        "evidence_source": "text_hint"
+      }
+    ]
+  },
+  "dimension_evidence": {
+    "graph_dimensions": [
+      {
+        "id": "dim-e2f6af1c",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "7'-1",
+        "value_m": 7.0,
+        "value_text": "7.00 m",
+        "metric_text": "7.00 m",
+        "bbox_text": "685.8, 442.2, 697.1, 448.8",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-2f2c8337",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "1",
+        "value_m": 1.0,
+        "value_text": "1.00 m",
+        "metric_text": "1.00 m",
+        "bbox_text": "697.1, 441.2, 699.4, 445.9",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-2b88ff34",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "2",
+        "value_m": 2.0,
+        "value_text": "2.00 m",
+        "metric_text": "2.00 m",
+        "bbox_text": "697.0, 445.1, 699.3, 449.8",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-78e045ce",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "2X10 FRAMING",
+        "value_m": 2.0,
+        "value_text": "2.00 m",
+        "metric_text": "2.00 m",
+        "bbox_text": "683.9, 449.2, 726.5, 455.8",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-ca6560ef",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "6'-4\" TO B.O. BEAM",
+        "value_m": 6.0,
+        "value_text": "6.00 m",
+        "metric_text": "6.00 m",
+        "bbox_text": "704.9, 411.4, 758.2, 418.0",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-d7c1a091",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "H20",
+        "value_m": 20.0,
+        "value_text": "20.00 m",
+        "metric_text": "20.00 m",
+        "bbox_text": "905.5, 435.4, 916.3, 442.0",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-1fd8b19d",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "60A EA",
+        "value_m": 60.0,
+        "value_text": "60.00 m",
+        "metric_text": "60.00 m",
+        "bbox_text": "775.9, 544.8, 795.9, 551.3",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-e248d6c5",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "UP 5R",
+        "value_m": 5.0,
+        "value_text": "5.00 m",
+        "metric_text": "5.00 m",
+        "bbox_text": "739.6, 511.7, 758.2, 518.7",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-1a42bfcd",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "36\" AFF",
+        "value_m": 36.0,
+        "value_text": "36.00 m",
+        "metric_text": "36.00 m",
+        "bbox_text": "658.5, 545.7, 679.9, 552.2",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-652cd9ac",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "1",
+        "value_m": 1.0,
+        "value_text": "1.00 m",
+        "metric_text": "1.00 m",
+        "bbox_text": "242.9, 688.6, 252.5, 707.9",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-63d43cea",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "1/4\" = 1'-0\"",
+        "value_m": 1.0,
+        "value_text": "1.00 m",
+        "metric_text": "1.00 m",
+        "bbox_text": "271.2, 701.6, 301.9, 708.6",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-00ac54f9",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "OPENING FOR NEW 3'-0 DOOR",
+        "value_m": 3.0,
+        "value_text": "3.00 m",
+        "metric_text": "3.00 m",
+        "bbox_text": "520.9, 675.4, 660.5, 686.0",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      }
+    ],
+    "ocr_dimensions": [],
+    "ocr_dimension_count": 0,
+    "ocr_bound_count": 0
+  },
+  "uncertainty_flags": [
+    "存在未分类房间: 1 个, 需要人工核对用途。",
+    "识别到空间但没有门/洞口, 可能漏检门洞或输入图纸不完整。",
+    "未识别到走廊/交通空间, 复杂户型可能需要人工核对动线。",
+    "楼梯/垂直交通缺少可靠几何锚点, 位置与构造细节需人工核对。"
+  ],
+  "sheet_graph_summary": {
+    "source": "sheet_graphs.json",
+    "graph_count": 1,
+    "plan_page_indexes": [
+      0
+    ],
+    "component_counts": {
+      "rooms": 1,
+      "doors": 0,
+      "corridors": 0,
+      "stairs": 0,
+      "dimensions": 24
+    },
+    "review_note": "Counts are aggregated from per-plan-sheet graph evidence. They are recognition evidence and are not merged into primary issues.json."
+  }
+}

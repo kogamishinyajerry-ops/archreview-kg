@@ -1,0 +1,444 @@
+{
+  "schema_version": "drawing_understanding.v2",
+  "drawing_type": "建筑平面图",
+  "likely_design": "建筑平面图",
+  "summary": "建筑平面图。识别到 1 个空间、0 个门/洞口、0 条走廊、1 个楼梯/垂直交通对象、32 条尺寸证据。 多页 sheet graph 证据汇总: 1 个空间、0 个门/洞口、0 条走廊、32 条尺寸证据。",
+  "component_counts": {
+    "lines": 1568,
+    "texts": 54,
+    "rooms": 1,
+    "doors": 0,
+    "corridors": 0,
+    "stairs": 1,
+    "dimensions": 32,
+    "ocr_texts": 0
+  },
+  "text_inventory": {
+    "room_label_counts": {},
+    "door_or_opening_size_label_counts": {},
+    "major_dimension_texts": []
+  },
+  "drawing_profile": {
+    "understanding_level": "multi_sheet_component_inventory",
+    "evidence_signals": [
+      "spatial_layout",
+      "vertical_circulation",
+      "dimension_evidence",
+      "per_sheet_graphs"
+    ],
+    "review_note": "识别档案用于衡量图纸内容理解, 不是规范判定。"
+  },
+  "benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": false,
+    "has_horizontal_circulation": false,
+    "has_vertical_circulation": true,
+    "has_dimension_evidence": true,
+    "has_ocr_text": false
+  },
+  "component_inventory": [
+    {
+      "id": "room-90ca2979",
+      "category": "space",
+      "semantic_kind": "unclassified_space",
+      "label": "空间",
+      "label_zh": "未分类",
+      "metric_text": "27.4 m²",
+      "confidence_band": "medium",
+      "evidence_source": "graph",
+      "bbox_text": "546.0, 365.5, 884.0, 604.0",
+      "uncertain": true
+    },
+    {
+      "id": "vertical-text-1",
+      "category": "vertical_circulation",
+      "semantic_kind": "stair",
+      "label": "UP",
+      "label_zh": "楼梯方向标注",
+      "metric_text": "文本提示 UP",
+      "confidence_band": "medium",
+      "evidence_source": "text_hint",
+      "bbox_text": "776.2, 369.8, 789.1, 379.1",
+      "uncertain": true
+    },
+    {
+      "id": "dim-65e0b2ec",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "2",
+      "label_zh": "",
+      "metric_text": "2.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "538.0, 690.1, 543.7, 702.7",
+      "uncertain": false
+    },
+    {
+      "id": "dim-76b9ec49",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "3",
+      "label_zh": "",
+      "metric_text": "3.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "595.3, 690.1, 601.1, 702.7",
+      "uncertain": false
+    },
+    {
+      "id": "dim-507405d4",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "4",
+      "label_zh": "",
+      "metric_text": "4.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "650.9, 690.1, 656.6, 702.7",
+      "uncertain": false
+    },
+    {
+      "id": "dim-e5ea5ea8",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "6",
+      "label_zh": "",
+      "metric_text": "6.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "762.1, 690.1, 767.9, 702.7",
+      "uncertain": false
+    },
+    {
+      "id": "dim-7773f144",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "7",
+      "label_zh": "",
+      "metric_text": "7.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "817.7, 690.1, 823.4, 702.7",
+      "uncertain": false
+    },
+    {
+      "id": "dim-952d2f73",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "1",
+      "label_zh": "",
+      "metric_text": "1.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "485.5, 690.4, 491.3, 703.0",
+      "uncertain": false
+    },
+    {
+      "id": "dim-022291ab",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "11",
+      "label_zh": "",
+      "metric_text": "11.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "637.0, 63.8, 648.2, 76.4",
+      "uncertain": false
+    },
+    {
+      "id": "dim-4f345398",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "12",
+      "label_zh": "",
+      "metric_text": "12.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "725.4, 64.3, 736.7, 76.9",
+      "uncertain": false
+    },
+    {
+      "id": "dim-cb1c4385",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "13",
+      "label_zh": "",
+      "metric_text": "13.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "792.0, 64.3, 803.3, 76.9",
+      "uncertain": false
+    },
+    {
+      "id": "dim-f47eba04",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "2681 SF",
+      "label_zh": "",
+      "metric_text": "2.68 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "606.6, 497.9, 635.2, 507.3",
+      "uncertain": false
+    },
+    {
+      "id": "dim-e60f78ca",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "2656 SF",
+      "label_zh": "",
+      "metric_text": "2.66 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "775.9, 497.9, 804.5, 507.3",
+      "uncertain": false
+    },
+    {
+      "id": "dim-777c192e",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "8",
+      "label_zh": "",
+      "metric_text": "8.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "854.6, 690.1, 860.4, 702.7",
+      "uncertain": false
+    }
+  ],
+  "components": {
+    "spaces": [
+      {
+        "id": "room-90ca2979",
+        "component": "空间",
+        "category": "space",
+        "semantic_kind": "unclassified_space",
+        "label": null,
+        "label_zh": "未分类",
+        "area_m2": 27.4274,
+        "area_text": "27.4 m²",
+        "metric_text": "27.4 m²",
+        "bbox_text": "546.0, 365.5, 884.0, 604.0",
+        "confidence": 0.6,
+        "confidence_band": "medium",
+        "uncertain": true,
+        "evidence_source": "graph"
+      }
+    ],
+    "openings": [],
+    "circulation": [],
+    "vertical_circulation": [
+      {
+        "id": "vertical-text-1",
+        "component": "楼梯/垂直交通",
+        "category": "vertical_circulation",
+        "semantic_kind": "stair",
+        "label": "UP",
+        "label_zh": "楼梯方向标注",
+        "metric_text": "文本提示 UP",
+        "bbox_text": "776.2, 369.8, 789.1, 379.1",
+        "page_index": 0,
+        "confidence": 0.62,
+        "confidence_band": "medium",
+        "uncertain": true,
+        "evidence_source": "text_hint"
+      }
+    ]
+  },
+  "dimension_evidence": {
+    "graph_dimensions": [
+      {
+        "id": "dim-65e0b2ec",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "2",
+        "value_m": 2.0,
+        "value_text": "2.00 m",
+        "metric_text": "2.00 m",
+        "bbox_text": "538.0, 690.1, 543.7, 702.7",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-76b9ec49",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "3",
+        "value_m": 3.0,
+        "value_text": "3.00 m",
+        "metric_text": "3.00 m",
+        "bbox_text": "595.3, 690.1, 601.1, 702.7",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-507405d4",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "4",
+        "value_m": 4.0,
+        "value_text": "4.00 m",
+        "metric_text": "4.00 m",
+        "bbox_text": "650.9, 690.1, 656.6, 702.7",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-e5ea5ea8",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "6",
+        "value_m": 6.0,
+        "value_text": "6.00 m",
+        "metric_text": "6.00 m",
+        "bbox_text": "762.1, 690.1, 767.9, 702.7",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-7773f144",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "7",
+        "value_m": 7.0,
+        "value_text": "7.00 m",
+        "metric_text": "7.00 m",
+        "bbox_text": "817.7, 690.1, 823.4, 702.7",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-952d2f73",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "1",
+        "value_m": 1.0,
+        "value_text": "1.00 m",
+        "metric_text": "1.00 m",
+        "bbox_text": "485.5, 690.4, 491.3, 703.0",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-022291ab",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "11",
+        "value_m": 11.0,
+        "value_text": "11.00 m",
+        "metric_text": "11.00 m",
+        "bbox_text": "637.0, 63.8, 648.2, 76.4",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-4f345398",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "12",
+        "value_m": 12.0,
+        "value_text": "12.00 m",
+        "metric_text": "12.00 m",
+        "bbox_text": "725.4, 64.3, 736.7, 76.9",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-cb1c4385",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "13",
+        "value_m": 13.0,
+        "value_text": "13.00 m",
+        "metric_text": "13.00 m",
+        "bbox_text": "792.0, 64.3, 803.3, 76.9",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-f47eba04",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "2681 SF",
+        "value_m": 2.681,
+        "value_text": "2.68 m",
+        "metric_text": "2.68 m",
+        "bbox_text": "606.6, 497.9, 635.2, 507.3",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-e60f78ca",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "2656 SF",
+        "value_m": 2.656,
+        "value_text": "2.66 m",
+        "metric_text": "2.66 m",
+        "bbox_text": "775.9, 497.9, 804.5, 507.3",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-777c192e",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "8",
+        "value_m": 8.0,
+        "value_text": "8.00 m",
+        "metric_text": "8.00 m",
+        "bbox_text": "854.6, 690.1, 860.4, 702.7",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      }
+    ],
+    "ocr_dimensions": [],
+    "ocr_dimension_count": 0,
+    "ocr_bound_count": 0
+  },
+  "uncertainty_flags": [
+    "存在未分类房间: 1 个, 需要人工核对用途。",
+    "识别到空间但没有门/洞口, 可能漏检门洞或输入图纸不完整。",
+    "未识别到走廊/交通空间, 复杂户型可能需要人工核对动线。",
+    "楼梯/垂直交通缺少可靠几何锚点, 位置与构造细节需人工核对。"
+  ],
+  "sheet_graph_summary": {
+    "source": "sheet_graphs.json",
+    "graph_count": 1,
+    "plan_page_indexes": [
+      0
+    ],
+    "component_counts": {
+      "rooms": 1,
+      "doors": 0,
+      "corridors": 0,
+      "stairs": 0,
+      "dimensions": 32
+    },
+    "review_note": "Counts are aggregated from per-plan-sheet graph evidence. They are recognition evidence and are not merged into primary issues.json."
+  }
+}

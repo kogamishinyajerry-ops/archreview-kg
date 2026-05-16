@@ -1,0 +1,52 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "cambridge_343medford_firstfloor-manual-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "平面图",
+  "component_counts": {
+    "rooms": {
+      "min": 15,
+      "max": 47
+    },
+    "doors": {
+      "min": 4,
+      "max": 18
+    },
+    "corridors": {
+      "min": 8,
+      "max": 12
+    },
+    "dimensions": {
+      "min": 18
+    }
+  },
+  "required_semantic_kinds": [
+    "door_opening",
+    "dimension_annotation"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_dimension_evidence": true
+  },
+  "expected_rule_counts": {
+    "RC-DOOR-WIDTH": 2,
+    "RC-CORRIDOR-WIDTH": 1,
+    "RC-STAIR-FLIGHT-WIDTH-1.10": 1,
+    "RC-STAIR-TREAD-WIDTH-0.26": 1,
+    "RC-ACCESSIBLE-DOOR-WIDTH-0.80": 4,
+    "RC-LIVING-BEDROOM-NETHEIGHT-2.4": 1,
+    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W3 reviewer judgment (profile: residential_full). Counts may exceed detected — that is intentional, to break the recall=1.0 uniformity flagged in QUALITY-REVIEW-post-w2.md. Recall scoring uses fn=max(0, expected-detected); when expected > detected, recall drops below 1.0 honestly."
+  },
+  "notes_for_reviewer": [
+    "M5.Z-W3: 343 Medford St — First Floor.",
+    "Source: Cambridge MA public BZA filing PDF. Active case.",
+    "Adversarial expected_rule_counts bundled per QUALITY-REVIEW-post-w2.md recommendation."
+  ]
+}

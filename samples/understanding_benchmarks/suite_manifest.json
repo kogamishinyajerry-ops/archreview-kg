@@ -138,6 +138,196 @@
       "expect": "real/medfield_a6_sections_expected.json",
       "provenance": "real/medfield_a6_sections_provenance.json",
       "notes": "M5.Z-W2: A-6 Sections from the same 9-page Medfield PDF. Honest known_gap — sections are not plan views; recognizer cannot honestly identify residential rooms from sectional cuts."
+    },
+    {
+      "case_id": "cambridge-207lex-basement",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/207lexingtonavebza1143415documents1.pdf",
+      "run_dir": "real/cambridge_207lex_basement_run",
+      "expect": "real/cambridge_207lex_basement_expected.json",
+      "provenance": "real/cambridge_207lex_basement_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 207 Lexington Ave ADU — Basement Plan (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-207lex-ground",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/207lexingtonavebza1143415documents1.pdf",
+      "run_dir": "real/cambridge_207lex_ground_run",
+      "expect": "real/cambridge_207lex_ground_expected.json",
+      "provenance": "real/cambridge_207lex_ground_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 207 Lexington Ave ADU — Ground Floor Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-2garden-existing-firstfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_existing_firstfloor_run",
+      "expect": "real/cambridge_2garden_existing_firstfloor_expected.json",
+      "provenance": "real/cambridge_2garden_existing_firstfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Existing First Floor Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-2garden-existing-overview",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_existing_overview_run",
+      "expect": "real/cambridge_2garden_existing_overview_expected.json",
+      "provenance": "real/cambridge_2garden_existing_overview_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Existing Conditions Page 09 (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-2garden-existing-secondfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_existing_secondfloor_run",
+      "expect": "real/cambridge_2garden_existing_secondfloor_expected.json",
+      "provenance": "real/cambridge_2garden_existing_secondfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Existing Second Floor Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-2garden-firstfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_firstfloor_run",
+      "expect": "real/cambridge_2garden_firstfloor_expected.json",
+      "provenance": "real/cambridge_2garden_firstfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — First Floor Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-2garden-proposed-overview2",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_proposed_overview2_run",
+      "expect": "real/cambridge_2garden_proposed_overview2_expected.json",
+      "provenance": "real/cambridge_2garden_proposed_overview2_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Proposed Plan Page 11 (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-2garden-proposed-overview",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_proposed_overview_run",
+      "expect": "real/cambridge_2garden_proposed_overview_expected.json",
+      "provenance": "real/cambridge_2garden_proposed_overview_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Proposed Plan Page 10 (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-2garden-secondfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_secondfloor_run",
+      "expect": "real/cambridge_2garden_secondfloor_expected.json",
+      "provenance": "real/cambridge_2garden_secondfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Second Floor Plan (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-2garden-thirdfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_thirdfloor_run",
+      "expect": "real/cambridge_2garden_thirdfloor_expected.json",
+      "provenance": "real/cambridge_2garden_thirdfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Third Floor Plan (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-343medford-firstfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/historicalcommission/pdf/chcmeetingfiles/case4487_plans_BZA.pdf",
+      "run_dir": "real/cambridge_343medford_firstfloor_run",
+      "expect": "real/cambridge_343medford_firstfloor_expected.json",
+      "provenance": "real/cambridge_343medford_firstfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 343 Medford St — First Floor (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-343medford-overview",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/historicalcommission/pdf/chcmeetingfiles/case4487_plans_BZA.pdf",
+      "run_dir": "real/cambridge_343medford_overview_run",
+      "expect": "real/cambridge_343medford_overview_expected.json",
+      "provenance": "real/cambridge_343medford_overview_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 343 Medford St — Floor Plan Overview (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-343medford-secondfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/historicalcommission/pdf/chcmeetingfiles/case4487_plans_BZA.pdf",
+      "run_dir": "real/cambridge_343medford_secondfloor_run",
+      "expect": "real/cambridge_343medford_secondfloor_expected.json",
+      "provenance": "real/cambridge_343medford_secondfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 343 Medford St — Second Floor (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-343medford-thirdfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/historicalcommission/pdf/chcmeetingfiles/case4487_plans_BZA.pdf",
+      "run_dir": "real/cambridge_343medford_thirdfloor_run",
+      "expect": "real/cambridge_343medford_thirdfloor_expected.json",
+      "provenance": "real/cambridge_343medford_thirdfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 343 Medford St — Third Floor (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-sp336-basement",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_basement_run",
+      "expect": "real/cambridge_sp336_basement_expected.json",
+      "provenance": "real/cambridge_sp336_basement_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Basement (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-sp336-ground",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_ground_run",
+      "expect": "real/cambridge_sp336_ground_expected.json",
+      "provenance": "real/cambridge_sp336_ground_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Ground Level Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-sp336-level2-3",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_level2_3_run",
+      "expect": "real/cambridge_sp336_level2_3_expected.json",
+      "provenance": "real/cambridge_sp336_level2_3_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Level 2-3 Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-sp336-level4",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_level4_run",
+      "expect": "real/cambridge_sp336_level4_expected.json",
+      "provenance": "real/cambridge_sp336_level4_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Level 4 Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-sp336-level5",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_level5_run",
+      "expect": "real/cambridge_sp336_level5_expected.json",
+      "provenance": "real/cambridge_sp336_level5_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Level 5 Plan (Cambridge MA). Active recognition: residential plan parses honestly."
     }
   ]
 }

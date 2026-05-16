@@ -21,3 +21,4 @@ tmp/
 
 # Local KG database (M5) — per-developer state, never committed.
 .archkg/
+quality_score.json
