@@ -2445,6 +2445,69 @@ def kg_ingest_suite(
     typer.echo(f"ingested {ingested} run dirs")
 
 
+@kg_app.command("query")
+def kg_query(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    rule: str | None = typer.Option(None, "--rule", help="Filter by rule_id (e.g. RC-DOOR-WIDTH)."),
+    status: str | None = typer.Option(
+        None, "--status", help="Filter by review status (candidate / confirmed / rejected / ...)."
+    ),
+    project: str | None = typer.Option(None, "--project", help="Filter by project slug."),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Query issues across all projects in the KG."""
+
+    import json as _json
+
+    from archkg.kg import KGStore, issues_by_filter
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        rows = issues_by_filter(store, rule=rule, status=status, project=project)
+    if json_out:
+        typer.echo(_json.dumps(rows, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"{len(rows)} issue(s)")
+    for r in rows[:50]:
+        typer.echo(
+            f"  [{r['project']}][{r['status']}][{r['rule_id']}] "
+            f"{r['source_issue_id']}: {(r['message'] or '')[:80]}"
+        )
+    if len(rows) > 50:
+        typer.echo(f"  ... and {len(rows) - 50} more (use --json for full output)")
+
+
+@kg_app.command("canonical-queries-run")
+def kg_canonical_queries_run(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Run the 10 canonical queries and report SQL-vs-Python correctness."""
+
+    import json as _json
+
+    from archkg.kg import run_canonical_queries
+
+    results = run_canonical_queries(db_path=db)
+    if json_out:
+        typer.echo(_json.dumps(results, ensure_ascii=False, indent=2, default=str))
+        return
+    correct = sum(1 for r in results if r.get("correct"))
+    typer.echo(f"{correct}/{len(results)} canonical queries correct")
+    for r in results:
+        marker = "OK" if r.get("correct") else "FAIL"
+        typer.echo(f"  [{marker}] {r['id']} ({r.get('sql_count', '?')} rows): {r['description']}")
+
+
 @kg_app.command("status")
 def kg_status(
     db: Path = typer.Option(

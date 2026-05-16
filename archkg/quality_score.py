@@ -362,6 +362,7 @@ def score_cross_project_query(repo: Path) -> DimensionScore:
         )
     try:
         from archkg.kg.query import run_canonical_queries
+        from archkg.kg.store import default_db_path
     except ImportError:
         detail["status"] = "query_module_missing"
         notes.append("archkg.kg.query not implemented; score 0")
@@ -372,8 +373,15 @@ def score_cross_project_query(repo: Path) -> DimensionScore:
             detail=detail,
             notes=notes,
         )
-    queries = json.loads(canonical.read_text(encoding="utf-8"))
-    results = run_canonical_queries(queries)
+    manifest = json.loads(canonical.read_text(encoding="utf-8"))
+    # Manifest may be {"schema_version": ..., "queries": [...]} or a bare list.
+    queries = (
+        manifest["queries"]
+        if isinstance(manifest, dict) and "queries" in manifest
+        else manifest
+    )
+    db_path = default_db_path(repo)
+    results = run_canonical_queries(queries, db_path=db_path)
     correct = sum(1 for r in results if r.get("correct"))
     total = len(results)
     detail.update({"total": total, "correct": correct, "results": results})

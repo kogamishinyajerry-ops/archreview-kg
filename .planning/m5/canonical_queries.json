@@ -1,0 +1,45 @@
+{
+  "schema_version": "canonical_queries.v1",
+  "queries": [
+    {
+      "id": "Q1",
+      "description": "Issue count per rule (rule_id, count)."
+    },
+    {
+      "id": "Q2",
+      "description": "Issue count per project (slug, count)."
+    },
+    {
+      "id": "Q3",
+      "description": "Issue count by status."
+    },
+    {
+      "id": "Q4",
+      "description": "Top 5 (rule_id, clause_id) pairs by issue count."
+    },
+    {
+      "id": "Q5",
+      "description": "Confirmed issues across all projects ((project_slug, source_issue_id))."
+    },
+    {
+      "id": "Q6",
+      "description": "Project with most issues ((slug, count))."
+    },
+    {
+      "id": "Q7",
+      "description": "Rule with most rejections ((rule_id, count))."
+    },
+    {
+      "id": "Q8",
+      "description": "Orphaned issues (no linked entity_id)."
+    },
+    {
+      "id": "Q9",
+      "description": "Distinct clauses per rule by standard prefix."
+    },
+    {
+      "id": "Q10",
+      "description": "Issue density per drawing (source_path, issues/page)."
+    }
+  ]
+}
