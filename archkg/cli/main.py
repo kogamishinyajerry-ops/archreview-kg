@@ -2328,6 +2328,64 @@ def control_sync(
             typer.echo(f"notion: {notion.get('status')} - {notion.get('reason')}")
 
 
+kg_app = typer.Typer(name="kg", help="ArchReview-KG knowledge graph commands.", no_args_is_help=True)
+app.add_typer(kg_app, name="kg")
+
+
+@kg_app.command("init")
+def kg_init(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path (default .archkg/kg.db relative to cwd).",
+    ),
+) -> None:
+    """Initialise the KG SQLite database and apply schema kg.v1."""
+
+    from archkg.kg import KGStore
+
+    store = KGStore(db)
+    report = store.health_check()
+    typer.echo(
+        f"initialised {db} (schema={report['schema_version']}, "
+        f"tables={len(report['tables_present'])}, runs={report['counts']['run']})"
+    )
+
+
+@kg_app.command("status")
+def kg_status(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Print KG health report (schema version, tables, counts, query p95)."""
+
+    import json as _json
+
+    from archkg.kg import KGStore, KGStoreError
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db} — run `archkg kg init` first")
+    try:
+        store = KGStore(db, create=False)
+    except KGStoreError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    report = store.health_check()
+    if json_out:
+        typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"db: {report['db_path']}")
+    typer.echo(f"schema: {report['schema_version']}")
+    typer.echo(f"required_tables_present: {report['required_tables_present']}")
+    typer.echo(f"query_p95_ms: {report['query_p95_ms']}")
+    typer.echo("counts:")
+    for table, count in sorted(report["counts"].items()):
+        typer.echo(f"  {table}: {count}")
+
+
 @app.command("quality-score")
 def quality_score_cmd(
     repo: Path = typer.Option(
