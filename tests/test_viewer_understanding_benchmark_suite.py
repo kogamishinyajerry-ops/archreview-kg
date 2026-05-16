@@ -211,9 +211,10 @@ def test_packaged_suite_manifest_tracks_medfield_active_real_case() -> None:
     assert result["pending_count"] == 0
     # M5.Z-W2 added 2 active + 3 known_gap from Medfield split.
     # M5.Z-W3 added 12 active + 7 known_gap from 4 distinct Cambridge MA projects.
-    # Total: 21 active, 10 known_gap.
+    # M5.Z-W4.C added 1 cross-state known_gap (Port Angeles WA).
+    # Total: 21 active, 11 known_gap.
     assert result["active_count"] == 21
-    assert result["known_gap_count"] == 10
+    assert result["known_gap_count"] == 11
     assert result["failed_count"] == 0
     sample_clean = next(
         case for case in result["cases"] if case["case_id"] == "sample-clean-full-active"

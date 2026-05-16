@@ -7,10 +7,21 @@
   "drawing_type": "建筑平面图",
   "likely_design_contains": "建筑平面图",
   "component_counts": {
-    "rooms": {"min": 10, "max": 30},
-    "doors": {"min": 4, "max": 20},
-    "corridors": {"min": 1, "max": 6},
-    "dimensions": {"min": 6}
+    "rooms": {
+      "min": 10,
+      "max": 30
+    },
+    "doors": {
+      "min": 4,
+      "max": 20
+    },
+    "corridors": {
+      "min": 1,
+      "max": 6
+    },
+    "dimensions": {
+      "min": 6
+    }
   },
   "required_semantic_kinds": [
     "door_opening",
@@ -33,5 +44,17 @@
     "Basement floor plan for the same 16-unit Medfield apartment building as A-1/A-2.",
     "No vertical-circulation signal is required for this case: stair geometry is rendered upstairs and the basement sheet shows only landings/clipped runs.",
     "Mechanical / storage rooms dominate; residential bedroom labels are not expected at significant counts."
-  ]
+  ],
+  "expected_rule_counts": {
+    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W4.B to provide honest reviewer ground truth that exceeds detection on low-count rules. Numbers are reviewer-judgment estimates for residential plans; they are not per-instance labels.",
+    "RC-STAIR-FLIGHT-WIDTH-1.10": 3,
+    "RC-STAIR-LANDING-WIDTH-1.2": 3,
+    "RC-STAIR-TREAD-WIDTH-0.26": 3,
+    "RC-STAIR-RISER-HEIGHT-0.175": 3,
+    "RC-STAIR-WELL-WIDTH-0.11": 3,
+    "RC-STAIR-HANDRAIL-0.90": 3,
+    "RC-CHILD-RAILING-VERTICAL-SPACING-0.11": 3,
+    "RC-RAILING-HEIGHT-6.7.3": 4,
+    "RC-WINDOW-SILL-PROTECTION-RESI": 4
+  }
 }

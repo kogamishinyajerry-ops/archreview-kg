@@ -328,6 +328,16 @@
       "expect": "real/cambridge_sp336_level5_expected.json",
       "provenance": "real/cambridge_sp336_level5_provenance.json",
       "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Level 5 Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "portangeles-wa-studio",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://cityofpa.us/DocumentCenter/View/13897/Application-and-Details---480SF",
+      "run_dir": "real/portangeles_wa_studio_run",
+      "expect": "real/portangeles_wa_studio_expected.json",
+      "provenance": "real/portangeles_wa_studio_provenance.json",
+      "notes": "M5.Z-W4.C cross-state sourcing attempt. Port Angeles WA Permit-Ready Plans — first non-MA fixture in the suite. Known gap because pages 2-4 are raster image PDF (not vector); recognizer is vector-only. Documents the jurisdiction-diversity signal even without promotion to active."
     }
   ]
 }

@@ -151,7 +151,7 @@ def test_packaged_suite_can_be_evidence_ready_with_representative_run(
     assert result["status"] == "demo_ready_with_known_gaps"
     assert result["suite"]["active_count"] == 21
     assert result["suite"]["pending_count"] == 0
-    assert result["suite"]["known_gap_count"] == 10
+    assert result["suite"]["known_gap_count"] == 11
     assert result["suite"]["real_active_count"] == 17
     assert result["suite"]["generated_active_count"] == 3
     # Warnings are plain strings, not dicts; the known_gap warning surfaces here

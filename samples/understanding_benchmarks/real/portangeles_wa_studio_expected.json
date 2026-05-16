@@ -1,0 +1,23 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "portangeles-wa-studio-known-gap-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "住宅工作室公寓",
+  "component_counts": {
+    "rooms": {"min": 3},
+    "doors": {"min": 1},
+    "dimensions": {"min": 8}
+  },
+  "required_semantic_kinds": ["residential_room", "door_opening"],
+  "required_evidence_signals": ["spatial_layout", "openings"],
+  "required_benchmark_signals": {"has_spatial_layout": true},
+  "notes_for_reviewer": [
+    "M5.Z-W4.C KNOWN_GAP — cross-state sourcing evidence.",
+    "Port Angeles, WA Permit-Ready Plans publish architectural drawings as raster images, not vector PDF.",
+    "Recognizer is expected to fail because page 1 is a permit application form and pages 2-4 are raster-image floor plans.",
+    "First non-MA fixture in the project's documented suite."
+  ]
+}

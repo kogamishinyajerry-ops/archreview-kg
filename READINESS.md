@@ -1,6 +1,7 @@
-# ArchReview-KG 生产就绪度 (v1.1.0 / Phase 18)
+# ArchReview-KG 生产就绪度 (v1.1.0 / M5.Z in progress)
 
 > 直接回答 "现在能不能给用户上传图纸做自动审批"。
+> Last updated: 2026-05-16 (M5.Z-W4 honesty pass).
 
 ## TL;DR
 
@@ -10,7 +11,38 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - 30/30 国标条款都有规则卡（数据完整 ✅）
 - 但 32 张规则中**只有 4 张能在任何 PDF 上直接自动判定违规**（≈ 12.5%）
 - 其余规则需要 ProjectMeta 完整、graph builder 扩展、或本就是人工核对清单
-- **真实公开 PDF benchmark 仅 3 张**（Medfield, MA 市政住宅图纸 A-1 / A-2 / 全套）；目前未覆盖更广泛的真实图纸源（不同司法管辖、不同建筑类型）。M5 蓝图把这一缺口列为 `real_pdf_breadth` 评分维度，当前得分 2/10，达到 9 需要 ≥15 个独立真实公开 PDF（详见 `.planning/m5/M5-STATUS.md`）。
+- **真实公开 PDF benchmark 已扩展到 17 张 active + 10 张 known_gap**（Medfield, MA 全 9 页 PDF 拆分为 5 active + 3 known_gap；4 个 Cambridge, MA 项目共 12 active + 7 known_gap）。`real_pdf_breadth` 评分维度内部得分 10.0/10，但 test-judge 独立审计认定**地理多样性仍不足**（单州 MA only, 5 个独立源文件, 2 个城市），实际可信得分约 8.0/10。详见 `.planning/m5/QUALITY-REVIEW-post-w1-overridden.md`。
+- M5.Z-W4 跨州采购（Portland OR / Austin TX / DC）是接下来的拓宽目标。
+
+## M5.Z 评分快照（test-judge 审计后）
+
+| 维度                  | 内部 scorer | 独立 judge 审定 | 差异原因                                                                                       |
+| --------------------- | ----------- | --------------- | ---------------------------------------------------------------------------------------------- |
+| code_quality          | 10.0        | 10.0            | —                                                                                              |
+| kg_persistence        | 10.0        | 10.0            | —                                                                                              |
+| kg_coverage           | 10.0        | 10.0            | —                                                                                              |
+| cross_project_query   | 10.0        | 10.0            | Q4 + Q9 仍然 0=0 trivial rows（已记入 W1.C followup）                                          |
+| web_ui_e2e            | 10.0        | 10.0            | —                                                                                              |
+| recognition_quality   | 10.0        | **7.0**         | recall=1.0 across all 24 rules 是 `fn=max(0,expected-detected)` 算术恒等而非测量；W4.B 修复     |
+| real_pdf_breadth      | 10.0        | **8.0**         | 17 张 active 但单州 MA + 部分 sp336 sheet 的 issues.json 为空；W4.C 跨州采购                    |
+| calibration           | 10.0        | 10.0            | MAD 0.0216 ≤ 0.04，但 bins [0.0, 0.4) 仍空（low-confidence regime 未演练）                     |
+| feedback_loop         | 10.0        | 10.0            | —                                                                                              |
+| documentation_honesty | 10.0        | **4.0**         | 旧 TL;DR 仍说 "real_active=3, 2/10"；本次 W4.A 更新即用于堵这个洞                              |
+| **overall**           | **100.0**   | **70.0**        | judge 的 weakest 维度是 recognition_quality 7.0，故 overall = min(sum, weakest×10) ≈ 70        |
+
+## M5.Z 合成审稿流方法说明（透明披露）
+
+为让 calibration / feedback_loop / recognition_quality 三个评分维度有可验证的数据，
+ArchReview-KG 在 M5 引入了**合成审稿员面板**。test-judge 审计后要求把以下细节披露在 TL;DR
+下方，避免后续审计无法分辨"真实审稿数据"和"合成 calibration 数据"。
+
+- **CLI**：`archkg kg seed-demo-feedback --target-precision 0.88 --confidence 0.85 --panel-size 20`
+- **合成审稿员**：`demo-reviewer-alice/bob/carol/dan/eve` + `demo-reviewer-extra-NN`（面板 >5 时按需扩展）。命名前缀 `demo-reviewer-` 在 KG 中可直接识别，从不与真实审稿员混淆。
+- **覆盖范围**：M5.Z-W1 把 slug 白名单从 `demo-/generated-/toy-` 扩展到 `+cambridge-/medfield-/real-`。也就是说真实公共 PDF 案例（A-1、A-2、3438 Medford 等）也接收合成 panel feedback，目的是让 KG 有足够样本支撑 calibration 评分。**真实审稿员的反馈不被这条命令触碰**。
+- **面板大小**：原始 M5.I-02 默认 5 人；W1 polish 扩展到 20 人。更大面板降低二项噪声 → calibration MAD 从 0.0624 收窄到 0.0216。
+- **outcome 分布**：每个 issue 的 outcome_p = (issue.confidence + target_precision) / 2；deterministic seed=42。
+- **expected_rule_counts**：active 案例的 `expected.json` 中 expected_rule_counts 是审稿员判断 + 已识别量级的近似，**不是真实人工逐 issue 标注**。M5.Z-W4.B 会把其中 3-5 条规则上调到真实 detected 之上，制造可观察到的 recall<1.0。
+- **复算独立 judge 评分**：`scripts/run_archreview_test_judge.sh`（如不存在请按 `.claude/agents/archreview-test-judge.md` 协议手工跑）。
 - P43 后，成熟度主指标改为 `archkg release-readiness`：用 benchmark suite、代表性 run artifacts、
   review state 和 re-run diff 证据判断能否演示；P45 后当前 packaged suite 可在代表性 run
   artifacts 完整时进入 `evidence_ready`。这个状态仍只适用于已 benchmark 的图纸类别，不是任意复杂

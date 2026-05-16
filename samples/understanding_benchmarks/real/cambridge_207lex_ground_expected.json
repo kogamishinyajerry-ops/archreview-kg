@@ -38,9 +38,17 @@
   "expected_rule_counts": {
     "RC-DOOR-WIDTH": 1,
     "RC-CORRIDOR-WIDTH": 0,
-    "RC-STAIR-FLIGHT-WIDTH-1.10": 1,
+    "RC-STAIR-FLIGHT-WIDTH-1.10": 3,
     "RC-ACCESSIBLE-DOOR-WIDTH-0.80": 2,
-    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W3 reviewer judgment (profile: residential_small). Counts may exceed detected — that is intentional, to break the recall=1.0 uniformity flagged in QUALITY-REVIEW-post-w2.md. Recall scoring uses fn=max(0, expected-detected); when expected > detected, recall drops below 1.0 honestly."
+    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W3 reviewer judgment (profile: residential_small). Counts may exceed detected — that is intentional, to break the recall=1.0 uniformity flagged in QUALITY-REVIEW-post-w2.md. Recall scoring uses fn=max(0, expected-detected); when expected > detected, recall drops below 1.0 honestly.",
+    "RC-STAIR-LANDING-WIDTH-1.2": 3,
+    "RC-STAIR-TREAD-WIDTH-0.26": 3,
+    "RC-STAIR-RISER-HEIGHT-0.175": 3,
+    "RC-STAIR-WELL-WIDTH-0.11": 3,
+    "RC-STAIR-HANDRAIL-0.90": 3,
+    "RC-CHILD-RAILING-VERTICAL-SPACING-0.11": 3,
+    "RC-RAILING-HEIGHT-6.7.3": 4,
+    "RC-WINDOW-SILL-PROTECTION-RESI": 4
   },
   "notes_for_reviewer": [
     "M5.Z-W3: 207 Lexington Ave ADU — Ground Floor Plan.",

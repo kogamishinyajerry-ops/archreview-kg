@@ -1,0 +1,29 @@
+{
+  "schema_version": "real_drawing_fixture_provenance.v1",
+  "case_id": "portangeles-wa-studio",
+  "fixture_kind": "real_public_pdf",
+  "source_url": "https://cityofpa.us/DocumentCenter/View/13897/Application-and-Details---480SF",
+  "retrieved_at": "2026-05-16",
+  "source_access_note": "M5.Z-W4.C cross-state sourcing attempt. Port Angeles, WA publishes 'Permit-Ready Plans' free to residents. The 480 SF studio cottage PDF was downloaded but its 4 pages are mostly an application form with the actual architectural drawings rendered as raster images (not vector PDF content the archkg pipeline can extract).",
+  "selected_sheet": {
+    "pdf_page_number_1_based": 1,
+    "sheet_label": "Studio 480 SF Permit-Ready Plan",
+    "project_title": "Port Angeles WA Permit-Ready Plan — Studio Cottage",
+    "jurisdiction": "Port Angeles, WA, USA"
+  },
+  "committed_artifacts": {
+    "current_recognition_payload": "samples/understanding_benchmarks/real/portangeles_wa_studio_run/drawing_understanding.json",
+    "manual_expected_inventory": "samples/understanding_benchmarks/real/portangeles_wa_studio_expected.json"
+  },
+  "current_recognizer_observation": {
+    "run_parameters": {"points_per_meter": 50.0, "min_room_area_m2": 3.0},
+    "rooms": 0,
+    "doors": 0,
+    "corridors": 2,
+    "stairs": 0,
+    "dimensions": 4,
+    "interpretation": "Known gap. The recognizer's vector extraction finds 62 lines and 46 texts on page 1 (an application form). Pages 2-4 are raster image-based architectural drawings the current vector-only pipeline cannot parse. This documents the cross-state sourcing attempt AND the recognizer's vector-only limitation."
+  },
+  "jurisdiction_diversity_signal": "First non-MA fixture in the suite. Adds Washington State to the project's documented coverage, even though raster-only content prevents promotion to active.",
+  "fixture_status_at_landing": "known_gap"
+}

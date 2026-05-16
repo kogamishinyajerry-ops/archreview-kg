@@ -7,10 +7,18 @@
   "drawing_type": "建筑平面图",
   "likely_design_contains": "住宅",
   "component_counts": {
-    "rooms": {"min": 30},
-    "doors": {"min": 80},
-    "stairs": {"min": 1},
-    "dimensions": {"min": 180}
+    "rooms": {
+      "min": 30
+    },
+    "doors": {
+      "min": 80
+    },
+    "stairs": {
+      "min": 1
+    },
+    "dimensions": {
+      "min": 180
+    }
   },
   "required_semantic_kinds": [
     "residential_room",
@@ -56,7 +64,9 @@
   "manual_expected_inventory": {
     "project": "Hillside Village, 89 N. Meadows Road, Medfield, MA",
     "scope": "A-2 Second Floor Plan sheet from the public 9-page plan/elevation set.",
-    "expected_plan_page_indexes": [0],
+    "expected_plan_page_indexes": [
+      0
+    ],
     "minimum_expected_evidence": [
       "The sheet is a residential second-floor plan.",
       "The sheet contains residential room labels, door/opening labels, vertical circulation hints, and dimension text.",
@@ -68,5 +78,17 @@
       "This expected spec is a recognition benchmark, not a complete permit-review inventory."
     ]
   },
-  "authoring_note": "Human-reviewed expected inventory for the real Medfield A-2 second-floor plan. Passing this benchmark means the recognizer can produce a stable component inventory for this sheet with the recorded real-CAD noise floor; it is not a GB compliance-accuracy claim."
+  "authoring_note": "Human-reviewed expected inventory for the real Medfield A-2 second-floor plan. Passing this benchmark means the recognizer can produce a stable component inventory for this sheet with the recorded real-CAD noise floor; it is not a GB compliance-accuracy claim.",
+  "expected_rule_counts": {
+    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W4.B to provide honest reviewer ground truth that exceeds detection on low-count rules. Numbers are reviewer-judgment estimates for residential plans; they are not per-instance labels.",
+    "RC-STAIR-FLIGHT-WIDTH-1.10": 3,
+    "RC-STAIR-LANDING-WIDTH-1.2": 3,
+    "RC-STAIR-TREAD-WIDTH-0.26": 3,
+    "RC-STAIR-RISER-HEIGHT-0.175": 3,
+    "RC-STAIR-WELL-WIDTH-0.11": 3,
+    "RC-STAIR-HANDRAIL-0.90": 3,
+    "RC-CHILD-RAILING-VERTICAL-SPACING-0.11": 3,
+    "RC-RAILING-HEIGHT-6.7.3": 4,
+    "RC-WINDOW-SILL-PROTECTION-RESI": 4
+  }
 }
