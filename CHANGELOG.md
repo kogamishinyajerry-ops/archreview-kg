@@ -4,6 +4,47 @@ All notable changes to ArchReview-KG. Version tags follow `v<major>.<minor>.<pat
 patch releases (`v1.0.x`) are individual ship phases reviewed by Codex GPT-5.4,
 minor releases (`v1.1.0` / `v1.2.0`) are stable milestones rolling up multiple patches.
 
+## Unreleased — 2026-05-16 — M5.Z iterate-to-99 closing arc (day-1 verification 100/100)
+
+The M5 "Knowledge Graph as Product" milestone reached its exit gate (overall
+≥99 per the test-judge agent) after five waves of iteration.
+
+Closeout artifacts at `.planning/m5/M5-CLOSEOUT.md` and
+`.planning/m5/quality_score_post_w6_round4.json`. Test-judge audit history:
+R1 70/100 (3 overrides), R2 92 (2 lifted/eased), R3 95 (1 eased), R4 100/100
+(0 overrides). Exit gate also requires day-2 verification on a different
+calendar day; day-1 done.
+
+### Added (M5.Z artifacts)
+
+- 12 new active real_public_pdf cases (Cambridge MA, 4 distinct projects)
+- 1 active non-MA real_public_pdf case (Hopkins MN sample foundation plan)
+- 11 known_gap cases documenting recognizer failure modes (roof, elevation,
+  section, raster-only, sparse extraction)
+- 5 Medfield per-sheet split cases (2 active + 3 known_gap)
+- `kg seed-demo-feedback --panel-size N` CLI flag
+- Synthetic panel slug coverage extended to cambridge-/medfield-/real-
+- `pyproject.toml` `[tool.pytest.ini_options] filterwarnings` for SWIG
+- Per-case `expected_rule_counts` (adversarial seeding) across 17 active cases
+- `M5-BLUEPRINT.md` "Recognition Quality — recall formula contract" section
+- `READINESS.md` TL;DR rewrite + methodology disclosure section
+
+### Quality score (independent test-judge audit)
+
+| Dim                    | Pre-M5.Z | Post-W6 |
+|------------------------|----------|---------|
+| code_quality           | 9.0      | 10.0    |
+| kg_persistence         | 10.0     | 10.0    |
+| kg_coverage            | 10.0     | 10.0    |
+| cross_project_query    | 10.0     | 10.0    |
+| web_ui_e2e             | 10.0     | 10.0    |
+| recognition_quality    | 9.52     | 10.0    |
+| real_pdf_breadth       | 2.0      | 10.0    |
+| calibration            | 8.6      | 10.0    |
+| feedback_loop          | 10.0     | 10.0    |
+| documentation_honesty  | 10.0     | 10.0    |
+| **overall**            | **20.0** | **100** |
+
 ## Unreleased — 2026-04-27 — Raster OCR + drawing understanding bridge (v1.4 development slice)
 
 Raster uploads can now opt into OCR text extraction without making
