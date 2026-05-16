@@ -1,0 +1,165 @@
+{
+  "schema_version": "quality_score.v1",
+  "overall_score": 0.0,
+  "average_dimension_score": 2.1,
+  "weakest_dimension": "kg_persistence",
+  "ninety_nine_plus": false,
+  "dimensions": [
+    {
+      "dimension": "code_quality",
+      "score": 9.0,
+      "measurable": true,
+      "detail": {
+        "ruff": {
+          "exit_code": 0,
+          "stdout_tail": [
+            "All checks passed!"
+          ],
+          "stderr_tail": []
+        },
+        "mypy": {
+          "exit_code": 0,
+          "stdout_tail": [
+            "Success: no issues found in 94 source files"
+          ],
+          "stderr_tail": []
+        },
+        "pytest": {
+          "exit_code": 0,
+          "passed": 456,
+          "failed": 0,
+          "errors": 0,
+          "warnings": 5,
+          "tail": [
+            "........................................................................ [ 15%]",
+            "........................................................................ [ 31%]",
+            "....s................................................................... [ 47%]",
+            "........................................................................ [ 63%]",
+            "........................................................................ [ 78%]",
+            "........................................................................ [ 94%]",
+            ".........................                                                [100%]",
+            "456 passed, 1 skipped, 5 warnings in 34.15s"
+          ]
+        }
+      },
+      "notes": [
+        "pytest had 5 warnings; -1"
+      ]
+    },
+    {
+      "dimension": "kg_persistence",
+      "score": 0.0,
+      "measurable": false,
+      "detail": {
+        "status": "no_kg_db_found",
+        "searched": [
+          "/Users/Zhuanz/archreview-kg/.archkg/kg.db",
+          "/Users/Zhuanz/.archkg/kg.db"
+        ]
+      },
+      "notes": [
+        "KG database not initialised; score 0"
+      ]
+    },
+    {
+      "dimension": "kg_coverage",
+      "score": 0.0,
+      "measurable": false,
+      "detail": {
+        "status": "kg_store_module_missing"
+      },
+      "notes": [
+        "KG not implemented; coverage 0"
+      ]
+    },
+    {
+      "dimension": "cross_project_query",
+      "score": 0.0,
+      "measurable": false,
+      "detail": {
+        "status": "canonical_queries_missing"
+      },
+      "notes": [
+        ".planning/m5/canonical_queries.json not yet authored; score 0"
+      ]
+    },
+    {
+      "dimension": "web_ui_e2e",
+      "score": 0.0,
+      "measurable": false,
+      "detail": {
+        "status": "web_module_missing"
+      },
+      "notes": [
+        "archkg.kg.web not implemented; score 0"
+      ]
+    },
+    {
+      "dimension": "recognition_quality",
+      "score": 0.0,
+      "measurable": false,
+      "detail": {
+        "status": "recognition_quality_module_missing"
+      },
+      "notes": [
+        "archkg.kg.recognition_quality not implemented; score 0"
+      ]
+    },
+    {
+      "dimension": "real_pdf_breadth",
+      "score": 2.0,
+      "measurable": true,
+      "detail": {
+        "real_active_count": 3,
+        "case_ids": [
+          "medfield-a1-first-floor",
+          "medfield-a2-second-floor",
+          "medfield-full-plan-set-multi-plan-intake"
+        ]
+      },
+      "notes": [
+        "3/15 real public PDFs active"
+      ]
+    },
+    {
+      "dimension": "calibration",
+      "score": 0.0,
+      "measurable": false,
+      "detail": {
+        "status": "calibration_module_missing"
+      },
+      "notes": [
+        "archkg.kg.calibration not implemented; score 0"
+      ]
+    },
+    {
+      "dimension": "feedback_loop",
+      "score": 0.0,
+      "measurable": false,
+      "detail": {
+        "status": "feedback_module_missing"
+      },
+      "notes": [
+        "archkg.kg.feedback not implemented; score 0"
+      ]
+    },
+    {
+      "dimension": "documentation_honesty",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "total_rule_cards": 32,
+        "real_active_count": 3,
+        "overclaims": []
+      },
+      "notes": [
+        "no overclaims detected"
+      ]
+    }
+  ],
+  "scoring_meta": {
+    "rule": "overall = min(sum, weakest_dimension * 10); 99+ requires all >= 9 AND >= 7 dims == 10",
+    "dimensions_scored": 10,
+    "skip_slow_code_quality": false
+  }
+}
