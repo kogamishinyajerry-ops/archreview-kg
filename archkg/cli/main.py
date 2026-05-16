@@ -2645,6 +2645,53 @@ def kg_seed_demo_feedback(
     )
 
 
+@kg_app.command("quality")
+def kg_quality(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    repo: Path = typer.Option(
+        Path(__file__).resolve().parents[2],
+        "--repo",
+        help="Repo root for benchmark expected-inventory lookup.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Per-rule precision / recall from KG feedback + benchmark inventory."""
+
+    import json as _json
+
+    from archkg.kg import per_rule_quality
+
+    report = per_rule_quality(db_path=db, repo=repo)
+    if json_out:
+        typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    if report.get("status") != "ok":
+        typer.echo(f"status: {report.get('status')}")
+        return
+    wp = report.get("weighted_precision")
+    wr = report.get("weighted_recall")
+    typer.echo(
+        f"weighted_precision: {wp:.3f}" if wp is not None else "weighted_precision: n/a"
+    )
+    typer.echo(
+        f"weighted_recall:    {wr:.3f}" if wr is not None else "weighted_recall:    n/a"
+    )
+    typer.echo(
+        f"rules_with_precision={report['rules_with_precision']} "
+        f"rules_with_recall={report['rules_with_recall']}"
+    )
+    for r in report["rules"][:20]:
+        p = f"{r['precision']:.2f}" if r["precision"] is not None else "n/a"
+        rc = f"{r['recall']:.2f}" if r["recall"] is not None else "n/a"
+        typer.echo(
+            f"  {r['rule_id']:<40} p={p} r={rc} (tp={r['tp']} fp={r['fp']} detected={r['detected']})"
+        )
+
+
 @kg_app.command("calibration")
 def kg_calibration_cmd(
     db: Path = typer.Option(

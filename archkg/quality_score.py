@@ -443,6 +443,7 @@ def score_recognition_quality(repo: Path) -> DimensionScore:
     notes: list[str] = []
     try:
         from archkg.kg.recognition_quality import per_rule_quality
+        from archkg.kg.store import default_db_path
     except ImportError:
         detail["status"] = "recognition_quality_module_missing"
         notes.append("archkg.kg.recognition_quality not implemented; score 0")
@@ -453,7 +454,7 @@ def score_recognition_quality(repo: Path) -> DimensionScore:
             detail=detail,
             notes=notes,
         )
-    pq = per_rule_quality()
+    pq = per_rule_quality(db_path=default_db_path(repo), repo=repo)
     if not pq.get("rules"):
         detail["status"] = "no_rules_with_ground_truth"
         notes.append("no rules have enough ground-truth labels to score")
@@ -465,8 +466,8 @@ def score_recognition_quality(repo: Path) -> DimensionScore:
             notes=notes,
         )
     detail.update(pq)
-    p = pq.get("weighted_precision", 0.0)
-    r = pq.get("weighted_recall", 0.0)
+    p = pq.get("weighted_precision") or 0.0
+    r = pq.get("weighted_recall") or 0.0
     # Linear scaling: 0 at (p=0, r=0); 10 at (p>=0.85 AND r>=0.75)
     p_score = min(1.0, p / 0.85) * 5.0
     r_score = min(1.0, r / 0.75) * 5.0

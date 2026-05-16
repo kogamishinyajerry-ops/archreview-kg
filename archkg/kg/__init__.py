@@ -17,6 +17,7 @@ from archkg.kg.feedback import (
 )
 from archkg.kg.ingest import INGESTABLE_ARTIFACTS, IngestResult, has_ingestable_artifact, ingest_run
 from archkg.kg.query import CANONICAL_QUERIES, issues_by_filter, run_canonical_queries
+from archkg.kg.recognition_quality import PerRuleStats, per_rule_quality
 from archkg.kg.store import KGStore, KGStoreError
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     "IngestResult",
     "KGStore",
     "KGStoreError",
+    "PerRuleStats",
     "RulePrior",
     "add_feedback",
     "build_calibration_report",
@@ -34,6 +36,7 @@ __all__ = [
     "has_ingestable_artifact",
     "ingest_run",
     "issues_by_filter",
+    "per_rule_quality",
     "rule_priors",
     "run_canonical_queries",
 ]
