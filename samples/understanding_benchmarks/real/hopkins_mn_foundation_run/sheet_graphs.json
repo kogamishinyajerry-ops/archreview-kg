@@ -1,0 +1,494 @@
+{
+  "schema_version": "sheet_graphs.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/hopkins-mn-foundation.pdf",
+  "graph_count": 1,
+  "confidence_floor": 0.5,
+  "graphs": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "classification_confidence": 0.67,
+      "component_counts": {
+        "rooms": 3,
+        "doors": 0,
+        "corridors": 1,
+        "stairs": 0,
+        "dimensions": 11
+      },
+      "graph": {
+        "source_pdf": "tmp/p86-multisrc/pages/hopkins-mn-foundation.pdf",
+        "points_per_meter": 50.0,
+        "page_index": 0,
+        "page_width_pt": 612.0,
+        "page_height_pt": 792.0,
+        "rooms": [
+          {
+            "id": "room-abf522b6",
+            "page_index": 0,
+            "bbox": [
+              154.5,
+              320.0,
+              449.0,
+              569.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                234.0,
+                320.0
+              ],
+              [
+                154.5,
+                320.0
+              ],
+              [
+                154.5,
+                524.0
+              ],
+              [
+                163.0,
+                523.5
+              ],
+              [
+                161.69850187265916,
+                526.5368289637953
+              ],
+              [
+                256.5,
+                569.0
+              ],
+              [
+                256.5,
+                546.5
+              ],
+              [
+                347.0,
+                546.5
+              ],
+              [
+                347.0,
+                569.0
+              ],
+              [
+                441.8979591836735,
+                537.3673469387755
+              ],
+              [
+                441.0,
+                534.0
+              ],
+              [
+                449.0,
+                535.5
+              ],
+              [
+                449.0,
+                320.0
+              ],
+              [
+                370.0,
+                320.0
+              ],
+              [
+                234.0,
+                320.0
+              ]
+            ],
+            "area_m2": 24.573974171316465,
+            "label": null
+          },
+          {
+            "id": "room-72dd0778",
+            "page_index": 0,
+            "bbox": [
+              120.5,
+              240.5,
+              483.0,
+              677.5
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                154.5,
+                240.5
+              ],
+              [
+                131.5,
+                240.5
+              ],
+              [
+                120.5,
+                240.5
+              ],
+              [
+                120.5,
+                677.5
+              ],
+              [
+                483.0,
+                677.5
+              ],
+              [
+                483.0,
+                240.5
+              ],
+              [
+                449.0,
+                240.5
+              ],
+              [
+                154.5,
+                240.5
+              ]
+            ],
+            "area_m2": 23.7376,
+            "label": null
+          },
+          {
+            "id": "room-0cb8b535",
+            "page_index": 0,
+            "bbox": [
+              154.5,
+              524.0,
+              449.0,
+              640.5
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                449.0,
+                640.5
+              ],
+              [
+                449.0,
+                535.5
+              ],
+              [
+                443.0,
+                541.5
+              ],
+              [
+                442.18367346938777,
+                538.4387755102041
+              ],
+              [
+                441.8979591836735,
+                537.3673469387755
+              ],
+              [
+                347.0,
+                569.0
+              ],
+              [
+                347.0,
+                592.0
+              ],
+              [
+                302.5,
+                592.0
+              ],
+              [
+                302.5,
+                630.0
+              ],
+              [
+                305.5,
+                630.0
+              ],
+              [
+                302.0,
+                637.5
+              ],
+              [
+                298.0,
+                630.0
+              ],
+              [
+                301.0,
+                630.0
+              ],
+              [
+                301.0,
+                592.0
+              ],
+              [
+                256.5,
+                592.0
+              ],
+              [
+                256.5,
+                569.0
+              ],
+              [
+                161.69850187265916,
+                526.5368289637953
+              ],
+              [
+                161.25842696629215,
+                527.5636704119851
+              ],
+              [
+                160.0,
+                530.5
+              ],
+              [
+                154.5,
+                524.0
+              ],
+              [
+                154.5,
+                640.5
+              ],
+              [
+                449.0,
+                640.5
+              ]
+            ],
+            "area_m2": 9.167125828683531,
+            "label": null
+          }
+        ],
+        "doors": [],
+        "corridors": [
+          {
+            "id": "corridor-76c55a5e",
+            "page_index": 0,
+            "bbox": [
+              165.5,
+              25.0,
+              483.0,
+              81.5
+            ],
+            "confidence": 0.8,
+            "uncertain": false,
+            "properties": {},
+            "type": "Corridor",
+            "polygon": [
+              [
+                483.0,
+                25.0
+              ],
+              [
+                165.5,
+                25.0
+              ],
+              [
+                165.5,
+                81.5
+              ],
+              [
+                483.0,
+                81.5
+              ],
+              [
+                483.0,
+                25.0
+              ]
+            ],
+            "min_width_m": 1.13
+          }
+        ],
+        "dimensions": [
+          {
+            "id": "dim-86d891bc",
+            "page_index": 0,
+            "bbox": [
+              526.3685302734375,
+              51.746070861816406,
+              576.6005249023438,
+              65.78607177734375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "Page 5 of 8",
+            "value_m": 5.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-601e937b",
+            "page_index": 0,
+            "bbox": [
+              37.39509963989258,
+              107.70818328857422,
+              106.2760009765625,
+              120.36918640136719
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "Scale  ¼” = 1 ft",
+            "value_m": 1.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-8904707a",
+            "page_index": 0,
+            "bbox": [
+              66.92009735107422,
+              437.6450500488281,
+              94.48387908935547,
+              451.7611083984375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "16’ 6”",
+            "value_m": 16.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-e2fd2095",
+            "page_index": 0,
+            "bbox": [
+              277.7972106933594,
+              698.42333984375,
+              291.7917785644531,
+              712.5394287109375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "13’",
+            "value_m": 13.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-ccff665f",
+            "page_index": 0,
+            "bbox": [
+              285.0519104003906,
+              346.35693359375,
+              310.8334655761719,
+              360.4729919433594
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "24” X",
+            "value_m": 24.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-7888285d",
+            "page_index": 0,
+            "bbox": [
+              313.77008056640625,
+              346.35693359375,
+              330.0126647949219,
+              360.4729919433594
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "24”",
+            "value_m": 24.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-afee7bdc",
+            "page_index": 0,
+            "bbox": [
+              284.1449890136719,
+              358.4480285644531,
+              330.7664794921875,
+              372.5640869140625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "10” DEEP",
+            "value_m": 10.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-2722f459",
+            "page_index": 0,
+            "bbox": [
+              279.9130859375,
+              550.6522827148438,
+              291.1330261230469,
+              564.6873168945312
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "10",
+            "value_m": 10.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-3dbc1282",
+            "page_index": 0,
+            "bbox": [
+              291.097412109375,
+              550.5712280273438,
+              326.5090637207031,
+              564.6873168945312
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "” x 20”",
+            "value_m": 20.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-48572569",
+            "page_index": 0,
+            "bbox": [
+              267.0663146972656,
+              562.2900390625,
+              339.3782958984375,
+              576.3250732421875
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "FOOTING W/ 2",
+            "value_m": 2.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-c274bc06",
+            "page_index": 0,
+            "bbox": [
+              276.8904113769531,
+              574.5323486328125,
+              329.5814208984375,
+              588.5673828125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "#4 REBAR",
+            "value_m": 4.0,
+            "unit": "m"
+          }
+        ],
+        "stairs": []
+      }
+    }
+  ],
+  "skipped_pages": []
+}

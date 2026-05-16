@@ -338,6 +338,16 @@
       "expect": "real/portangeles_wa_studio_expected.json",
       "provenance": "real/portangeles_wa_studio_provenance.json",
       "notes": "M5.Z-W4.C cross-state sourcing attempt. Port Angeles WA Permit-Ready Plans — first non-MA fixture in the suite. Known gap because pages 2-4 are raster image PDF (not vector); recognizer is vector-only. Documents the jurisdiction-diversity signal even without promotion to active."
+    },
+    {
+      "case_id": "hopkins-mn-foundation",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.hopkinsmn.com/DocumentCenter/View/420/Building-Plans---A-Guide-to-Requirements-and-Sample-Plans-PDF",
+      "run_dir": "real/hopkins_mn_foundation_run",
+      "expect": "real/hopkins_mn_foundation_expected.json",
+      "provenance": "real/hopkins_mn_foundation_provenance.json",
+      "notes": "M5.Z-W5 cross-state sourcing: City of Hopkins MN sample foundation plan. First non-MA ACTIVE case in the suite. Acknowledges the active-set MA-only bias has now been partially broken (Minnesota is a different jurisdiction from MA)."
     }
   ]
 }

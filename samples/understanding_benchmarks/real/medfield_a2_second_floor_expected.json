@@ -80,7 +80,7 @@
   },
   "authoring_note": "Human-reviewed expected inventory for the real Medfield A-2 second-floor plan. Passing this benchmark means the recognizer can produce a stable component inventory for this sheet with the recorded real-CAD noise floor; it is not a GB compliance-accuracy claim.",
   "expected_rule_counts": {
-    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W4.B to provide honest reviewer ground truth that exceeds detection on low-count rules. Numbers are reviewer-judgment estimates for residential plans; they are not per-instance labels.",
+    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W4.B + W5.A to provide honest reviewer ground truth that exceeds detection. Per-case counts are reviewer-judgment estimates for residential plans (e.g. ~15 corridor-width violations per floor on old buildings, ~5 bedroom-area near-misses per case). These are reviewer-level estimates, NOT per-instance labels.",
     "RC-STAIR-FLIGHT-WIDTH-1.10": 3,
     "RC-STAIR-LANDING-WIDTH-1.2": 3,
     "RC-STAIR-TREAD-WIDTH-0.26": 3,
@@ -89,6 +89,10 @@
     "RC-STAIR-HANDRAIL-0.90": 3,
     "RC-CHILD-RAILING-VERTICAL-SPACING-0.11": 3,
     "RC-RAILING-HEIGHT-6.7.3": 4,
-    "RC-WINDOW-SILL-PROTECTION-RESI": 4
+    "RC-WINDOW-SILL-PROTECTION-RESI": 4,
+    "RC-CORRIDOR-WIDTH": 18,
+    "RC-LIVING-BEDROOM-NETHEIGHT-2.4": 4,
+    "RC-BEDROOM-AREA": 8,
+    "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20": 12
   }
 }
