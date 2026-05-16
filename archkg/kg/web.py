@@ -20,9 +20,10 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 
 from archkg.kg.feedback import add_feedback
+from archkg.kg.pdf_render import render_page, resolve_pdf_for_drawing
 from archkg.kg.store import KGStore, default_db_path
 
 INDEX_HTML = r"""<!doctype html>
@@ -128,6 +129,28 @@ INDEX_HTML = r"""<!doctype html>
     .full-row { grid-column: 1 / -1; }
     .badge-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .badge-row span { background: #f5f5f7; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+    /* PDF viewport — M7.W1 */
+    #viewport_panel { grid-column: 1 / -1; }
+    .viewport-wrap { position: relative; padding: 12px;
+                     background: #fafafa; max-height: 720px; overflow: auto;
+                     display: flex; align-items: flex-start; justify-content: center; }
+    .viewport-stack { position: relative; display: inline-block; max-width: 100%; }
+    .viewport-stack img { display: block; max-width: 100%; max-height: 680px; width: auto; height: auto; }
+    .viewport-stack svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .viewport-stack svg rect { pointer-events: auto; cursor: pointer; transition: stroke-width 0.1s, fill-opacity 0.1s; }
+    .viewport-stack svg rect.bbox-candidate  { fill: rgba(255,149,0,0.10); stroke: var(--warn); stroke-width: 1.6; }
+    .viewport-stack svg rect.bbox-confirmed  { fill: rgba(40,167,69,0.10); stroke: var(--ok); stroke-width: 1.6; }
+    .viewport-stack svg rect.bbox-rejected   { fill: rgba(255,59,48,0.10); stroke: var(--bad); stroke-width: 1.6; }
+    .viewport-stack svg rect.bbox-needs_info { fill: rgba(94,92,230,0.10); stroke: var(--info); stroke-width: 1.6; }
+    .viewport-stack svg rect.bbox-resolved   { fill: rgba(0,113,227,0.10); stroke: var(--accent); stroke-width: 1.6; }
+    .viewport-stack svg rect.bbox-superseded { fill: rgba(110,110,115,0.10); stroke: var(--muted); stroke-width: 1.6; }
+    .viewport-stack svg rect.bbox-hot { stroke-width: 4; fill-opacity: 0.28; }
+    .viewport-stack svg text.bbox-label { font: 600 12px ui-monospace, "SF Mono", monospace;
+                                          fill: white; paint-order: stroke; stroke: rgba(0,0,0,0.6); stroke-width: 3; }
+    .viewport-header { padding: 10px 16px; display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .viewport-header .bbox-count { font-weight: 600; color: var(--text); }
+    .viewport-header code { font-family: ui-monospace, "SF Mono", monospace; font-size: 11px; }
+    .viewport-empty { padding: 60px 28px; text-align: center; color: var(--muted); font-size: 13px; }
   </style>
 </head>
 <body>
@@ -164,6 +187,28 @@ INDEX_HTML = r"""<!doctype html>
         <thead><tr><th>Rule</th><th style="text-align:right">Total</th><th style="text-align:right">Confirmed</th><th style="text-align:right">Rejected</th><th style="text-align:right">Candidate</th></tr></thead>
         <tbody></tbody>
       </table>
+    </section>
+
+    <section class="panel" id="viewport_panel" style="display: none;">
+      <div class="panel-h">
+        <span>Drawing viewport · <code id="vp_slug"></code></span>
+        <span class="meta" id="vp_meta">no drawing loaded</span>
+      </div>
+      <div class="viewport-header" id="vp_header_inline" style="display:none">
+        <span class="bbox-count" id="vp_bbox_count">0 bboxes</span>
+        <span>·</span>
+        <span>page <code id="vp_page_label">0</code></span>
+        <span>·</span>
+        <span>native <code id="vp_dim_label">?×?</code> pts</span>
+        <span style="margin-left:auto">click a bbox or an issue row to sync</span>
+      </div>
+      <div class="viewport-wrap" id="vp_wrap">
+        <div class="viewport-empty" id="vp_empty">Select a project to load its drawing.</div>
+        <div class="viewport-stack" id="vp_stack" style="display: none;">
+          <img id="vp_img" alt="drawing">
+          <svg id="vp_svg" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
     </section>
 
     <section class="panel full-row" id="issues_panel" style="grid-column: 1 / -1; display: none;">
@@ -254,33 +299,159 @@ INDEX_HTML = r"""<!doctype html>
       $('#heat_meta').textContent = `${totalRules} rules · ${totalConfirmed} confirmed · ${totalRejected} rejected · ${totalCandidate} candidate`;
     }
 
+    // Viewport state — set when openProject loads a drawing.
+    let currentDrawingId = null;
+    let currentPageIndex = 0;
+    let currentPageW = null;
+    let currentPageH = null;
+    let issueRowByIssueId = new Map();   // issue_id -> <tr>
+    let bboxRectByIssueId = new Map();   // issue_id -> <rect>
+
     async function openProject(slug) {
       currentSlug = slug;
       $$('#projects_table tbody tr').forEach((tr) => {
         tr.classList.toggle('active', tr.dataset.slug === slug);
       });
+      // Load issues
       const data = await fetchJSON(`/api/projects/${slug}/issues`);
       const panel = $('#issues_panel');
       panel.style.display = 'block';
       $('#issues_slug').textContent = slug;
       const tbody = panel.querySelector('tbody');
       tbody.innerHTML = '';
+      issueRowByIssueId = new Map();
       const counts = { candidate: 0, confirmed: 0, rejected: 0, needs_info: 0, resolved: 0, superseded: 0 };
       for (const i of data.issues) {
         counts[i.status] = (counts[i.status] || 0) + 1;
         const tr = document.createElement('tr');
+        tr.dataset.issueId = String(i.id);
         tr.innerHTML = `<td><code>${i.source_issue_id || i.id}</code></td>
                         <td><code>${i.rule_id || '<none>'}</code></td>
                         <td>${i.severity || ''}</td>
                         <td>${statusBadge(i.status)}</td>
                         <td>${(i.message || '').slice(0, 120)}</td>`;
-        tr.onclick = () => openIssue(i.id);
+        tr.onclick = () => { highlightBboxForIssue(i.id); openIssue(i.id); };
+        tr.onmouseenter = () => highlightBboxForIssue(i.id, /*scroll=*/false);
+        tr.onmouseleave = () => unhighlightAllBboxes();
         tbody.appendChild(tr);
+        issueRowByIssueId.set(i.id, tr);
       }
       const parts = Object.entries(counts).filter(([_,v]) => v>0)
         .map(([k,v]) => `${v} ${k}`).join(' · ');
       $('#issues_meta').textContent = `${data.issues.length} issues · ${parts}`;
-      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Load drawing viewport
+      await loadViewportForProject(slug);
+      $('#viewport_panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function loadViewportForProject(slug) {
+      // Find the drawing_id for this project (first drawing).
+      const draws = await fetchJSON(`/api/projects/${slug}/drawings`);
+      $('#vp_slug').textContent = slug;
+      const stack = $('#vp_stack');
+      const empty = $('#vp_empty');
+      const panel = $('#viewport_panel');
+      panel.style.display = 'block';
+      bboxRectByIssueId = new Map();
+      if (!draws.drawings || draws.drawings.length === 0) {
+        stack.style.display = 'none';
+        empty.style.display = 'block';
+        empty.textContent = 'This project has no drawings registered.';
+        $('#vp_meta').textContent = 'no drawings';
+        $('#vp_header_inline').style.display = 'none';
+        return;
+      }
+      const d = draws.drawings[0];
+      currentDrawingId = d.id;
+      currentPageIndex = 0;
+      // Probe the bbox endpoint first — if PDF isn't resolvable we surface a clear empty state.
+      let bboxData;
+      try {
+        bboxData = await fetchJSON(`/api/drawings/${d.id}/page/0/bboxes`);
+      } catch (e) {
+        stack.style.display = 'none';
+        empty.style.display = 'block';
+        empty.innerHTML = `<strong>No source PDF for this drawing.</strong><br>
+          Commit a PDF to <code>samples/real_plans/${slug}.pdf</code> to enable the viewport.<br>
+          <small style="color:var(--muted)">drawing_id=${d.id} · path=${d.source_path || '(unset)'}</small>`;
+        $('#vp_meta').textContent = `drawing #${d.id} · no source PDF`;
+        $('#vp_header_inline').style.display = 'none';
+        return;
+      }
+      currentPageW = bboxData.page_width_pts;
+      currentPageH = bboxData.page_height_pts;
+      // Image
+      $('#vp_img').src = `/api/drawings/${d.id}/page/0.png`;
+      // SVG overlay
+      const svg = $('#vp_svg');
+      svg.setAttribute('viewBox', `0 0 ${currentPageW} ${currentPageH}`);
+      svg.innerHTML = '';
+      const xmlns = 'http://www.w3.org/2000/svg';
+      for (const bb of bboxData.bboxes) {
+        const rect = document.createElementNS(xmlns, 'rect');
+        rect.setAttribute('x', bb.x0);
+        rect.setAttribute('y', bb.y0);
+        rect.setAttribute('width', Math.max(2, bb.x1 - bb.x0));
+        rect.setAttribute('height', Math.max(2, bb.y1 - bb.y0));
+        rect.setAttribute('class', `bbox-${bb.status}`);
+        rect.dataset.issueId = String(bb.issue_id);
+        rect.dataset.ruleId = bb.rule_id || '';
+        rect.dataset.status = bb.status;
+        rect.addEventListener('mouseenter', () => highlightIssueRowForBbox(bb.issue_id));
+        rect.addEventListener('mouseleave', () => unhighlightAllIssueRows());
+        rect.addEventListener('click', () => { highlightBboxForIssue(bb.issue_id); openIssue(bb.issue_id); });
+        svg.appendChild(rect);
+        bboxRectByIssueId.set(bb.issue_id, rect);
+      }
+      stack.style.display = 'inline-block';
+      empty.style.display = 'none';
+      $('#vp_meta').textContent =
+        `drawing #${d.id} · page ${0 + 1} · ${bboxData.bboxes.length} bboxes`;
+      $('#vp_bbox_count').textContent = `${bboxData.bboxes.length} bboxes`;
+      $('#vp_page_label').textContent = '0';
+      $('#vp_dim_label').textContent =
+        `${Math.round(currentPageW)}×${Math.round(currentPageH)}`;
+      $('#vp_header_inline').style.display = 'flex';
+    }
+
+    function highlightBboxForIssue(issueId, scroll = true) {
+      unhighlightAllBboxes();
+      const r = bboxRectByIssueId.get(issueId);
+      if (!r) return;
+      r.classList.add('bbox-hot');
+      if (scroll) {
+        // Scroll the rect into view inside the viewport-wrap.
+        const wrap = $('#vp_wrap');
+        const stack = $('#vp_stack');
+        const img = $('#vp_img');
+        if (currentPageW && img.naturalWidth) {
+          // Estimate visible y of rect center in wrap-scroll coords.
+          const yCenterPts = (parseFloat(r.getAttribute('y')) +
+            parseFloat(r.getAttribute('height')) / 2);
+          const imgRect = img.getBoundingClientRect();
+          const wrapRect = wrap.getBoundingClientRect();
+          const ratio = yCenterPts / currentPageH;
+          const yCenterPx = (imgRect.top - wrapRect.top + wrap.scrollTop) +
+                            ratio * imgRect.height;
+          wrap.scrollTo({ top: yCenterPx - wrap.clientHeight / 2, behavior: 'smooth' });
+        }
+      }
+    }
+
+    function unhighlightAllBboxes() {
+      $$('#vp_svg rect').forEach((r) => r.classList.remove('bbox-hot'));
+    }
+
+    function highlightIssueRowForBbox(issueId) {
+      unhighlightAllIssueRows();
+      const tr = issueRowByIssueId.get(issueId);
+      if (!tr) return;
+      tr.classList.add('active');
+      tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function unhighlightAllIssueRows() {
+      $$('#issues_table tbody tr.active').forEach((t) => t.classList.remove('active'));
     }
 
     async function openIssue(id) {
@@ -371,62 +542,57 @@ INDEX_HTML = r"""<!doctype html>
       await captionOverlay('ArchReview-KG Workbench — 33 plans, 148 issues, 25 rules', 4000);
       await sleep(600);
 
-      // Highlight the target project row, then click it.
+      // Drill into the demo project.
       const targetSlug = 'cambridge-343medford-overview';
       const row = document.querySelector(`#projects_table tbody tr[data-slug="${targetSlug}"]`);
       if (row) {
-        await captionOverlay('Drill into a project to see its issues', 3500);
-        await flashRow(row, 1200);
+        await captionOverlay('Drill into a project — workbench loads its drawing + issues', 3800);
+        await flashRow(row, 1000);
         row.click();
-        await sleep(2200);
+        await sleep(3500); // wait for PDF render
       }
 
-      // Scroll heatmap into view to show rule coverage, then come back.
-      $('#heatmap_table').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      await captionOverlay('Rule heatmap — over-detection visible on door & corridor width', 4500);
-      await sleep(1500);
+      // Linger on the viewport so the audience sees the real plan with bbox overlays.
+      await captionOverlay('Real public-record plan PDF · bbox overlays linked to issue rows', 4500);
+      await sleep(2000);
 
-      // Scroll back to issues panel and open the first needs_info issue.
-      const issuesPanel = $('#issues_panel');
-      issuesPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      await sleep(1500);
+      // Hover sync — pick an issue row, watch the bbox light up.
       const issueRows = document.querySelectorAll('#issues_table tbody tr');
       let targetIssueRow = null;
       for (const tr of issueRows) {
-        if (tr.textContent.includes('needs_info') || tr.textContent.includes('candidate')) {
-          targetIssueRow = tr; break;
-        }
+        if (tr.textContent.includes('RC-CORRIDOR-WIDTH')) { targetIssueRow = tr; break; }
       }
+      if (!targetIssueRow) targetIssueRow = issueRows[0];
       if (targetIssueRow) {
-        await captionOverlay('Every issue cites the rule, the evidence, and the lifecycle', 4000);
-        await flashRow(targetIssueRow, 1500);
+        await captionOverlay('Click an issue → the matching bbox lights up on the plan', 4200);
+        targetIssueRow.dispatchEvent(new Event('mouseenter'));
+        await sleep(2000);
         targetIssueRow.click();
-        await sleep(3200);
+        await sleep(3000);
       }
 
-      await captionOverlay('Evidence: measured value vs. clause threshold — verifiable on disk', 4500);
-      await sleep(2000);
-      await captionOverlay('Reviewer feedback events are preserved — disagreements are not overwritten', 5000);
+      await captionOverlay('Issue drawer: rule + clause + evidence + reviewer feedback history', 4800);
+      await sleep(2200);
+      await captionOverlay('Reviewer disagreements preserved — never overwritten', 4500);
       await sleep(1500);
 
       // Record a confirm verdict — real POST to /api/issues/<id>/feedback.
       const confirmBtn = document.querySelector('#drawer .btn.confirm');
       if (confirmBtn) {
-        await captionOverlay('Record a verdict — writes a new feedback_event in the KG', 3800);
+        await captionOverlay('Record a verdict — writes a feedback_event into the live KG', 3800);
         confirmBtn.click();
         await sleep(2800);
       }
 
-      await captionOverlay('Verdict recorded. Status updated. Audit trail preserved.', 4000);
+      await captionOverlay('Verdict committed · audit trail preserved · heatmap count ticks up', 4500);
       await sleep(2000);
       closeDrawer();
       await sleep(900);
 
-      // Return to top for closing shot.
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      await captionOverlay('Open source. Offline. Honest. Every finding traces to its evidence.', 5500);
+      await captionOverlay('Open source · Offline · Honest · Every finding traces to its evidence', 5500);
       await sleep(2500);
-      await captionOverlay('archreview-kg · M6 product demo', 3500);
+      await captionOverlay('archreview-kg · M7 product demo', 3500);
     }
 
     const params = new URLSearchParams(location.search);
@@ -522,6 +688,135 @@ def create_app(db_path: Path | None = None) -> Flask:
                 ).fetchall()
             ]
         return jsonify({"project": slug, "issues": issues})
+
+    # M7.W1 — PDF viewport endpoints.
+    @app.get("/api/drawings/<int:drawing_id>/page/<int:page_index>.png")
+    def drawing_page_png(drawing_id: int, page_index: int) -> Any:
+        with _store() as store:
+            row = store._conn.execute(
+                "SELECT d.source_path AS source_path, p.slug AS slug "
+                "FROM drawing d JOIN project p ON d.project_id = p.id "
+                "WHERE d.id = ?",
+                (drawing_id,),
+            ).fetchone()
+            if not row:
+                return jsonify({"error": "drawing not found", "id": drawing_id}), 404
+        repo_root = Path(app.config["KG_DB_PATH"]).parent.parent
+        pdf = resolve_pdf_for_drawing(repo_root, row["slug"], row["source_path"])
+        if not pdf:
+            return (
+                jsonify(
+                    {
+                        "error": "no committed source PDF for this drawing",
+                        "drawing_id": drawing_id,
+                        "project_slug": row["slug"],
+                        "hint": "commit a PDF to samples/real_plans/{slug}.pdf",
+                    }
+                ),
+                404,
+            )
+        try:
+            rp = render_page(pdf, page_index)
+        except (IndexError, FileNotFoundError) as exc:
+            return jsonify({"error": str(exc)}), 404
+        # Cache-Control: rendered PNGs are content-addressed, safe to cache.
+        return Response(
+            rp.image_bytes,
+            mimetype="image/png",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    @app.get("/api/drawings/<int:drawing_id>/page/<int:page_index>/bboxes")
+    def drawing_page_bboxes(drawing_id: int, page_index: int) -> Any:
+        """Return bbox + issue metadata for SVG overlay sync with the PNG.
+
+        Response shape:
+          {
+            "drawing_id": N,
+            "page_index": N,
+            "page_width_pts":  float,   # PDF coordinate space — use as SVG viewBox width
+            "page_height_pts": float,   # PDF coordinate space — use as SVG viewBox height
+            "image_width_px":  int,     # rendered PNG dimensions (informational)
+            "image_height_px": int,
+            "bboxes": [{ "issue_id", "source_issue_id", "rule_id", "status",
+                         "severity", "x0", "y0", "x1", "y1" }, ...]
+          }
+        """
+
+        with _store() as store:
+            drow = store._conn.execute(
+                "SELECT d.source_path AS source_path, p.slug AS slug "
+                "FROM drawing d JOIN project p ON d.project_id = p.id "
+                "WHERE d.id = ?",
+                (drawing_id,),
+            ).fetchone()
+            if not drow:
+                return jsonify({"error": "drawing not found", "id": drawing_id}), 404
+            # Issues on this drawing with bbox + matching page_index in evidence_json.
+            irows = store._conn.execute(
+                "SELECT i.id, i.source_issue_id, i.status, i.severity, i.bbox_json, "
+                "i.evidence_json, r.rule_id AS rule_id "
+                "FROM issue i "
+                "JOIN run rn ON i.run_id = rn.id "
+                "LEFT JOIN rule r ON i.rule_id = r.id "
+                "WHERE rn.drawing_id = ? AND i.bbox_json IS NOT NULL "
+                "ORDER BY i.id",
+                (drawing_id,),
+            ).fetchall()
+        repo_root = Path(app.config["KG_DB_PATH"]).parent.parent
+        pdf = resolve_pdf_for_drawing(repo_root, drow["slug"], drow["source_path"])
+        if not pdf:
+            return (
+                jsonify(
+                    {
+                        "error": "no committed source PDF for this drawing",
+                        "drawing_id": drawing_id,
+                        "project_slug": drow["slug"],
+                    }
+                ),
+                404,
+            )
+        try:
+            rp = render_page(pdf, page_index)
+        except (IndexError, FileNotFoundError) as exc:
+            return jsonify({"error": str(exc)}), 404
+
+        bboxes: list[dict[str, Any]] = []
+        for r in irows:
+            try:
+                bb = json.loads(r["bbox_json"])
+                ev = json.loads(r["evidence_json"] or "{}")
+            except (json.JSONDecodeError, TypeError):
+                continue
+            if not isinstance(bb, list) or len(bb) < 4:
+                continue
+            evidence_page = ev.get("page_index", 0)
+            if evidence_page != page_index:
+                continue
+            bboxes.append(
+                {
+                    "issue_id": int(r["id"]),
+                    "source_issue_id": r["source_issue_id"],
+                    "rule_id": r["rule_id"],
+                    "status": r["status"],
+                    "severity": r["severity"],
+                    "x0": float(bb[0]),
+                    "y0": float(bb[1]),
+                    "x1": float(bb[2]),
+                    "y1": float(bb[3]),
+                }
+            )
+        return jsonify(
+            {
+                "drawing_id": drawing_id,
+                "page_index": page_index,
+                "page_width_pts": rp.page_width_pts,
+                "page_height_pts": rp.page_height_pts,
+                "image_width_px": rp.image_width_px,
+                "image_height_px": rp.image_height_px,
+                "bboxes": bboxes,
+            }
+        )
 
     @app.get("/api/heatmap")
     def heatmap() -> Any:

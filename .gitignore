@@ -20,6 +20,7 @@ standards_raw/*.pdf
 tmp/
 
 # Local KG database (M5) — per-developer state, never committed.
+# This also covers .archkg/page_cache/ (M7.W1 PDF page render cache).
 .archkg/
 quality_score.json
 
