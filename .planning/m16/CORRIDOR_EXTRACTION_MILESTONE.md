@@ -1,7 +1,24 @@
 # Milestone scope — real-corridor extraction (R7-BUG-003)
 
-> Status: **scoped, not started.** Acceptance gate = `tests/test_graph_builder.py::test_m16_real_corridor_extracted` (currently `xfail strict`).
-> Authored 2026-05-29 after a diagnosis workflow + independent verification. This is the deepest remaining recall gap and the one the M11–M16 audits repeatedly deferred.
+> Status: **PART 1 LANDED (2026-05-29).** The wide-opening repair is implemented in
+> `archkg/graph/geometry.py` (`bridge_door_gaps` + `LONG_RUN_PT`/`WIDE_GAP_MAX_PT`):
+> m16/m15 ground-floor corridors are now extracted, audit recall **25% → 50%**,
+> verified **issue-level FP-neutral** on the cambridge / m10-m14 control set.
+> Acceptance gate `tests/test_graph_builder.py::test_m16_real_corridor_extracted`
+> now PASSES (xfail removed). **Remaining (part 2):** the m16/m15 **page-1 trunk
+> corridor** is still missed — page-1's sheet graph extracts 0 corridors (the full-
+> width single trunk corridor has a page-1-specific wall-gap topology the current
+> wide-opening repair doesn't close), plus p1 bedroom-door positions and the
+> RC-BEDROOM-AREA matcher gap. See "Remaining work" below.
+> Authored 2026-05-29 after a diagnosis workflow + independent verification + an
+> FP-controlled closure-candidate workflow. This was the deepest recall gap the
+> M11–M16 audits repeatedly deferred.
+
+## What landed (part 1)
+
+The verified FP-neutral closure (workflow `corridor-closure-fp-controlled` Candidate 2, then independently re-measured and **refined to fix an FP the workflow missed**): a horizontal-only additive pass in `bridge_door_gaps` that bridges a wide gap (up to `WIDE_GAP_MAX_PT=70pt`) **only when flanked on both sides by long collinear wall runs (`LONG_RUN_PT=150pt`)**. Critically the wide bridge is appended to `augmented` (wall closure for polygonize) **but not to `bridges`** — so it never creates a Door entity. The workflow's corridor-only FP measurement had passed Candidate 2, but my issue-level re-measurement found the door-creating form added spurious RC-DOOR-WIDTH issues on m10 (0.75m) and m14 (0.85m) via dimension binding; the augmented-only form is issue-level FP-neutral (0 new issues on every geometrically-distinct control plan).
+
+## Remaining work (part 2 — page-1 trunk corridor + door/area gaps)
 
 ## The gap
 

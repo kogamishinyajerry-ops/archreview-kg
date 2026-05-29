@@ -50,6 +50,27 @@ class GapBridge:
     width_pt: float
 
 
+# Wide-opening repair (corridor-extraction milestone, round-7 R7-BUG-003).
+# A circulation corridor's long wall can contain a doorway WIDER than the normal
+# door-bridge ceiling (e.g. m16's 1.32m / 66pt "service entry"), which leaves the
+# wall open so polygonize floods the corridor strip into the room band and no
+# corridor is ever extracted. We close such a wide gap ONLY when it is flanked on
+# BOTH sides by genuinely-long collinear wall runs (>= LONG_RUN_PT) — the
+# corridor-mouth signature. Door leaves / swing-arc chords are short (<=~66pt) so
+# they never qualify as anchors and are ignored without any debris stripping, and
+# the global door ceiling (max_gap_pt) is never raised. Horizontal-only: vertical
+# interior-partition gaps are flanked by short stubs (not >= LONG_RUN_PT on both
+# sides) and stay closed, avoiding a phantom-corridor FP class. Thresholds assume
+# the ~50pt/m extraction scale and are pinned by tests; verified FP-neutral on the
+# cambridge / m10-m14 control set. See .planning/m16/CORRIDOR_EXTRACTION_MILESTONE.md.
+LONG_RUN_PT = 150.0
+WIDE_GAP_MAX_PT = 70.0
+
+
+def _bridge_key(seg: Segment) -> tuple[float, float, float, float]:
+    return (round(seg[0][0], 3), round(seg[0][1], 3), round(seg[1][0], 3), round(seg[1][1], 3))
+
+
 def bridge_door_gaps(
     segments: list[Segment],
     *,
@@ -94,6 +115,34 @@ def bridge_door_gaps(
                 bridge = ((x, a[1][1]), (x, b[0][1]))
                 augmented.append(bridge)
                 bridges.append(GapBridge(segment=bridge, axis="v", width_pt=gap))
+
+    # Wide-opening repair (horizontal only) — see LONG_RUN_PT/WIDE_GAP_MAX_PT.
+    # Bridge a wide doorway only when flanked on BOTH sides by long collinear wall
+    # runs. Crucially these segments are appended ONLY to `augmented` (so
+    # polygonize can close the corridor wall) and NOT to `bridges`, so they never
+    # become Door entities. A wide (1.0-1.4m) opening in a long wall is a
+    # wall-closure for corridor extraction, not a narrow-door defect; emitting a
+    # door there lets dimension-text binding mislabel its width and fire spurious
+    # RC-DOOR-WIDTH issues on control plans (measured +1 issue each on m10 and
+    # m14). Wide doors never fail the width rules anyway, so no door recall is
+    # lost. Dedup against the normal bridges so an already-bridged gap isn't
+    # re-added to `augmented`.
+    seen = {_bridge_key(b.segment) for b in bridges}
+    for y, segs in horizontals.items():
+        anchors = sorted(
+            (s for s in segs if (s[1][0] - s[0][0]) >= LONG_RUN_PT),
+            key=lambda s: s[0][0],
+        )
+        for a, b in pairwise(anchors):
+            gap = b[0][0] - a[1][0]
+            if not (min_gap_pt < gap < WIDE_GAP_MAX_PT):
+                continue
+            bridge = ((a[1][0], y), (b[0][0], y))
+            key = _bridge_key(bridge)
+            if key in seen:
+                continue
+            seen.add(key)
+            augmented.append(bridge)
 
     return augmented, bridges
 

@@ -166,41 +166,103 @@ def test_titleblock_band_not_classified_as_corridor() -> None:
     ), "the round-7 title-block phantom corridor must no longer be emitted"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Corridor-extraction milestone (R7-BUG-003). m16's real corridors ARE "
-        "explicitly walled, but the bottom long-wall never closes into a thin "
-        "polygon: one intended opening is 66pt (1.32m 'service entry') which "
-        "exceeds the 50pt (1.0m) door-bridge ceiling, AND door-swing arc/leaf "
-        "primitives snap onto the wall's y-group and mask the remaining "
-        "bridgeable gaps. So shapely polygonize floods the strip into a ~92m2 "
-        "room (short side 6.44m) and corridors=0. Every naive closure re-"
-        "introduces the phantom-band FP class just fixed (verified at "
-        "DOOR_MAX_M=1.4m: sample_clean 1->2, m12 4->6, m13 13->17), and even "
-        "then m16 stays 0 because the door-swing debris also blocks it. The real "
-        "fix (door-swing debris stripper + corridor-aware closure tolerating one "
-        "wide opening, validated FP-neutral against the cambridge plans) is a "
-        "scoped multi-session milestone. See .planning/m16/"
-        "CORRIDOR_EXTRACTION_MILESTONE.md. This test flips to XPASS (strict -> "
-        "fails loudly, prompting removal of the mark) when extraction lands."
-    ),
-)
-def test_m16_real_corridor_extracted() -> None:
-    """Acceptance gate for real-corridor extraction (currently a known gap)."""
-    pdf = Path("samples/real_plans/test-m16-defective-plan.pdf")
-    if not pdf.exists():
-        pytest.skip("m16 sample not present")
+def _real_corridor_band(pdf: Path):
     g = build_graph(extract(pdf))
-    # Ground-floor corridor: full-width band at engine y~440-495, ~1.10m wide,
-    # which must FAIL RC-CORRIDOR-WIDTH's 1.20m floor.
-    band = [
+    return [
         c
         for c in g.corridors
         if 430 <= c.bbox[1] and c.bbox[3] <= 505 and (c.bbox[2] - c.bbox[0]) >= 0.6 * g.page_width_pt
     ]
+
+
+def test_m16_real_corridor_extracted() -> None:
+    """R7-BUG-003 closed: m16's real ground-floor corridor is now extracted.
+
+    The corridor's bottom long-wall has a 1.32m (66pt) service opening that
+    exceeds the 1.0m door-bridge ceiling, so the wall never closed and the
+    strip flooded into a room (corridors=0). The wide-opening repair in
+    ``bridge_door_gaps`` closes a wide gap only when flanked by two long
+    (>=150pt) collinear wall runs — the corridor-mouth signature — so the
+    band at engine y~440-495 (~1.10m wide) is now a Corridor and fires
+    RC-CORRIDOR-WIDTH below the 1.20m floor.
+    """
+    pdf = Path("samples/real_plans/test-m16-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m16 sample not present")
+    band = _real_corridor_band(pdf)
     assert band, "the m16 ground-floor corridor must be extracted as a Corridor entity"
     assert any(c.min_width_m is not None and c.min_width_m < 1.2 for c in band)
+
+
+def test_m15_real_corridor_extracted() -> None:
+    """m15 is byte-identical line geometry to m16 (same drawing, same real
+    corridor), so the wide-opening repair must extract it too. Closing one
+    must close the other — this documents the duplicate fixture so a future
+    FP-control table never mistakes m15's corridor for a phantom."""
+    pdf = Path("samples/real_plans/test-m15-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m15 sample not present")
+    band = _real_corridor_band(pdf)
+    assert band, "m15 (== m16 geometry) ground-floor corridor must be extracted"
+    assert any(c.min_width_m is not None and c.min_width_m < 1.2 for c in band)
+
+
+def test_wide_opening_repair_is_fp_neutral_on_control_plans() -> None:
+    """FP control for the wide-opening repair (R7-BUG-003): corridor counts on
+    geometrically-distinct control plans must NOT increase. The cambridge plans
+    are the priority guard (real drawings, no ground truth); m13/m14 are the
+    phantom sinks rejected closure candidates fell into."""
+    baseline = {
+        "samples/real_plans/cambridge-2garden-existing-overview.pdf": 2,
+        "samples/real_plans/cambridge-343medford-overview.pdf": 9,
+        "samples/real_plans/cambridge-sp336-basement.pdf": 1,
+        "samples/sample_clean.pdf": 1,
+        "samples/real_plans/test-m10-defective-plan.pdf": 8,
+        "samples/real_plans/test-m12-defective-plan.pdf": 4,
+        "samples/real_plans/test-m13-defective-plan.pdf": 13,
+        "samples/real_plans/test-m14-defective-plan.pdf": 0,
+    }
+    for path, expected in baseline.items():
+        pdf = Path(path)
+        if not pdf.exists():
+            pytest.skip(f"{path} not present")
+        n = len(build_graph(extract(pdf)).corridors)
+        assert n == expected, f"{pdf.name}: corridor count {n} != FP-control baseline {expected}"
+
+
+def test_wide_opening_thresholds_pinned() -> None:
+    """Pin the verified FP-neutral operating point: LONG_RUN_PT=150 leaks a
+    phantom if lowered to 100 and fails to close m16 if raised to 200; the wide
+    ceiling assumes the ~50pt/m extraction scale. An accidental retune surfaces
+    here (R7-BUG-003)."""
+    from archkg.graph import geometry
+
+    assert geometry.LONG_RUN_PT == 150.0
+    assert geometry.WIDE_GAP_MAX_PT == 70.0
+
+
+def test_wide_opening_bridge_closes_wall_without_creating_a_door() -> None:
+    """The wide-opening repair appends a wall-closure segment to ``augmented``
+    (so polygonize can form the corridor) but NOT to ``bridges``, so no Door
+    entity is created at a wide circulation opening — this is what keeps it
+    issue-level FP-neutral. It fires only when BOTH flanks are >= LONG_RUN_PT."""
+    y = 100.0
+    gap = 66.0  # > 50pt door ceiling, < 70pt wide ceiling
+    left = ((0.0, y), (200.0, y))  # 200pt anchor (>=150)
+    right = ((200.0 + gap, y), (500.0, y))  # 234pt anchor (>=150)
+    augmented, bridges = bridge_door_gaps([left, right], max_gap_pt=50.0, min_gap_pt=35.0)
+    assert any(
+        abs(s[0][0] - 200.0) < 0.1 and abs(s[1][0] - (200.0 + gap)) < 0.1 and s[0][1] == y
+        for s in augmented
+    ), "wide opening between two long walls must be closed in augmented segments"
+    assert all(b.width_pt != gap for b in bridges), "wide opening must NOT become a Door bridge"
+
+    # Flanked by a SHORT fragment (< anchor floor) on one side → not bridged.
+    short_left = ((150.0, y), (200.0, y))  # 50pt fragment
+    augmented2, _ = bridge_door_gaps([short_left, right], max_gap_pt=50.0, min_gap_pt=35.0)
+    assert not any(
+        abs(s[0][0] - 200.0) < 0.1 and abs(s[1][0] - (200.0 + gap)) < 0.1 for s in augmented2
+    ), "wide opening flanked by a short fragment must NOT be bridged"
 
 
 def test_min_room_area_filter_drops_sub_threshold_polygons(sample_pdf: Path) -> None:
