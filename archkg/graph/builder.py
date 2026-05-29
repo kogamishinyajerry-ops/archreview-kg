@@ -151,6 +151,46 @@ def _aspect_ratio(poly: Polygon) -> float:
     return max(w, h) / min(w, h)
 
 
+# Round-7 R7-BUG-001/003: a drawing's border frame / legend strip / full-width
+# title band gets polygonized into a long thin rectangle that passes the
+# corridor shape test (aspect >= 3, short side 0.5-2.0 m) and then fires
+# RC-CORRIDOR-WIDTH as a phantom. The discriminator vs a REAL corridor is
+# position, not shape: an artifact band spans almost the whole SHEET (margins +
+# title block included) AND hugs a sheet edge, whereas a circulation corridor —
+# even a full-width one that splits the plan — sits well inside the margin with
+# rooms on both long sides. Both gates are required so an interior full-width
+# corridor (e.g. the synthetic sample's mid-page corridor at 100% width) is
+# never dropped. Conservative by construction: ambiguous cases keep the corridor.
+SHEET_BAND_SPAN_FRAC = 0.85
+SHEET_BAND_EDGE_FRAC = 0.05
+
+
+def _is_sheet_edge_band(
+    bbox: tuple[float, float, float, float],
+    page_w: float,
+    page_h: float,
+    *,
+    span_frac: float = SHEET_BAND_SPAN_FRAC,
+    edge_frac: float = SHEET_BAND_EDGE_FRAC,
+) -> bool:
+    """True if ``bbox`` (page points) is a sheet-spanning band hugging an edge —
+    i.e. a border / legend / title strip, not a circulation corridor."""
+    x0, y0, x1, y1 = bbox
+    if page_w <= 0 or page_h <= 0:
+        return False
+    # Horizontal band spanning the sheet width, flush to the top or bottom edge.
+    if (x1 - x0) >= span_frac * page_w and (
+        y0 <= edge_frac * page_h or (page_h - y1) <= edge_frac * page_h
+    ):
+        return True
+    # Vertical band spanning the sheet height, flush to the left or right edge.
+    if (y1 - y0) >= span_frac * page_h and (
+        x0 <= edge_frac * page_w or (page_w - x1) <= edge_frac * page_w
+    ):
+        return True
+    return False
+
+
 def _classify_label(text: str) -> str | None:
     lo = text.lower()
     for kw, normalized in LABEL_KEYWORDS.items():
@@ -425,6 +465,14 @@ def build_graph(
             continue
 
         if is_corridor_shaped:
+            if _is_sheet_edge_band(bbox, page.width_pt, page.height_pt):
+                # Border frame / legend / title band mis-shaped as a corridor
+                # (round-7 R7-BUG-001/003). Drop it: it is not a circulation
+                # corridor and must not fire RC-CORRIDOR-WIDTH. Tracked like a
+                # filtered polygon so the door classifier treats its boundary
+                # as non-surviving rather than a real interior wall.
+                filtered_polygons.append(poly)
+                continue
             corridors.append(
                 Corridor(
                     id=_new_id("corridor"),

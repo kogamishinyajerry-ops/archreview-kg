@@ -6,7 +6,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from archkg.cli.main import app
-from archkg.graph.builder import build_graph, render_overlay
+from archkg.graph.builder import _is_sheet_edge_band, build_graph, render_overlay
 from archkg.graph.geometry import bridge_door_gaps, polygonize_segments
 from archkg.ingest.primitive_extractor import extract
 
@@ -126,6 +126,43 @@ def test_door_bboxes_have_positive_area(sample_pdf: Path) -> None:
         x0, y0, x1, y1 = d.bbox
         w, h = x1 - x0, y1 - y0
         assert w > 0.0 and h > 0.0, f"door {d.id} has degenerate bbox {d.bbox}"
+
+
+def test_is_sheet_edge_band_discriminates_artifacts_from_corridors() -> None:
+    """Round-7 R7-BUG-001/003 helper: a sheet-spanning band hugging an edge is
+    an artifact; an interior band (even full-width) is a real corridor."""
+    W, H = 1190.0, 842.0
+    # m16 phantom: full-width strip flush to the bottom edge → artifact.
+    assert _is_sheet_edge_band((60.0, 762.0, 1130.0, 812.0), W, H) is True
+    # full-width strip flush to the top edge → artifact.
+    assert _is_sheet_edge_band((60.0, 30.0, 1130.0, 110.0), W, H) is True
+    # full-height strip flush to the right edge → artifact.
+    assert _is_sheet_edge_band((1100.0, 20.0, 1180.0, 820.0), W, H) is True
+    # the synthetic sample's REAL corridor: full width but mid-page → kept.
+    assert _is_sheet_edge_band((0.0, 200.0, 500.0, 252.5), 500.0, 400.0) is False
+    # a normal interior corridor → kept.
+    assert _is_sheet_edge_band((300.0, 350.0, 700.0, 402.0), W, H) is False
+
+
+def test_titleblock_band_not_classified_as_corridor() -> None:
+    """E2E (round-7 R7-BUG-001/003): the m16 plan's full-width bottom/top
+    title-block & legend strips must NOT become corridors, so RC-CORRIDOR-WIDTH
+    can't fire a phantom violation on them."""
+    pdf = Path("samples/real_plans/test-m16-defective-plan.pdf")
+    if not pdf.exists():
+        import pytest
+
+        pytest.skip("m16 sample not present")
+    g = build_graph(extract(pdf))
+    for c in g.corridors:
+        assert not _is_sheet_edge_band(c.bbox, g.page_width_pt, g.page_height_pt), (
+            f"corridor {c.id} bbox={c.bbox} is a sheet-edge band and should be dropped"
+        )
+    # The specific phantom from the round-7 audit ([60,762,1130,812], 1.0m).
+    assert not any(
+        abs(c.bbox[0] - 60.0) < 5 and abs(c.bbox[1] - 762.0) < 5 and abs(c.bbox[2] - 1130.0) < 5
+        for c in g.corridors
+    ), "the round-7 title-block phantom corridor must no longer be emitted"
 
 
 def test_min_room_area_filter_drops_sub_threshold_polygons(sample_pdf: Path) -> None:
