@@ -125,7 +125,11 @@ def review(
     )
     from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
-    from archkg.rules.sheet_issues import build_sheet_issues, write_sheet_issues
+    from archkg.rules.sheet_issues import (
+        build_sheet_issues,
+        merge_sheet_issues,
+        write_sheet_issues,
+    )
     from archkg.schemas import ProjectMeta
     from archkg.viewer.drawing_understanding import (
         build_drawing_understanding,
@@ -342,7 +346,18 @@ def review(
         sheet_issue_review_queue,
         out / "sheet_issue_review_queue.json",
     )
-    result = evaluate(graph, rules, standards, project_meta=meta)
+    # Multi-page canonical issue extraction (round-7 R6/R7-BUG-001/002/003).
+    # The page-0-only build_graph path silently dropped every defect on a
+    # non-primary plan page. When extra plan pages exist, evaluate per-page
+    # via the already-built sheet graphs so issues carry their true
+    # page_index; otherwise keep the exact legacy single-page path.
+    extra_plan_pages = [
+        entry for entry in sheet_graphs.graphs if entry.page_index != graph.page_index
+    ]
+    if extra_plan_pages:
+        result = merge_sheet_issues(sheet_graphs, graph, rules, standards, project_meta=meta)
+    else:
+        result = evaluate(graph, rules, standards, project_meta=meta)
     rule_readiness = build_rule_input_readiness(
         graph,
         rules,
