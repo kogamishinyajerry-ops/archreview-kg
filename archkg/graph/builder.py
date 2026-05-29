@@ -588,12 +588,26 @@ def _carve_host_band_corridors(
                     for ep in existing_polys
                 ):
                     continue
+                # Clip the corridor footprint to the host polygon (Codex part-3 P2):
+                # the strip is a rectangle that, on a concave/notched host, can
+                # extend up to (1 - HOST_CARVE_OPEN_FRAC) outside the host into
+                # neighbouring space. Emit the host∩strip footprint instead so the
+                # corridor geometry never leaks. min_width_m stays the wall-to-wall
+                # band gap (dy), not the clipped polygon's short side.
+                footprint = inter if inter.geom_type == "Polygon" else max(
+                    (g for g in getattr(inter, "geoms", []) if g.geom_type == "Polygon"),
+                    key=lambda g: g.area,
+                    default=None,
+                )
+                if footprint is None or footprint.is_empty:
+                    continue
+                fx0, fy0, fx1, fy1 = footprint.bounds
                 new_corridors.append(
                     Corridor(
                         id=_new_id("corridor"),
                         page_index=page_index,
-                        bbox=(ox0, y_lo, ox1, y_hi),
-                        polygon=[(ox0, y_lo), (ox1, y_lo), (ox1, y_hi), (ox0, y_hi), (ox0, y_lo)],
+                        bbox=(fx0, fy0, fx1, fy1),
+                        polygon=[(float(x), float(y)) for x, y in footprint.exterior.coords],
                         min_width_m=round(dy / ppm, 2),
                         confidence=0.75,
                         uncertain=False,
