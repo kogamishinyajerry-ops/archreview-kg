@@ -35,6 +35,7 @@ from shapely.geometry import Point as SPoint
 
 from archkg.graph.geometry import (
     bridge_door_gaps,
+    is_vertical,
     polygonize_segments,
 )
 from archkg.schemas import (
@@ -80,6 +81,34 @@ DOOR_MAX_M = 1.00
 CORRIDOR_ASPECT_MIN = 3.0
 CORRIDOR_SHORT_MIN_M = 0.5
 CORRIDOR_SHORT_MAX_M = 2.0
+
+# Trunk-corridor carve (corridor-extraction milestone part 2, round-7 R7-BUG-003).
+# A long circulation corridor's bounding wall can contain an opening WIDER than
+# even the wide-opening repair closes (m16/m15 page-1: a 74pt/1.48m gap exceeding
+# WIDE_GAP_MAX_PT). The wall stays open, so polygonize floods the corridor strip
+# into the adjacent room band and no thin corridor polygon ever forms. This pass
+# recovers it WITHOUT widening any bridge ceiling (which re-merges rooms across
+# legitimate doorways and re-introduces phantom corridors — measured): it detects
+# the corridor directly from its defining geometry — two long, mostly-covered
+# parallel wall chords a corridor-width apart — and carves that band out of the
+# flooded host room, measuring width from the chord gap (robust to the unclosed
+# wall, so it reports the TRUE ~1.10m, not the flooded polygon's short side).
+# Three discriminators keep it FP-neutral on the cambridge / m10-m14 control set
+# (each verified load-bearing by ablation): the band must sit INSIDE a polygonized
+# room (the flooded host), leave a real room remnant on BOTH sides (rejects bands
+# glued to a room edge, e.g. m14), and have NO interior vertical crossing it
+# (rejects furniture/fixture clusters chopped into cells, e.g. m13). The width
+# window reuses the corridor classifier's CORRIDOR_SHORT_MIN_M..MAX_M (NOT a
+# fixture-centered window — verified that widening it to the full corridor band
+# changes nothing on any control plan, so the discriminators, not the width, carry
+# FP-control). See .planning/m16/CORRIDOR_EXTRACTION_MILESTONE.md.
+TRUNK_CARVE_SPAN_FRAC = 0.5          # a wall chord must span >= this fraction of the page width
+TRUNK_CARVE_FILL_FRAC = 0.5          # covered length / span of the chord (tolerates the unclosed opening)
+TRUNK_CARVE_OVERLAP_FRAC = 0.5       # x-overlap of the two chords vs the wider chord's span
+TRUNK_CARVE_REMNANT_MIN_M = 0.5      # min room remnant ABOVE and BELOW the band
+TRUNK_CARVE_CROSS_FRAC = 0.6         # a vertical covering >= this frac of band height "crosses" it
+TRUNK_CARVE_CROSS_EDGE_MARGIN_PT = 20.0  # ignore verticals within this of the band x-edges (room end-walls)
+TRUNK_CARVE_Y_TOL = 3.0              # collinearity tolerance when clustering horizontal chords
 
 # Codex P19-D R7 P1 (both findings): the right adjacency check is "does the
 # polygon boundary CONTAIN the bridge segment?", not "is the polygon
@@ -189,6 +218,211 @@ def _is_sheet_edge_band(
     ):
         return True
     return False
+
+
+def _merge_intervals(
+    intervals: list[tuple[float, float]], *, gap_tol: float = 0.5
+) -> list[list[float]]:
+    """Merge overlapping or touching ``[start, end]`` intervals."""
+    merged: list[list[float]] = []
+    for a, b in sorted(intervals):
+        if merged and a <= merged[-1][1] + gap_tol:
+            merged[-1][1] = max(merged[-1][1], b)
+        else:
+            merged.append([a, b])
+    return merged
+
+
+def _long_horizontal_chords(
+    segments: list[tuple[tuple[float, float], tuple[float, float]]],
+    page_w: float,
+) -> list[tuple[float, float, float, float]]:
+    """Cluster horizontal segments into wall-chord levels and keep the long,
+    mostly-covered ones — i.e. building walls that span most of the sheet width.
+
+    Returns ``[(y, x_min, x_max, span), ...]`` sorted by y. The fill fraction is
+    measured over the merged coverage so a chord with a single wide doorway (the
+    unclosed corridor opening) still qualifies.
+    """
+    items: list[tuple[float, float, float]] = []
+    for (x0, y0), (x1, y1) in segments:
+        if abs(y0 - y1) <= TRUNK_CARVE_Y_TOL:
+            items.append(((y0 + y1) / 2.0, min(x0, x1), max(x0, x1)))
+    items.sort()
+    levels: list[tuple[float, list[tuple[float, float]]]] = []
+    for yc, x0, x1 in items:
+        for level_y, ivs in levels:
+            if abs(level_y - yc) <= TRUNK_CARVE_Y_TOL:
+                ivs.append((x0, x1))
+                break
+        else:
+            levels.append((yc, [(x0, x1)]))
+    chords: list[tuple[float, float, float, float]] = []
+    for yc, ivs in levels:
+        merged = _merge_intervals(ivs)
+        x_min = min(a for a, _ in merged)
+        x_max = max(b for _, b in merged)
+        span = x_max - x_min
+        covered = sum(b - a for a, b in merged)
+        if span > 0 and span >= TRUNK_CARVE_SPAN_FRAC * page_w and covered >= TRUNK_CARVE_FILL_FRAC * span:
+            chords.append((yc, x_min, x_max, span))
+    chords.sort()
+    return chords
+
+
+def _band_has_crossing_vertical(
+    segments: list[tuple[tuple[float, float], tuple[float, float]]],
+    x0: float,
+    x1: float,
+    y_lo: float,
+    y_hi: float,
+) -> bool:
+    """True if an interior vertical segment crosses >= ``TRUNK_CARVE_CROSS_FRAC``
+    of the band height. Verticals within ``TRUNK_CARVE_CROSS_EDGE_MARGIN_PT`` of
+    the band x-edges are ignored — those are the room's own end-walls. A genuine
+    interior crossing means the band is chopped into cells (furniture / fixtures),
+    not an open traversable corridor tube.
+    """
+    need = TRUNK_CARVE_CROSS_FRAC * (y_hi - y_lo)
+    for seg in segments:
+        if not is_vertical(seg):
+            continue
+        (sx0, sy0), (sx1, sy1) = seg
+        xc = (sx0 + sx1) / 2.0
+        if not (x0 + TRUNK_CARVE_CROSS_EDGE_MARGIN_PT < xc < x1 - TRUNK_CARVE_CROSS_EDGE_MARGIN_PT):
+            continue
+        sy_lo, sy_hi = min(sy0, sy1), max(sy0, sy1)
+        if min(sy_hi, y_hi) - max(sy_lo, y_lo) >= need:
+            return True
+    return False
+
+
+def _carve_trunk_corridors(
+    rooms: list[Room],
+    corridors: list[Corridor],
+    doors: list[Door],
+    augmented: list[tuple[tuple[float, float], tuple[float, float]]],
+    page: PagePrimitives,
+    ppm: float,
+    page_index: int,
+) -> tuple[list[Room], list[Corridor], list[Door]]:
+    """Recover a corridor that ``polygonize`` failed to isolate because its long
+    bounding wall has an opening wider than any bridge closes, so the corridor
+    strip floods into the room band. See the ``TRUNK_CARVE_*`` constants for the
+    geometry and the FP-control discriminators.
+
+    Returns updated ``(rooms, corridors, doors)``. Pure on plans with no flooded
+    trunk corridor (every control plan in the regression set): no chord pair
+    passes all three discriminators, so the inputs are returned unchanged.
+    """
+    chords = _long_horizontal_chords(augmented, page.width_pt)
+    if len(chords) < 2:
+        return rooms, corridors, doors
+
+    w_min = CORRIDOR_SHORT_MIN_M * ppm
+    w_max = CORRIDOR_SHORT_MAX_M * ppm
+    remnant_min_pt = TRUNK_CARVE_REMNANT_MIN_M * ppm
+
+    new_corridors: list[Corridor] = []
+    remnant_rooms: list[Room] = []
+    removed_room_ids: set[str] = set()
+
+    for i in range(len(chords)):
+        for j in range(i + 1, len(chords)):
+            y_a, xa0, xa1, span_a = chords[i]
+            y_b, xb0, xb1, span_b = chords[j]
+            dy = abs(y_b - y_a)
+            if not (w_min <= dy <= w_max):
+                continue
+            ox0 = max(xa0, xb0)
+            ox1 = min(xa1, xb1)
+            overlap = ox1 - ox0
+            if overlap <= 0 or overlap < TRUNK_CARVE_OVERLAP_FRAC * max(span_a, span_b):
+                continue
+            y_lo, y_hi = min(y_a, y_b), max(y_a, y_b)
+            center = SPoint((ox0 + ox1) / 2.0, (y_lo + y_hi) / 2.0)
+
+            # GATE 1: the band must sit inside a polygonized room — the flooded
+            # host the corridor strip merged into. A band over open sheet (no host)
+            # is a margin artifact, not a corridor.
+            host: Room | None = None
+            for room in rooms:
+                if room.id in removed_room_ids:
+                    continue
+                try:
+                    if Polygon(room.polygon).contains(center):
+                        host = room
+                        break
+                except (ValueError, TypeError):
+                    continue
+            if host is None:
+                continue
+
+            hx0, hy0, hx1, hy1 = host.bbox
+            # GATE 2: a real room remnant on BOTH sides of the band. A band glued
+            # to the host's top or bottom wall (m14: remnant above == 0) is an edge
+            # feature, not a corridor flanked by rooms.
+            if (y_lo - hy0) < remnant_min_pt or (hy1 - y_hi) < remnant_min_pt:
+                continue
+            # GATE 3: no interior vertical crossing the band (m13: 3 verticals chop
+            # its band into furniture cells; a real corridor tube has none).
+            if _band_has_crossing_vertical(augmented, ox0, ox1, y_lo, y_hi):
+                continue
+
+            cx0, cx1 = max(ox0, hx0), min(ox1, hx1)
+            new_corridors.append(
+                Corridor(
+                    id=_new_id("corridor"),
+                    page_index=page_index,
+                    bbox=(cx0, y_lo, cx1, y_hi),
+                    polygon=[(cx0, y_lo), (cx1, y_lo), (cx1, y_hi), (cx0, y_hi), (cx0, y_lo)],
+                    min_width_m=round(dy / ppm, 2),
+                    confidence=0.75,
+                    uncertain=False,
+                )
+            )
+            # Replace the host with above/below remnants so the band isn't double
+            # counted as both room and corridor. GATE 2 guarantees both remnants
+            # clear remnant_min_pt; the floor below is a defensive degenerate guard.
+            removed_room_ids.add(host.id)
+            for ry0, ry1, keep_label in ((hy0, y_lo, True), (y_hi, hy1, False)):
+                if ry1 - ry0 < remnant_min_pt:
+                    continue
+                remnant_rooms.append(
+                    Room(
+                        id=_new_id("room"),
+                        page_index=page_index,
+                        bbox=(hx0, ry0, hx1, ry1),
+                        polygon=[(hx0, ry0), (hx1, ry0), (hx1, ry1), (hx0, ry1), (hx0, ry0)],
+                        area_m2=round((hx1 - hx0) * (ry1 - ry0) / (ppm * ppm), 2),
+                        label=host.label if keep_label else None,
+                        confidence=host.confidence,
+                        uncertain=host.uncertain,
+                    )
+                )
+
+    if not new_corridors:
+        return rooms, corridors, doors
+
+    rooms = [r for r in rooms if r.id not in removed_room_ids] + remnant_rooms
+    corridors = list(corridors) + new_corridors
+    # A door whose connected room was split no longer points at a live entity. Null
+    # the stale ref (connects already permits None). We do not re-point because the
+    # split is geometrically ambiguous; the door's bbox and surviving side stay.
+    cleaned_doors: list[Door] = []
+    for door in doors:
+        a, b = door.connects
+        if a in removed_room_ids or b in removed_room_ids:
+            door = door.model_copy(
+                update={
+                    "connects": (
+                        None if a in removed_room_ids else a,
+                        None if b in removed_room_ids else b,
+                    )
+                }
+            )
+        cleaned_doors.append(door)
+    return rooms, corridors, cleaned_doors
 
 
 def _classify_label(text: str) -> str | None:
@@ -563,6 +797,13 @@ def build_graph(
                 uncertain=confidence < 0.6,
             )
         )
+
+    # Recover a flooded trunk corridor (part 2 of the corridor-extraction
+    # milestone) before dimension binding, so a carved corridor can still receive
+    # a nearby dimension override. No-op on plans without a flooded trunk corridor.
+    rooms, corridors, doors = _carve_trunk_corridors(
+        rooms, corridors, doors, augmented, page, ppm, page_index
+    )
 
     dimensions, doors, corridors = _bind_dimensions_to_entities(
         page.texts, page_index, rooms, doors, corridors, ppm

@@ -265,6 +265,183 @@ def test_wide_opening_bridge_closes_wall_without_creating_a_door() -> None:
     ), "wide opening flanked by a short fragment must NOT be bridged"
 
 
+# --- Trunk-corridor carve (corridor-extraction milestone part 2, R7-BUG-003) ---
+
+
+def _sheet_entries(pdf: Path):
+    """Per-page graphs for a multi-page plan (the path the canonical multi-page
+    issue list consumes). build_graph alone only reads pages[0]."""
+    from archkg.graph.sheet_graphs import build_sheet_graphs
+    from archkg.ingest.sheet_classification import build_sheet_classification
+
+    prims = extract(pdf)
+    report = build_sheet_graphs(prims, build_sheet_classification(prims))
+    return {e.page_index: e for e in report.graphs}
+
+
+def _trunk_band_corridors(entry):
+    """Corridors in the trunk-corridor band: engine y~440-495, spanning most of
+    the sheet width."""
+    page_w = entry.graph.page_width_pt
+    return [
+        c
+        for c in entry.graph.corridors
+        if 435 <= c.bbox[1] and c.bbox[3] <= 500 and (c.bbox[2] - c.bbox[0]) >= 0.6 * page_w
+    ]
+
+
+def _sheet_corridor_count(pdf: Path) -> int:
+    return sum(len(e.graph.corridors) for e in _sheet_entries(pdf).values())
+
+
+def test_m16_page1_trunk_corridor_extracted() -> None:
+    """Part 2 of the corridor-extraction milestone: m16's PAGE-1 trunk corridor
+    is recovered by the post-polygonize carve. Its top wall has a 74pt opening
+    (> WIDE_GAP_MAX_PT) so it never closes and the strip floods into the room
+    band — naively forcing closure yields a 1.65m merged polygon that does not
+    fire the rule. The carve instead measures width from the two parallel wall
+    chords, giving the TRUE ~1.10m, and emits EXACTLY ONE corridor (no spurious
+    1.65m entity)."""
+    pdf = Path("samples/real_plans/test-m16-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m16 sample not present")
+    entries = _sheet_entries(pdf)
+    assert 1 in entries, "m16 must have a page-1 sheet graph"
+    band = _trunk_band_corridors(entries[1])
+    assert len(band) == 1, f"exactly one page-1 trunk corridor, got {[c.bbox for c in band]}"
+    width = band[0].min_width_m
+    assert width is not None and 1.0 <= width < 1.2, (
+        f"page-1 trunk corridor must be the TRUE ~1.10m (fires RC-CORRIDOR-WIDTH), not {width}"
+    )
+
+
+def test_m15_page1_trunk_corridor_extracted() -> None:
+    """m15 is byte-identical line geometry to m16, so its page-1 trunk corridor
+    must be recovered identically. Documents the duplicate fixture."""
+    pdf = Path("samples/real_plans/test-m15-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m15 sample not present")
+    entries = _sheet_entries(pdf)
+    assert 1 in entries
+    band = _trunk_band_corridors(entries[1])
+    assert len(band) == 1, f"exactly one page-1 trunk corridor, got {[c.bbox for c in band]}"
+    width = band[0].min_width_m
+    assert width is not None and 1.0 <= width < 1.2, width
+
+
+def test_m16_page0_not_double_carved() -> None:
+    """The carve must not add a second corridor on page-0, which already has its
+    part-1 wide-opening corridor and no flooded mega-room host for the carve."""
+    pdf = Path("samples/real_plans/test-m16-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m16 sample not present")
+    entries = _sheet_entries(pdf)
+    assert len(entries[0].graph.corridors) == 1, (
+        "page-0 must keep exactly its single part-1 corridor"
+    )
+
+
+def test_m16_page1_corridor_width_issue_fires() -> None:
+    """End-to-end recall proof: the page-1 trunk corridor surfaces as a real
+    RC-CORRIDOR-WIDTH issue on page_index=1 via the canonical multi-page path."""
+    pdf = Path("samples/real_plans/test-m16-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m16 sample not present")
+    from archkg.graph.sheet_graphs import build_sheet_graphs
+    from archkg.ingest.sheet_classification import build_sheet_classification
+    from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.rules.sheet_issues import merge_sheet_issues
+
+    prims = extract(pdf)
+    sheet = build_sheet_graphs(prims, build_sheet_classification(prims))
+    project = build_graph(prims)
+    standards = load_standards()
+    rules = load_rules(standards=standards)
+    result = merge_sheet_issues(sheet, project, rules, standards)
+    page1_corridor_issues = [
+        i
+        for i in result.issues
+        if i.rule_card_id == "RC-CORRIDOR-WIDTH" and i.page_index == 1
+    ]
+    assert page1_corridor_issues, "the page-1 trunk corridor must fire RC-CORRIDOR-WIDTH"
+
+
+def test_trunk_carve_is_fp_neutral_on_control_plans(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The carve must change NOTHING on the control set — per-page corridor counts
+    with the carve must equal counts with the carve disabled. Direct no-op proof,
+    so no hardcoded baseline can rot. The cambridge plans are the priority guard
+    (real drawings, no ground truth); m13/m14 are the phantom sinks."""
+    import archkg.graph.builder as builder
+
+    controls = [
+        "samples/real_plans/cambridge-2garden-existing-overview.pdf",
+        "samples/real_plans/cambridge-343medford-overview.pdf",
+        "samples/real_plans/cambridge-sp336-basement.pdf",
+        "samples/real_plans/test-m13-defective-plan.pdf",
+        "samples/real_plans/test-m14-defective-plan.pdf",
+    ]
+    for path in controls:
+        pdf = Path(path)
+        if not pdf.exists():
+            pytest.skip(f"{path} not present")
+        with_carve = _sheet_corridor_count(pdf)
+        monkeypatch.setattr(builder, "_carve_trunk_corridors", lambda r, c, d, *a, **k: (r, c, d))
+        without_carve = _sheet_corridor_count(pdf)
+        monkeypatch.undo()
+        assert with_carve == without_carve, (
+            f"{pdf.name}: carve changed corridor count {without_carve} -> {with_carve} (FP)"
+        )
+
+
+def test_trunk_carve_gate_remnant_is_load_bearing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ablation pin: the remnant-both-sides gate is what rejects m14's edge-glued
+    band. Disabling it (REMNANT_MIN_M=0) must re-introduce a phantom corridor on
+    m14 — proving the gate carries FP-control, not a coincidence."""
+    import archkg.graph.builder as builder
+
+    pdf = Path("samples/real_plans/test-m14-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m14 sample not present")
+    base = _sheet_corridor_count(pdf)
+    monkeypatch.setattr(builder, "TRUNK_CARVE_REMNANT_MIN_M", 0.0)
+    ablated = _sheet_corridor_count(pdf)
+    assert ablated > base, "disabling the remnant gate must surface m14's phantom band"
+
+
+def test_trunk_carve_gate_crossing_is_load_bearing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ablation pin: the no-crossing-verticals gate is what rejects m13's band
+    (chopped into furniture cells by 3 interior verticals). Disabling it
+    (CROSS_FRAC huge → nothing counts as a crossing) must re-introduce a phantom
+    corridor on m13."""
+    import archkg.graph.builder as builder
+
+    pdf = Path("samples/real_plans/test-m13-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m13 sample not present")
+    base = _sheet_corridor_count(pdf)
+    monkeypatch.setattr(builder, "TRUNK_CARVE_CROSS_FRAC", 10.0)
+    ablated = _sheet_corridor_count(pdf)
+    assert ablated > base, "disabling the crossing gate must surface m13's phantom band"
+
+
+def test_trunk_carve_thresholds_pinned() -> None:
+    """Pin the verified FP-neutral operating point so an accidental retune fails
+    loudly (mirrors test_wide_opening_thresholds_pinned). The width window reuses
+    the corridor classifier's band — verified non-overfit (widening it changes
+    nothing on any control plan), so the discriminators below carry FP-control."""
+    import archkg.graph.builder as builder
+
+    assert builder.TRUNK_CARVE_SPAN_FRAC == 0.5
+    assert builder.TRUNK_CARVE_FILL_FRAC == 0.5
+    assert builder.TRUNK_CARVE_OVERLAP_FRAC == 0.5
+    assert builder.TRUNK_CARVE_REMNANT_MIN_M == 0.5
+    assert builder.TRUNK_CARVE_CROSS_FRAC == 0.6
+    # The carve's width window is the classifier's corridor band, not a fixture
+    # window centered on 1.10m.
+    assert builder.CORRIDOR_SHORT_MIN_M == 0.5
+    assert builder.CORRIDOR_SHORT_MAX_M == 2.0
+
+
 def test_min_room_area_filter_drops_sub_threshold_polygons(sample_pdf: Path) -> None:
     """Phase 19-D: ``min_room_area_m2`` is a noise filter for real CAD
     PDFs. The synthetic sample has 4 rooms at 14.75-20 m² so a 10 m²

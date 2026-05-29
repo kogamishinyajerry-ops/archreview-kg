@@ -1,26 +1,65 @@
 # Milestone scope — real-corridor extraction (R7-BUG-003)
 
-> Status: **PART 1 LANDED (2026-05-29).** The wide-opening repair is implemented in
-> `archkg/graph/geometry.py` (`bridge_door_gaps` + `LONG_RUN_PT`/`WIDE_GAP_MAX_PT`):
-> m16/m15 ground-floor corridors are now extracted, audit recall **25% → 50%**,
-> verified **issue-level FP-neutral** on the cambridge / m10-m14 control set.
-> Acceptance gate `tests/test_graph_builder.py::test_m16_real_corridor_extracted`
-> now PASSES (xfail removed). **Remaining (part 2):** the m16/m15 **page-1 trunk
-> corridor** is still missed — page-1's sheet graph extracts 0 corridors (the full-
-> width single trunk corridor has a page-1-specific wall-gap topology the current
-> wide-opening repair doesn't close), plus p1 bedroom-door positions and the
-> RC-BEDROOM-AREA matcher gap. See "Remaining work" below.
-> Authored 2026-05-29 after a diagnosis workflow + independent verification + an
-> FP-controlled closure-candidate workflow. This was the deepest recall gap the
-> M11–M16 audits repeatedly deferred.
+> Status: **PARTS 1 + 2 LANDED (2026-05-29).** Part 1 (wide-opening repair in
+> `archkg/graph/geometry.py`) extracts the m16/m15 **page-0** ground-floor
+> corridors; part 2 (trunk-corridor carve in `archkg/graph/builder.py`) recovers
+> the m16/m15 **page-1** trunk corridor that part 1 could not close. Both are
+> verified **issue-level FP-neutral** on the cambridge / m10-m14 control set (at
+> `min_room_area_m2` 0.0 AND 1.0). Acceptance gates
+> `tests/test_graph_builder.py::test_m16_real_corridor_extracted` (page-0) and
+> `::test_m16_page1_trunk_corridor_extracted` (page-1) both pass.
+> **Remaining (part 3, lower priority):** p1 bedroom-door positions don't match
+> intended, and the RC-BEDROOM-AREA matcher gap. See "Remaining work" below.
+> Authored 2026-05-29 after a diagnosis workflow + independent verification + two
+> FP-controlled candidate workflows (closure, then carve). This was the deepest
+> recall gap the M11–M16 audits repeatedly deferred.
 
 ## What landed (part 1)
 
 The verified FP-neutral closure (workflow `corridor-closure-fp-controlled` Candidate 2, then independently re-measured and **refined to fix an FP the workflow missed**): a horizontal-only additive pass in `bridge_door_gaps` that bridges a wide gap (up to `WIDE_GAP_MAX_PT=70pt`) **only when flanked on both sides by long collinear wall runs (`LONG_RUN_PT=150pt`)**. Critically the wide bridge is appended to `augmented` (wall closure for polygonize) **but not to `bridges`** — so it never creates a Door entity. The workflow's corridor-only FP measurement had passed Candidate 2, but my issue-level re-measurement found the door-creating form added spurious RC-DOOR-WIDTH issues on m10 (0.75m) and m14 (0.85m) via dimension binding; the augmented-only form is issue-level FP-neutral (0 new issues on every geometrically-distinct control plan).
 
-## Remaining work (part 2 — page-1 trunk corridor + door/area gaps)
+## What landed (part 2 — page-1 trunk corridor carve)
 
-## The gap
+The m16/m15 **page-1** trunk corridor was still missed after part 1: its top wall
+has a **74pt (1.48m) opening** that exceeds `WIDE_GAP_MAX_PT=70`, so the wall never
+closes and `polygonize` floods the corridor strip into the room band. Naively
+raising the wide ceiling to catch the 74pt gap closes the top wall but yields a
+**1.65m merged polygon** (the strip merges downward through the debris-laden
+bottom wall into the room below) — which is `>= 1.20m` so it fires **nothing**:
+useless for recall, and it adds FP risk. Three candidate fixes were prototyped in
+an FP-controlled workflow (raise-ceiling-and-close-both-walls; re-measure width
+from wall chords; post-polygonize carve). The first two were rejected — the
+ceiling-raise leaves a spurious 1.65m entity, and post-hoc width re-measurement is
+**inseparable from an m14 false positive** (m14/m15/m16 share the same band
+geometry; any re-measure that catches m16-p1 also lights m14).
+
+The **post-polygonize carve** (`_carve_trunk_corridors` in `builder.py`, run before
+dimension binding) won: it detects the corridor directly from its defining
+geometry — two long, mostly-covered parallel wall chords a corridor-width apart —
+and carves that band out of the flooded host room, measuring width from the
+**chord gap** (so it reports the TRUE ~1.10m regardless of whether the wall
+closed). Three discriminators carry FP-control (each verified load-bearing by
+ablation, pinned by `test_trunk_carve_gate_*_is_load_bearing`):
+
+1. **host-room** — the band must sit inside a polygonized room (the flooded host);
+2. **remnant-both-sides** — a real room remnant ≥0.5m above AND below the band
+   (rejects bands glued to a room edge, e.g. m14);
+3. **no-crossing-verticals** — no interior vertical crosses ≥60% of the band height
+   (rejects furniture/fixture clusters chopped into cells, e.g. m13).
+
+The width window reuses the corridor classifier's `CORRIDOR_SHORT_MIN_M..MAX_M`
+(0.5–2.0m), **not** a fixture-centered window: independently verified that widening
+it to the full corridor band changes nothing on any control plan, so the
+discriminators — not the width — do the FP-control work. Result (independently
+re-measured at issue level, not trusting the workflow): m16/m15 page-1 gains
+**exactly one** corridor at 1.10m firing both corridor-width rules (+2 issues);
+**every** control plan (cambridge×3, m10, m12, m13, m14, sample_clean) byte-
+unchanged in total issues AND corridor counts at `min_room_area_m2` ∈ {0.0, 1.0};
+0 dangling door refs; page-0 not double-carved. 581 tests green.
+
+## Remaining work (part 3 — door/area gaps)
+
+## The gap (part 1, historical — page-0, now closed)
 
 On `samples/real_plans/test-m16-defective-plan.pdf` the engine extracts **0 of 3** real corridors, so `RC-CORRIDOR-WIDTH` recall is ~0. (The phantom "corridors" that previously fired were border/legend bands, removed by the `_is_sheet_edge_band` fix; their removal corrected the m16 headline recall from a phantom-inflated 62.5% to an honest 25%.)
 
