@@ -341,6 +341,45 @@ def test_m16_page0_not_double_carved() -> None:
     )
 
 
+def test_trunk_carve_remnants_clip_to_host_polygon_not_bbox() -> None:
+    """Codex review R0 [P1]: after carving, the room remnants must be the host
+    polygon MINUS the band (clipped to host.polygon), NOT full-width rectangles
+    from host.bbox. An irregular flooded host (m16 p1: 81 m² polygon vs 236 m²
+    bbox) would otherwise manufacture room area never enclosed by walls and
+    blanket the sibling rooms polygonize already found (measured 155 m² of room
+    overlap). Pin: ~zero room/corridor overlap and stored area == polygon area."""
+    from shapely.geometry import Polygon as _Poly
+
+    pdf = Path("samples/real_plans/test-m16-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m16 sample not present")
+    entry = _sheet_entries(pdf)[1]
+    ppm = entry.graph.points_per_meter
+    polys = [_Poly(r.polygon) for r in entry.graph.rooms] + [
+        _Poly(c.polygon) for c in entry.graph.corridors
+    ]
+    overlap_m2 = (
+        sum(
+            polys[i].intersection(polys[j]).area
+            for i in range(len(polys))
+            for j in range(i + 1, len(polys))
+        )
+        / (ppm * ppm)
+    )
+    assert overlap_m2 < 0.5, (
+        f"carved page-1 rooms/corridors overlap by {overlap_m2:.1f} m^2 — "
+        "bbox-rectangle remnant regression (Codex P1)"
+    )
+    for room in entry.graph.rooms:
+        if room.area_m2 is None:
+            continue
+        poly_area = _Poly(room.polygon).area / (ppm * ppm)
+        assert abs(room.area_m2 - poly_area) < 0.5, (
+            f"room {room.id} stored area {room.area_m2} != polygon area {poly_area:.1f} "
+            "(remnant built from bbox, not host polygon)"
+        )
+
+
 def test_m16_page1_corridor_width_issue_fires() -> None:
     """End-to-end recall proof: the page-1 trunk corridor surfaces as a real
     RC-CORRIDOR-WIDTH issue on page_index=1 via the canonical multi-page path."""

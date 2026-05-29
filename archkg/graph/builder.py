@@ -32,6 +32,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 from shapely.geometry import LineString, Polygon
 from shapely.geometry import Point as SPoint
+from shapely.geometry import box as sbox
 
 from archkg.graph.geometry import (
     bridge_door_gaps,
@@ -305,6 +306,7 @@ def _carve_trunk_corridors(
     page: PagePrimitives,
     ppm: float,
     page_index: int,
+    min_room_area_m2: float,
 ) -> tuple[list[Room], list[Corridor], list[Door]]:
     """Recover a corridor that ``polygonize`` failed to isolate because its long
     bounding wall has an opening wider than any bridge closes, so the corridor
@@ -322,6 +324,10 @@ def _carve_trunk_corridors(
     w_min = CORRIDOR_SHORT_MIN_M * ppm
     w_max = CORRIDOR_SHORT_MAX_M * ppm
     remnant_min_pt = TRUNK_CARVE_REMNANT_MIN_M * ppm
+    # Remnant area floor mirrors build_graph's two-tier room filter: the
+    # polygonize floor (~0.25 m²) plus the caller's min_room_area_m2. Drops the
+    # thin slivers a difference() can shed at the band edges.
+    area_floor_pt2 = max((0.5 * ppm) ** 2, min_room_area_m2 * ppm * ppm)
 
     new_corridors: list[Corridor] = []
     remnant_rooms: list[Room] = []
@@ -346,16 +352,19 @@ def _carve_trunk_corridors(
             # host the corridor strip merged into. A band over open sheet (no host)
             # is a margin artifact, not a corridor.
             host: Room | None = None
+            host_poly: Polygon | None = None
             for room in rooms:
                 if room.id in removed_room_ids:
                     continue
                 try:
-                    if Polygon(room.polygon).contains(center):
+                    candidate = Polygon(room.polygon)
+                    if candidate.contains(center):
                         host = room
+                        host_poly = candidate
                         break
                 except (ValueError, TypeError):
                     continue
-            if host is None:
+            if host is None or host_poly is None:
                 continue
 
             hx0, hy0, hx1, hy1 = host.bbox
@@ -370,6 +379,7 @@ def _carve_trunk_corridors(
                 continue
 
             cx0, cx1 = max(ox0, hx0), min(ox1, hx1)
+            corridor_box = sbox(cx0, y_lo, cx1, y_hi)
             new_corridors.append(
                 Corridor(
                     id=_new_id("corridor"),
@@ -381,23 +391,30 @@ def _carve_trunk_corridors(
                     uncertain=False,
                 )
             )
-            # Replace the host with above/below remnants so the band isn't double
-            # counted as both room and corridor. GATE 2 guarantees both remnants
-            # clear remnant_min_pt; the floor below is a defensive degenerate guard.
+            # Replace the host with its remainder MINUS the carved band, using the
+            # host's TRUE (irregular) polygon — NOT its bounding box, which would
+            # blanket and overlap the sibling rooms polygonize already found around
+            # the flood (a real defect: the bbox remnants over-reported area by ~2.6x
+            # and created ~155 m^2 of room overlap on m16). The host is a mis-merge
+            # artifact, so its label is not reliably attributable to either side:
+            # drop it (a flooded mega-room is never a real labelled room that should
+            # drive a room-area verdict).
             removed_room_ids.add(host.id)
-            for ry0, ry1, keep_label in ((hy0, y_lo, True), (y_hi, hy1, False)):
-                if ry1 - ry0 < remnant_min_pt:
+            remainder = host_poly.difference(corridor_box)
+            for part in getattr(remainder, "geoms", [remainder]):
+                if part.is_empty or part.geom_type != "Polygon" or part.area < area_floor_pt2:
                     continue
+                px0, py0, px1, py1 = part.bounds
                 remnant_rooms.append(
                     Room(
                         id=_new_id("room"),
                         page_index=page_index,
-                        bbox=(hx0, ry0, hx1, ry1),
-                        polygon=[(hx0, ry0), (hx1, ry0), (hx1, ry1), (hx0, ry1), (hx0, ry0)],
-                        area_m2=round((hx1 - hx0) * (ry1 - ry0) / (ppm * ppm), 2),
-                        label=host.label if keep_label else None,
+                        bbox=(px0, py0, px1, py1),
+                        polygon=[(float(x), float(y)) for x, y in part.exterior.coords],
+                        area_m2=round(part.area / (ppm * ppm), 2),
+                        label=None,
                         confidence=host.confidence,
-                        uncertain=host.uncertain,
+                        uncertain=True,
                     )
                 )
 
@@ -802,7 +819,7 @@ def build_graph(
     # milestone) before dimension binding, so a carved corridor can still receive
     # a nearby dimension override. No-op on plans without a flooded trunk corridor.
     rooms, corridors, doors = _carve_trunk_corridors(
-        rooms, corridors, doors, augmented, page, ppm, page_index
+        rooms, corridors, doors, augmented, page, ppm, page_index, min_room_area_m2
     )
 
     dimensions, doors, corridors = _bind_dimensions_to_entities(

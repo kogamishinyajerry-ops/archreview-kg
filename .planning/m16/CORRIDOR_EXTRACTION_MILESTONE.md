@@ -5,8 +5,10 @@
 > corridors; part 2 (trunk-corridor carve in `archkg/graph/builder.py`) recovers
 > the m16/m15 **page-1** trunk corridor that part 1 could not close. Both are
 > verified **issue-level FP-neutral** on the cambridge / m10-m14 control set (at
-> `min_room_area_m2` 0.0 AND 1.0). Acceptance gates
-> `tests/test_graph_builder.py::test_m16_real_corridor_extracted` (page-0) and
+> `min_room_area_m2` 0.0 AND 1.0). m16 audit **recall 25% → 50% (part 1) → 62.5%
+> (part 2), title-block FP 0** — the honest number, not phantom-inflated; the 3
+> remaining misses are all part-3 (p1 door positions + RC-BEDROOM-AREA). Acceptance
+> gates `tests/test_graph_builder.py::test_m16_real_corridor_extracted` (page-0) and
 > `::test_m16_page1_trunk_corridor_extracted` (page-1) both pass.
 > **Remaining (part 3, lower priority):** p1 bedroom-door positions don't match
 > intended, and the RC-BEDROOM-AREA matcher gap. See "Remaining work" below.
@@ -55,7 +57,20 @@ re-measured at issue level, not trusting the workflow): m16/m15 page-1 gains
 **exactly one** corridor at 1.10m firing both corridor-width rules (+2 issues);
 **every** control plan (cambridge×3, m10, m12, m13, m14, sample_clean) byte-
 unchanged in total issues AND corridor counts at `min_room_area_m2` ∈ {0.0, 1.0};
-0 dangling door refs; page-0 not double-carved. 581 tests green.
+0 dangling door refs; page-0 not double-carved. 582 tests green.
+
+**Codex governance review (gpt-5.4 xhigh, commit `20e5c37`) — 1×[P1], fixed:**
+the room remnants left after carving were rebuilt as full-width rectangles from
+`host.bbox`, but the flooded host is an irregular polygon (m16 p1: 81 m² polygon
+vs 236 m² bbox), so the bbox remnants manufactured room area never enclosed by
+walls and overlapped the sibling rooms polygonize already found (measured 155 m²
+of room overlap — invisible at the issue level because the remnants are unlabelled,
+which is why my own issue-level re-measurement missed it; cross-source review
+caught it). Fixed by clipping the remnant to `host_poly.difference(corridor_box)`
+(true geometry, disjoint from siblings) and dropping the label (a flooded
+mega-room artifact can't attribute its label to either side). Re-verified: room+
+corridor overlap **155 m² → 0 m²**, every remnant's stored area == its polygon
+area, issues still 16→18, pinned by `test_trunk_carve_remnants_clip_to_host_polygon_not_bbox`.
 
 ## Remaining work (part 3 — door/area gaps)
 
