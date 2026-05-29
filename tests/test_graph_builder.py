@@ -208,10 +208,12 @@ def test_m15_real_corridor_extracted() -> None:
 
 
 def test_wide_opening_repair_is_fp_neutral_on_control_plans() -> None:
-    """FP control for the wide-opening repair (R7-BUG-003): corridor counts on
-    geometrically-distinct control plans must NOT increase. The cambridge plans
-    are the priority guard (real drawings, no ground truth); m13/m14 are the
-    phantom sinks rejected closure candidates fell into."""
+    """FP control for all three corridor-extraction passes (R7-BUG-003): corridor
+    counts on plans with NO intended trunk corridor must NOT increase. The cambridge
+    plans are the priority guard (real drawings, no ground truth). m13/m14 were once
+    in this set but part 3 legitimately extracts their real split trunk corridors,
+    so they moved to test_split_trunk_corridors_extracted; here they would be a
+    phantom-vs-real confound."""
     baseline = {
         "samples/real_plans/cambridge-2garden-existing-overview.pdf": 2,
         "samples/real_plans/cambridge-343medford-overview.pdf": 9,
@@ -219,8 +221,6 @@ def test_wide_opening_repair_is_fp_neutral_on_control_plans() -> None:
         "samples/sample_clean.pdf": 1,
         "samples/real_plans/test-m10-defective-plan.pdf": 8,
         "samples/real_plans/test-m12-defective-plan.pdf": 4,
-        "samples/real_plans/test-m13-defective-plan.pdf": 13,
-        "samples/real_plans/test-m14-defective-plan.pdf": 0,
     }
     for path, expected in baseline.items():
         pdf = Path(path)
@@ -228,6 +228,68 @@ def test_wide_opening_repair_is_fp_neutral_on_control_plans() -> None:
             pytest.skip(f"{path} not present")
         n = len(build_graph(extract(pdf)).corridors)
         assert n == expected, f"{pdf.name}: corridor count {n} != FP-control baseline {expected}"
+
+
+def test_split_trunk_corridors_extracted() -> None:
+    """Part 3 of the corridor-extraction milestone: the m13/m14 trunk corridors —
+    8 of the 17 real perception gaps in the corpus decomposition — are recovered by
+    the per-host band carve. m13's trunk is physically split by the elevator lobby
+    into west + east halves (two corridors @1.00m); m14's trunk has no interior
+    divider so it is ONE continuous corridor @1.10m covering both labelled regions
+    (forcing a split would fabricate a divider indistinguishable from door jambs).
+    All fire RC-CORRIDOR-WIDTH (<1.20m)."""
+    m13 = Path("samples/real_plans/test-m13-defective-plan.pdf")
+    m14 = Path("samples/real_plans/test-m14-defective-plan.pdf")
+    if not (m13.exists() and m14.exists()):
+        pytest.skip("m13/m14 samples not present")
+    g13 = build_graph(extract(m13))
+    # m13: two new trunk-half corridors at engine y~435-485, ~1.00m, on either
+    # side of the central lobby (west ends near x570, east starts near x670).
+    trunk13 = [
+        c
+        for c in g13.corridors
+        if 430 <= c.bbox[1] and c.bbox[3] <= 490 and c.min_width_m is not None and c.min_width_m < 1.2
+        and (c.bbox[2] - c.bbox[0]) >= 300
+    ]
+    west = [c for c in trunk13 if c.bbox[2] <= 620]
+    east = [c for c in trunk13 if c.bbox[0] >= 620]
+    assert west, f"m13 west trunk half not extracted; trunk corridors={[c.bbox for c in trunk13]}"
+    assert east, f"m13 east trunk half not extracted; trunk corridors={[c.bbox for c in trunk13]}"
+    assert len(g13.corridors) == 15, f"m13 corridor count {len(g13.corridors)} != 15"
+
+    g14 = build_graph(extract(m14))
+    # m14: exactly one continuous trunk corridor spanning both west and east.
+    trunk14 = [
+        c
+        for c in g14.corridors
+        if 435 <= c.bbox[1] and c.bbox[3] <= 500 and (c.bbox[2] - c.bbox[0]) >= 0.6 * g14.page_width_pt
+    ]
+    assert len(trunk14) == 1, f"m14 trunk should be one continuous corridor, got {[c.bbox for c in trunk14]}"
+    c14 = trunk14[0]
+    assert c14.min_width_m is not None and c14.min_width_m < 1.2, c14.min_width_m
+    assert c14.bbox[0] <= 200 and c14.bbox[2] >= 900, "m14 trunk must span both west and east regions"
+
+
+def test_host_band_carve_open_gate_is_fp_neutral_on_343medford() -> None:
+    """The decisive anti-phantom gate (HOST_CARVE_OPEN_FRAC): the per-host carve
+    must NOT manufacture a corridor in cambridge-343medford's 62.9 m² irregular
+    room, where the naive carve (without the open-band gate) produces a degenerate
+    sliver phantom (9 -> 10). Pins HOST_CARVE_OPEN_FRAC's necessity."""
+    pdf = Path("samples/real_plans/cambridge-343medford-overview.pdf")
+    if not pdf.exists():
+        pytest.skip("343medford sample not present")
+    assert len(build_graph(extract(pdf)).corridors) == 9, "open-band gate must keep 343medford at 9 corridors"
+
+
+def test_host_band_carve_thresholds_pinned() -> None:
+    """Pin the part-3 host-band-carve operating point; an accidental retune fails
+    loudly. HOST_CARVE_OPEN_FRAC is the decisive anti-phantom gate."""
+    import archkg.graph.builder as builder
+
+    assert builder.HOST_CARVE_MIN_AREA_M2 == 30.0
+    assert builder.HOST_CARVE_CHORD_EXTENT_FRAC == 0.70
+    assert builder.HOST_CARVE_OPEN_FRAC == 0.60
+    assert builder.HOST_CARVE_ASPECT_MIN == 3.0
 
 
 def test_wide_opening_thresholds_pinned() -> None:
@@ -432,35 +494,48 @@ def test_trunk_carve_is_fp_neutral_on_control_plans(monkeypatch: pytest.MonkeyPa
         )
 
 
+def _disable_part3(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Isolate the part-2 carve: no-op the part-3 host-band pass. (Part 3 now
+    legitimately extracts the m13/m14 trunk corridors, so without isolating it the
+    part-2 ablations below are confounded — the corridor appears via part 3
+    regardless of the part-2 gate.)"""
+    import archkg.graph.builder as builder
+
+    monkeypatch.setattr(builder, "_carve_host_band_corridors", lambda r, c, d, *a, **k: (r, c, d))
+
+
 def test_trunk_carve_gate_remnant_is_load_bearing(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Ablation pin: the remnant-both-sides gate is what rejects m14's edge-glued
-    band. Disabling it (REMNANT_MIN_M=0) must re-introduce a phantom corridor on
-    m14 — proving the gate carries FP-control, not a coincidence."""
+    """Ablation pin (part-2 isolated): the remnant-both-sides gate keeps the part-2
+    carve conservative — it declines m14's edge-glued band (deferring it to part 3).
+    Disabling it (REMNANT_MIN_M=0) makes part 2 itself carve m14, proving the gate
+    is load-bearing, not coincidental."""
     import archkg.graph.builder as builder
 
     pdf = Path("samples/real_plans/test-m14-defective-plan.pdf")
     if not pdf.exists():
         pytest.skip("m14 sample not present")
+    _disable_part3(monkeypatch)
     base = _sheet_corridor_count(pdf)
     monkeypatch.setattr(builder, "TRUNK_CARVE_REMNANT_MIN_M", 0.0)
     ablated = _sheet_corridor_count(pdf)
-    assert ablated > base, "disabling the remnant gate must surface m14's phantom band"
+    assert ablated > base, "disabling the remnant gate must make part 2 carve m14's band"
 
 
 def test_trunk_carve_gate_crossing_is_load_bearing(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Ablation pin: the no-crossing-verticals gate is what rejects m13's band
-    (chopped into furniture cells by 3 interior verticals). Disabling it
-    (CROSS_FRAC huge → nothing counts as a crossing) must re-introduce a phantom
-    corridor on m13."""
+    """Ablation pin (part-2 isolated): the no-crossing-verticals gate keeps the
+    part-2 carve from spanning m13's lobby-divided band. Disabling it (CROSS_FRAC
+    huge → nothing counts as a crossing) makes part 2 carve m13, proving the gate is
+    load-bearing."""
     import archkg.graph.builder as builder
 
     pdf = Path("samples/real_plans/test-m13-defective-plan.pdf")
     if not pdf.exists():
         pytest.skip("m13 sample not present")
+    _disable_part3(monkeypatch)
     base = _sheet_corridor_count(pdf)
     monkeypatch.setattr(builder, "TRUNK_CARVE_CROSS_FRAC", 10.0)
     ablated = _sheet_corridor_count(pdf)
-    assert ablated > base, "disabling the crossing gate must surface m13's phantom band"
+    assert ablated > base, "disabling the crossing gate must make part 2 carve m13's band"
 
 
 def test_trunk_carve_thresholds_pinned() -> None:

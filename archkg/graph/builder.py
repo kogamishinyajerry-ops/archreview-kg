@@ -111,6 +111,28 @@ TRUNK_CARVE_CROSS_FRAC = 0.6         # a vertical covering >= this frac of band 
 TRUNK_CARVE_CROSS_EDGE_MARGIN_PT = 20.0  # ignore verticals within this of the band x-edges (room end-walls)
 TRUNK_CARVE_Y_TOL = 3.0              # collinearity tolerance when clustering horizontal chords
 
+# Host-band carve (corridor-extraction milestone part 3, R7-BUG-003). The part-2
+# carve above uses a PAGE-relative span gate (a chord must span >= half the sheet),
+# which misses a *split* trunk corridor whose halves each span only ~40% of the
+# page (m13 west/east, divided by a real elevator-lobby wall; m14's single full
+# band is missed instead on the remnant gate). This additive second pass re-scopes
+# the same chord-pair detection to the INTERIOR of a large flooded host room, so a
+# half that spans most of *its host* (but <50% of the page) qualifies. It runs
+# AFTER the part-2 carve and skips bands already covered by an existing corridor,
+# so m15/m16's part-2 trunk is preserved byte-for-byte. The decisive anti-phantom
+# gate is HOST_CARVE_OPEN_FRAC: the carved strip must be a genuinely OPEN area
+# inside the host polygon (not a thin edge sliver of an irregular room) — without
+# it a 62.9 m² cambridge-343medford room carves a degenerate phantom. Calibrated +
+# verified FP-clean on the cambridge / m10-m12 control set; see
+# .planning/CORPUS_RECALL_DECOMPOSITION.md (the m13/m14 trunk-corridor cluster).
+HOST_CARVE_MIN_AREA_M2 = 30.0        # only generalize inside a large flooded host room
+HOST_CARVE_CHORD_EXTENT_FRAC = 0.70  # a host-clipped wall chord must span >= this fraction of host width
+HOST_CARVE_CHORD_COVER_FRAC = 0.80   # covered length / extent of the host-clipped chord
+HOST_CARVE_ASPECT_MIN = 3.0          # carved strip length / width >= this (a tube, not a blob)
+HOST_CARVE_OPEN_FRAC = 0.60          # strip ∩ host area >= this * strip area (genuinely open band, not a sliver)
+HOST_CARVE_OVERLAP_FRAC = 0.30       # skip if strip overlaps an existing corridor by > this * strip area
+HOST_CARVE_CROSS_EDGE_MARGIN_PT = 25.0  # crossing-test edge margin for host end-walls / lobby walls
+
 # Codex P19-D R7 P1 (both findings): the right adjacency check is "does the
 # polygon boundary CONTAIN the bridge segment?", not "is the polygon
 # boundary close enough at any point" (a polygon touching only one
@@ -277,12 +299,14 @@ def _band_has_crossing_vertical(
     x1: float,
     y_lo: float,
     y_hi: float,
+    *,
+    edge_margin_pt: float = TRUNK_CARVE_CROSS_EDGE_MARGIN_PT,
 ) -> bool:
     """True if an interior vertical segment crosses >= ``TRUNK_CARVE_CROSS_FRAC``
-    of the band height. Verticals within ``TRUNK_CARVE_CROSS_EDGE_MARGIN_PT`` of
-    the band x-edges are ignored — those are the room's own end-walls. A genuine
-    interior crossing means the band is chopped into cells (furniture / fixtures),
-    not an open traversable corridor tube.
+    of the band height. Verticals within ``edge_margin_pt`` of the band x-edges are
+    ignored — those are the room's own end-walls. A genuine interior crossing means
+    the band is chopped into cells (furniture / fixtures), not an open traversable
+    corridor tube.
     """
     need = TRUNK_CARVE_CROSS_FRAC * (y_hi - y_lo)
     for seg in segments:
@@ -290,7 +314,7 @@ def _band_has_crossing_vertical(
             continue
         (sx0, sy0), (sx1, sy1) = seg
         xc = (sx0 + sx1) / 2.0
-        if not (x0 + TRUNK_CARVE_CROSS_EDGE_MARGIN_PT < xc < x1 - TRUNK_CARVE_CROSS_EDGE_MARGIN_PT):
+        if not (x0 + edge_margin_pt < xc < x1 - edge_margin_pt):
             continue
         sy_lo, sy_hi = min(sy0, sy1), max(sy0, sy1)
         if min(sy_hi, y_hi) - max(sy_lo, y_lo) >= need:
@@ -426,6 +450,182 @@ def _carve_trunk_corridors(
     # A door whose connected room was split no longer points at a live entity. Null
     # the stale ref (connects already permits None). We do not re-point because the
     # split is geometrically ambiguous; the door's bbox and surviving side stay.
+    cleaned_doors: list[Door] = []
+    for door in doors:
+        a, b = door.connects
+        if a in removed_room_ids or b in removed_room_ids:
+            door = door.model_copy(
+                update={
+                    "connects": (
+                        None if a in removed_room_ids else a,
+                        None if b in removed_room_ids else b,
+                    )
+                }
+            )
+        cleaned_doors.append(door)
+    return rooms, corridors, cleaned_doors
+
+
+def _host_clipped_chords(
+    segments: list[tuple[tuple[float, float], tuple[float, float]]],
+    hx0: float,
+    hx1: float,
+) -> list[tuple[float, float, float, float]]:
+    """Like :func:`_long_horizontal_chords` but scoped to a single host room: each
+    horizontal segment is clipped to the host x-range ``[hx0, hx1]`` and the span /
+    coverage gates are measured against the HOST width, not the page width. This is
+    what lets a split-trunk half that spans most of *its host* (but <50% of the
+    page) qualify. Returns ``[(y, x_min, x_max, extent), ...]`` sorted by y.
+    """
+    host_w = hx1 - hx0
+    if host_w <= 0:
+        return []
+    items: list[tuple[float, float, float]] = []
+    for (x0, y0), (x1, y1) in segments:
+        if abs(y0 - y1) > TRUNK_CARVE_Y_TOL:
+            continue
+        cx0, cx1 = max(hx0, min(x0, x1)), min(hx1, max(x0, x1))
+        if cx1 - cx0 <= 0:
+            continue
+        items.append(((y0 + y1) / 2.0, cx0, cx1))
+    items.sort()
+    levels: list[tuple[float, list[tuple[float, float]]]] = []
+    for yc, x0, x1 in items:
+        for level_y, ivs in levels:
+            if abs(level_y - yc) <= TRUNK_CARVE_Y_TOL:
+                ivs.append((x0, x1))
+                break
+        else:
+            levels.append((yc, [(x0, x1)]))
+    chords: list[tuple[float, float, float, float]] = []
+    for yc, ivs in levels:
+        merged = _merge_intervals(ivs)
+        x_min = min(a for a, _ in merged)
+        x_max = max(b for _, b in merged)
+        extent = x_max - x_min
+        covered = sum(b - a for a, b in merged)
+        if extent >= HOST_CARVE_CHORD_EXTENT_FRAC * host_w and covered >= HOST_CARVE_CHORD_COVER_FRAC * extent:
+            chords.append((yc, x_min, x_max, extent))
+    chords.sort()
+    return chords
+
+
+def _carve_host_band_corridors(
+    rooms: list[Room],
+    corridors: list[Corridor],
+    doors: list[Door],
+    augmented: list[tuple[tuple[float, float], tuple[float, float]]],
+    page: PagePrimitives,
+    ppm: float,
+    page_index: int,
+    min_room_area_m2: float,
+) -> tuple[list[Room], list[Corridor], list[Door]]:
+    """Part-3 additive pass: recover a SPLIT trunk corridor whose halves each span
+    most of their flooded host room but less than half the page, so the part-2
+    page-relative span gate misses them (m13's west/east halves divided by the
+    elevator lobby; m14's full band). Runs AFTER :func:`_carve_trunk_corridors` and
+    skips any band an existing corridor already covers, so part-2's m15/m16 trunk is
+    preserved byte-for-byte. See the ``HOST_CARVE_*`` constants for the FP gates.
+    """
+    w_min = CORRIDOR_SHORT_MIN_M * ppm
+    w_max = CORRIDOR_SHORT_MAX_M * ppm
+    area_floor_pt2 = max((0.5 * ppm) ** 2, min_room_area_m2 * ppm * ppm)
+    host_min_pt2 = HOST_CARVE_MIN_AREA_M2 * ppm * ppm
+    existing_polys = [Polygon(c.polygon) for c in corridors]
+
+    new_corridors: list[Corridor] = []
+    remnant_rooms: list[Room] = []
+    removed_room_ids: set[str] = set()
+
+    for host in rooms:
+        hx0, _hy0, hx1, _hy1 = host.bbox
+        try:
+            host_poly = Polygon(host.polygon)
+        except (ValueError, TypeError):
+            continue
+        if host_poly.area < host_min_pt2:
+            continue
+        chords = _host_clipped_chords(augmented, hx0, hx1)
+        if len(chords) < 2:
+            continue
+        carved = False
+        for i in range(len(chords)):
+            if carved:
+                break
+            for j in range(i + 1, len(chords)):
+                y_a, xa0, xa1, _ = chords[i]
+                y_b, xb0, xb1, _ = chords[j]
+                dy = abs(y_b - y_a)
+                if not (w_min <= dy <= w_max):
+                    continue
+                ox0, ox1 = max(xa0, xb0), min(xa1, xb1)
+                if ox1 - ox0 <= 0:
+                    continue
+                y_lo, y_hi = min(y_a, y_b), max(y_a, y_b)
+                strip = sbox(ox0, y_lo, ox1, y_hi)
+                strip_area = strip.area
+                if strip_area <= 0:
+                    continue
+                # GATE-A (decisive anti-phantom): the strip must be a genuinely OPEN
+                # area inside the host polygon, not a thin sliver of an irregular
+                # room (without this a 62.9 m² cambridge room carves a phantom).
+                inter = host_poly.intersection(strip)
+                if inter.is_empty or inter.area < HOST_CARVE_OPEN_FRAC * strip_area:
+                    continue
+                # GATE-B: corridor-tube aspect (length / width).
+                if (ox1 - ox0) < HOST_CARVE_ASPECT_MIN * dy:
+                    continue
+                # GATE-C: no interior vertical crosses the band (host end-walls and
+                # the m13 lobby wall sit at the strip edges and are ignored).
+                if _band_has_crossing_vertical(
+                    augmented, ox0, ox1, y_lo, y_hi, edge_margin_pt=HOST_CARVE_CROSS_EDGE_MARGIN_PT
+                ):
+                    continue
+                # GATE-D: don't double-carve a band an existing corridor already
+                # covers (preserves m15/m16's part-2 trunk).
+                if any(
+                    ep.intersection(strip).area > HOST_CARVE_OVERLAP_FRAC * strip_area
+                    for ep in existing_polys
+                ):
+                    continue
+                new_corridors.append(
+                    Corridor(
+                        id=_new_id("corridor"),
+                        page_index=page_index,
+                        bbox=(ox0, y_lo, ox1, y_hi),
+                        polygon=[(ox0, y_lo), (ox1, y_lo), (ox1, y_hi), (ox0, y_hi), (ox0, y_lo)],
+                        min_width_m=round(dy / ppm, 2),
+                        confidence=0.75,
+                        uncertain=False,
+                    )
+                )
+                existing_polys.append(strip)
+                removed_room_ids.add(host.id)
+                remainder = host_poly.difference(strip)
+                for part in getattr(remainder, "geoms", [remainder]):
+                    if part.is_empty or part.geom_type != "Polygon" or part.area < area_floor_pt2:
+                        continue
+                    px0, py0, px1, py1 = part.bounds
+                    remnant_rooms.append(
+                        Room(
+                            id=_new_id("room"),
+                            page_index=page_index,
+                            bbox=(px0, py0, px1, py1),
+                            polygon=[(float(x), float(y)) for x, y in part.exterior.coords],
+                            area_m2=round(part.area / (ppm * ppm), 2),
+                            label=None,
+                            confidence=host.confidence,
+                            uncertain=True,
+                        )
+                    )
+                carved = True
+                break
+
+    if not new_corridors:
+        return rooms, corridors, doors
+
+    rooms = [r for r in rooms if r.id not in removed_room_ids] + remnant_rooms
+    corridors = list(corridors) + new_corridors
     cleaned_doors: list[Door] = []
     for door in doors:
         a, b = door.connects
@@ -819,6 +1019,13 @@ def build_graph(
     # milestone) before dimension binding, so a carved corridor can still receive
     # a nearby dimension override. No-op on plans without a flooded trunk corridor.
     rooms, corridors, doors = _carve_trunk_corridors(
+        rooms, corridors, doors, augmented, page, ppm, page_index, min_room_area_m2
+    )
+    # Part 3: recover SPLIT trunk corridors scoped to a large flooded host (m13
+    # west/east halves; m14's full band). Runs after the part-2 carve and skips
+    # bands an existing corridor already covers, so m15/m16's part-2 trunk is a
+    # strict no-op. No-op on plans without a large flooded host.
+    rooms, corridors, doors = _carve_host_band_corridors(
         rooms, corridors, doors, augmented, page, ppm, page_index, min_room_area_m2
     )
 

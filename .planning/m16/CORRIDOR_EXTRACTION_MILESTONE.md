@@ -1,9 +1,17 @@
 # Milestone scope — real-corridor extraction (R7-BUG-003)
 
-> Status: **PARTS 1 + 2 LANDED (2026-05-29).** Part 1 (wide-opening repair in
+> Status: **PARTS 1 + 2 + 3 LANDED (2026-05-29).** Part 1 (wide-opening repair in
 > `archkg/graph/geometry.py`) extracts the m16/m15 **page-0** ground-floor
 > corridors; part 2 (trunk-corridor carve in `archkg/graph/builder.py`) recovers
-> the m16/m15 **page-1** trunk corridor that part 1 could not close. Both are
+> the m16/m15 **page-1** trunk corridor that part 1 could not close; **part 3
+> (`_carve_host_band_corridors`, builder.py) recovers the m13/m14 SPLIT trunk
+> corridors** — the dominant fixable cluster (8 of 17) found by the corpus
+> decomposition. The corridor recall arc is now complete: corpus recall
+> **43.6% → 55.1%**, honest perception recall **66.7% → 84.3%**. The remaining
+> "part 3" items I once listed (p1 doors, RC-BEDROOM-AREA) were RECLASSIFIED by the
+> corpus decomposition as adversarial (door label-vs-geometry) / rule-modeling
+> (bedroom 5-vs-9 m²) — NOT perception fixes. See
+> [CORPUS_RECALL_DECOMPOSITION.md](../CORPUS_RECALL_DECOMPOSITION.md). Both are
 > verified **issue-level FP-neutral** on the cambridge / m10-m14 control set (at
 > `min_room_area_m2` 0.0 AND 1.0). m16 audit **recall 25% → 50% (part 1) → 62.5%
 > (part 2), title-block FP 0** — the honest number, not phantom-inflated; the 3
