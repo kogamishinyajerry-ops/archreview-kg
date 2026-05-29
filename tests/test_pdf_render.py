@@ -102,7 +102,6 @@ def test_resolve_uses_explicit_source_path_when_real(tmp_path: Path) -> None:
 def test_web_drawing_page_png_endpoint_returns_png(tmp_path: Path) -> None:
     """Integration: the Flask endpoint should serve the rendered PNG."""
     # Build a tiny KG with one drawing pointing at the real PDF (via slug).
-    import sqlite3
 
     from archkg.kg.web import create_app
 
