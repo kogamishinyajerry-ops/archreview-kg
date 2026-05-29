@@ -1,6 +1,7 @@
-# ArchReview-KG 生产就绪度 (v1.1.0 / Phase 18)
+# ArchReview-KG 生产就绪度 (v1.1.0 / M5.Z in progress)
 
 > 直接回答 "现在能不能给用户上传图纸做自动审批"。
+> Last updated: 2026-05-16 (M5.Z-W4 honesty pass).
 
 ## TL;DR
 
@@ -10,12 +11,173 @@ ArchReview-KG **能跑端到端审图**（上传 PDF → 输出标注 PDF + 复�
 - 30/30 国标条款都有规则卡（数据完整 ✅）
 - 但 32 张规则中**只有 4 张能在任何 PDF 上直接自动判定违规**（≈ 12.5%）
 - 其余规则需要 ProjectMeta 完整、graph builder 扩展、或本就是人工核对清单
+- **真实公开 PDF benchmark 已扩展到 17 张 active + 10 张 known_gap**（Medfield, MA 全 9 页 PDF 拆分为 5 active + 3 known_gap；4 个 Cambridge, MA 项目共 12 active + 7 known_gap）。`real_pdf_breadth` 评分维度内部得分 10.0/10，但 test-judge 独立审计认定**地理多样性仍不足**（单州 MA only, 5 个独立源文件, 2 个城市），实际可信得分约 8.0/10。详见 `.planning/m5/QUALITY-REVIEW-post-w1-overridden.md`。
+- M5.Z-W4 跨州采购（Portland OR / Austin TX / DC）是接下来的拓宽目标。
+
+## M5.Z 评分快照（test-judge 审计后）
+
+| 维度                  | 内部 scorer | 独立 judge 审定 | 差异原因                                                                                       |
+| --------------------- | ----------- | --------------- | ---------------------------------------------------------------------------------------------- |
+| code_quality          | 10.0        | 10.0            | —                                                                                              |
+| kg_persistence        | 10.0        | 10.0            | —                                                                                              |
+| kg_coverage           | 10.0        | 10.0            | —                                                                                              |
+| cross_project_query   | 10.0        | 10.0            | Q4 + Q9 仍然 0=0 trivial rows（已记入 W1.C followup）                                          |
+| web_ui_e2e            | 10.0        | 10.0            | —                                                                                              |
+| recognition_quality   | 10.0        | **7.0**         | recall=1.0 across all 24 rules 是 `fn=max(0,expected-detected)` 算术恒等而非测量；W4.B 修复     |
+| real_pdf_breadth      | 10.0        | **8.0**         | 17 张 active 但单州 MA + 部分 sp336 sheet 的 issues.json 为空；W4.C 跨州采购                    |
+| calibration           | 10.0        | 10.0            | MAD 0.0216 ≤ 0.04，但 bins [0.0, 0.4) 仍空（low-confidence regime 未演练）                     |
+| feedback_loop         | 10.0        | 10.0            | —                                                                                              |
+| documentation_honesty | 10.0        | **4.0**         | 旧 TL;DR 仍说 "real_active=3, 2/10"；本次 W4.A 更新即用于堵这个洞                              |
+| **overall**           | **100.0**   | **70.0**        | judge 的 weakest 维度是 recognition_quality 7.0，故 overall = min(sum, weakest×10) ≈ 70        |
+
+## M5.Z 合成审稿流方法说明（透明披露）
+
+为让 calibration / feedback_loop / recognition_quality 三个评分维度有可验证的数据，
+ArchReview-KG 在 M5 引入了**合成审稿员面板**。test-judge 审计后要求把以下细节披露在 TL;DR
+下方，避免后续审计无法分辨"真实审稿数据"和"合成 calibration 数据"。
+
+- **CLI**：`archkg kg seed-demo-feedback --target-precision 0.88 --confidence 0.85 --panel-size 20`
+- **合成审稿员**：`demo-reviewer-alice/bob/carol/dan/eve` + `demo-reviewer-extra-NN`（面板 >5 时按需扩展）。命名前缀 `demo-reviewer-` 在 KG 中可直接识别，从不与真实审稿员混淆。
+- **覆盖范围**：M5.Z-W1 把 slug 白名单从 `demo-/generated-/toy-` 扩展到 `+cambridge-/medfield-/real-`。也就是说真实公共 PDF 案例（A-1、A-2、3438 Medford 等）也接收合成 panel feedback，目的是让 KG 有足够样本支撑 calibration 评分。**真实审稿员的反馈不被这条命令触碰**。
+- **面板大小**：原始 M5.I-02 默认 5 人；W1 polish 扩展到 20 人。更大面板降低二项噪声 → calibration MAD 从 0.0624 收窄到 0.0216。
+- **outcome 分布**：每个 issue 的 outcome_p = (issue.confidence + target_precision) / 2；deterministic seed=42。
+- **expected_rule_counts**：active 案例的 `expected.json` 中 expected_rule_counts 是审稿员判断 + 已识别量级的近似，**不是真实人工逐 issue 标注**。M5.Z-W4.B 会把其中 3-5 条规则上调到真实 detected 之上，制造可观察到的 recall<1.0。
+- **复算独立 judge 评分**：`scripts/run_archreview_test_judge.sh`（如不存在请按 `.claude/agents/archreview-test-judge.md` 协议手工跑）。
+- P43 后，成熟度主指标改为 `archkg release-readiness`：用 benchmark suite、代表性 run artifacts、
+  review state 和 re-run diff 证据判断能否演示；P45 后当前 packaged suite 可在代表性 run
+  artifacts 完整时进入 `evidence_ready`。这个状态仍只适用于已 benchmark 的图纸类别，不是任意复杂
+  真实图纸自动审批证明。
+- P46 后每次完整 review run 会生成 `reviewer_onboarding.json` / `reviewer_quickstart.md`，
+  把新手审图工程师的第一小时复核路径固化为 artifact。
+- P47 后每次完整 review run 会生成 `sheet_issue_review_queue.json`，把 per-sheet preview
+  收束成有界人工审阅队列，但 preview id 仍不能进入主 `review_state.json`。
+- P48 后可用 `archkg handoff-package <run-dir> -o <package-dir>` 生成只读交接包，
+  将 quickstart、readiness、diff、preview queue 和边界提醒固化为可移交证据。
+- P49 后可用 `archkg handoff-check <package-dir>` 对交接包做独立质量门禁，
+  检查 schema、copy-only 策略、必需 artifact、复制件存在性和边界提醒。
+- P50 后可用 `archkg handoff-signoff <package-dir>` 在交接包内记录 reviewer 的 ready /
+  needs_info / blocked 状态、阻塞项和下一步；它只写包内 note，不是合规证书。
+- P51 后交接包根目录会有 `index.html` 静态入口，汇总 boundary、quality、signoff 和 artifact 链接，
+  方便新手审图工程师直接打开复核。
+- P52 后可用 `archkg handoff-manager-checklist <package-dir>` 生成负责人交接清单，
+  把 package quality、reviewer signoff 和必需 artifact 汇总为 manager-level intake 状态。
+- P53 后可用 `archkg handoff-archive-manifest <package-dir>` 生成移交完整性清单，
+  对交接包内稳定文件记录 SHA-256 和 package digest；它只证明包文件未漂移，不证明图纸合规。
+- P54 后可用 `archkg handoff-archive-verify <package-dir>` 在收到包后重算 checksum，
+  输出 `archive_verified` 或 `archive_drift`；drift 是交接阻塞，不是图纸违规结论。
+- P56/P57 后 Viewer/Studio 的 issue focus 已按图纸页定位，并能基于 `preview_pages.json`
+  切换 source / annotated 多页预览：非第一页 issue 可直接切到对应页高亮，避免第一页假定位。
+- P58 后 `archkg handoff-package` 会把多页 preview manifest 及其引用页图复制进交接包；
+  缺少 manifest 引用的页图会成为 handoff quality blocker。
+- P59 后 Viewer/Studio 会为 graph-backed sheet 生成多页 entity overlay 预览，并把这些页图纳入
+  `preview_pages.json` 和 handoff 复制链路；没有 graph 的页仍需 source/annotated/PDF 人工核对。
+- P60 后负责人可对多个交接包运行 `archkg handoff-bundle-index <packages-root>`，生成批量
+  `handoff_bundle_index` JSON/Markdown/HTML，用于筛出 ready / needs_info / blocked 包。
+- P61 后完整 run 会生成 `reviewer_task_sequence.json` / `.md`，按 readiness blockers、
+  主 issue、per-sheet preview、handoff 动作排序新手 reviewer 的下一步。
+- P62 后完整 run 会从任务序列派生 `reviewer_task_checklist.json` / `.md`，供新手
+  reviewer 逐项勾选证据、记录 reviewer_status 与未解决风险；该清单不写回
+  `issues.json` 或 `review_state.json`。
+- P63 后 `handoff-bundle-index` 会读取每个包内的 `artifacts/reviewer_task_checklist.json`，
+  汇总 checklist open item 总数、每包 checklist_review_status 和 open samples；它只做负责人
+  triage，不改变 package readiness。
+- P64 后 reviewer 可用 `archkg handoff-checklist-update <package-dir>` 在交接包内更新单个
+  checklist item 的 reviewer_status、note 和 evidence_checked；该命令只写 package-local
+  checklist 和 package `index.html`。
+- P65 后 `archkg handoff-manager-checklist <package-dir>` 会读取 package-local reviewer
+  checklist 完成度；open / needs_info item 会让 manager intake 保持 `manager_needs_info`，
+  blocked 或缺失 checklist 会阻塞 manager intake。
+- P66 后交接包会写 `handoff_ready_runbook.json` / `.md`；`archkg handoff-ready-runbook`
+  可刷新新手 reviewer 的下一步命令清单，直到 checklist 和 manager intake 闭环。
+- P67 后 `archkg handoff-bundle-index <packages-root>` 会输出 `next_action_queue`，
+  并为每个包标出 next_actor / next_action_command，支持跨包分派 reviewer、manager、archive 下一步。
+- P68 后完整 CLI/Studio run 会写 `layout_3d.json`、`layout_3d_summary.md` 和
+  `layout_3d.glb`，把已识别的平面 graph 转成证据化 2.5D 空间导航模型；默认层高、墙厚、
+  板厚、门洞高度只用于可视化，并在 assumptions 中显式标出，不是 BIM 真值或合规判断输入。
+- P69 后可显式运行 `archkg ifc export-layout`，从 `layout_3d.json` 派生可打开的
+  `layout.ifc` preview 和 `layout_ifc_export.v1` 报告；它需要可选 IfcOpenShell，
+  缺依赖时清晰降级，不生成 IFC，也不影响普通审图流水线。
+- P70 后 `layout_3d` 会把明确窗口洞口（`Door` 上有 `opening_kind: "window"` /
+  `opening_kind: "window_opening"` 或 `is_window: true`）建模为 `window_opening`，
+  并在 IFC preview 导出时映射为 `IfcWindow`。这仍是 preview / evidence 信号，不是
+  规则引擎或合规输入。
+- P71 后 `layout_3d` 的 `door_opening` / `window_opening` 会携带
+  `properties.opening_semantic`，说明语义来自显式 graph evidence 还是默认 Door entity；
+  Viewer/Studio 和 summary 会显示 Opening Semantics 摘要，方便 reviewer 审计来源。
+- P72 后 `layout_3d` 的 `door_opening` / `window_opening` 在 graph 明确提供
+  `Door.width_m`、`Door.properties.height_m`、`sill_height_m` 或 `head_height_m` 时会携带
+  `properties.opening_measurement`；Viewer/Studio 和 summary 会显示 Opening Measurements。
+  缺失尺寸仍按显式 assumptions 处理，所有 opening measurements 仍只是 preview provenance。
+- P73 后 `layout_3d` 只有在 graph 明确提供 opening host wall/source-segment 字段时才写入
+  `properties.opening_host`；Viewer/Studio 和 summary 会显示 Opening Host Wall Provenance。
+  没有显式 host evidence 时不推断 host，不生成墙体布尔开洞。
+- P74 后 Viewer/Studio 和 summary 会显示 Opening Provenance Consistency，把 semantic、
+  measurement、host 三类 opening 证据面合并成 coverage 视图。缺失项是复核提示，不是失败、
+  合规结论或 BIM 完整性声明。
+- P75 后 `layout_ifc_export.v1` 和 IFC Viewer 数据会透传 opening provenance coverage KPI；
+  它只是 optional IFC preview 的元数据，不把 `layout.ifc` 升级为审查级 BIM。
+- P76 后交接包的 manifest、summary 和静态 `index.html` 会显示 opening provenance coverage，
+  让新手 reviewer 在包入口看到 semantic / measurement / host_wall / all_three 覆盖；
+  缺失项仍只是复核提示，不是 handoff quality blocker 或合规结论。
+- P77 后 `handoff-bundle-index` 会跨包汇总 opening provenance coverage，并标出 weak
+  coverage 包数量，供负责人分派复核。
+- P78 后 bundle index 还会输出独立 `opening_provenance_triage_queue`，把 weak coverage
+  包列为 reviewer triage 项；它与正常 `next_action_queue` 分离，不改变 readiness 或交接状态。
+- P79 后 weak opening provenance 会进入包内 reviewer checklist guidance 区，提示缺失的
+  semantic / measurement / host_wall 信号；它不新增 checklist item，不改变 manager readiness。
+- P80 后 `handoff_ready_runbook` 会把同一 weak opening provenance guidance 暴露为 optional
+  review guidance，帮助新手 reviewer 找到 `artifacts/reviewer_task_checklist.md`；
+  它不进入 required next actions，也不阻塞 manager intake。
+- P81 后包根 `index.html` 会在 Ready-To-Review Runbook 区显示 optional guidance 导航，
+  链接到 runbook optional section 和 package-local checklist guidance；它仍只是静态入口。
+- P82 后 bundle index 会汇总哪些包已经在 package index 暴露 optional guidance 入口，
+  并输出独立 `package_index_optional_guidance_queue`；它不改变正常 next action queue。
+- P83 后 reviewer 可以在交接包内写 `handoff_optional_guidance_note.json/.md`，
+  记录 optional guidance review closeout；它不是 candidate issue confirmation。
+- P84 后 bundle summary 还会聚合 optional guidance note 的 closeout 状态（reviewed / needs_info / blocked / not_recorded / invalid），
+  并输出 `optional_guidance_note_closeout_queue` 供 manager triage 使用；这只是可见性，不改变 readiness / routing / source run / `review_state.json`。
+- P85 后 bundle summary 还会写 `manager_triage_digest`，把 required next actions、opening provenance triage、
+  package-index optional guidance 和 optional guidance note closeout 合成一个 manager 摘要；它只汇总现有队列，不改变 readiness / routing / source run / `review_state.json`。
 
 复现该结论：
 
 ```bash
 archkg clause readiness
+archkg release-readiness \
+  --manifest samples/understanding_benchmarks/suite_manifest.json \
+  --run-dir out/ \
+  --out out/release_readiness.json \
+  --markdown out/release_readiness.md
 ```
+
+## P43 发布/演示门禁
+
+`archkg release-readiness` 输出三个状态：
+
+| status | 含义 |
+|---|---|
+| `not_ready` | active suite 失败、没有 active 真实图纸、或代表性 run 缺核心 artifacts。不能对外用作成熟度信号。 |
+| `demo_ready_with_known_gaps` | 可演示证据优先审图工作台，但必须同时展示 known gaps、pending fixtures 和人工复核边界。 |
+| `evidence_ready` | active suite 通过、没有 known_gap / pending rows、代表性 run 具备核心和成熟度 artifacts。仍只适用于已 benchmark 的图纸类别。 |
+
+当前 packaged suite 的门禁烟测结果：
+
+```text
+release-readiness status=evidence_ready blockers=0 warnings=0 active=7 real_active=3 known_gap=0
+```
+
+这意味着：项目可以演示“识图证据、规则输入就绪度、候选问题、人工复核状态、重跑 diff、新手上手包、per-sheet 预览审阅队列、按页 issue focus、2.5D 空间导航模型、只读交接包、包内复核备注、静态交接入口、负责人交接清单”
+组成的闭环；P44 已把 Medfield 9 页真实 full-set 从 known_gap 晋升为 active recognition benchmark。
+P55 又补入 Medfield A-2 第二张真实单页 expected inventory 和一个 generated mixed-sheet-set 复杂回归样本，
+使 active=7、real_active=3、generated_active=3，仍避免 generated-heavy proof 超过真实图纸证据。
+但 `layout_3d` / `layout.ifc` 仍是从当前 graph 推导的辅助导航层，Opening Semantics、
+Opening Measurements、Opening Host Wall Provenance 和 Opening Provenance Consistency
+只解释来源与覆盖；P75-P85 把同一组 coverage / optional-guidance 透传到 IFC export summary、handoff package、
+bundle summary、独立 triage queue、包内 reviewer checklist guidance、ready-runbook optional guidance、package index navigation、bundle optional-guidance visibility、package-local optional guidance note 和
+package optional guidance note closeout、manager triage digest，
+但仍不代表墙洞几何已准确建模；per-sheet preview issues 还没有进入主 lifecycle，
+且真实复杂图纸覆盖仍有限，所以仍不能宣称
+“已能处理任意复杂真实设计图并自动精准纠错”。
 
 ## 32 张规则的就绪度分布
 
@@ -114,6 +276,72 @@ archkg studio
   落在墙体 centerline 内, 可能让所有 door 邻接判定都失败 → 全被丢弃。
   **症状**: 结果里 door 数量为 0 或明显偏少。**应对**: CAD 里把双线墙合并为单线再导出, 或等 v1.3+ 处理
 
+**v1.4-dev 应对** (raster OCR + drawing understanding bridge):
+- PNG/JPEG/TIFF/BMP 上传可选启用 **栅格 OCR beta**。OCR 成功时，文本作为
+  `TextPrimitive(source="ocr")` 写入 `primitives.json`，并参与 room label binding。
+- 结果页新增 OCR 证据面：展示 OCR text count、绑定房间数、低置信度数量与样例文本行；
+  standalone `archkg viewer` 从 run artifacts 重渲染时也保留该证据面。
+- OCR 证据面新增 label QA candidates：label 冲突、未绑定高置信度 label、低置信度 label
+  只作为人工复核提示，不自动修改 `Room.label`，也不改变规则结论。
+- OCR 数字文本新增 Door/Corridor 尺寸绑定证据：展示 OCR 值、绑定实体与实体当前尺寸值；
+  这是对既有 dimension binding 路径的审计展示，不新增合规输出通道。
+- OCR 不作为默认依赖；本机未安装 PaddleOCR 或 OCR 返回空时，流水线不崩溃，
+  继续按 partial 审图降级，并保留 "栅格图无 OCR" 质量提示。
+- 这不是 production OCR 准确率承诺。OCR-bound room labels 仍需人工核对，
+  噪声扫描图 / 手绘图纸仍可能无法可靠识别。
+- 结果页新增 `drawing_understanding.json` + "图纸理解摘要" 面板：汇总图纸类型、
+  可能设计对象、空间 / 门洞 / 通行部件清单，以及 graph/OCR 尺寸证据绑定状态。
+  这是识图闭环和人工复核入口，不是新的规范纠错通道，也不代表复杂真实施工图已经可全自动理解。
+- P24 起 `drawing_understanding.json` 升级为 v2 schema：增加 typed `component_inventory`、
+  `drawing_profile` 与 `benchmark_signals`。楼梯/垂直交通从 stair schedule 或未来 builder 输出进入
+  同一部件清单；旧 run 目录里的 P23 摘要会在 standalone viewer 重渲染时自动重建为 v2。
+  这些字段服务于"识别到什么"的横向基准，不提升 OCR/CV 准确率，也不扩大规范纠错范围。
+- P25 新增 `archkg understanding-benchmark <run-dir> --expect <spec.json>`：把 run 目录里的
+  `drawing_understanding.json`（或从 `primitives.json + entity_graph.json` 自动构建的 v2 摘要）
+  与期望部件清单、证据信号、benchmark flags 比对，输出 JSON / Markdown 跑分。
+  当前只随仓库提供 `samples/understanding_benchmarks/sample_clean_full.json` 作为 toy fixture 基准；
+  真实复杂图纸需要逐个加入期望清单后才能形成有效 benchmark。
+- P26 新增 `archkg understanding-benchmark-suite --manifest <suite.json>`：把多个识图 benchmark case
+  放进同一个 suite manifest。`active` case 会检查 run artifacts 并跑分；`pending_fixture` /
+  `manual_run_required` 只登记真实图纸或待生成样例，不计为通过证明。仓库里的
+  `samples/understanding_benchmarks/suite_manifest.json` 是 intake 模板，用于后续接入真实公开图纸
+  和人工标注的 expected inventory。
+- P27 新增 `archkg understanding-benchmark-author <run-dir> --out <draft.json>`：从当前 run 的
+  `drawing_understanding.json` 生成 expected inventory 草案，包含图纸类型、部件计数、semantic kinds、
+  evidence signals 与 positive benchmark flags。草案带 `review_required: true`，必须人工核对和调整后
+  才能把真实图纸 case 从 `pending_fixture` 提升为 `active`。
+- P28 开始接入真实图纸 expected inventory：`suite_manifest.json` 现在包含 Medfield / Hillside Village
+  A-1 First Floor Plan 的人工 expected inventory、来源 provenance 和当前 `drawing_understanding.json`
+  快照。该 case 标为 `known_gap`：suite 会真实跑分并记录 rooms/doors 过分割与 stair/vertical
+  circulation 缺失，但不把这张真实图纸包装成已通过能力。
+- P44 已把 Medfield 9 页 full plan/elevation set 从 known_gap 晋升为 active recognition benchmark：
+  opening evidence 来自 `sheet_graphs.json` 的多页计数汇总，不代表 per-sheet issue 已自动进入主审图结论。
+- P45 已把 `sample_clean_full` toy row 从 `manual_run_required` 固化为 deterministic active fixture：
+  它只清理可复现门禁，不扩大真实图纸能力宣称。
+- P55 新增 Medfield A-2 Second Floor Plan 真实单页 expected inventory，并新增 generated mixed-sheet-set
+  复杂回归样本；packaged suite 当前 active=7、pending=0、known_gap=0，real_active=3、generated_active=3。
+  这扩大的是 benchmark 覆盖，不是任意复杂真实图纸自动审批证明。
+- P46 新增 `reviewer_onboarding.json` / `reviewer_quickstart.md`：完整 review run 会生成新手第一小时流程、
+  常用命令、不要误宣称的边界和交接清单；该 artifact 是 guidance-only，不确认 issue、不修改规则结论。
+- P47 新增 `sheet_issue_review_queue.json`：完整 review run 会把 `sheet_issues.json` preview rows
+  收束为 `preview-only bounded bridge`，供人工逐页核对；它不创建主 issue id，也不允许
+  `archkg review-state` 写入这些 preview rows。
+- P48 新增 `archkg handoff-package`：从已有 run 复制交接所需 artifacts 到独立目录，
+  写出 `handoff_manifest.json` 与 `handoff_summary.md`；该操作不修改源 run，不确认 issue。
+- P49 新增 `archkg handoff-check`：读取交接包并输出 `handoff_package_quality.v1`；
+  缺少必需 artifact、复制件丢失或边界提醒缺失时返回 `not_ready`。
+- P50 新增 `archkg handoff-signoff`：在交接包内写 `reviewer_signoff.json` / `.md`，
+  记录 reviewer、ready / needs_info / blocked 状态、阻塞项、待补信息和下一步；该命令不修改源 run，
+  不确认 candidate issue。
+- P51 新增交接包静态 `index.html`：`handoff-package` 创建入口，`handoff-check` 和 `handoff-signoff`
+  刷新 quality/signoff 摘要；该页面只是浏览入口，不产生新 evidence。
+- P52 新增 `archkg handoff-manager-checklist`：读取包内 manifest、handoff quality 和 reviewer signoff，
+  写出 `handoff_manager_checklist.v1` JSON/Markdown，并刷新静态入口；该清单只判断交接包是否可进入下一步复核。
+- P53 新增 `archkg handoff-archive-manifest`：读取交接包并写出 `handoff_archive_manifest.v1` JSON/Markdown，
+  对 `artifacts/*` 和包根 metadata 记录 SHA-256、size 和 package digest；该命令不修改源 run，不是合规证书。
+- P54 新增 `archkg handoff-archive-verify`：重算交接包稳定文件 checksum，
+  写出 `handoff_archive_verification.v1` JSON/Markdown，并在缺失、变更或多出文件时返回 `archive_drift`。
+
 ### 对抗训练 lane (v1.0.4-v1.0.9)
 
 Phase 18-D 起加了 examiner ↔ candidate ↔ adjudicator 对抗 lane (`archkg adversarial`)。
@@ -141,47 +369,108 @@ archkg adversarial sample-stats -n 1000 --seed 5000   # 审计 per-rule 触发�
 
 把 v1.0 当作**规则知识库与引擎的完整态**，而非**生产可用审图服务**。
 
-## 走到"真自动审批"还需要什么
+## P32 后重大转向：先做可信度平台，再扩自动审查
 
-按 ROI 排序：
+P32 调研后，项目主线从“继续扩规则数量 / 继续扩视觉识别数量”调整为
+**证据优先的智能审图可信度平台**。
 
-### 高 ROI（解锁现有规则）
+成熟审图软件与政府级 BIM 审查实践的共同模式是：先定义输入交付要求和证据来源，
+再运行规则，再把发现变成可复核的 issue 生命周期。ArchReview-KG 也应采用这个路径。
 
-1. **graph builder 加 Room.properties 自动抽取** ← v1.0.2 已开手动数据路径 `--room-schedule`
-   - 当前：`samples/room_schedule_demo.yaml` 等 YAML 让用户填净高 / 楼层 / 坡屋顶 → 4 张 PARTIAL_AUTODETECT 规则可触发
-   - 下一步：从剖面图 / 图签 / 楼层结构自动产出同一份数据，让 schedule 退化为 override
-   - 难点：净高来自剖面图（不在平面图）；level / pitched_roof 来自图签或楼层标识
-   - 依赖：CAD/PDF 多页面理解 + OCR / 文字定位
+新的近期路线：
 
-2. **graph builder 加 PDF 楼梯检测**
-   - 解锁 5 张 STAIR_PENDING 规则
-   - 难点：楼梯多边形识别 + tread/riser/well/handrail 数据从平面图或剖面图绑定
-   - 依赖：vision/CV + 几何约束推理
+1. **P33 Rule-input readiness dashboard**
+   - 每次 run 为 32 张规则输出 `ready / missing_input / low_confidence / manual_only / not_applicable`。
+   - 目标是让用户明确知道“哪些规则真的可判、哪些规则缺证据”，而不是只看 issue 数量。
 
-3. **真实图纸鲁棒性测试**
-   - 当前 sample_clean.pdf 是 3.6 KB toy demo
-   - 实际项目图纸几十 MB，多页 + 多比例 + 多种规范图签
-   - builder 在真实 noise 下的失败模式未测
+2. **P34 Sheet-region candidate suggestions**
+   - 在 P31 手动 `--sheet-region` 基础上，自动建议 design / title block / schedule / legend 区域。
+   - 默认只提示，不自动裁剪，避免静默丢失设计证据。
 
-### 中 ROI（提升用户体验）
+3. **P35 Issue lifecycle / review state**
+   - 规则引擎只输出 candidate。
+   - 人工复核再进入 `confirmed / rejected / needs_info / resolved / superseded`。
+   - 为后续 BCF-like export 做准备。
 
-4. **Door / Stair schema 加 subtype 字段**
-   - door_kind ∈ {auto, swing, sliding, folding}：让 RC-ACCESSIBLE-DOOR-WIDTH 拆 0.80/1.00 严格分支（当前是 reminder 妥协）
-   - Stair.single_side_handrail / Stair.serves_floors_under_7：让 RC-STAIR-FLIGHT-WIDTH-1.10 升级为硬规则（含 1.00m 例外）
+4. **P36 IFC/IDS side lane**
+   - 复用 IfcOpenShell / IfcTester 做 IFC + IDS 校验 spike。
+   - PDF 图纸识别和 IFC 模型检查保持解耦，不重造完整 BIM checker。
 
-5. **ProjectMeta 自动从图签抽取**
-   - 现在 ProjectMeta 来自 `--project-meta` YAML 手填
-   - 自动从图纸首页图签抽 building_type / height_class / floors
+5. **P37 Rule-card authoring / code-citation assistant**
+   - AI 只生成 draft rule-card / citation / ambiguity notes。
+   - 人工确认前不得进入 active `rule_cards.yaml`，也不得生成最终违规。
 
-### 大工程（产品形态）
+新的 readiness 评价标准：
 
-6. **Web 上传界面 + 审图 worker**
-   - 当前 archkg 是 CLI only
-   - 需要：上传服务、异步任务队列、报告网页化、复核协作
+- 不再以 rule count 作为成熟度主指标。
+- 以真实图纸 expected inventory、每次 run 的规则输入就绪度、证据来源绑定、issue 复核状态、
+  rerun 后问题是否 resolved 为主要指标。
+- P43 起，发布/演示宣称必须经过 `archkg release-readiness`，并把输出状态和 warnings
+  一起展示；`generated_*` fixture 只能做回归锁定，不能替代真实图纸成熟度证明。生成样本数量多于
+  active 真实图纸证据时，门禁会继续阻止 `evidence_ready`。
+- P44 起，`drawing_understanding.json` 可把 `sheet_graphs.json` 的多页 plan graph 计数合并为
+  full-set recognition evidence；该 evidence 不会自动合并 per-sheet issues 到主 `issues.json`。
+- P45 起，packaged release gate 可在代表性 run artifacts 完整时输出 `evidence_ready`；该状态应解释为
+  “benchmarked drawing classes 的受限试点证据就绪”，而不是 production certification。
+- P46 起，readiness gate 也把 reviewer onboarding artifacts 视为 maturity evidence；交付前不仅要看模型输出，
+  还要看新手能否按 `reviewer_quickstart.md` 完成复核与交接。
+- P47 起，readiness gate 也要求 `sheet_issue_review_queue.json`；它证明 per-sheet preview 有可执行的人工审阅入口，
+  但不代表多页候选问题已经自动聚合为主违规结论。
+- P48 起，交付前建议另跑 `archkg handoff-package` 生成只读包；它是交接完整性证据，
+  不是 release-readiness gate 的替代品。
+- P49 起，交付前还应跑 `archkg handoff-check`；它只验证交接包完整性，
+  不替代图纸识别 benchmark 或 release-readiness。
+- P50 起，交接复核可以用 `archkg handoff-signoff` 收口为包内 note；ready 只表示交接包可进入下一位 reviewer
+  流程，不表示图纸合规。
+- P51 起，交接包可直接打开 `index.html` 给新手 reviewer 使用；页面上的状态来自既有 artifacts，
+  不替代源 run、benchmark 或人工复核。
+- P52 起，负责人可用 manager checklist 做 intake；`manager_ready` 不是图纸合规，只表示交接包本身满足进入下一轮复核的条件。
+- P53 起，移交前可用 archive manifest 做 checksum 固化；`archive_manifest_ready` 只表示包内文件有完整性清单，
+  不替代 source run、benchmark、release-readiness 或人工复核。
+- P54 起，收到包后可用 archive verification 做 drift 检查；`archive_verified` 只表示 checksum 对齐，
+  不表示任何 candidate issue 已确认或图纸合规。
+- P55 起，release-readiness 仍要求真实图纸证据不少于生成样本证据；新增 generated mixed-sheet-set
+  没有放宽该 guardrail，而是同时补入第二张 Medfield 真实单页 expected inventory。
+- P57/P59 起，source / annotated / graph-backed entity overlay 静态 PNG 预览已经支持多页切换；
+  preview pages 只是导航/复核辅助，不能当成合规结论或完整识图证明。
+- P58 起，交接包会保全多页 preview assets；这只提升包内静态 viewer 可用性，
+  不表示 candidate issue 已确认或图纸合规。
+- P60 起，bundle index 只汇总多个 package 的交接状态，不写入单包或源 run；
+  `bundle_ready` 不是图纸合规，也不是 release-readiness 的替代品。
+- P61 起，reviewer task sequence 只是复核顺序，不会自动确认 issue、不会写
+  `review_state.json`，也不会把 preview issue 提升为主 issue。
+- P62 起，reviewer task checklist 只是人工填写的清单种子，不会自动完成任务、
+  确认 issue、写入 `review_state.json`，也不是合规证书。
+- P63 起，bundle checklist risk 只是跨包只读汇总；它不修改单包 artifacts，也不把
+  checklist 状态当成图纸合规状态。
+- P64 起，handoff checklist update 只记录交接包内的复核进度；它不写源 run、
+  不写主 `review_state.json`，也不确认 candidate issue。
+- P65 起，manager checklist 要求 reviewer checklist 完成后才输出 `manager_ready`；
+  该 gate 只说明交接包可进入负责人下一步 intake，不说明图纸合规。
+- P66 起，ready-to-review runbook 是包内导航面和命令提示；它不纳入 archive checksum，
+  不确认 candidate issue，也不替代人工复核或经理 intake。
+- P67 起，bundle next-actor queue 是只读调度提示；它不修改单包、不替代包内 runbook，
+  也不改变 package readiness 或合规状态。
+- P76 起，handoff opening provenance coverage 是包内导航提示；它不改变 handoff quality、
+  reviewer checklist、manager checklist、archive verification 或图纸合规状态。
+- P77/P78 起，bundle opening provenance aggregation 和 triage queue 只帮助负责人跨包分派 reviewer；
+  它不改变 package readiness、normal next action queue、handoff quality 或图纸合规状态。
+- P79 起，package-local opening provenance checklist guidance 不新增 checklist item，不改变
+  checklist completion、manager readiness、source run 或图纸合规状态。
+- P80 起，ready-runbook optional opening provenance guidance 不进入 required next actions，
+  不改变 manager intake、package readiness、source run 或图纸合规状态。
+- P81 起，package index optional opening provenance guidance link 只做入口导航，
+  不改变 required next actions、manager intake、package readiness、source run 或图纸合规状态。
+- P82 起，bundle optional guidance visibility 只帮助负责人看到包内可用入口，
+  不改变 `next_action_queue`、next actor、manager intake、package readiness、source run 或图纸合规状态。
+- P83 起，package-local optional guidance note 只记录 reviewer closeout，
+  不确认 candidate issue、不改变 `review_state.json`、manager intake、package readiness、source run 或图纸合规状态。
+- P84 起，bundle optional guidance note closeout 只做 manager 可见性，
+  不改变 readiness、routing、source run、`issues.json`、`review_state.json` 或图纸合规状态。
+- P85 起，manager triage digest 只把现有 bundle queues 归并为 manager 导航摘要，
+  不替代 `next_action_queue`、不新增 gate、不改变 package readiness、source run 或图纸合规状态。
 
-7. **审图工作流支持人审注释回写**
-   - feedback recorder 已在 — Reviewer 在 report.md 标 status=confirmed 后跑 `archkg feedback --apply`，已确认违规自动入库 test_cases
-   - 体验：复核界面化 + 减少手工编辑 markdown
+repo 内规划真值见 `.planning/PROJECT.md`、`.planning/ROADMAP.md`、`.planning/STATE.md`。
 
 ## 给现在想用的人的指引
 
@@ -192,8 +481,8 @@ archkg adversarial sample-stats -n 1000 --seed 5000   # 审计 per-rule 触发�
 - 不要期望：楼梯类（Phase 19+）、户门 subtype、PDF 自动抽净高/楼层（Phase 20+）
 
 如果想**等 production-ready**：
-- 关注 Phase 18+ 路线（见上文「走到真自动审批还需要什么」）
-- 当 `archkg clause readiness` 显示 AUTODETECTABLE ≥ 20 张时，就是 Phase 18 真完成的信号
+- 关注 `archkg release-readiness` 的 `evidence_ready` 状态，而不是只看 AUTODETECTABLE 数量。
+- 等 known_gap / pending 真实图纸 case 被人工 expected inventory 推进为 active 且持续通过后，再扩大试点图纸类别。
 
 ## 状态查询
 
@@ -203,4 +492,5 @@ archkg clause coverage      # 30/30 标准条款覆盖
 archkg clause fidelity      # 数值保真闸 0 errors
 archkg clause verbatim      # paraphrase clause 与 PDF 原文对照
 archkg demo --meta          # 端到端 demo（包括样例 ProjectMeta）
+archkg release-readiness --manifest samples/understanding_benchmarks/suite_manifest.json --run-dir out/
 ```

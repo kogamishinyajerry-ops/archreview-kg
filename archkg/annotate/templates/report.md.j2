@@ -7,6 +7,7 @@
 - 标注 PDF：`{{ annotated_pdf }}`
 - 违规数：**{{ violations|length }}**（severity ≠ info）
 - 人工核对提醒数：**{{ reminders|length }}**（severity = info）
+- Issue 状态文件：`review_state.json`
 {% if project_meta %}
 
 ## 项目上下文
@@ -25,6 +26,244 @@
 {% endif %}
 {% endif %}
 
+## 审图工作台总览
+
+{% if not review_workbench %}
+review_workbench.json 暂无数据；请查看下方单项 evidence 面板。
+{% else %}
+> {{ review_workbench.note }}
+
+| 维度 | 值 |
+|---|---:|
+| drawing_type | {{ review_workbench.summary.drawing_type }} |
+| rooms / doors / corridors / stairs / dimensions | {{ review_workbench.summary.rooms }} / {{ review_workbench.summary.doors }} / {{ review_workbench.summary.corridors }} / {{ review_workbench.summary.stairs }} / {{ review_workbench.summary.dimensions }} |
+| issues / error / warning / info | {{ review_workbench.summary.issue_count }} / {{ review_workbench.summary.issue_error_count }} / {{ review_workbench.summary.issue_warning_count }} / {{ review_workbench.summary.issue_info_count }} |
+| ready rules / blocked rules | {{ review_workbench.summary.ready_rules }} / {{ review_workbench.summary.blocked_rules }} |
+| plan sheets / sheet graphs / sheet preview issues | {{ review_workbench.summary.plan_sheet_count }} / {{ review_workbench.summary.sheet_graph_count }} / {{ review_workbench.summary.sheet_issue_count }} |
+
+| Evidence | Artifact | Status | Detail |
+|---|---|---|---|
+{% for row in review_workbench.artifact_statuses %}| {{ row.label }} | `{{ row.artifact }}` | {{ row.status }} | {{ row.detail }} |
+{% endfor %}
+
+### 工作台动作入口
+
+| Action | Target | Artifact | Status | Reason |
+|---|---|---|---|---|
+{% for action in review_workbench.action_links %}| {{ action.label }} | {{ action.target }} | `{{ action.artifact }}` | {{ action.status }} | {{ action.reason }} |
+{% endfor %}
+
+{% if review_workbench.review_state_operations and review_workbench.review_state_operations.commands %}
+### 复核状态本地操作
+
+> {{ review_workbench.review_state_operations.note }}
+
+| issue_id | rule_card_id | command template |
+|---|---|---|
+{% for command in review_workbench.review_state_operations.commands %}| `{{ command.issue_id }}` | `{{ command.rule_card_id }}` | `{{ command.command_template }}` |
+{% endfor %}
+{% if review_workbench.review_state_operations.omitted_count %}
+
+另有 {{ review_workbench.review_state_operations.omitted_count }} 条 issue 未展开，完整列表见 `issues.json`。
+{% endif %}
+{% endif %}
+
+{% if review_workbench.warnings %}
+### 工作台提示
+
+{% for warning in review_workbench.warnings %}- {{ warning }}
+{% endfor %}
+{% endif %}
+
+完整数据见 `review_workbench.json`。
+{% endif %}
+
+## 新手审图上手包
+
+{% if not reviewer_onboarding %}
+reviewer_onboarding.json 暂无数据；请先按 `review_workbench.json` 和本报告逐项复核。
+{% else %}
+> {{ reviewer_onboarding.note }}
+
+完整上手文档见 `reviewer_quickstart.md`；机器可读数据见 `reviewer_onboarding.json`。
+
+### 第一小时流程
+
+| # | 步骤 | 入口 | 完成标准 |
+|---:|---|---|---|
+{% for step in reviewer_onboarding.first_hour_steps %}| {{ loop.index }} | {{ step.title }} | `{{ step.artifact }}` / {{ step.target }} | {{ step.done_when }} |
+{% endfor %}
+
+### 不要这样宣称
+
+{% for item in reviewer_onboarding.do_not_claim %}- {{ item }}
+{% endfor %}
+
+### 交接前检查
+
+{% for item in reviewer_onboarding.handoff_checklist %}- {{ item }}
+{% endfor %}
+{% endif %}
+
+## 复核任务序列
+
+{% if not reviewer_task_sequence %}
+reviewer_task_sequence.json 暂无数据；请先按 `reviewer_quickstart.md` 和 `review_workbench.json` 复核。
+{% else %}
+> {{ reviewer_task_sequence.boundary_warning }}
+
+完整任务队列见 `reviewer_task_sequence.md`；机器可读数据见 `reviewer_task_sequence.json`。
+
+| # | stage | priority | task | artifact | target |
+|---:|---|---:|---|---|---|
+{% for task in reviewer_task_sequence.tasks %}| {{ task.ordinal }} | `{{ task.stage }}` | {{ task.priority }} | {{ task.title }} | `{{ task.artifact }}` | {{ task.target }} |
+{% endfor %}
+{% endif %}
+
+## 复核任务清单
+
+{% if not reviewer_task_checklist %}
+reviewer_task_checklist.json 暂无数据；请先按 `reviewer_task_sequence.md` 人工复核。
+{% else %}
+> {{ reviewer_task_checklist.boundary_warning }}
+
+可填写清单见 `reviewer_task_checklist.md`；机器可读种子见 `reviewer_task_checklist.json`。
+
+| # | stage | task | reviewer_status | required_evidence |
+|---:|---|---|---|---|
+{% for item in reviewer_task_checklist['items'] %}| {{ item.ordinal }} | `{{ item.stage }}` | {{ item.title }} | `{{ item.reviewer_status }}` | {{ item.required_evidence|join(', ') }} |
+{% endfor %}
+{% endif %}
+
+## 规则输入就绪度
+
+{% if not rule_readiness or not rule_readiness.available %}
+规则输入就绪度暂无数据；缺失 readiness 不代表通过。请检查本 run 是否来自旧版本或仅识图模式。
+{% else %}
+> {{ rule_readiness.warning_text }}
+
+| 状态 | 数量 |
+|---|---:|
+{% for row in rule_readiness.summary_rows %}| {{ row.label }} (`{{ row.status }}`) | {{ row.count }} |
+{% endfor %}
+
+{% if rule_readiness.source_rows %}
+### 缺失/低置信输入来源
+
+| 来源 | 数量 |
+|---|---:|
+{% for row in rule_readiness.source_rows %}| {{ row.source_label }} | {{ row.count }} |
+{% endfor %}
+{% endif %}
+
+{% if rule_readiness.non_ready_rules %}
+### 非 ready 规则示例
+
+| rule_card_id | 状态 | 来源 | missing_inputs | 说明 |
+|---|---|---|---|---|
+{% for row in rule_readiness.non_ready_rules %}| `{{ row.rule_id }}` | {{ row.status_label }} (`{{ row.status }}`) | {{ row.source_label }} | {{ row.missing_inputs }} | {{ row.reason }} |
+{% endfor %}
+{% if rule_readiness.omitted_non_ready_count %}
+
+另有 {{ rule_readiness.omitted_non_ready_count }} 张非 ready 规则未在本报告摘要中展开，完整数据见 `rule_input_readiness.json`。
+{% endif %}
+{% endif %}
+{% endif %}
+
+## Sheet 分类
+
+{% if not sheet_classification %}
+sheet_classification.json 暂无数据；缺失分类不代表可直接进入 graph。
+{% else %}
+> 页分类只作路由证据；P38-01 不会因为分类结果自动跳过 graph build。
+
+| 类型 | 数量 |
+|---|---:|
+{% for sheet_type, count in sheet_classification.summary.items() %}| `{{ sheet_type }}` | {{ count }} |
+{% endfor %}
+
+| page | type | graph eligible | confidence | reason |
+|---|---|---|---:|---|
+{% for page in sheet_classification.pages %}| {{ page.page_index }} | `{{ page.sheet_type }}` | {{ page.eligible_for_graph }} | {{ "%.0f"|format(page.confidence * 100.0) }}% | {{ page.reason }} |
+{% endfor %}
+
+完整数据见 `sheet_classification.json`。
+{% endif %}
+
+## Sheet 路由
+
+{% if not sheet_routing %}
+sheet_routing.json 暂无数据；缺失路由不代表已按 sheet 类型过滤。
+{% else %}
+> 路由只在高置信单一 plan 页场景启用；unknown、低置信或多个 plan 页会回退 legacy 全页输入。
+
+| mode | selected pages | excluded pages | graph pages | fallback |
+|---|---|---|---:|---|
+| `{{ sheet_routing.mode }}` | {{ sheet_routing.selected_page_indexes | join(', ') }} | {{ sheet_routing.excluded_page_indexes | join(', ') if sheet_routing.excluded_page_indexes else '无' }} | {{ sheet_routing.graph_page_count }} | {{ sheet_routing.fallback_reason or '无' }} |
+
+原因：{{ sheet_routing.reason }}
+
+完整数据见 `sheet_routing.json`。
+{% endif %}
+
+## Sheet Graphs
+
+{% if not sheet_graphs %}
+sheet_graphs.json 暂无数据；缺失多页 graph 不代表没有其他 plan sheet。
+{% else %}
+> 多页 graph 是按 plan sheet 生成的证据输出；P39-01 不把多 plan 页合并进主规则引擎结论。
+
+| page | rooms | doors | corridors | stairs | dimensions | confidence |
+|---|---:|---:|---:|---:|---:|---:|
+{% for entry in sheet_graphs.graphs %}| {{ entry.page_index }} | {{ entry.component_counts.rooms }} | {{ entry.component_counts.doors }} | {{ entry.component_counts.corridors }} | {{ entry.component_counts.stairs }} | {{ entry.component_counts.dimensions }} | {{ "%.0f"|format(entry.classification_confidence * 100.0) }}% |
+{% endfor %}
+
+graph_count: {{ sheet_graphs.graph_count }}。完整数据见 `sheet_graphs.json`。
+{% endif %}
+
+## Sheet Issue Preview
+
+{% if not sheet_issues %}
+sheet_issues.json 暂无数据；缺失 per-sheet issue preview 不代表多页无候选问题。
+{% else %}
+> Per-sheet issue preview 只作多 plan 页候选问题预览；P39-02 不写入主 `issues.json` 或 `review_state.json`。
+
+| page | candidate issues | skipped rules |
+|---|---:|---:|
+{% for sheet in sheet_issues.sheets %}| {{ sheet.page_index }} | {{ sheet.issue_count }} | {{ sheet.skipped_rule_count }} |
+{% endfor %}
+
+sheet_count: {{ sheet_issues.sheet_count }}；issue_count: {{ sheet_issues.issue_count }}。完整数据见 `sheet_issues.json`。
+{% endif %}
+
+## Sheet Issue Review Queue
+
+{% if not sheet_issue_review_queue %}
+sheet_issue_review_queue.json 暂无数据；per-sheet preview issue 仍不得进入主 `review_state.json`。
+{% else %}
+> {{ sheet_issue_review_queue.note }}
+
+mutation_policy: `{{ sheet_issue_review_queue.mutation_policy }}`；primary_review_state_linked: `{{ sheet_issue_review_queue.primary_review_state_linked }}`。
+
+| page | queued issues | omitted |
+|---|---:|---:|
+{% for sheet in sheet_issue_review_queue.sheets %}| {{ sheet.page_index }} | {{ sheet.queued_issue_count }} | {{ sheet.omitted_issue_count }} |
+{% endfor %}
+
+第一条禁止动作：{{ sheet_issue_review_queue.forbidden_actions[0] if sheet_issue_review_queue.forbidden_actions else '不得把 preview id 作为主 issue id 使用。' }}
+
+完整数据见 `sheet_issue_review_queue.json`。
+{% endif %}
+
+## Issue 生命周期
+
+`issues.json` 是规则引擎输出的候选观察，默认状态为 `candidate`；人工确认、驳回、补信息、解决或被新 run 替代的状态写入 `review_state.json`，不回写到 `issues.json`。
+
+| 状态 | 数量 |
+|---|---:|
+{% for status, count in review_state.summary.items() %}| `{{ status }}` | {{ count }} |
+{% endfor %}
+
 ## 违规清单
 
 {% if not violations %}
@@ -32,7 +271,7 @@
 {% else %}
 | issue_id | rule_card_id | 条文 | 实体 | 测量值 | 阈值 | 单位 | 信息 | reviewer | status | note |
 |---|---|---|---|---|---|---|---|---|---|---|
-{% for i in violations %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} |  | open |  |
+{% for i in violations %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | `{{ i.entity_ids|join(',') }}` | {{ i.evidence.measured_value if i.evidence.measured_value is not none else '—' }} | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} | {{ i.evidence.unit or '—' }} | {{ i.message }} | {{ i.review_state.reviewer or '' }} | {{ i.review_state.status }} | {{ i.review_state.note or '' }} |
 {% endfor %}
 {% endif %}
 
@@ -44,7 +283,7 @@
 
 | issue_id | rule_card_id | 条文 | 阈值 | 提醒 | reviewer | status | note |
 |---|---|---|---|---|---|---|---|
-{% for i in reminders %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} {{ i.evidence.unit or '' }} | {{ i.message }} |  | open |  |
+{% for i in reminders %}| `{{ i.issue_id }}` | `{{ i.rule_card_id }}` | `{{ i.standard_clause_id }}` | {{ i.evidence.threshold_value if i.evidence.threshold_value is not none else '—' }} {{ i.evidence.unit or '' }} | {{ i.message }} | {{ i.review_state.reviewer or '' }} | {{ i.review_state.status }} | {{ i.review_state.note or '' }} |
 {% endfor %}
 {% endif %}
 
@@ -72,5 +311,5 @@
 
 复核字段说明：
 - `reviewer`: 复核人姓名
-- `status`: `open` / `confirmed` / `rejected`
-- `note`: 复核意见。`/archkg feedback <run_id>` 会读取本表格回写到 feedback YAML。
+- `status`: `candidate` / `confirmed` / `rejected` / `needs_info` / `resolved` / `superseded`
+- `note`: 复核意见。`/archkg feedback <run_id>` 会读取本表格回写到 `feedback.yaml` 和 `review_state.json`。

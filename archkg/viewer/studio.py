@@ -334,11 +334,14 @@ def run_pipeline(
     points_per_meter: float = 50.0,
     inspect_only: bool = False,
     min_room_area_m2: float = 1.0,
+    sheet_region: tuple[float, float, float, float] | None = None,
+    use_ocr: bool = False,
 ) -> PipelineResult:
     """End-to-end review on a single PDF.
 
     Same lane as `archkg review` but factored out so the studio's HTTP
     handler can call it directly. Writes primitives.json, entity_graph.json,
+    drawing_understanding.json, rule_input_readiness.json (full mode),
     issues.json, annotated.pdf, report.md, and entity_overlay.png into
     out_dir.
 
@@ -358,18 +361,84 @@ def run_pipeline(
       that would otherwise light up the rule report with spurious
       door-width violations on non-door wall breaks adjacent to those
       noise rooms. Set to 0.0 to disable.
+
+    Phase 20-B:
+    - ``use_ocr`` enables the optional PaddleOCR bridge for raster
+      uploads. It is best-effort and does not change vector-PDF
+      behavior. If OCR is unavailable or returns no texts, the raster
+      warning remains visible.
     """
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
-    from archkg.graph.builder import build_graph, render_overlay
+    from archkg.annotate.sheet_region_overlay import render_sheet_region_candidate_overlay
+    from archkg.graph.builder import build_graph
     from archkg.graph.builder import write_json as write_graph
+    from archkg.graph.sheet_graphs import build_sheet_graphs, write_sheet_graphs
     from archkg.ingest.primitive_extractor import extract as extract_pdf
     from archkg.ingest.primitive_extractor import write_json as write_prims
     from archkg.ingest.raster_extractor import extract as extract_raster
     from archkg.ingest.raster_extractor import wrap_image_as_pdf
+    from archkg.ingest.sheet_classification import (
+        build_sheet_classification,
+        write_sheet_classification,
+    )
+    from archkg.ingest.sheet_region import crop_primitives_to_region
+    from archkg.ingest.sheet_region_candidates import (
+        build_sheet_region_candidates,
+        write_sheet_region_candidates,
+    )
+    from archkg.ingest.sheet_routing import (
+        route_primitives_for_graph,
+        write_sheet_routing,
+    )
     from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.knowledge.run_readiness import (
+        build_rule_input_readiness,
+        write_rule_input_readiness,
+    )
+    from archkg.layout_3d import (
+        build_layout_3d,
+        export_layout_3d_glb,
+        write_layout_3d,
+        write_layout_3d_summary,
+    )
+    from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
+    from archkg.rules.sheet_issues import (
+        build_sheet_issues,
+        merge_sheet_issues,
+        write_sheet_issues,
+    )
     from archkg.schemas import ProjectMeta
+    from archkg.viewer.drawing_understanding import (
+        build_drawing_understanding,
+        write_drawing_understanding,
+    )
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.review_workbench import (
+        build_review_workbench,
+        write_review_workbench,
+    )
+    from archkg.viewer.reviewer_onboarding import (
+        build_reviewer_onboarding,
+        write_reviewer_onboarding_json,
+        write_reviewer_quickstart_markdown,
+    )
+    from archkg.viewer.reviewer_task_checklist import (
+        build_reviewer_task_checklist,
+        write_reviewer_task_checklist_json,
+        write_reviewer_task_checklist_markdown,
+    )
+    from archkg.viewer.reviewer_task_sequence import (
+        build_reviewer_task_sequence,
+        write_reviewer_task_sequence_json,
+        write_reviewer_task_sequence_markdown,
+    )
+    from archkg.viewer.rule_readiness import build_rule_readiness_view
+    from archkg.viewer.sheet_issue_review_queue import (
+        build_sheet_issue_review_queue,
+        write_sheet_issue_review_queue,
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -384,12 +453,16 @@ def run_pipeline(
 
     # Phase 20-A: dispatch on file extension. PDFs go through the
     # vector path (PyMuPDF); PNG/JPEG/TIFF go through the CV pipeline
-    # (raster_extractor) which has no OCR yet, so labels are absent
-    # and rules needing them won't fire.
+    # (raster_extractor). OCR is opt-in because PaddleOCR is not part
+    # of the default install.
     suffix = pdf_path.suffix.lower()
     is_raster_input = suffix in (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp")
     if is_raster_input:
-        primitives = extract_raster(pdf_path, points_per_meter=points_per_meter)
+        primitives = extract_raster(
+            pdf_path,
+            points_per_meter=points_per_meter,
+            use_ocr=use_ocr,
+        )
         # Wrap the image as a 1:1 px:pt PDF so the rest of the
         # pipeline (preview, annotation, overlay) treats it like any
         # other PDF and the pixel-space polygon coords align with
@@ -401,9 +474,42 @@ def run_pipeline(
         pdf_path = wrapped_pdf
     else:
         primitives = extract_pdf(pdf_path, points_per_meter=points_per_meter)
+    sheet_classification = build_sheet_classification(primitives)
+    write_sheet_classification(
+        sheet_classification,
+        out_dir / "sheet_classification.json",
+    )
+    sheet_candidates = build_sheet_region_candidates(
+        primitives,
+        applied_region=sheet_region,
+    )
+    write_sheet_region_candidates(sheet_candidates, out_dir / "sheet_region_candidates.json")
+    render_sheet_region_candidate_overlay(
+        pdf_path,
+        sheet_candidates,
+        out_dir / "sheet_region_candidates_overlay.png",
+    )
+    sheet_graph_primitives = primitives
+    routing = route_primitives_for_graph(
+        primitives,
+        sheet_classification,
+        manual_sheet_region_applied=sheet_region is not None,
+    )
+    write_sheet_routing(routing.decision, out_dir / "sheet_routing.json")
+    primitives = routing.primitives
+    if sheet_region is not None:
+        sheet_graph_primitives = crop_primitives_to_region(sheet_graph_primitives, sheet_region)
+        primitives = crop_primitives_to_region(primitives, sheet_region)
+    sheet_graphs = build_sheet_graphs(
+        sheet_graph_primitives,
+        sheet_classification,
+        min_room_area_m2=min_room_area_m2,
+    )
+    write_sheet_graphs(sheet_graphs, out_dir / "sheet_graphs.json")
     write_prims(primitives, out_dir / "primitives.json")
     graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
 
+    schedule_apply = None
     if room_schedule_path is not None:
         if meta is None:
             raise ValueError(
@@ -419,8 +525,10 @@ def run_pipeline(
                 f"room_schedule project_id '{schedule.project_id}' does not "
                 f"match project_meta project_id '{meta.project_id}'"
             )
-        graph = apply_room_schedule(graph, schedule).graph
+        schedule_apply = apply_room_schedule(graph, schedule)
+        graph = schedule_apply.graph
 
+    stair_schedule_apply = None
     if stair_schedule_path is not None:
         if meta is None:
             raise ValueError(
@@ -436,10 +544,34 @@ def run_pipeline(
                 f"stair_schedule project_id '{sched.project_id}' does not "
                 f"match project_meta project_id '{meta.project_id}'"
             )
-        graph = apply_stair_schedule(graph, sched).graph
+        stair_schedule_apply = apply_stair_schedule(graph, sched)
+        graph = stair_schedule_apply.graph
 
     graph_path = write_graph(graph, out_dir / "entity_graph.json")
-    render_overlay(graph, pdf_path, out_dir / "entity_overlay.png")
+    from archkg.viewer.preview_pages import render_entity_overlay_preview_pages
+
+    overlay_pages = render_entity_overlay_preview_pages(
+        pdf_path,
+        out_dir,
+        graphs=[graph, *(entry.graph for entry in sheet_graphs.graphs)],
+    )
+    primitives_payload = primitives.model_dump(mode="json")
+    graph_payload = graph.model_dump(mode="json")
+    ocr_diagnostics = build_ocr_diagnostics(primitives_payload, graph_payload)
+    drawing_understanding = build_drawing_understanding(
+        primitives_payload,
+        graph_payload,
+        ocr_diagnostics,
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
+    )
+    write_drawing_understanding(
+        drawing_understanding,
+        out_dir / "drawing_understanding.json",
+    )
+    layout_3d = build_layout_3d(sheet_graphs=sheet_graphs, entity_graph=graph)
+    write_layout_3d(layout_3d, out_dir / "layout_3d.json")
+    write_layout_3d_summary(layout_3d, out_dir / "layout_3d_summary.md")
+    export_layout_3d_glb(layout_3d, out_dir / "layout_3d.glb")
 
     # Count entities from the in-memory typed graph directly so a future
     # serialisation shape change can't silently neuter the quality flags.
@@ -447,24 +579,37 @@ def run_pipeline(
     n_rooms = len(graph.rooms)
     n_doors = len(graph.doors)
     n_corridors = len(graph.corridors)
+    ocr_text_count = sum(
+        1
+        for page in primitives.pages
+        for text in page.texts
+        if text.source == "ocr"
+    )
 
-    # Codex P20-A R1 P1 / R2 P1: raster ingest produces no OCR text,
-    # so every room ends up label-less and label-dependent rules
-    # silently don't fire. The R2 fix corrects an earlier false
-    # remediation path: ``room_schedule.yaml`` selects rooms by
-    # existing ``room_id`` (a fresh UUID per run) or ``label``
-    # (also missing from raster rooms), so it can't actually patch
-    # raster runs. Honest options are listed in the warning instead.
-    if is_raster_input:
+    # Codex P20-A R1 P1 / R2 P1: label-less raster ingest silently
+    # skips label-dependent Room rules. P20-B keeps that warning unless
+    # OCR actually produced text primitives. OCR being enabled is not
+    # enough; unavailable PaddleOCR or empty results still mean a
+    # partial review. The earlier false remediation path remains
+    # forbidden: ``room_schedule.yaml`` selects existing room_id/label
+    # and cannot patch label-less raster runs.
+    if is_raster_input and ocr_text_count == 0:
         raster_flag = (
-            "ⓘ 栅格图无 OCR：检出的房间均无 label，依赖 label 的 5 张 Room 规则不会触发"
+            "ⓘ 栅格图无 OCR：本次未获得 OCR text primitives，检出的房间均无 label，"
+            "依赖 label 的 5 张 Room 规则不会触发"
             " (RC-BEDROOM-AREA / RC-LIVING-BEDROOM-NETHEIGHT-2.4 /"
             " RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1 /"
             " RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0 / RC-NO-LIVING-IN-BASEMENT)。"
             " 本次违规清单是 partial 审图 (几何规则可触发, 上述 5 张 label-依赖规则不触发)。"
-            " 完整审图请改上传与之对应的矢量 PDF；OCR 自动补 label 在 v1.4 中规划。"
+            " 完整审图请改上传与之对应的矢量 PDF，或安装 OCR 依赖后启用栅格 OCR beta。"
         )
         quality_flags = (raster_flag, *quality_flags)
+    elif is_raster_input and ocr_text_count > 0:
+        quality_flags = (
+            f"ⓘ 栅格图 OCR beta：已获得 {ocr_text_count} 条 OCR text primitives；"
+            "仍需人工核对 OCR 置信度与房间标签绑定结果。",
+            *quality_flags,
+        )
 
     # Codex P19-C R2 P0: persist mode + quality_flags so any downstream
     # renderer (archkg viewer, scripts that re-render index.html, future
@@ -477,6 +622,9 @@ def run_pipeline(
         quality_flags=quality_flags,
         points_per_meter=points_per_meter,
         min_room_area_m2=min_room_area_m2,
+        sheet_region=sheet_region,
+        use_ocr=use_ocr if is_raster_input else False,
+        ocr_text_count=ocr_text_count,
     )
 
     # Mirror what the existing viewer.serve() needs: a copy of the source
@@ -484,7 +632,17 @@ def run_pipeline(
     # inspect_only runs render correctly.
     if not (out_dir / "source.pdf").exists():
         shutil.copy(pdf_path, out_dir / "source.pdf")
-    _render_preview(pdf_path, out_dir / "source_preview.png")
+    from archkg.viewer.preview_pages import (
+        render_pdf_preview_pages,
+        write_preview_pages_manifest,
+    )
+
+    source_pages = render_pdf_preview_pages(
+        pdf_path,
+        out_dir,
+        layer="source",
+        legacy_name="source_preview.png",
+    )
 
     if inspect_only:
         # Skip rule evaluation; write empty issues + a minimal report so
@@ -492,7 +650,18 @@ def run_pipeline(
         # copy of the source with no markup.
         (out_dir / "issues.json").write_text("[]", encoding="utf-8")
         shutil.copy(pdf_path, out_dir / "annotated.pdf")
-        _render_preview(out_dir / "annotated.pdf", out_dir / "annotated_preview.png")
+        annotated_pages = render_pdf_preview_pages(
+            out_dir / "annotated.pdf",
+            out_dir,
+            layer="annotated",
+            legacy_name="annotated_preview.png",
+        )
+        write_preview_pages_manifest(
+            out_dir,
+            source_pages=source_pages,
+            annotated_pages=annotated_pages,
+            overlay_pages=overlay_pages,
+        )
         report_lines = [
             "# 仅识图模式 — ArchReview-KG",
             "",
@@ -510,6 +679,61 @@ def run_pipeline(
             "让规则引擎评估违规。"
         )
         (out_dir / "report.md").write_text("\n".join(report_lines), encoding="utf-8")
+        review_workbench = build_review_workbench(
+            source_pdf=pdf_path,
+            mode="inspect_only",
+            drawing_understanding=drawing_understanding,
+            issues=[],
+            sheet_classification=sheet_classification.model_dump(mode="json"),
+            sheet_routing=routing.decision.model_dump(mode="json"),
+            sheet_graphs=sheet_graphs.model_dump(mode="json"),
+            sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+            layout_3d=layout_3d.model_dump(mode="json"),
+        )
+        write_review_workbench(review_workbench, out_dir / "review_workbench.json")
+        reviewer_onboarding = build_reviewer_onboarding(
+            run_dir=out_dir,
+            source_pdf=pdf_path,
+            review_workbench=review_workbench,
+            mode="inspect_only",
+        )
+        write_reviewer_onboarding_json(
+            reviewer_onboarding,
+            out_dir / "reviewer_onboarding.json",
+        )
+        write_reviewer_quickstart_markdown(
+            reviewer_onboarding,
+            out_dir / "reviewer_quickstart.md",
+        )
+        reviewer_task_sequence = build_reviewer_task_sequence(
+            run_dir=out_dir,
+            source_pdf=pdf_path,
+            mode="inspect_only",
+            review_workbench=review_workbench,
+            issues=[],
+            quality_flags=quality_flags,
+        )
+        write_reviewer_task_sequence_json(
+            reviewer_task_sequence,
+            out_dir / "reviewer_task_sequence.json",
+        )
+        write_reviewer_task_sequence_markdown(
+            reviewer_task_sequence,
+            out_dir / "reviewer_task_sequence.md",
+        )
+        reviewer_task_checklist = build_reviewer_task_checklist(
+            run_dir=out_dir,
+            source_pdf=pdf_path,
+            reviewer_task_sequence=reviewer_task_sequence,
+        )
+        write_reviewer_task_checklist_json(
+            reviewer_task_checklist,
+            out_dir / "reviewer_task_checklist.json",
+        )
+        write_reviewer_task_checklist_markdown(
+            reviewer_task_checklist,
+            out_dir / "reviewer_task_checklist.md",
+        )
         _render_viewer_index(
             out_dir, pdf_path,
             quality_flags=quality_flags,
@@ -529,10 +753,109 @@ def run_pipeline(
 
     standards = load_standards()
     rules = load_rules(standards=standards)
-    result = evaluate(graph, rules, standards, project_meta=meta)
+    sheet_issues = build_sheet_issues(
+        sheet_graphs,
+        rules,
+        standards,
+        project_meta=meta,
+    )
+    write_sheet_issues(sheet_issues, out_dir / "sheet_issues.json")
+    sheet_issue_review_queue = build_sheet_issue_review_queue(
+        sheet_issues.model_dump(mode="json")
+    )
+    write_sheet_issue_review_queue(
+        sheet_issue_review_queue,
+        out_dir / "sheet_issue_review_queue.json",
+    )
+    # Multi-page canonical issue extraction (round-7 R6/R7-BUG-001/002/003);
+    # see archkg.rules.sheet_issues.merge_sheet_issues. Extra plan pages are
+    # evaluated per-page so issues carry their true page_index; single-page
+    # runs keep the exact legacy path.
+    extra_plan_pages = [
+        entry for entry in sheet_graphs.graphs if entry.page_index != graph.page_index
+    ]
+    if extra_plan_pages:
+        result = merge_sheet_issues(sheet_graphs, graph, rules, standards, project_meta=meta)
+    else:
+        result = evaluate(graph, rules, standards, project_meta=meta)
+    rule_readiness = build_rule_input_readiness(
+        graph,
+        rules,
+        standards,
+        project_meta=meta,
+        skipped=result.skipped,
+        ocr_diagnostics=ocr_diagnostics,
+        schedule_apply=schedule_apply,
+        stair_schedule_apply=stair_schedule_apply,
+    )
+    write_rule_input_readiness(rule_readiness, out_dir / "rule_input_readiness.json")
     (out_dir / "issues.json").write_text(
         json.dumps([i.model_dump() for i in result.issues], ensure_ascii=False, indent=2),
         encoding="utf-8",
+    )
+    review_state = build_review_state(result.issues, run_id=out_dir.name)
+    write_review_state(review_state, out_dir / "review_state.json")
+    review_workbench = build_review_workbench(
+        source_pdf=pdf_path,
+        mode="full",
+        drawing_understanding=drawing_understanding,
+        rule_readiness=rule_readiness.model_dump(mode="json"),
+        issues=[issue.model_dump(mode="json") for issue in result.issues],
+        review_state=review_state.model_dump(mode="json"),
+        sheet_classification=sheet_classification.model_dump(mode="json"),
+        sheet_routing=routing.decision.model_dump(mode="json"),
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
+        sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
+        sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+        layout_3d=layout_3d.model_dump(mode="json"),
+    )
+    write_review_workbench(review_workbench, out_dir / "review_workbench.json")
+    reviewer_onboarding = build_reviewer_onboarding(
+        run_dir=out_dir,
+        source_pdf=pdf_path,
+        review_workbench=review_workbench,
+        mode="full",
+    )
+    write_reviewer_onboarding_json(
+        reviewer_onboarding,
+        out_dir / "reviewer_onboarding.json",
+    )
+    write_reviewer_quickstart_markdown(
+        reviewer_onboarding,
+        out_dir / "reviewer_quickstart.md",
+    )
+    reviewer_task_sequence = build_reviewer_task_sequence(
+        run_dir=out_dir,
+        source_pdf=pdf_path,
+        mode="full",
+        review_workbench=review_workbench,
+        rule_readiness=rule_readiness.model_dump(mode="json"),
+        issues=[issue.model_dump(mode="json") for issue in result.issues],
+        review_state=review_state.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
+        quality_flags=quality_flags,
+    )
+    write_reviewer_task_sequence_json(
+        reviewer_task_sequence,
+        out_dir / "reviewer_task_sequence.json",
+    )
+    write_reviewer_task_sequence_markdown(
+        reviewer_task_sequence,
+        out_dir / "reviewer_task_sequence.md",
+    )
+    reviewer_task_checklist = build_reviewer_task_checklist(
+        run_dir=out_dir,
+        source_pdf=pdf_path,
+        reviewer_task_sequence=reviewer_task_sequence,
+    )
+    write_reviewer_task_checklist_json(
+        reviewer_task_checklist,
+        out_dir / "reviewer_task_checklist.json",
+    )
+    write_reviewer_task_checklist_markdown(
+        reviewer_task_checklist,
+        out_dir / "reviewer_task_checklist.md",
     )
 
     annotated = annotate_pdf(pdf_path, result.issues, out_dir / "annotated.pdf")
@@ -545,10 +868,36 @@ def run_pipeline(
         out_md=out_dir / "report.md",
         project_meta=meta,
         skipped=result.skipped,
+        rule_readiness=build_rule_readiness_view(
+            rule_readiness.model_dump(mode="json")
+        ),
+        sheet_classification=sheet_classification.model_dump(mode="json"),
+        sheet_routing=routing.decision.model_dump(mode="json"),
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
+        sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
+        review_state=review_state,
+        review_workbench=review_workbench,
+        reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_sequence=reviewer_task_sequence,
+        reviewer_task_checklist=reviewer_task_checklist,
     )
 
     if annotated.exists():
-        _render_preview(annotated, out_dir / "annotated_preview.png")
+        annotated_pages = render_pdf_preview_pages(
+            annotated,
+            out_dir,
+            layer="annotated",
+            legacy_name="annotated_preview.png",
+        )
+    else:
+        annotated_pages = []
+    write_preview_pages_manifest(
+        out_dir,
+        source_pages=source_pages,
+        annotated_pages=annotated_pages,
+        overlay_pages=overlay_pages,
+    )
 
     # Pre-render the existing viewer index so the redirect lands on a
     # ready-to-display page.
@@ -580,6 +929,9 @@ def _write_run_meta(
     quality_flags: tuple[str, ...] = (),
     points_per_meter: float | None = None,
     min_room_area_m2: float | None = None,
+    sheet_region: tuple[float, float, float, float] | None = None,
+    use_ocr: bool | None = None,
+    ocr_text_count: int | None = None,
 ) -> Path:
     """Persist the inspect-only / full mode + quality flags + tunable
     knobs to a JSON file in the run directory. Read by
@@ -594,6 +946,9 @@ def _write_run_meta(
     Codex P19-D R1 P2: also persist the tunable knobs that materially
     change outputs (ppm + min_room_area_m2) so a user reporting
     unexpected entity counts can be debugged from the run dir alone.
+
+    Phase 20-B persists OCR mode and observed OCR text count so a
+    raster run can be debugged from artifacts alone.
     """
     payload: dict[str, Any] = {
         "mode": mode,
@@ -603,6 +958,12 @@ def _write_run_meta(
         payload["points_per_meter"] = points_per_meter
     if min_room_area_m2 is not None:
         payload["min_room_area_m2"] = min_room_area_m2
+    if sheet_region is not None:
+        payload["sheet_region"] = list(sheet_region)
+    if use_ocr is not None:
+        payload["use_ocr"] = use_ocr
+    if ocr_text_count is not None:
+        payload["ocr_text_count"] = ocr_text_count
     meta_path = out_dir / "run_meta.json"
     meta_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
@@ -654,6 +1015,25 @@ def _render_viewer_index(
         json.loads(primitives_path.read_text("utf-8")) if primitives_path.exists() else {}
     )
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
+    from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
+    from archkg.viewer.issue_focus import build_issue_focus_view
+    from archkg.viewer.layout_3d import load_layout_3d_view
+    from archkg.viewer.layout_ifc import load_layout_ifc_view
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.preview_pages import load_preview_pages_view
+    from archkg.viewer.review_diff import load_review_diff_view
+    from archkg.viewer.review_state import load_review_state_view
+    from archkg.viewer.review_workbench import load_review_workbench_view
+    from archkg.viewer.reviewer_onboarding import load_reviewer_onboarding_view
+    from archkg.viewer.reviewer_task_checklist import load_reviewer_task_checklist_view
+    from archkg.viewer.reviewer_task_sequence import load_reviewer_task_sequence_view
+    from archkg.viewer.rule_readiness import load_rule_readiness_view
+    from archkg.viewer.sheet_classification import load_sheet_classification_view
+    from archkg.viewer.sheet_graphs import load_sheet_graphs_view
+    from archkg.viewer.sheet_issue_review_queue import load_sheet_issue_review_queue_view
+    from archkg.viewer.sheet_issues import load_sheet_issues_view
+    from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
+    from archkg.viewer.sheet_routing import load_sheet_routing_view
 
     n_lines = sum(len(p.get("lines", [])) for p in primitives.get("pages", []))
     n_texts = sum(len(p.get("texts", [])) for p in primitives.get("pages", []))
@@ -675,6 +1055,34 @@ def _render_viewer_index(
     issue_summary = issue_payload["summary"]
     clause_refs = _clause_refs(issues)
     knowledge_overview = _knowledge_overview()
+    ocr_diagnostics = build_ocr_diagnostics(primitives, graph)
+    drawing_understanding = load_or_build_drawing_understanding(
+        out_dir,
+        primitives,
+        graph,
+        ocr_diagnostics,
+    )
+    rule_readiness = load_rule_readiness_view(out_dir)
+    review_workbench = load_review_workbench_view(out_dir)
+    reviewer_onboarding = load_reviewer_onboarding_view(out_dir)
+    reviewer_task_checklist = load_reviewer_task_checklist_view(out_dir)
+    reviewer_task_sequence = load_reviewer_task_sequence_view(out_dir)
+    review_diff = load_review_diff_view(out_dir)
+    review_state = load_review_state_view(out_dir, issues)
+    sheet_classification = load_sheet_classification_view(out_dir)
+    sheet_graphs = load_sheet_graphs_view(out_dir)
+    sheet_issues = load_sheet_issues_view(out_dir)
+    sheet_issue_review_queue = load_sheet_issue_review_queue_view(out_dir)
+    sheet_routing = load_sheet_routing_view(out_dir)
+    sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
+    layout_3d = load_layout_3d_view(out_dir)
+    layout_ifc = load_layout_ifc_view(out_dir)
+    preview_pages = load_preview_pages_view(out_dir)
+    issue_focus = build_issue_focus_view(
+        issues,
+        primitives,
+        preview_pages=preview_pages,
+    )
 
     html = env.get_template("index.html.j2").render(
         source_pdf=str(source_pdf),
@@ -688,6 +1096,25 @@ def _render_viewer_index(
         issue_summary=issue_summary,
         issue_metrics=issue_payload,
         clause_refs=clause_refs,
+        ocr_diagnostics=ocr_diagnostics,
+        drawing_understanding=drawing_understanding,
+        rule_readiness=rule_readiness,
+        review_workbench=review_workbench,
+        reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_checklist=reviewer_task_checklist,
+        reviewer_task_sequence=reviewer_task_sequence,
+        review_diff=review_diff,
+        review_state=review_state,
+        sheet_classification=sheet_classification,
+        sheet_graphs=sheet_graphs,
+        sheet_issues=sheet_issues,
+        sheet_issue_review_queue=sheet_issue_review_queue,
+        sheet_routing=sheet_routing,
+        sheet_region_candidates=sheet_region_candidates,
+        layout_3d=layout_3d,
+        layout_ifc=layout_ifc,
+        preview_pages=preview_pages,
+        issue_focus=issue_focus,
     )
     (out_dir / "index.html").write_text(html, encoding="utf-8")
 
@@ -1138,7 +1565,7 @@ STUDIO_HTML = r"""
         <div style="font-size: 31px;">🧭</div>
         <strong style="font-size: 18px;">把 PDF 平面图（或 PNG/JPEG 图片）拖到这里</strong>
         <p class="drop-hint">先看识图结果，再决定规则策略。PDF 与 PNG/JPEG 都支持；
-          栅格图无 OCR，房间标签链路不触发 label-依赖规则。</p>
+          栅格图默认不跑 OCR，可在识图参数里启用 beta。</p>
         <div id="fileChosen"></div>
       </label>
       <div class="note" id="fileHint">已选：等待你拖拽文件</div>
@@ -1162,11 +1589,20 @@ STUDIO_HTML = r"""
             <div style="margin-left:auto; color: var(--muted);">仅栅格图</div>
           </div>
           <input id="dpiInput" class="num" type="number" name="image_dpi" step="1" min="36" value="200" />
+          <label style="margin-top: 10px;">
+            <input type="checkbox" name="use_ocr" value="1" />
+            栅格 OCR beta（需要本机安装 OCR 依赖）
+          </label>
           <div class="inline" style="margin-top: 10px;">
             <label style="margin: 0;">min_room_area_m2</label>
             <div style="margin-left:auto; color: var(--muted);">噪声剔除阈值</div>
           </div>
           <input id="noiseInput" class="num" type="number" name="min_room_area_m2" step="0.1" min="0" value="1.0" />
+          <div class="inline" style="margin-top: 10px;">
+            <label style="margin: 0;">sheet_region</label>
+            <div style="margin-left:auto; color: var(--muted);">x0,y0,x1,y1</div>
+          </div>
+          <input class="num" type="text" name="sheet_region" placeholder="留空=整张图；例：0,0,2200,1600" />
           <label style="margin-top: 10px;">
             <input type="checkbox" name="inspect_only" value="1" />
             仅识图模式（先检查 Rooms / Doors / Corridors）
@@ -1376,6 +1812,17 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
             flash("min_room_area_m2 不能为负（设 0 即关闭过滤）。")
             return redirect(url_for("index"))
 
+        raw_sheet_region = request.form.get("sheet_region", "").strip()
+        sheet_region = None
+        if raw_sheet_region:
+            from archkg.ingest.sheet_region import parse_sheet_region
+
+            try:
+                sheet_region = parse_sheet_region(raw_sheet_region)
+            except ValueError as exc:
+                flash(f"sheet_region 无效：{exc}")
+                return redirect(url_for("index"))
+
         # Phase 20-A R1 P0: raster uploads need PIXELS-per-meter, not
         # PDF points-per-meter. Compute from the form's `image_dpi`
         # (default 200) compounded with `points_per_meter` (the
@@ -1393,6 +1840,7 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
                 flash("image_dpi 必须 > 0。")
                 return redirect(url_for("index"))
             ppm = ppm * form_dpi / 72.0
+        use_ocr = ext in supported_raster_exts and request.form.get("use_ocr") == "1"
 
         try:
             run_pipeline(
@@ -1404,6 +1852,8 @@ def create_app(state_dir: Path, *, archkg_version: str = "1.3.0") -> Flask:
                 points_per_meter=ppm,
                 inspect_only=inspect_only,
                 min_room_area_m2=min_room_area,
+                sheet_region=sheet_region,
+                use_ocr=use_ocr,
             )
         except Exception as exc:
             tb = traceback.format_exc()

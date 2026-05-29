@@ -1,0 +1,40 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "cambridge_2garden_thirdfloor-known-gap-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "site_plan_or_overview_not_residential",
+  "component_counts": {
+    "rooms": {
+      "min": 5
+    },
+    "doors": {
+      "min": 2
+    },
+    "corridors": {
+      "min": 1
+    },
+    "dimensions": {
+      "min": 5
+    }
+  },
+  "required_semantic_kinds": [
+    "residential_room",
+    "door_opening"
+  ],
+  "required_evidence_signals": [
+    "residential_room_labels",
+    "openings"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true
+  },
+  "notes_for_reviewer": [
+    "M5.Z-W3 KNOWN_GAP: 2 Garden St Rear Addition — Third Floor Plan.",
+    "Recognizer is expected to FAIL this benchmark because the source page is either a site plan, an overview, an elevation, or has insufficient label density.",
+    "Documents real recognizer failure modes; not padding."
+  ]
+}

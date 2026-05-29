@@ -1,0 +1,13 @@
+{
+  "fixture_kind": "generated_multi_plan_pdf",
+  "source": "samples/sample_clean.pdf duplicated into a two-page PDF",
+  "generated_pdf": "tmp/p40/generated_multi_plan.pdf",
+  "run_command": ".venv/bin/archkg review tmp/p40/generated_multi_plan.pdf -o tmp/p40/generated_multi_plan_run",
+  "committed_artifacts": [
+    "samples/understanding_benchmarks/generated/multi_plan_run/drawing_understanding.json",
+    "samples/understanding_benchmarks/generated/multi_plan_run/sheet_graphs.json",
+    "samples/understanding_benchmarks/generated/multi_plan_run/sheet_issues.json"
+  ],
+  "expected_inventory": "samples/understanding_benchmarks/generated/multi_plan_expected.json",
+  "notes": "This is a deterministic generated fixture used to lock P39 multi-plan graph and per-sheet issue preview behavior. It does not claim real-world recognition breadth or final compliance correctness."
+}

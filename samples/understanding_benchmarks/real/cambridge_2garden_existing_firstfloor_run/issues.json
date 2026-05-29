@@ -1,0 +1,26 @@
+[
+  {
+    "issue_id": "ISS-4ba79e86",
+    "rule_card_id": "RC-BEDROOM-AREA",
+    "standard_clause_id": "GB50096-5.3.1",
+    "entity_ids": [
+      "room-b64d64d7"
+    ],
+    "bbox": [
+      213.0,
+      195.0,
+      360.0,
+      322.5
+    ],
+    "page_index": 0,
+    "severity": "error",
+    "message": "卧室面积 4.61 m²，小于规范要求的 5.0 m²。",
+    "evidence": {
+      "snippet": "卧室面积 4.61 m²，小于规范要求的 5.0 m²。",
+      "page_index": 0,
+      "measured_value": 4.6113800000000005,
+      "threshold_value": 5.0,
+      "unit": "m^2"
+    }
+  }
+]

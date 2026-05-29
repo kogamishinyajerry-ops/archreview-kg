@@ -1,0 +1,30 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "medfield-a6-sections-known-gap-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑剖面图",
+  "likely_design_contains": "剖面图与构造大样",
+  "component_counts": {
+    "rooms": {"exact": 0},
+    "doors": {"exact": 0},
+    "corridors": {"max": 0},
+    "dimensions": {"min": 20}
+  },
+  "required_semantic_kinds": [
+    "section_cut",
+    "structural_detail"
+  ],
+  "required_evidence_signals": [
+    "section_layout"
+  ],
+  "required_benchmark_signals": {
+    "has_dimension_evidence": true
+  },
+  "notes_for_reviewer": [
+    "Section views cut vertically through the building. They contain structural / construction details, not plan-view residential rooms.",
+    "The plan-tuned recognizer is expected to FAIL by falsely identifying 23 rooms and 4 corridors from sectional geometry.",
+    "This fixture is a documented known_gap. Sections need a separate semantic layer."
+  ]
+}

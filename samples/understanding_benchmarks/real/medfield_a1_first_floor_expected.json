@@ -1,0 +1,151 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "medfield-a1-first-floor-manual-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "住宅",
+  "component_counts": {
+    "rooms": {
+      "min": 40,
+      "max": 90
+    },
+    "doors": {
+      "min": 60,
+      "max": 90
+    },
+    "corridors": {
+      "min": 1,
+      "max": 4
+    },
+    "dimensions": {
+      "min": 6
+    }
+  },
+  "required_semantic_kinds": [
+    "residential_room",
+    "door_opening",
+    "horizontal_circulation",
+    "dimension_annotation",
+    "stair"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "residential_room_labels",
+    "openings",
+    "horizontal_circulation",
+    "vertical_circulation",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_horizontal_circulation": true,
+    "has_vertical_circulation": true,
+    "has_dimension_evidence": true
+  },
+  "text_inventory": {
+    "room_label_counts": {
+      "living": 6,
+      "mech": 4,
+      "bedroom": 11,
+      "walk_in": 5,
+      "closet": 8,
+      "study": 2,
+      "bath": 10,
+      "foyer": 3,
+      "balcony": 4,
+      "linen": 8,
+      "kitchen": 6,
+      "dining": 6,
+      "clt": 5,
+      "common": 1
+    },
+    "door_or_opening_size_label_counts": {
+      "3068": 51,
+      "5068": 8,
+      "6068": 1,
+      "4068": 6,
+      "SLD6068": 3,
+      "2268": 1
+    },
+    "major_dimension_texts": [
+      "150'-0\"",
+      "94'-0\"",
+      "52'-0\"",
+      "48'-0\"",
+      "24'-0\"",
+      "4'-0\""
+    ]
+  },
+  "manual_expected_inventory": {
+    "project": "Hillside Village, 89 N. Meadows Road, Medfield, MA",
+    "sheet": "A-1",
+    "drawing_name": "First Floor Plan",
+    "drawing_scale": "3/16 in = 1 ft",
+    "gross_area_text": "7,119 gross sq. ft.",
+    "building_label": "New Construction: 16 Unit Apartment Building",
+    "unit_labels": {
+      "1_bedroom_units": 2,
+      "2_bedroom_units": 3,
+      "3_bedroom_units": 1,
+      "affordable_units": 2,
+      "total_units_on_sheet": 6
+    },
+    "room_label_counts": {
+      "bedroom": 11,
+      "living": 6,
+      "dining": 6,
+      "kitchen": 6,
+      "bath": 10,
+      "walk_in": 5,
+      "closet": 8,
+      "balcony": 4,
+      "foyer": 3,
+      "common": 1,
+      "study": 2,
+      "mech": 4,
+      "clt": 5,
+      "linen": 8
+    },
+    "door_or_opening_size_label_counts": {
+      "3068": 51,
+      "4068": 6,
+      "5068": 8,
+      "6068": 4,
+      "2268": 1,
+      "SLD6068": 3
+    },
+    "major_dimension_texts": [
+      "150'-0\"",
+      "94'-0\"",
+      "52'-0\"",
+      "48'-0\"",
+      "24'-0\"",
+      "4'-0\""
+    ],
+    "annotation_basis": [
+      "Visual inspection of rendered A-1 page.",
+      "Vector text extraction was used to count repeated room and door-size labels.",
+      "Counts are recognition-benchmark inventory targets, not GB compliance findings."
+    ]
+  },
+  "authoring_note": "Human-entered expected inventory for the real Medfield A-1 first-floor plan. Passing this benchmark means the recognizer can produce a plausible component inventory for this sheet with the recorded real-CAD noise floor; it is not a claim that GB compliance findings are correct.",
+  "expected_rule_counts": {
+    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W4.B + W5.A to provide honest reviewer ground truth that exceeds detection. Per-case counts are reviewer-judgment estimates for residential plans (e.g. ~15 corridor-width violations per floor on old buildings, ~5 bedroom-area near-misses per case). These are reviewer-level estimates, NOT per-instance labels.",
+    "RC-STAIR-FLIGHT-WIDTH-1.10": 3,
+    "RC-STAIR-LANDING-WIDTH-1.2": 3,
+    "RC-STAIR-TREAD-WIDTH-0.26": 3,
+    "RC-STAIR-RISER-HEIGHT-0.175": 3,
+    "RC-STAIR-WELL-WIDTH-0.11": 3,
+    "RC-STAIR-HANDRAIL-0.90": 3,
+    "RC-CHILD-RAILING-VERTICAL-SPACING-0.11": 3,
+    "RC-RAILING-HEIGHT-6.7.3": 4,
+    "RC-WINDOW-SILL-PROTECTION-RESI": 4,
+    "RC-CORRIDOR-WIDTH": 18,
+    "RC-LIVING-BEDROOM-NETHEIGHT-2.4": 4,
+    "RC-BEDROOM-AREA": 8,
+    "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20": 12
+  }
+}

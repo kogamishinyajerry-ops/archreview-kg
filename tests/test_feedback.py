@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
@@ -22,8 +23,8 @@ def _mark_first_corridor_confirmed(run_dir: Path) -> str:
     new_lines: list[str] = []
     target_id: str | None = None
     for line in md.splitlines():
-        if "RC-CORRIDOR-WIDTH" in line and "| open |" in line and target_id is None:
-            line = line.replace("| open |", "| confirmed |")
+        if "RC-CORRIDOR-WIDTH" in line and "| candidate |" in line and target_id is None:
+            line = line.replace("| candidate |", "| confirmed |")
             # extract the issue_id from the first cell
             cells = [c.strip() for c in line.strip().strip("|").split("|")]
             target_id = cells[0].strip("`").strip()
@@ -47,21 +48,43 @@ def test_record_writes_feedback_yaml_with_one_confirmed_row(
 
     statuses = {item["issue_id"]: item["status"] for item in payload["items"]}
     assert statuses[target_id] == "confirmed"
-    # All other issues remain `open`.
+    # All other issues remain rule-engine candidates.
     assert sum(1 for v in statuses.values() if v == "confirmed") == 1
-    assert sum(1 for v in statuses.values() if v == "open") == len(statuses) - 1
+    assert sum(1 for v in statuses.values() if v == "candidate") == len(statuses) - 1
+
+    review_state = json.loads((run_dir / "review_state.json").read_text(encoding="utf-8"))
+    by_issue = {item["issue_id"]: item for item in review_state["items"]}
+    assert by_issue[target_id]["status"] == "confirmed"
+    assert sum(1 for item in by_issue.values() if item["status"] == "candidate") == len(statuses) - 1
+
+    issues = json.loads((run_dir / "issues.json").read_text(encoding="utf-8"))
+    assert all("status" not in issue for issue in issues)
 
 
 def test_record_rejects_invalid_status(sample_pdf: Path, tmp_path: Path) -> None:
     run_dir = tmp_path / "run-bad"
     _seed_run(sample_pdf, run_dir)
     md = (run_dir / "report.md").read_text(encoding="utf-8")
-    md = md.replace("| open |", "| weird |", 1)
+    md = md.replace("| candidate |", "| weird |", 1)
     (run_dir / "report.md").write_text(md, encoding="utf-8")
     import pytest
 
     with pytest.raises(FeedbackError, match="invalid status"):
         record(run_dir)
+
+
+def test_record_accepts_legacy_open_status_as_candidate(
+    sample_pdf: Path, tmp_path: Path
+) -> None:
+    run_dir = tmp_path / "run-legacy"
+    _seed_run(sample_pdf, run_dir)
+    md = (run_dir / "report.md").read_text(encoding="utf-8")
+    md = md.replace("| candidate |", "| open |", 1)
+    (run_dir / "report.md").write_text(md, encoding="utf-8")
+
+    out = record(run_dir)
+    payload = yaml.safe_load(out.read_text(encoding="utf-8"))
+    assert any(item["status"] == "candidate" for item in payload["items"])
 
 
 def test_apply_promotes_confirmed_to_rule_cards(
@@ -93,6 +116,43 @@ def test_cli_feedback_smoke(sample_pdf: Path, tmp_path: Path) -> None:
     result = runner.invoke(app, ["feedback", str(run_dir)])
     assert result.exit_code == 0, result.output
     assert (run_dir / "feedback.yaml").exists()
+
+
+def test_cli_review_state_updates_single_issue_without_mutating_issues(
+    sample_pdf: Path,
+    tmp_path: Path,
+) -> None:
+    runner = CliRunner()
+    run_dir = tmp_path / "run-review-state"
+    _seed_run(sample_pdf, run_dir)
+    issues_before = (run_dir / "issues.json").read_text(encoding="utf-8")
+    issues = json.loads(issues_before)
+    issue_id = issues[0]["issue_id"]
+
+    result = runner.invoke(
+        app,
+        [
+            "review-state",
+            str(run_dir),
+            issue_id,
+            "--status",
+            "rejected",
+            "--reviewer",
+            "Zhu",
+            "--note",
+            "not applicable after manual check",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (run_dir / "issues.json").read_text(encoding="utf-8") == issues_before
+    review_state = json.loads((run_dir / "review_state.json").read_text("utf-8"))
+    by_issue = {item["issue_id"]: item for item in review_state["items"]}
+    assert by_issue[issue_id]["status"] == "rejected"
+    assert by_issue[issue_id]["reviewer"] == "Zhu"
+    assert review_state["summary"]["rejected"] == 1
+    workbench = json.loads((run_dir / "review_workbench.json").read_text("utf-8"))
+    assert workbench["summary"]["candidate_review_states"] == len(issues) - 1
 
 
 def test_build_test_case_for_project_issue_without_meta_returns_none() -> None:

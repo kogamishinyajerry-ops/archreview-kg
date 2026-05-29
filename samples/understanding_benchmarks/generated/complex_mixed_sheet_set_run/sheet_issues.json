@@ -1,0 +1,814 @@
+{
+  "schema_version": "sheet_issues.v1",
+  "source_pdf": "samples/generated_complex_sheet_set.pdf",
+  "sheet_count": 2,
+  "issue_count": 37,
+  "preview_only": true,
+  "review_state_linked": false,
+  "sheets": [
+    {
+      "page_index": 0,
+      "issue_count": 21,
+      "skipped_rule_count": 1,
+      "issues": [
+        {
+          "issue_id": "ISS-a5cc60c5",
+          "rule_card_id": "RC-ELEVATOR-REQUIRED",
+          "standard_clause_id": "GB50096-6.4.1",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目 6 层 / 入口距地 18.0 m，按 GB 50096-6.4.1 必须设置电梯，请确认电梯方案。",
+          "evidence": {
+            "snippet": "项目 6 层 / 入口距地 18.0 m，按 GB 50096-6.4.1 必须设置电梯，请确认电梯方案。",
+            "page_index": 0,
+            "measured_value": 6.0,
+            "threshold_value": 16.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-d71caed2",
+          "rule_card_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "standard_clause_id": "GB50096-6.4.7",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目 6 层 / 入口距地 18.0 m，按 GB 50096-6.4.7 电梯不应紧邻卧室布置，请核对电梯井道与卧室的相邻关系。",
+          "evidence": {
+            "snippet": "项目 6 层 / 入口距地 18.0 m，按 GB 50096-6.4.7 电梯不应紧邻卧室布置，请核对电梯井道与卧室的相邻关系。",
+            "page_index": 0,
+            "measured_value": 6.0,
+            "threshold_value": null,
+            "unit": "bool"
+          }
+        },
+        {
+          "issue_id": "ISS-376c9a5d",
+          "rule_card_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "standard_clause_id": "GB50016-5.5.29",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目耐火等级 二级 / 高度类别 多层，按 GB 50016 表 5.5.29（一/二级 + 单/多层 分支）位于两个安全出口之间的户门至最近安全出口直线距离不应大于 40 m，请核对疏散距离。注：本规则仅覆盖 一/二级 + 单/多层 分支；其它耐火/高度组合需另行查表。",
+          "evidence": {
+            "snippet": "项目耐火等级 二级 / 高度类别 多层，按 GB 50016 表 5.5.29（一/二级 + 单/多层 分支）位于两个安全出口之间的户门至最近安全出口直线距离不应大于 40 m，请核对疏散距离。注：本规则仅覆盖 一/二级 + 单/多层 分支；其它耐火/高度组合需另行查表。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 40.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-daa87d63",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-6f016ad8"
+          ],
+          "bbox": [
+            45.0,
+            55.0,
+            112.5,
+            175.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-45675cee",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-59cf171f"
+          ],
+          "bbox": [
+            195.0,
+            55.0,
+            262.5,
+            175.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-93da2fe2",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-13da3d0a"
+          ],
+          "bbox": [
+            345.0,
+            55.0,
+            412.5,
+            175.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-f510eaff",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-81008d80"
+          ],
+          "bbox": [
+            495.0,
+            55.0,
+            562.5,
+            175.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-75b4e16d",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-e7700312"
+          ],
+          "bbox": [
+            645.0,
+            55.0,
+            712.5,
+            175.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-eefe53d6",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-370007fe"
+          ],
+          "bbox": [
+            45.0,
+            335.0,
+            112.5,
+            455.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-b6cebb63",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-3aa7f18f"
+          ],
+          "bbox": [
+            195.0,
+            335.0,
+            262.5,
+            455.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-92c33661",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-e889bc46"
+          ],
+          "bbox": [
+            345.0,
+            335.0,
+            412.5,
+            455.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-115bb586",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-812352be"
+          ],
+          "bbox": [
+            495.0,
+            335.0,
+            562.5,
+            455.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-893453a1",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-ea062740"
+          ],
+          "bbox": [
+            645.0,
+            335.0,
+            712.5,
+            455.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-bcb56cf3",
+          "rule_card_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "standard_clause_id": "GB50096-5.6.2",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对阳台栏杆垂直杆件净距 ≤ 0.11 m，且采用防止儿童攀登的构造（GB 50096-5.6.2）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对阳台栏杆垂直杆件净距 ≤ 0.11 m，且采用防止儿童攀登的构造（GB 50096-5.6.2）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 0.11,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-c0473764",
+          "rule_card_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "standard_clause_id": "GB50096-5.6.3",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对阳台栏板/栏杆净高：六层及以下不应低于 1.05 m，七层及以上不应低于 1.10 m（GB 50096-5.6.3）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对阳台栏板/栏杆净高：六层及以下不应低于 1.05 m，七层及以上不应低于 1.10 m（GB 50096-5.6.3）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 1.05,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-ef7bc6c0",
+          "rule_card_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "standard_clause_id": "GB50096-5.8.1",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对外窗窗台距楼面/地面净高 < 0.90 m 时是否设防护设施（GB 50096-5.8.1）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对外窗窗台距楼面/地面净高 < 0.90 m 时是否设防护设施（GB 50096-5.8.1）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-32e0e9e9",
+          "rule_card_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "standard_clause_id": "GB50096-6.1.2",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对公共出入口台阶高度 > 0.70 m 且侧面临空时是否设防护设施，防护净高 ≥ 1.05 m（GB 50096-6.1.2）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对公共出入口台阶高度 > 0.70 m 且侧面临空时是否设防护设施，防护净高 ≥ 1.05 m（GB 50096-6.1.2）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 1.05,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-1fbed1b2",
+          "rule_card_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "standard_clause_id": "GB50096-6.2.4",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对两个安全出口的距离不应小于 5 m（GB 50096-6.2.4，安全出口分散布置）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对两个安全出口的距离不应小于 5 m（GB 50096-6.2.4，安全出口分散布置）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 5.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-532fdd1c",
+          "rule_card_id": "RC-RAILING-HEIGHT-6.7.3",
+          "standard_clause_id": "GB50352-6.7.3",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为 residential，请核对阳台/外廊/室内回廊/上人屋面等临空处栏杆高度：临空高度 < 24.0 m 时 ≥ 1.05 m；临空高度 ≥ 24.0 m 时 ≥ 1.1 m；上人屋面或交通/商业/旅馆/医院/学校等建筑临开敞中庭 ≥ 1.2 m（GB 50352-6.7.3）。",
+          "evidence": {
+            "snippet": "项目为 residential，请核对阳台/外廊/室内回廊/上人屋面等临空处栏杆高度：临空高度 < 24.0 m 时 ≥ 1.05 m；临空高度 ≥ 24.0 m 时 ≥ 1.1 m；上人屋面或交通/商业/旅馆/医院/学校等建筑临开敞中庭 ≥ 1.2 m（GB 50352-6.7.3）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 1.05,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-113f1421",
+          "rule_card_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "standard_clause_id": "GB50352-6.7.4",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对栏杆采用防止攀爬构造，垂直杆件净间距 ≤ 0.11 m（GB 50352-6.7.4，住宅/托幼/中小学等场所）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对栏杆采用防止攀爬构造，垂直杆件净间距 ≤ 0.11 m（GB 50352-6.7.4，住宅/托幼/中小学等场所）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 0.11,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-7460ad60",
+          "rule_card_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "standard_clause_id": "GB50352-6.8.4",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为 residential，请核对楼梯转向端处平台宽度 ≥ 1.2 m（不应小于梯段净宽），直跑楼梯中间平台宽度 ≥ 0.9 m（GB 50352-6.8.4）。",
+          "evidence": {
+            "snippet": "项目为 residential，请核对楼梯转向端处平台宽度 ≥ 1.2 m（不应小于梯段净宽），直跑楼梯中间平台宽度 ≥ 0.9 m（GB 50352-6.8.4）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 1.2,
+            "unit": "m"
+          }
+        }
+      ],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "GB50016-5.5.31: 仅适用 超高层（项目为 多层）"
+        }
+      ]
+    },
+    {
+      "page_index": 2,
+      "issue_count": 16,
+      "skipped_rule_count": 1,
+      "issues": [
+        {
+          "issue_id": "ISS-3374d203",
+          "rule_card_id": "RC-ELEVATOR-REQUIRED",
+          "standard_clause_id": "GB50096-6.4.1",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目 6 层 / 入口距地 18.0 m，按 GB 50096-6.4.1 必须设置电梯，请确认电梯方案。",
+          "evidence": {
+            "snippet": "项目 6 层 / 入口距地 18.0 m，按 GB 50096-6.4.1 必须设置电梯，请确认电梯方案。",
+            "page_index": 0,
+            "measured_value": 6.0,
+            "threshold_value": 16.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-0bb90ef1",
+          "rule_card_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "standard_clause_id": "GB50096-6.4.7",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目 6 层 / 入口距地 18.0 m，按 GB 50096-6.4.7 电梯不应紧邻卧室布置，请核对电梯井道与卧室的相邻关系。",
+          "evidence": {
+            "snippet": "项目 6 层 / 入口距地 18.0 m，按 GB 50096-6.4.7 电梯不应紧邻卧室布置，请核对电梯井道与卧室的相邻关系。",
+            "page_index": 0,
+            "measured_value": 6.0,
+            "threshold_value": null,
+            "unit": "bool"
+          }
+        },
+        {
+          "issue_id": "ISS-bfb98b5a",
+          "rule_card_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "standard_clause_id": "GB50016-5.5.29",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目耐火等级 二级 / 高度类别 多层，按 GB 50016 表 5.5.29（一/二级 + 单/多层 分支）位于两个安全出口之间的户门至最近安全出口直线距离不应大于 40 m，请核对疏散距离。注：本规则仅覆盖 一/二级 + 单/多层 分支；其它耐火/高度组合需另行查表。",
+          "evidence": {
+            "snippet": "项目耐火等级 二级 / 高度类别 多层，按 GB 50016 表 5.5.29（一/二级 + 单/多层 分支）位于两个安全出口之间的户门至最近安全出口直线距离不应大于 40 m，请核对疏散距离。注：本规则仅覆盖 一/二级 + 单/多层 分支；其它耐火/高度组合需另行查表。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 40.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-ed6aa72f",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-460eade7"
+          ],
+          "bbox": [
+            45.0,
+            335.0,
+            112.5,
+            455.0
+          ],
+          "page_index": 2,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 2,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-6b26e35c",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-2758b6cc"
+          ],
+          "bbox": [
+            195.0,
+            335.0,
+            262.5,
+            455.0
+          ],
+          "page_index": 2,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 2,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-1f704a9b",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-b4f637f8"
+          ],
+          "bbox": [
+            345.0,
+            335.0,
+            412.5,
+            455.0
+          ],
+          "page_index": 2,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 2,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-a959903b",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-33592a8c"
+          ],
+          "bbox": [
+            495.0,
+            335.0,
+            562.5,
+            455.0
+          ],
+          "page_index": 2,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 2,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-d4138b41",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-adf01334"
+          ],
+          "bbox": [
+            645.0,
+            335.0,
+            712.5,
+            455.0
+          ],
+          "page_index": 2,
+          "severity": "error",
+          "message": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.24 m²，小于规范要求的 5.0 m²。",
+            "page_index": 2,
+            "measured_value": 3.24,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-6f023a17",
+          "rule_card_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "standard_clause_id": "GB50096-5.6.2",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对阳台栏杆垂直杆件净距 ≤ 0.11 m，且采用防止儿童攀登的构造（GB 50096-5.6.2）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对阳台栏杆垂直杆件净距 ≤ 0.11 m，且采用防止儿童攀登的构造（GB 50096-5.6.2）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 0.11,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-4a2ba270",
+          "rule_card_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "standard_clause_id": "GB50096-5.6.3",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对阳台栏板/栏杆净高：六层及以下不应低于 1.05 m，七层及以上不应低于 1.10 m（GB 50096-5.6.3）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对阳台栏板/栏杆净高：六层及以下不应低于 1.05 m，七层及以上不应低于 1.10 m（GB 50096-5.6.3）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 1.05,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-71f45e44",
+          "rule_card_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "standard_clause_id": "GB50096-5.8.1",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对外窗窗台距楼面/地面净高 < 0.90 m 时是否设防护设施（GB 50096-5.8.1）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对外窗窗台距楼面/地面净高 < 0.90 m 时是否设防护设施（GB 50096-5.8.1）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-43edceef",
+          "rule_card_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "standard_clause_id": "GB50096-6.1.2",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对公共出入口台阶高度 > 0.70 m 且侧面临空时是否设防护设施，防护净高 ≥ 1.05 m（GB 50096-6.1.2）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对公共出入口台阶高度 > 0.70 m 且侧面临空时是否设防护设施，防护净高 ≥ 1.05 m（GB 50096-6.1.2）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 1.05,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-6b9b42d4",
+          "rule_card_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "standard_clause_id": "GB50096-6.2.4",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对两个安全出口的距离不应小于 5 m（GB 50096-6.2.4，安全出口分散布置）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对两个安全出口的距离不应小于 5 m（GB 50096-6.2.4，安全出口分散布置）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 5.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-7c70e9f1",
+          "rule_card_id": "RC-RAILING-HEIGHT-6.7.3",
+          "standard_clause_id": "GB50352-6.7.3",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为 residential，请核对阳台/外廊/室内回廊/上人屋面等临空处栏杆高度：临空高度 < 24.0 m 时 ≥ 1.05 m；临空高度 ≥ 24.0 m 时 ≥ 1.1 m；上人屋面或交通/商业/旅馆/医院/学校等建筑临开敞中庭 ≥ 1.2 m（GB 50352-6.7.3）。",
+          "evidence": {
+            "snippet": "项目为 residential，请核对阳台/外廊/室内回廊/上人屋面等临空处栏杆高度：临空高度 < 24.0 m 时 ≥ 1.05 m；临空高度 ≥ 24.0 m 时 ≥ 1.1 m；上人屋面或交通/商业/旅馆/医院/学校等建筑临开敞中庭 ≥ 1.2 m（GB 50352-6.7.3）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 1.05,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-92fb97df",
+          "rule_card_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "standard_clause_id": "GB50352-6.7.4",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为住宅，请核对栏杆采用防止攀爬构造，垂直杆件净间距 ≤ 0.11 m（GB 50352-6.7.4，住宅/托幼/中小学等场所）。",
+          "evidence": {
+            "snippet": "项目为住宅，请核对栏杆采用防止攀爬构造，垂直杆件净间距 ≤ 0.11 m（GB 50352-6.7.4，住宅/托幼/中小学等场所）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 0.11,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-26f4619a",
+          "rule_card_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "standard_clause_id": "GB50352-6.8.4",
+          "entity_ids": [
+            "project:DEMO-001"
+          ],
+          "bbox": null,
+          "page_index": 0,
+          "severity": "info",
+          "message": "项目为 residential，请核对楼梯转向端处平台宽度 ≥ 1.2 m（不应小于梯段净宽），直跑楼梯中间平台宽度 ≥ 0.9 m（GB 50352-6.8.4）。",
+          "evidence": {
+            "snippet": "项目为 residential，请核对楼梯转向端处平台宽度 ≥ 1.2 m（不应小于梯段净宽），直跑楼梯中间平台宽度 ≥ 0.9 m（GB 50352-6.8.4）。",
+            "page_index": 0,
+            "measured_value": null,
+            "threshold_value": 1.2,
+            "unit": "m"
+          }
+        }
+      ],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "GB50016-5.5.31: 仅适用 超高层（项目为 多层）"
+        }
+      ]
+    }
+  ]
+}

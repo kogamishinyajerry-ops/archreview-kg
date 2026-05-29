@@ -1,0 +1,18 @@
+{
+  "schema_version": "sheet_routing.v1",
+  "mode": "legacy_all_pages",
+  "selected_page_indexes": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "excluded_page_indexes": [],
+  "original_page_count": 4,
+  "graph_page_count": 4,
+  "confidence_floor": 0.5,
+  "reason": "multiple confident plan pages require future multi-graph support",
+  "fallback_reason": "multiple_eligible_plan_pages",
+  "source_sheet_classification_schema": "sheet_classification.v1",
+  "manual_sheet_region_applied": false
+}

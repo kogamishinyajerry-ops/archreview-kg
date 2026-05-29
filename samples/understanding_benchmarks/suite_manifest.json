@@ -1,0 +1,353 @@
+{
+  "schema_version": "understanding_benchmark_suite.v1",
+  "suite_id": "archreview-understanding-intake-v1",
+  "cases": [
+    {
+      "case_id": "sample-clean-full-active",
+      "fixture_kind": "toy_vector_pdf",
+      "status": "active",
+      "run_dir": "toy/sample_clean_full_run",
+      "expect": "sample_clean_full.json",
+      "provenance": "toy/sample_clean_full_provenance.json",
+      "notes": "Deterministic toy vector fixture generated from samples/sample_clean.pdf with demo project/room/stair schedules. Active only to keep the packaged release gate reproducible; it is not real-drawing proof."
+    },
+    {
+      "case_id": "medfield-a1-first-floor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a1_first_floor_run",
+      "expect": "real/medfield_a1_first_floor_expected.json",
+      "provenance": "real/medfield_a1_first_floor_provenance.json",
+      "notes": "A-1 First Floor Plan has human-entered expected inventory. Current recognizer passes this case using a 3.0 m² real-CAD noise floor and text-hint vertical circulation evidence; this is recognition benchmarking only, not GB compliance validation."
+    },
+    {
+      "case_id": "medfield-a2-second-floor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a2_second_floor_run",
+      "expect": "real/medfield_a2_second_floor_expected.json",
+      "provenance": "real/medfield_a2_second_floor_provenance.json",
+      "notes": "A-2 Second Floor Plan has human-reviewed expected inventory. Current recognizer passes this case with a 3.0 m² real-CAD noise floor, door/opening labels, dimension evidence, and vertical circulation hints; horizontal circulation is not asserted for this sheet."
+    },
+    {
+      "case_id": "medfield-full-plan-set-multi-plan-intake",
+      "fixture_kind": "real_public_multi_plan_pdf",
+      "status": "active",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_full_plan_set_run",
+      "expect": "real/medfield_full_plan_set_expected.json",
+      "provenance": "real/medfield_full_plan_set_intake_provenance.json",
+      "required_artifacts": [
+        "source_pdf_or_private_pointer",
+        "full_review_run_dir",
+        "drawing_understanding.json",
+        "sheet_classification.json",
+        "sheet_graphs.json",
+        "sheet_issues.json",
+        "human_expected_inventory.json"
+      ],
+      "promotion_rule": "promoted active in P44 after drawing_understanding began merging sheet_graphs.json counts into multi-sheet recognition evidence; per-sheet preview issues still stay out of primary issues.json",
+      "notes": "Real public 9-page plan/elevation PDF active recognition benchmark. Full-set drawing_understanding now exposes opening evidence from sheet_graphs.json aggregate counts; this remains recognition benchmarking, not final multi-plan compliance aggregation."
+    },
+    {
+      "case_id": "generated-complex-titleblock",
+      "fixture_kind": "generated_complex_pdf",
+      "status": "active",
+      "run_dir": "generated/complex_titleblock_run",
+      "expect": "generated/complex_titleblock_expected.json",
+      "provenance": "generated/complex_titleblock_provenance.json",
+      "notes": "Deterministic generated complex sheet with a right-side title block. The committed run uses --sheet-region 0,0,860,660 so benchmark counts exclude non-design title-block geometry and text."
+    },
+    {
+      "case_id": "generated-complex-mixed-sheet-set",
+      "fixture_kind": "generated_complex_mixed_sheet_pdf",
+      "status": "active",
+      "run_dir": "generated/complex_mixed_sheet_set_run",
+      "expect": "generated/complex_mixed_sheet_set_expected.json",
+      "provenance": "generated/complex_mixed_sheet_set_provenance.json",
+      "required_artifacts": [
+        "source_pdf",
+        "full_review_run_dir",
+        "drawing_understanding.json",
+        "sheet_classification.json",
+        "sheet_routing.json",
+        "sheet_graphs.json",
+        "sheet_issues.json",
+        "reviewed_expected_inventory.json"
+      ],
+      "promotion_rule": "active generated complex benchmark after P55 expected inventory review; locks plan/schedule/elevation classification and per-plan graphing without promoting per-sheet preview issues",
+      "notes": "Deterministic four-page mixed sheet set with two plan sheets plus schedule/legend and elevation/section pages. This is complex recognition benchmarking only, not a real-project or compliance-accuracy claim."
+    },
+    {
+      "case_id": "generated-multi-plan-sheets",
+      "fixture_kind": "generated_multi_plan_pdf",
+      "status": "active",
+      "run_dir": "generated/multi_plan_run",
+      "expect": "generated/multi_plan_expected.json",
+      "provenance": "generated/multi_plan_provenance.json",
+      "notes": "Deterministic two-page plan set created by duplicating sample_clean.pdf. This locks sheet_graphs.json and sheet_issues.json behavior without promoting per-sheet preview issues into primary issues.json."
+    },
+    {
+      "case_id": "medfield-a0-basement",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a0_basement_run",
+      "expect": "real/medfield_a0_basement_expected.json",
+      "provenance": "real/medfield_a0_basement_provenance.json",
+      "notes": "M5.Z-W2: A-0 Basement Floor Plan from the same 9-page Medfield PDF. Shared-source bias with other medfield-* cases is acknowledged explicitly in provenance. Recognizer parses 4 of 5 evidence signals (no vertical-circulation on this sheet)."
+    },
+    {
+      "case_id": "medfield-a3-third-floor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a3_third_floor_run",
+      "expect": "real/medfield_a3_third_floor_expected.json",
+      "provenance": "real/medfield_a3_third_floor_provenance.json",
+      "notes": "M5.Z-W2: A-3 Third Floor Plan from the same 9-page Medfield PDF. Same shared-source bias as A-0; recognizer parses all 5 evidence signals."
+    },
+    {
+      "case_id": "medfield-a4-roof",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a4_roof_run",
+      "expect": "real/medfield_a4_roof_expected.json",
+      "provenance": "real/medfield_a4_roof_provenance.json",
+      "notes": "M5.Z-W2: A-4 Roof Plan from the same 9-page Medfield PDF. Honest known_gap — the plan-tuned recognizer falsely identifies 25 'rooms' and 8 'corridors' from roof outline geometry. Needs a roof-aware semantic layer before promotion."
+    },
+    {
+      "case_id": "medfield-a5-elevations",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a5_elevations_run",
+      "expect": "real/medfield_a5_elevations_expected.json",
+      "provenance": "real/medfield_a5_elevations_provenance.json",
+      "notes": "M5.Z-W2: A-5 Elevations from the same 9-page Medfield PDF. Honest known_gap — elevations are not plan views; recognizer cannot honestly produce residential-room evidence from side elevations."
+    },
+    {
+      "case_id": "medfield-a6-sections",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+      "run_dir": "real/medfield_a6_sections_run",
+      "expect": "real/medfield_a6_sections_expected.json",
+      "provenance": "real/medfield_a6_sections_provenance.json",
+      "notes": "M5.Z-W2: A-6 Sections from the same 9-page Medfield PDF. Honest known_gap — sections are not plan views; recognizer cannot honestly identify residential rooms from sectional cuts."
+    },
+    {
+      "case_id": "cambridge-207lex-basement",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/207lexingtonavebza1143415documents1.pdf",
+      "run_dir": "real/cambridge_207lex_basement_run",
+      "expect": "real/cambridge_207lex_basement_expected.json",
+      "provenance": "real/cambridge_207lex_basement_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 207 Lexington Ave ADU — Basement Plan (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-207lex-ground",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/207lexingtonavebza1143415documents1.pdf",
+      "run_dir": "real/cambridge_207lex_ground_run",
+      "expect": "real/cambridge_207lex_ground_expected.json",
+      "provenance": "real/cambridge_207lex_ground_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 207 Lexington Ave ADU — Ground Floor Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-2garden-existing-firstfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_existing_firstfloor_run",
+      "expect": "real/cambridge_2garden_existing_firstfloor_expected.json",
+      "provenance": "real/cambridge_2garden_existing_firstfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Existing First Floor Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-2garden-existing-overview",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_existing_overview_run",
+      "expect": "real/cambridge_2garden_existing_overview_expected.json",
+      "provenance": "real/cambridge_2garden_existing_overview_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Existing Conditions Page 09 (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-2garden-existing-secondfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_existing_secondfloor_run",
+      "expect": "real/cambridge_2garden_existing_secondfloor_expected.json",
+      "provenance": "real/cambridge_2garden_existing_secondfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Existing Second Floor Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-2garden-firstfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_firstfloor_run",
+      "expect": "real/cambridge_2garden_firstfloor_expected.json",
+      "provenance": "real/cambridge_2garden_firstfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — First Floor Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-2garden-proposed-overview2",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_proposed_overview2_run",
+      "expect": "real/cambridge_2garden_proposed_overview2_expected.json",
+      "provenance": "real/cambridge_2garden_proposed_overview2_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Proposed Plan Page 11 (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-2garden-proposed-overview",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_proposed_overview_run",
+      "expect": "real/cambridge_2garden_proposed_overview_expected.json",
+      "provenance": "real/cambridge_2garden_proposed_overview_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Proposed Plan Page 10 (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-2garden-secondfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_secondfloor_run",
+      "expect": "real/cambridge_2garden_secondfloor_expected.json",
+      "provenance": "real/cambridge_2garden_secondfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Second Floor Plan (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-2garden-thirdfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/inspectionalservicesdepartment/bzadocuments/2gardenstbza228569documents.pdf",
+      "run_dir": "real/cambridge_2garden_thirdfloor_run",
+      "expect": "real/cambridge_2garden_thirdfloor_expected.json",
+      "provenance": "real/cambridge_2garden_thirdfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 2 Garden St Rear Addition — Third Floor Plan (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-343medford-firstfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/historicalcommission/pdf/chcmeetingfiles/case4487_plans_BZA.pdf",
+      "run_dir": "real/cambridge_343medford_firstfloor_run",
+      "expect": "real/cambridge_343medford_firstfloor_expected.json",
+      "provenance": "real/cambridge_343medford_firstfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 343 Medford St — First Floor (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-343medford-overview",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/historicalcommission/pdf/chcmeetingfiles/case4487_plans_BZA.pdf",
+      "run_dir": "real/cambridge_343medford_overview_run",
+      "expect": "real/cambridge_343medford_overview_expected.json",
+      "provenance": "real/cambridge_343medford_overview_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 343 Medford St — Floor Plan Overview (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-343medford-secondfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/historicalcommission/pdf/chcmeetingfiles/case4487_plans_BZA.pdf",
+      "run_dir": "real/cambridge_343medford_secondfloor_run",
+      "expect": "real/cambridge_343medford_secondfloor_expected.json",
+      "provenance": "real/cambridge_343medford_secondfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 343 Medford St — Second Floor (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-343medford-thirdfloor",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/historicalcommission/pdf/chcmeetingfiles/case4487_plans_BZA.pdf",
+      "run_dir": "real/cambridge_343medford_thirdfloor_run",
+      "expect": "real/cambridge_343medford_thirdfloor_expected.json",
+      "provenance": "real/cambridge_343medford_thirdfloor_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: 343 Medford St — Third Floor (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-sp336-basement",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_basement_run",
+      "expect": "real/cambridge_sp336_basement_expected.json",
+      "provenance": "real/cambridge_sp336_basement_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Basement (Cambridge MA). Known_gap: documents real recognizer failure mode on this page type."
+    },
+    {
+      "case_id": "cambridge-sp336-ground",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_ground_run",
+      "expect": "real/cambridge_sp336_ground_expected.json",
+      "provenance": "real/cambridge_sp336_ground_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Ground Level Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-sp336-level2-3",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_level2_3_run",
+      "expect": "real/cambridge_sp336_level2_3_expected.json",
+      "provenance": "real/cambridge_sp336_level2_3_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Level 2-3 Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-sp336-level4",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_level4_run",
+      "expect": "real/cambridge_sp336_level4_expected.json",
+      "provenance": "real/cambridge_sp336_level4_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Level 4 Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "cambridge-sp336-level5",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.cambridgema.gov/-/media/Files/CDD/ZoningDevel/specialpermitsadvisory/sp336/sp336_revisedgraphics_20180703.pdf",
+      "run_dir": "real/cambridge_sp336_level5_run",
+      "expect": "real/cambridge_sp336_level5_expected.json",
+      "provenance": "real/cambridge_sp336_level5_provenance.json",
+      "notes": "M5.Z-W3 multi-source acquisition: Cambridge St Mixed-Use (sp336) — Level 5 Plan (Cambridge MA). Active recognition: residential plan parses honestly."
+    },
+    {
+      "case_id": "portangeles-wa-studio",
+      "fixture_kind": "real_public_pdf",
+      "status": "known_gap",
+      "source_url": "https://cityofpa.us/DocumentCenter/View/13897/Application-and-Details---480SF",
+      "run_dir": "real/portangeles_wa_studio_run",
+      "expect": "real/portangeles_wa_studio_expected.json",
+      "provenance": "real/portangeles_wa_studio_provenance.json",
+      "notes": "M5.Z-W4.C cross-state sourcing attempt. Port Angeles WA Permit-Ready Plans — first non-MA fixture in the suite. Known gap because pages 2-4 are raster image PDF (not vector); recognizer is vector-only. Documents the jurisdiction-diversity signal even without promotion to active."
+    },
+    {
+      "case_id": "hopkins-mn-foundation",
+      "fixture_kind": "real_public_pdf",
+      "status": "active",
+      "source_url": "https://www.hopkinsmn.com/DocumentCenter/View/420/Building-Plans---A-Guide-to-Requirements-and-Sample-Plans-PDF",
+      "run_dir": "real/hopkins_mn_foundation_run",
+      "expect": "real/hopkins_mn_foundation_expected.json",
+      "provenance": "real/hopkins_mn_foundation_provenance.json",
+      "notes": "M5.Z-W5 cross-state sourcing: City of Hopkins MN sample foundation plan. First non-MA ACTIVE case in the suite. Acknowledges the active-set MA-only bias has now been partially broken (Minnesota is a different jurisdiction from MA)."
+    }
+  ]
+}

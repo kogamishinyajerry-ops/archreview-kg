@@ -1,0 +1,226 @@
+{
+  "schema_version": "drawing_understanding.v2",
+  "drawing_type": "建筑平面图",
+  "likely_design": "建筑平面图",
+  "summary": "建筑平面图。识别到 0 个空间、0 个门/洞口、2 条走廊、0 个楼梯/垂直交通对象、4 条尺寸证据。 多页 sheet graph 证据汇总: 0 个空间、0 个门/洞口、2 条走廊、4 条尺寸证据。",
+  "component_counts": {
+    "lines": 62,
+    "texts": 46,
+    "rooms": 0,
+    "doors": 0,
+    "corridors": 2,
+    "stairs": 0,
+    "dimensions": 4,
+    "ocr_texts": 0
+  },
+  "text_inventory": {
+    "room_label_counts": {},
+    "door_or_opening_size_label_counts": {},
+    "major_dimension_texts": []
+  },
+  "drawing_profile": {
+    "understanding_level": "component_inventory",
+    "evidence_signals": [
+      "horizontal_circulation",
+      "dimension_evidence",
+      "per_sheet_graphs"
+    ],
+    "review_note": "识别档案用于衡量图纸内容理解, 不是规范判定。"
+  },
+  "benchmark_signals": {
+    "has_spatial_layout": false,
+    "has_openings": false,
+    "has_horizontal_circulation": true,
+    "has_vertical_circulation": false,
+    "has_dimension_evidence": true,
+    "has_ocr_text": false
+  },
+  "component_inventory": [
+    {
+      "id": "corridor-16615911",
+      "category": "horizontal_circulation",
+      "semantic_kind": "horizontal_circulation",
+      "label": "走廊/交通空间",
+      "label_zh": "走廊/交通空间",
+      "metric_text": "0.98 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "180.5, 316.5, 576.5, 365.5",
+      "uncertain": false
+    },
+    {
+      "id": "corridor-fb2dde0f",
+      "category": "horizontal_circulation",
+      "semantic_kind": "horizontal_circulation",
+      "label": "走廊/交通空间",
+      "label_zh": "走廊/交通空间",
+      "metric_text": "0.88 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "180.5, 371.5, 576.5, 415.5",
+      "uncertain": false
+    },
+    {
+      "id": "dim-7bd1849e",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "321 E. 5th Street, Port Angeles, WA 98362",
+      "label_zh": "",
+      "metric_text": "0.32 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "183.4, 66.5, 426.0, 85.3",
+      "uncertain": false
+    },
+    {
+      "id": "dim-45ae321a",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "360.417.4750 | www.cityofpa.us | ced@cityofpa.us",
+      "label_zh": "",
+      "metric_text": "0.36 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "161.5, 83.3, 447.9, 102.1",
+      "uncertain": false
+    },
+    {
+      "id": "dim-29246693",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "1",
+      "label_zh": "",
+      "metric_text": "1.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "535.9, 757.3, 541.4, 771.0",
+      "uncertain": false
+    },
+    {
+      "id": "dim-ea8be324",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "2/19/2023",
+      "label_zh": "",
+      "metric_text": "2.00 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "541.4, 757.3, 585.9, 771.0",
+      "uncertain": false
+    }
+  ],
+  "components": {
+    "spaces": [],
+    "openings": [],
+    "circulation": [
+      {
+        "id": "corridor-16615911",
+        "component": "走廊/交通空间",
+        "category": "horizontal_circulation",
+        "semantic_kind": "horizontal_circulation",
+        "min_width_m": 0.98,
+        "min_width_text": "0.98 m",
+        "metric_text": "0.98 m",
+        "bbox_text": "180.5, 316.5, 576.5, 365.5",
+        "confidence": 0.8,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "corridor-fb2dde0f",
+        "component": "走廊/交通空间",
+        "category": "horizontal_circulation",
+        "semantic_kind": "horizontal_circulation",
+        "min_width_m": 0.88,
+        "min_width_text": "0.88 m",
+        "metric_text": "0.88 m",
+        "bbox_text": "180.5, 371.5, 576.5, 415.5",
+        "confidence": 0.8,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      }
+    ],
+    "vertical_circulation": []
+  },
+  "dimension_evidence": {
+    "graph_dimensions": [
+      {
+        "id": "dim-7bd1849e",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "321 E. 5th Street, Port Angeles, WA 98362",
+        "value_m": 0.321,
+        "value_text": "0.32 m",
+        "metric_text": "0.32 m",
+        "bbox_text": "183.4, 66.5, 426.0, 85.3",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-45ae321a",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "360.417.4750 | www.cityofpa.us | ced@cityofpa.us",
+        "value_m": 0.360417,
+        "value_text": "0.36 m",
+        "metric_text": "0.36 m",
+        "bbox_text": "161.5, 83.3, 447.9, 102.1",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-29246693",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "1",
+        "value_m": 1.0,
+        "value_text": "1.00 m",
+        "metric_text": "1.00 m",
+        "bbox_text": "535.9, 757.3, 541.4, 771.0",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-ea8be324",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "2/19/2023",
+        "value_m": 2.0,
+        "value_text": "2.00 m",
+        "metric_text": "2.00 m",
+        "bbox_text": "541.4, 757.3, 585.9, 771.0",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      }
+    ],
+    "ocr_dimensions": [],
+    "ocr_dimension_count": 0,
+    "ocr_bound_count": 0
+  },
+  "uncertainty_flags": [],
+  "sheet_graph_summary": {
+    "source": "sheet_graphs.json",
+    "graph_count": 1,
+    "plan_page_indexes": [
+      0
+    ],
+    "component_counts": {
+      "rooms": 0,
+      "doors": 0,
+      "corridors": 2,
+      "stairs": 0,
+      "dimensions": 4
+    },
+    "review_note": "Counts are aggregated from per-plan-sheet graph evidence. They are recognition evidence and are not merged into primary issues.json."
+  }
+}

@@ -1,0 +1,12 @@
+{"issue_id": 33, "reviewer_id": "kogami-maintainer", "event_type": "confirm", "reviewer_class": "project_internal", "note": "走廊净宽 0.57m 远低于 1.20m 阈值，按 GB 50096 § 5.2.4 严格判违规"}
+{"issue_id": 34, "reviewer_id": "kogami-maintainer", "event_type": "confirm", "reviewer_class": "project_internal", "note": "0.58m 同样违规，与 #33 是同一走廊延伸段"}
+{"issue_id": 35, "reviewer_id": "kogami-maintainer", "event_type": "confirm", "reviewer_class": "project_internal", "note": "户门净宽 0.85m < 0.90m 阈值，违规明确"}
+{"issue_id": 36, "reviewer_id": "kogami-maintainer", "event_type": "confirm", "reviewer_class": "project_internal", "note": "0.72m 是儿童房门，强制违规"}
+{"issue_id": 37, "reviewer_id": "kogami-maintainer", "event_type": "reject", "reviewer_class": "project_internal", "note": "0.89m vs 0.90m 阈值差 1cm — 在 ±2cm 测量误差范围内，按工程惯例不视作违规"}
+{"issue_id": 38, "reviewer_id": "kogami-maintainer", "event_type": "reject", "reviewer_class": "project_internal", "note": "0.88m 同样在测量误差范围内，规则触发但工程上接受"}
+{"issue_id": 39, "reviewer_id": "kogami-maintainer", "event_type": "confirm", "reviewer_class": "project_internal", "note": "0.72m 远低于阈值 + 是主卧门，违规"}
+{"issue_id": 40, "reviewer_id": "kogami-maintainer", "event_type": "needs_info", "reviewer_class": "project_internal", "note": "0.86m — 需要确认是非户门还是户门；如是户门则违规，如是普通内门则按 GB 50352 较宽 scope"}
+{"issue_id": 41, "reviewer_id": "kogami-maintainer", "event_type": "confirm", "reviewer_class": "project_internal", "note": "0.78m 违规明确"}
+{"issue_id": 42, "reviewer_id": "kogami-maintainer", "event_type": "needs_info", "reviewer_class": "project_internal", "note": "0.86m 同样需 scope 确认 (见 #40)"}
+{"issue_id": 43, "reviewer_id": "kogami-maintainer", "event_type": "reject", "reviewer_class": "project_internal", "note": "0.85m 但根据图纸标注备注是工业储藏间门，不适用 GB 50096 § 5.2.1"}
+{"issue_id": 44, "reviewer_id": "kogami-maintainer", "event_type": "confirm", "reviewer_class": "project_internal", "note": "0.85m 违规明确"}

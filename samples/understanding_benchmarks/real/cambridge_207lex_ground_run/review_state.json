@@ -1,0 +1,21 @@
+{
+  "schema_version": "issue_review_state.v1",
+  "run_id": "cambridge-207lex-page07-ground",
+  "generated_at": "2026-05-16T08:16:23Z",
+  "summary": {
+    "candidate": 1
+  },
+  "items": [
+    {
+      "issue_id": "ISS-a86cdc35",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-207lex-page07-ground",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:23Z",
+      "updated_at": "2026-05-16T08:16:23Z"
+    }
+  ]
+}

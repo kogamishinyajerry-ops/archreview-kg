@@ -22,6 +22,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from archkg.viewer.preview_pages import PreviewPage
+
 
 def _knowledge_overview() -> dict[str, object]:
     """Small knowledge-base summary for the result dashboard."""
@@ -194,6 +196,25 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         json.loads(primitives_path.read_text("utf-8")) if primitives_path.exists() else {}
     )
     report_md = report_path.read_text("utf-8") if report_path.exists() else "(report.md missing)"
+    from archkg.viewer.drawing_understanding import load_or_build_drawing_understanding
+    from archkg.viewer.issue_focus import build_issue_focus_view
+    from archkg.viewer.layout_3d import load_layout_3d_view
+    from archkg.viewer.layout_ifc import load_layout_ifc_view
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.preview_pages import load_preview_pages_view
+    from archkg.viewer.review_diff import load_review_diff_view
+    from archkg.viewer.review_state import load_review_state_view
+    from archkg.viewer.review_workbench import load_review_workbench_view
+    from archkg.viewer.reviewer_onboarding import load_reviewer_onboarding_view
+    from archkg.viewer.reviewer_task_checklist import load_reviewer_task_checklist_view
+    from archkg.viewer.reviewer_task_sequence import load_reviewer_task_sequence_view
+    from archkg.viewer.rule_readiness import load_rule_readiness_view
+    from archkg.viewer.sheet_classification import load_sheet_classification_view
+    from archkg.viewer.sheet_graphs import load_sheet_graphs_view
+    from archkg.viewer.sheet_issue_review_queue import load_sheet_issue_review_queue_view
+    from archkg.viewer.sheet_issues import load_sheet_issues_view
+    from archkg.viewer.sheet_region_candidates import load_sheet_region_candidate_view
+    from archkg.viewer.sheet_routing import load_sheet_routing_view
 
     # Codex P19-C R2 P0: honour inspect_only mode on re-render. Without
     # this, archkg viewer re-renders an inspect_only run as a misleading
@@ -212,6 +233,44 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
     clause_refs = _clause_refs(issues)
     issue_payload = _issue_metrics_payload(issues)
     issue_summary = issue_payload["summary"]
+    ocr_diagnostics = build_ocr_diagnostics(primitives, graph)
+    sheet_graphs_payload: dict[str, object] | None = None
+    sheet_graphs_path = out_dir / "sheet_graphs.json"
+    if sheet_graphs_path.exists():
+        try:
+            raw_sheet_graphs = json.loads(sheet_graphs_path.read_text("utf-8"))
+        except json.JSONDecodeError:
+            raw_sheet_graphs = None
+        if isinstance(raw_sheet_graphs, dict):
+            sheet_graphs_payload = raw_sheet_graphs
+    drawing_understanding = load_or_build_drawing_understanding(
+        out_dir,
+        primitives,
+        graph,
+        ocr_diagnostics,
+        sheet_graphs=sheet_graphs_payload,
+    )
+    rule_readiness = load_rule_readiness_view(out_dir)
+    review_workbench = load_review_workbench_view(out_dir)
+    reviewer_onboarding = load_reviewer_onboarding_view(out_dir)
+    reviewer_task_checklist = load_reviewer_task_checklist_view(out_dir)
+    reviewer_task_sequence = load_reviewer_task_sequence_view(out_dir)
+    review_diff = load_review_diff_view(out_dir)
+    review_state = load_review_state_view(out_dir, issues)
+    sheet_classification = load_sheet_classification_view(out_dir)
+    sheet_graphs = load_sheet_graphs_view(out_dir)
+    sheet_issues = load_sheet_issues_view(out_dir)
+    sheet_issue_review_queue = load_sheet_issue_review_queue_view(out_dir)
+    sheet_routing = load_sheet_routing_view(out_dir)
+    sheet_region_candidates = load_sheet_region_candidate_view(out_dir)
+    layout_3d = load_layout_3d_view(out_dir)
+    layout_ifc = load_layout_ifc_view(out_dir)
+    preview_pages = load_preview_pages_view(out_dir)
+    issue_focus = build_issue_focus_view(
+        issues,
+        primitives,
+        preview_pages=preview_pages,
+    )
 
     stats = {
         "lines": n_lines,
@@ -232,6 +291,25 @@ def _render_index(out_dir: Path, source_pdf: Path) -> Path:
         issue_summary=issue_summary,
         issue_metrics=issue_payload,
         clause_refs=clause_refs,
+        ocr_diagnostics=ocr_diagnostics,
+        drawing_understanding=drawing_understanding,
+        rule_readiness=rule_readiness,
+        review_workbench=review_workbench,
+        reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_checklist=reviewer_task_checklist,
+        reviewer_task_sequence=reviewer_task_sequence,
+        review_diff=review_diff,
+        review_state=review_state,
+        sheet_classification=sheet_classification,
+        sheet_graphs=sheet_graphs,
+        sheet_issues=sheet_issues,
+        sheet_issue_review_queue=sheet_issue_review_queue,
+        sheet_routing=sheet_routing,
+        sheet_region_candidates=sheet_region_candidates,
+        layout_3d=layout_3d,
+        layout_ifc=layout_ifc,
+        preview_pages=preview_pages,
+        issue_focus=issue_focus,
         mode=mode,
         quality_flags=quality_flags,
     )
@@ -312,9 +390,32 @@ def serve(
         )
 
     # 1) materialise inline previews + copy the source PDF so the page can deep-link to it
-    _render_pdf_preview(source_pdf, out_dir / "source_preview.png")
+    from archkg.viewer.preview_pages import (
+        render_pdf_preview_pages,
+        write_preview_pages_manifest,
+    )
+
+    source_pages = render_pdf_preview_pages(
+        source_pdf,
+        out_dir,
+        layer="source",
+        legacy_name="source_preview.png",
+    )
+    annotated_pages = []
     if (out_dir / "annotated.pdf").exists():
-        _render_pdf_preview(out_dir / "annotated.pdf", out_dir / "annotated_preview.png")
+        annotated_pages = render_pdf_preview_pages(
+            out_dir / "annotated.pdf",
+            out_dir,
+            layer="annotated",
+            legacy_name="annotated_preview.png",
+        )
+    overlay_pages = _render_overlay_preview_pages(out_dir, source_pdf)
+    write_preview_pages_manifest(
+        out_dir,
+        source_pages=source_pages,
+        annotated_pages=annotated_pages,
+        overlay_pages=overlay_pages,
+    )
     if not (out_dir / "source.pdf").exists() or (
         out_dir / "source.pdf"
     ).resolve() != source_pdf.resolve():
@@ -335,3 +436,39 @@ def serve(
             httpd.serve_forever()
         except KeyboardInterrupt:
             print("\nviewer · stopping (Ctrl-C)")
+
+
+def _render_overlay_preview_pages(out_dir: Path, source_pdf: Path) -> list[PreviewPage]:
+    from archkg.graph.builder import EntityGraph
+    from archkg.viewer.preview_pages import render_entity_overlay_preview_pages
+
+    graph_path = out_dir / "entity_graph.json"
+    if not graph_path.exists():
+        return []
+    try:
+        primary_graph = EntityGraph.model_validate(
+            json.loads(graph_path.read_text("utf-8"))
+        )
+    except Exception:
+        return []
+    graphs = [primary_graph]
+    sheet_graphs_path = out_dir / "sheet_graphs.json"
+    if sheet_graphs_path.exists():
+        try:
+            raw_sheet_graphs = json.loads(sheet_graphs_path.read_text("utf-8"))
+        except json.JSONDecodeError:
+            raw_sheet_graphs = {}
+        if isinstance(raw_sheet_graphs, dict):
+            raw_entries = raw_sheet_graphs.get("graphs")
+            if isinstance(raw_entries, list):
+                for entry in raw_entries:
+                    if not isinstance(entry, dict):
+                        continue
+                    raw_graph = entry.get("graph")
+                    if not isinstance(raw_graph, dict):
+                        continue
+                    try:
+                        graphs.append(EntityGraph.model_validate(raw_graph))
+                    except Exception:
+                        continue
+    return render_entity_overlay_preview_pages(source_pdf, out_dir, graphs=graphs)

@@ -1,0 +1,26 @@
+{
+  "schema_version": "sheet_classification.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-207lex-page07-ground.pdf",
+  "summary": {
+    "plan": 1
+  },
+  "pages": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "confidence": 0.92,
+      "eligible_for_graph": true,
+      "reason": "classified from 5 keyword signal(s)",
+      "evidence_texts": [
+        "BEDROOM 1",
+        "BEDROOM 2",
+        "PROPOSED GROUND FLOOR PLAN",
+        "LIVING",
+        "AT BEDROOMS, TYP.",
+        "FLOOR PLAN"
+      ],
+      "line_count": 3612,
+      "text_count": 163
+    }
+  ]
+}

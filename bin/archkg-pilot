@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+#
+# archkg-pilot — one-command pilot bootstrap (M6.W4)
+#
+# Subcommands:
+#   init       Initialise the KG, ingest the bundled sample, open the UI
+#   start      Start the web UI in the foreground (assumes init done)
+#   doctor     Print environment + KG health (idempotent diagnostic)
+#   stop       Stop a running web UI on the configured port
+#
+# Honest scope: this is a developer / pilot script. Production deployment
+# (auth, multi-user, postgres) is M7+ scope and explicitly out of scope.
+
+set -euo pipefail
+
+ARCHKG_HOST="${ARCHKG_HOST:-127.0.0.1}"
+ARCHKG_PORT="${ARCHKG_PORT:-8765}"
+ARCHKG_DB_PATH="${ARCHKG_DB_PATH:-./.archkg/kg.db}"
+
+repo_root() {
+    git rev-parse --show-toplevel 2>/dev/null || pwd
+}
+
+run_archkg() {
+    # Prefer the venv'd binary if present; fall back to PATH.
+    if [ -x "./.venv/bin/python" ]; then
+        ./.venv/bin/python -m archkg.cli.main "$@"
+    else
+        archkg "$@"
+    fi
+}
+
+cmd_init() {
+    cd "$(repo_root)"
+    echo "[archkg-pilot] initialising KG at ${ARCHKG_DB_PATH}"
+    run_archkg kg init --db "${ARCHKG_DB_PATH}" || true
+
+    echo "[archkg-pilot] ingesting bundled benchmark sample suite"
+    run_archkg kg ingest-suite --db "${ARCHKG_DB_PATH}" || \
+        echo "[archkg-pilot] (no suite ingest; continuing)"
+
+    echo "[archkg-pilot] launching web UI at http://${ARCHKG_HOST}:${ARCHKG_PORT}"
+    if command -v open >/dev/null 2>&1; then
+        (sleep 2 && open "http://${ARCHKG_HOST}:${ARCHKG_PORT}/") &
+    fi
+    cmd_start
+}
+
+cmd_start() {
+    cd "$(repo_root)"
+    exec run_archkg kg serve --db "${ARCHKG_DB_PATH}" --host "${ARCHKG_HOST}" --port "${ARCHKG_PORT}"
+}
+
+cmd_doctor() {
+    cd "$(repo_root)"
+    echo "[archkg-pilot] doctor"
+    echo "  python:    $(./.venv/bin/python --version 2>/dev/null || python --version 2>/dev/null || echo 'not found')"
+    echo "  archkg:    $(run_archkg --help 2>&1 | head -1 || echo 'not callable')"
+    echo "  KG file:   ${ARCHKG_DB_PATH} $([ -f "${ARCHKG_DB_PATH}" ] && echo 'exists' || echo 'MISSING')"
+    if [ -f "${ARCHKG_DB_PATH}" ]; then
+        run_archkg kg status --db "${ARCHKG_DB_PATH}" || true
+    fi
+    echo "  ffmpeg:    $(ffmpeg -version 2>/dev/null | head -1 || echo 'not found — needed for M6 demo')"
+    echo "  port:      ${ARCHKG_PORT} $(lsof -nP -iTCP:${ARCHKG_PORT} -sTCP:LISTEN 2>/dev/null | head -2 || echo '(free)')"
+}
+
+cmd_stop() {
+    pids=$(lsof -nP -iTCP:${ARCHKG_PORT} -sTCP:LISTEN -t 2>/dev/null || true)
+    if [ -z "${pids}" ]; then
+        echo "[archkg-pilot] no listener on port ${ARCHKG_PORT}"
+        return 0
+    fi
+    echo "[archkg-pilot] stopping pid(s): ${pids}"
+    kill ${pids}
+}
+
+usage() {
+    cat <<EOM
+archkg-pilot — ArchReview-KG pilot bootstrap
+
+USAGE:
+    bin/archkg-pilot <command>
+
+COMMANDS:
+    init      Initialise KG, ingest sample, start UI, open browser
+    start     Start web UI (foreground; assumes init done)
+    doctor    Print environment + KG health
+    stop      Stop the listening UI process
+
+ENVIRONMENT:
+    ARCHKG_HOST     Bind host  (default: 127.0.0.1)
+    ARCHKG_PORT     Bind port  (default: 8765)
+    ARCHKG_DB_PATH  KG SQLite path (default: ./.archkg/kg.db)
+EOM
+}
+
+case "${1:-}" in
+    init)    cmd_init ;;
+    start)   cmd_start ;;
+    doctor)  cmd_doctor ;;
+    stop)    cmd_stop ;;
+    -h|--help|help|"") usage ;;
+    *)       echo "[archkg-pilot] unknown command: $1"; usage; exit 2 ;;
+esac

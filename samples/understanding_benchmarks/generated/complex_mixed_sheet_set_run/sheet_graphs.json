@@ -1,0 +1,3674 @@
+{
+  "schema_version": "sheet_graphs.v1",
+  "source_pdf": "samples/generated_complex_sheet_set.pdf",
+  "graph_count": 2,
+  "confidence_floor": 0.5,
+  "graphs": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "classification_confidence": 0.92,
+      "component_counts": {
+        "rooms": 30,
+        "doors": 8,
+        "corridors": 2,
+        "stairs": 0,
+        "dimensions": 12
+      },
+      "graph": {
+        "source_pdf": "samples/generated_complex_sheet_set.pdf",
+        "points_per_meter": 50.0,
+        "page_index": 0,
+        "page_width_pt": 1120.0,
+        "page_height_pt": 700.0,
+        "rooms": [
+          {
+            "id": "room-11e649c9",
+            "page_index": 0,
+            "bbox": [
+              645.0,
+              455.0,
+              795.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                795.0,
+                580.0
+              ],
+              [
+                795.0,
+                455.0
+              ],
+              [
+                712.5,
+                455.0
+              ],
+              [
+                645.0,
+                455.0
+              ],
+              [
+                645.0,
+                580.0
+              ],
+              [
+                795.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-b9d74c01",
+            "page_index": 0,
+            "bbox": [
+              45.0,
+              455.0,
+              195.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                45.0,
+                580.0
+              ],
+              [
+                195.0,
+                580.0
+              ],
+              [
+                195.0,
+                455.0
+              ],
+              [
+                112.5,
+                455.0
+              ],
+              [
+                45.0,
+                455.0
+              ],
+              [
+                45.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-29fbc286",
+            "page_index": 0,
+            "bbox": [
+              195.0,
+              455.0,
+              345.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                195.0,
+                580.0
+              ],
+              [
+                345.0,
+                580.0
+              ],
+              [
+                345.0,
+                455.0
+              ],
+              [
+                262.5,
+                455.0
+              ],
+              [
+                195.0,
+                455.0
+              ],
+              [
+                195.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-9c05e8d8",
+            "page_index": 0,
+            "bbox": [
+              345.0,
+              455.0,
+              495.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                345.0,
+                580.0
+              ],
+              [
+                495.0,
+                580.0
+              ],
+              [
+                495.0,
+                455.0
+              ],
+              [
+                412.5,
+                455.0
+              ],
+              [
+                345.0,
+                455.0
+              ],
+              [
+                345.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-f84c1d8c",
+            "page_index": 0,
+            "bbox": [
+              495.0,
+              455.0,
+              645.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                495.0,
+                580.0
+              ],
+              [
+                645.0,
+                580.0
+              ],
+              [
+                645.0,
+                455.0
+              ],
+              [
+                562.5,
+                455.0
+              ],
+              [
+                495.0,
+                455.0
+              ],
+              [
+                495.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-24ac389e",
+            "page_index": 0,
+            "bbox": [
+              645.0,
+              175.0,
+              795.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                795.0,
+                275.0
+              ],
+              [
+                795.0,
+                175.0
+              ],
+              [
+                712.5,
+                175.0
+              ],
+              [
+                645.0,
+                175.0
+              ],
+              [
+                645.0,
+                275.0
+              ],
+              [
+                662.5,
+                275.0
+              ],
+              [
+                795.0,
+                275.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-ce92c6bb",
+            "page_index": 0,
+            "bbox": [
+              45.0,
+              175.0,
+              195.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                45.0,
+                175.0
+              ],
+              [
+                45.0,
+                275.0
+              ],
+              [
+                95.0,
+                275.0
+              ],
+              [
+                132.5,
+                275.0
+              ],
+              [
+                195.0,
+                275.0
+              ],
+              [
+                195.0,
+                175.0
+              ],
+              [
+                112.5,
+                175.0
+              ],
+              [
+                45.0,
+                175.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-9f65f4b3",
+            "page_index": 0,
+            "bbox": [
+              195.0,
+              175.0,
+              345.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                195.0,
+                275.0
+              ],
+              [
+                275.0,
+                275.0
+              ],
+              [
+                312.5,
+                275.0
+              ],
+              [
+                345.0,
+                275.0
+              ],
+              [
+                345.0,
+                175.0
+              ],
+              [
+                262.5,
+                175.0
+              ],
+              [
+                195.0,
+                175.0
+              ],
+              [
+                195.0,
+                275.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-4c89f45f",
+            "page_index": 0,
+            "bbox": [
+              345.0,
+              175.0,
+              495.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                345.0,
+                275.0
+              ],
+              [
+                420.0,
+                275.0
+              ],
+              [
+                450.0,
+                275.0
+              ],
+              [
+                487.5,
+                275.0
+              ],
+              [
+                495.0,
+                275.0
+              ],
+              [
+                495.0,
+                175.0
+              ],
+              [
+                412.5,
+                175.0
+              ],
+              [
+                345.0,
+                175.0
+              ],
+              [
+                345.0,
+                275.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-1271adb4",
+            "page_index": 0,
+            "bbox": [
+              495.0,
+              175.0,
+              645.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                495.0,
+                275.0
+              ],
+              [
+                625.0,
+                275.0
+              ],
+              [
+                645.0,
+                275.0
+              ],
+              [
+                645.0,
+                175.0
+              ],
+              [
+                562.5,
+                175.0
+              ],
+              [
+                495.0,
+                175.0
+              ],
+              [
+                495.0,
+                275.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-9400e7c1",
+            "page_index": 0,
+            "bbox": [
+              112.5,
+              55.0,
+              195.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                195.0,
+                55.0
+              ],
+              [
+                112.5,
+                55.0
+              ],
+              [
+                112.5,
+                175.0
+              ],
+              [
+                195.0,
+                175.0
+              ],
+              [
+                195.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-fdbf9543",
+            "page_index": 0,
+            "bbox": [
+              262.5,
+              55.0,
+              345.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                345.0,
+                55.0
+              ],
+              [
+                262.5,
+                55.0
+              ],
+              [
+                262.5,
+                175.0
+              ],
+              [
+                345.0,
+                175.0
+              ],
+              [
+                345.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-ea0f4776",
+            "page_index": 0,
+            "bbox": [
+              412.5,
+              55.0,
+              495.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                495.0,
+                55.0
+              ],
+              [
+                412.5,
+                55.0
+              ],
+              [
+                412.5,
+                175.0
+              ],
+              [
+                495.0,
+                175.0
+              ],
+              [
+                495.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-feb8794a",
+            "page_index": 0,
+            "bbox": [
+              562.5,
+              55.0,
+              645.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                645.0,
+                55.0
+              ],
+              [
+                562.5,
+                55.0
+              ],
+              [
+                562.5,
+                175.0
+              ],
+              [
+                645.0,
+                175.0
+              ],
+              [
+                645.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-88a7a389",
+            "page_index": 0,
+            "bbox": [
+              712.5,
+              55.0,
+              795.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                795.0,
+                55.0
+              ],
+              [
+                712.5,
+                55.0
+              ],
+              [
+                712.5,
+                175.0
+              ],
+              [
+                795.0,
+                175.0
+              ],
+              [
+                795.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-d9825693",
+            "page_index": 0,
+            "bbox": [
+              712.5,
+              335.0,
+              795.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                795.0,
+                455.0
+              ],
+              [
+                795.0,
+                335.0
+              ],
+              [
+                712.5,
+                335.0
+              ],
+              [
+                712.5,
+                455.0
+              ],
+              [
+                795.0,
+                455.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-27bfaddb",
+            "page_index": 0,
+            "bbox": [
+              112.5,
+              335.0,
+              195.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                195.0,
+                335.0
+              ],
+              [
+                132.5,
+                335.0
+              ],
+              [
+                112.5,
+                335.0
+              ],
+              [
+                112.5,
+                455.0
+              ],
+              [
+                195.0,
+                455.0
+              ],
+              [
+                195.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-23f89a6d",
+            "page_index": 0,
+            "bbox": [
+              262.5,
+              335.0,
+              345.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                275.0,
+                335.0
+              ],
+              [
+                262.5,
+                335.0
+              ],
+              [
+                262.5,
+                455.0
+              ],
+              [
+                345.0,
+                455.0
+              ],
+              [
+                345.0,
+                335.0
+              ],
+              [
+                312.5,
+                335.0
+              ],
+              [
+                275.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-acaa6c1e",
+            "page_index": 0,
+            "bbox": [
+              412.5,
+              335.0,
+              495.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                420.0,
+                335.0
+              ],
+              [
+                412.5,
+                335.0
+              ],
+              [
+                412.5,
+                455.0
+              ],
+              [
+                495.0,
+                455.0
+              ],
+              [
+                495.0,
+                335.0
+              ],
+              [
+                487.5,
+                335.0
+              ],
+              [
+                450.0,
+                335.0
+              ],
+              [
+                420.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-15df0d07",
+            "page_index": 0,
+            "bbox": [
+              562.5,
+              335.0,
+              645.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                625.0,
+                335.0
+              ],
+              [
+                562.5,
+                335.0
+              ],
+              [
+                562.5,
+                455.0
+              ],
+              [
+                645.0,
+                455.0
+              ],
+              [
+                645.0,
+                335.0
+              ],
+              [
+                625.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-6f016ad8",
+            "page_index": 0,
+            "bbox": [
+              45.0,
+              55.0,
+              112.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                112.5,
+                55.0
+              ],
+              [
+                45.0,
+                55.0
+              ],
+              [
+                45.0,
+                175.0
+              ],
+              [
+                112.5,
+                175.0
+              ],
+              [
+                112.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-59cf171f",
+            "page_index": 0,
+            "bbox": [
+              195.0,
+              55.0,
+              262.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                262.5,
+                55.0
+              ],
+              [
+                195.0,
+                55.0
+              ],
+              [
+                195.0,
+                175.0
+              ],
+              [
+                262.5,
+                175.0
+              ],
+              [
+                262.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-13da3d0a",
+            "page_index": 0,
+            "bbox": [
+              345.0,
+              55.0,
+              412.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                412.5,
+                55.0
+              ],
+              [
+                345.0,
+                55.0
+              ],
+              [
+                345.0,
+                175.0
+              ],
+              [
+                412.5,
+                175.0
+              ],
+              [
+                412.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-81008d80",
+            "page_index": 0,
+            "bbox": [
+              495.0,
+              55.0,
+              562.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                562.5,
+                55.0
+              ],
+              [
+                495.0,
+                55.0
+              ],
+              [
+                495.0,
+                175.0
+              ],
+              [
+                562.5,
+                175.0
+              ],
+              [
+                562.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-e7700312",
+            "page_index": 0,
+            "bbox": [
+              645.0,
+              55.0,
+              712.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                712.5,
+                55.0
+              ],
+              [
+                645.0,
+                55.0
+              ],
+              [
+                645.0,
+                175.0
+              ],
+              [
+                712.5,
+                175.0
+              ],
+              [
+                712.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-370007fe",
+            "page_index": 0,
+            "bbox": [
+              45.0,
+              335.0,
+              112.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                45.0,
+                335.0
+              ],
+              [
+                45.0,
+                455.0
+              ],
+              [
+                112.5,
+                455.0
+              ],
+              [
+                112.5,
+                335.0
+              ],
+              [
+                95.0,
+                335.0
+              ],
+              [
+                45.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-3aa7f18f",
+            "page_index": 0,
+            "bbox": [
+              195.0,
+              335.0,
+              262.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                262.5,
+                335.0
+              ],
+              [
+                195.0,
+                335.0
+              ],
+              [
+                195.0,
+                455.0
+              ],
+              [
+                262.5,
+                455.0
+              ],
+              [
+                262.5,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-e889bc46",
+            "page_index": 0,
+            "bbox": [
+              345.0,
+              335.0,
+              412.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                412.5,
+                335.0
+              ],
+              [
+                345.0,
+                335.0
+              ],
+              [
+                345.0,
+                455.0
+              ],
+              [
+                412.5,
+                455.0
+              ],
+              [
+                412.5,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-812352be",
+            "page_index": 0,
+            "bbox": [
+              495.0,
+              335.0,
+              562.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                562.5,
+                335.0
+              ],
+              [
+                495.0,
+                335.0
+              ],
+              [
+                495.0,
+                455.0
+              ],
+              [
+                562.5,
+                455.0
+              ],
+              [
+                562.5,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-ea062740",
+            "page_index": 0,
+            "bbox": [
+              645.0,
+              335.0,
+              712.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                712.5,
+                335.0
+              ],
+              [
+                662.5,
+                335.0
+              ],
+              [
+                645.0,
+                335.0
+              ],
+              [
+                645.0,
+                455.0
+              ],
+              [
+                712.5,
+                455.0
+              ],
+              [
+                712.5,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          }
+        ],
+        "doors": [
+          {
+            "id": "door-5a89461e",
+            "page_index": 0,
+            "bbox": [
+              95.0,
+              275.0,
+              132.5,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 3.068,
+            "connects": [
+              "room-ce92c6bb",
+              "corridor-5189be1b"
+            ]
+          },
+          {
+            "id": "door-dd86cc3d",
+            "page_index": 0,
+            "bbox": [
+              275.0,
+              275.0,
+              312.5,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 3.068,
+            "connects": [
+              "room-9f65f4b3",
+              "corridor-5189be1b"
+            ]
+          },
+          {
+            "id": "door-546e5296",
+            "page_index": 0,
+            "bbox": [
+              450.0,
+              275.0,
+              487.5,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 3.068,
+            "connects": [
+              "room-4c89f45f",
+              "corridor-d98ad627"
+            ]
+          },
+          {
+            "id": "door-22ff4375",
+            "page_index": 0,
+            "bbox": [
+              625.0,
+              275.0,
+              662.5,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 3.068,
+            "connects": [
+              "room-1271adb4",
+              "corridor-d98ad627"
+            ]
+          },
+          {
+            "id": "door-1850a2ec",
+            "page_index": 0,
+            "bbox": [
+              95.0,
+              335.0,
+              132.5,
+              335.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 2.868,
+            "connects": [
+              "corridor-5189be1b",
+              "room-27bfaddb"
+            ]
+          },
+          {
+            "id": "door-2cac358b",
+            "page_index": 0,
+            "bbox": [
+              275.0,
+              335.0,
+              312.5,
+              335.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 2.868,
+            "connects": [
+              "corridor-5189be1b",
+              "room-23f89a6d"
+            ]
+          },
+          {
+            "id": "door-5f19c6c1",
+            "page_index": 0,
+            "bbox": [
+              450.0,
+              335.0,
+              487.5,
+              335.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 2.868,
+            "connects": [
+              "corridor-d98ad627",
+              "room-acaa6c1e"
+            ]
+          },
+          {
+            "id": "door-eda7ddd3",
+            "page_index": 0,
+            "bbox": [
+              625.0,
+              335.0,
+              662.5,
+              335.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 2.868,
+            "connects": [
+              "corridor-d98ad627",
+              "room-15df0d07"
+            ]
+          }
+        ],
+        "corridors": [
+          {
+            "id": "corridor-d98ad627",
+            "page_index": 0,
+            "bbox": [
+              420.0,
+              275.0,
+              795.0,
+              335.0
+            ],
+            "confidence": 0.8,
+            "uncertain": false,
+            "properties": {},
+            "type": "Corridor",
+            "polygon": [
+              [
+                795.0,
+                335.0
+              ],
+              [
+                795.0,
+                275.0
+              ],
+              [
+                662.5,
+                275.0
+              ],
+              [
+                645.0,
+                275.0
+              ],
+              [
+                625.0,
+                275.0
+              ],
+              [
+                495.0,
+                275.0
+              ],
+              [
+                487.5,
+                275.0
+              ],
+              [
+                450.0,
+                275.0
+              ],
+              [
+                420.0,
+                275.0
+              ],
+              [
+                420.0,
+                335.0
+              ],
+              [
+                450.0,
+                335.0
+              ],
+              [
+                487.5,
+                335.0
+              ],
+              [
+                495.0,
+                335.0
+              ],
+              [
+                562.5,
+                335.0
+              ],
+              [
+                625.0,
+                335.0
+              ],
+              [
+                645.0,
+                335.0
+              ],
+              [
+                662.5,
+                335.0
+              ],
+              [
+                712.5,
+                335.0
+              ],
+              [
+                795.0,
+                335.0
+              ]
+            ],
+            "min_width_m": 1.2
+          },
+          {
+            "id": "corridor-5189be1b",
+            "page_index": 0,
+            "bbox": [
+              45.0,
+              275.0,
+              420.0,
+              335.0
+            ],
+            "confidence": 0.8,
+            "uncertain": false,
+            "properties": {},
+            "type": "Corridor",
+            "polygon": [
+              [
+                45.0,
+                275.0
+              ],
+              [
+                45.0,
+                335.0
+              ],
+              [
+                95.0,
+                335.0
+              ],
+              [
+                112.5,
+                335.0
+              ],
+              [
+                132.5,
+                335.0
+              ],
+              [
+                195.0,
+                335.0
+              ],
+              [
+                262.5,
+                335.0
+              ],
+              [
+                275.0,
+                335.0
+              ],
+              [
+                312.5,
+                335.0
+              ],
+              [
+                345.0,
+                335.0
+              ],
+              [
+                412.5,
+                335.0
+              ],
+              [
+                420.0,
+                335.0
+              ],
+              [
+                420.0,
+                275.0
+              ],
+              [
+                345.0,
+                275.0
+              ],
+              [
+                312.5,
+                275.0
+              ],
+              [
+                275.0,
+                275.0
+              ],
+              [
+                195.0,
+                275.0
+              ],
+              [
+                132.5,
+                275.0
+              ],
+              [
+                95.0,
+                275.0
+              ],
+              [
+                45.0,
+                275.0
+              ]
+            ],
+            "min_width_m": 1.2
+          }
+        ],
+        "dimensions": [
+          {
+            "id": "dim-78d5eb4b",
+            "page_index": 0,
+            "bbox": [
+              45.0,
+              23.25,
+              169.47999572753906,
+              36.9900016784668
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "A-101 FIRST FLOOR PLAN",
+            "value_m": 0.101,
+            "unit": "m"
+          },
+          {
+            "id": "dim-c6f16e3a",
+            "page_index": 0,
+            "bbox": [
+              327.5,
+              309.9750061035156,
+              391.87200927734375,
+              319.5929870605469
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "CORRIDOR W=1.20",
+            "value_m": 1.2,
+            "unit": "m"
+          },
+          {
+            "id": "dim-254816ec",
+            "page_index": 0,
+            "bbox": [
+              97.5,
+              262.54998779296875,
+              110.843994140625,
+              270.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3068",
+            "value_m": 3.068,
+            "unit": "m"
+          },
+          {
+            "id": "dim-4ed24ee4",
+            "page_index": 0,
+            "bbox": [
+              97.5,
+              322.54998779296875,
+              110.843994140625,
+              330.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2868",
+            "value_m": 2.868,
+            "unit": "m"
+          },
+          {
+            "id": "dim-a2b06ed3",
+            "page_index": 0,
+            "bbox": [
+              277.5,
+              262.54998779296875,
+              290.843994140625,
+              270.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3068",
+            "value_m": 3.068,
+            "unit": "m"
+          },
+          {
+            "id": "dim-90ae3816",
+            "page_index": 0,
+            "bbox": [
+              277.5,
+              322.54998779296875,
+              290.843994140625,
+              330.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2868",
+            "value_m": 2.868,
+            "unit": "m"
+          },
+          {
+            "id": "dim-8283d576",
+            "page_index": 0,
+            "bbox": [
+              452.5,
+              262.54998779296875,
+              465.843994140625,
+              270.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3068",
+            "value_m": 3.068,
+            "unit": "m"
+          },
+          {
+            "id": "dim-e287c852",
+            "page_index": 0,
+            "bbox": [
+              452.5,
+              322.54998779296875,
+              465.843994140625,
+              330.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2868",
+            "value_m": 2.868,
+            "unit": "m"
+          },
+          {
+            "id": "dim-3c407095",
+            "page_index": 0,
+            "bbox": [
+              627.5,
+              262.54998779296875,
+              640.843994140625,
+              270.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3068",
+            "value_m": 3.068,
+            "unit": "m"
+          },
+          {
+            "id": "dim-9b0f9a3e",
+            "page_index": 0,
+            "bbox": [
+              627.5,
+              322.54998779296875,
+              640.843994140625,
+              330.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2868",
+            "value_m": 2.868,
+            "unit": "m"
+          },
+          {
+            "id": "dim-d48ec935",
+            "page_index": 0,
+            "bbox": [
+              55.0,
+              591.4749755859375,
+              76.72100067138672,
+              601.093017578125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "150'-0\"",
+            "value_m": 0.15,
+            "unit": "m"
+          },
+          {
+            "id": "dim-d0fbf411",
+            "page_index": 0,
+            "bbox": [
+              812.5,
+              67.4749984741211,
+              830.3290405273438,
+              77.09300231933594
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "52'-6\"",
+            "value_m": 52.0,
+            "unit": "m"
+          }
+        ],
+        "stairs": []
+      }
+    },
+    {
+      "page_index": 2,
+      "sheet_type": "plan",
+      "classification_confidence": 0.92,
+      "component_counts": {
+        "rooms": 30,
+        "doors": 8,
+        "corridors": 2,
+        "stairs": 0,
+        "dimensions": 12
+      },
+      "graph": {
+        "source_pdf": "samples/generated_complex_sheet_set.pdf",
+        "points_per_meter": 50.0,
+        "page_index": 2,
+        "page_width_pt": 1120.0,
+        "page_height_pt": 700.0,
+        "rooms": [
+          {
+            "id": "room-dbec9d0c",
+            "page_index": 2,
+            "bbox": [
+              645.0,
+              455.0,
+              795.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                795.0,
+                580.0
+              ],
+              [
+                795.0,
+                455.0
+              ],
+              [
+                712.5,
+                455.0
+              ],
+              [
+                645.0,
+                455.0
+              ],
+              [
+                645.0,
+                580.0
+              ],
+              [
+                795.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-9513853e",
+            "page_index": 2,
+            "bbox": [
+              45.0,
+              455.0,
+              195.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                45.0,
+                580.0
+              ],
+              [
+                195.0,
+                580.0
+              ],
+              [
+                195.0,
+                455.0
+              ],
+              [
+                112.5,
+                455.0
+              ],
+              [
+                45.0,
+                455.0
+              ],
+              [
+                45.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-584bb39d",
+            "page_index": 2,
+            "bbox": [
+              195.0,
+              455.0,
+              345.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                195.0,
+                580.0
+              ],
+              [
+                345.0,
+                580.0
+              ],
+              [
+                345.0,
+                455.0
+              ],
+              [
+                262.5,
+                455.0
+              ],
+              [
+                195.0,
+                455.0
+              ],
+              [
+                195.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-733e1ea7",
+            "page_index": 2,
+            "bbox": [
+              345.0,
+              455.0,
+              495.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                345.0,
+                580.0
+              ],
+              [
+                495.0,
+                580.0
+              ],
+              [
+                495.0,
+                455.0
+              ],
+              [
+                412.5,
+                455.0
+              ],
+              [
+                345.0,
+                455.0
+              ],
+              [
+                345.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-69236e80",
+            "page_index": 2,
+            "bbox": [
+              495.0,
+              455.0,
+              645.0,
+              580.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                495.0,
+                580.0
+              ],
+              [
+                645.0,
+                580.0
+              ],
+              [
+                645.0,
+                455.0
+              ],
+              [
+                562.5,
+                455.0
+              ],
+              [
+                495.0,
+                455.0
+              ],
+              [
+                495.0,
+                580.0
+              ]
+            ],
+            "area_m2": 7.5,
+            "label": "dining"
+          },
+          {
+            "id": "room-0ab9bf54",
+            "page_index": 2,
+            "bbox": [
+              645.0,
+              175.0,
+              795.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                795.0,
+                275.0
+              ],
+              [
+                795.0,
+                175.0
+              ],
+              [
+                712.5,
+                175.0
+              ],
+              [
+                645.0,
+                175.0
+              ],
+              [
+                645.0,
+                275.0
+              ],
+              [
+                662.5,
+                275.0
+              ],
+              [
+                795.0,
+                275.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-d61f94db",
+            "page_index": 2,
+            "bbox": [
+              45.0,
+              175.0,
+              195.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                45.0,
+                175.0
+              ],
+              [
+                45.0,
+                275.0
+              ],
+              [
+                95.0,
+                275.0
+              ],
+              [
+                132.5,
+                275.0
+              ],
+              [
+                195.0,
+                275.0
+              ],
+              [
+                195.0,
+                175.0
+              ],
+              [
+                112.5,
+                175.0
+              ],
+              [
+                45.0,
+                175.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-5bd14241",
+            "page_index": 2,
+            "bbox": [
+              195.0,
+              175.0,
+              345.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                195.0,
+                275.0
+              ],
+              [
+                275.0,
+                275.0
+              ],
+              [
+                312.5,
+                275.0
+              ],
+              [
+                345.0,
+                275.0
+              ],
+              [
+                345.0,
+                175.0
+              ],
+              [
+                262.5,
+                175.0
+              ],
+              [
+                195.0,
+                175.0
+              ],
+              [
+                195.0,
+                275.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-6412e87d",
+            "page_index": 2,
+            "bbox": [
+              345.0,
+              175.0,
+              495.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                345.0,
+                275.0
+              ],
+              [
+                420.0,
+                275.0
+              ],
+              [
+                450.0,
+                275.0
+              ],
+              [
+                487.5,
+                275.0
+              ],
+              [
+                495.0,
+                275.0
+              ],
+              [
+                495.0,
+                175.0
+              ],
+              [
+                412.5,
+                175.0
+              ],
+              [
+                345.0,
+                175.0
+              ],
+              [
+                345.0,
+                275.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-889fbc95",
+            "page_index": 2,
+            "bbox": [
+              495.0,
+              175.0,
+              645.0,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                495.0,
+                275.0
+              ],
+              [
+                625.0,
+                275.0
+              ],
+              [
+                645.0,
+                275.0
+              ],
+              [
+                645.0,
+                175.0
+              ],
+              [
+                562.5,
+                175.0
+              ],
+              [
+                495.0,
+                175.0
+              ],
+              [
+                495.0,
+                275.0
+              ]
+            ],
+            "area_m2": 6.0,
+            "label": "living"
+          },
+          {
+            "id": "room-a2855dc5",
+            "page_index": 2,
+            "bbox": [
+              112.5,
+              55.0,
+              195.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                195.0,
+                55.0
+              ],
+              [
+                112.5,
+                55.0
+              ],
+              [
+                112.5,
+                175.0
+              ],
+              [
+                195.0,
+                175.0
+              ],
+              [
+                195.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-8f08623b",
+            "page_index": 2,
+            "bbox": [
+              262.5,
+              55.0,
+              345.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                345.0,
+                55.0
+              ],
+              [
+                262.5,
+                55.0
+              ],
+              [
+                262.5,
+                175.0
+              ],
+              [
+                345.0,
+                175.0
+              ],
+              [
+                345.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-4c7953d0",
+            "page_index": 2,
+            "bbox": [
+              412.5,
+              55.0,
+              495.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                495.0,
+                55.0
+              ],
+              [
+                412.5,
+                55.0
+              ],
+              [
+                412.5,
+                175.0
+              ],
+              [
+                495.0,
+                175.0
+              ],
+              [
+                495.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-0820f3b0",
+            "page_index": 2,
+            "bbox": [
+              562.5,
+              55.0,
+              645.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                645.0,
+                55.0
+              ],
+              [
+                562.5,
+                55.0
+              ],
+              [
+                562.5,
+                175.0
+              ],
+              [
+                645.0,
+                175.0
+              ],
+              [
+                645.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-a51ae2ef",
+            "page_index": 2,
+            "bbox": [
+              712.5,
+              55.0,
+              795.0,
+              175.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                795.0,
+                55.0
+              ],
+              [
+                712.5,
+                55.0
+              ],
+              [
+                712.5,
+                175.0
+              ],
+              [
+                795.0,
+                175.0
+              ],
+              [
+                795.0,
+                55.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-bff49ef8",
+            "page_index": 2,
+            "bbox": [
+              712.5,
+              335.0,
+              795.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                795.0,
+                455.0
+              ],
+              [
+                795.0,
+                335.0
+              ],
+              [
+                712.5,
+                335.0
+              ],
+              [
+                712.5,
+                455.0
+              ],
+              [
+                795.0,
+                455.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-b752736e",
+            "page_index": 2,
+            "bbox": [
+              112.5,
+              335.0,
+              195.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                195.0,
+                335.0
+              ],
+              [
+                132.5,
+                335.0
+              ],
+              [
+                112.5,
+                335.0
+              ],
+              [
+                112.5,
+                455.0
+              ],
+              [
+                195.0,
+                455.0
+              ],
+              [
+                195.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-39283625",
+            "page_index": 2,
+            "bbox": [
+              262.5,
+              335.0,
+              345.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                275.0,
+                335.0
+              ],
+              [
+                262.5,
+                335.0
+              ],
+              [
+                262.5,
+                455.0
+              ],
+              [
+                345.0,
+                455.0
+              ],
+              [
+                345.0,
+                335.0
+              ],
+              [
+                312.5,
+                335.0
+              ],
+              [
+                275.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-21322487",
+            "page_index": 2,
+            "bbox": [
+              412.5,
+              335.0,
+              495.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                420.0,
+                335.0
+              ],
+              [
+                412.5,
+                335.0
+              ],
+              [
+                412.5,
+                455.0
+              ],
+              [
+                495.0,
+                455.0
+              ],
+              [
+                495.0,
+                335.0
+              ],
+              [
+                487.5,
+                335.0
+              ],
+              [
+                450.0,
+                335.0
+              ],
+              [
+                420.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-bb13282a",
+            "page_index": 2,
+            "bbox": [
+              562.5,
+              335.0,
+              645.0,
+              455.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                625.0,
+                335.0
+              ],
+              [
+                562.5,
+                335.0
+              ],
+              [
+                562.5,
+                455.0
+              ],
+              [
+                645.0,
+                455.0
+              ],
+              [
+                645.0,
+                335.0
+              ],
+              [
+                625.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.96,
+            "label": null
+          },
+          {
+            "id": "room-bdee5d26",
+            "page_index": 2,
+            "bbox": [
+              45.0,
+              55.0,
+              112.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                112.5,
+                55.0
+              ],
+              [
+                45.0,
+                55.0
+              ],
+              [
+                45.0,
+                175.0
+              ],
+              [
+                112.5,
+                175.0
+              ],
+              [
+                112.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "kids"
+          },
+          {
+            "id": "room-d99222c7",
+            "page_index": 2,
+            "bbox": [
+              195.0,
+              55.0,
+              262.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                262.5,
+                55.0
+              ],
+              [
+                195.0,
+                55.0
+              ],
+              [
+                195.0,
+                175.0
+              ],
+              [
+                262.5,
+                175.0
+              ],
+              [
+                262.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "kids"
+          },
+          {
+            "id": "room-d59cc2e8",
+            "page_index": 2,
+            "bbox": [
+              345.0,
+              55.0,
+              412.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                412.5,
+                55.0
+              ],
+              [
+                345.0,
+                55.0
+              ],
+              [
+                345.0,
+                175.0
+              ],
+              [
+                412.5,
+                175.0
+              ],
+              [
+                412.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "kids"
+          },
+          {
+            "id": "room-1c336cb5",
+            "page_index": 2,
+            "bbox": [
+              495.0,
+              55.0,
+              562.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                562.5,
+                55.0
+              ],
+              [
+                495.0,
+                55.0
+              ],
+              [
+                495.0,
+                175.0
+              ],
+              [
+                562.5,
+                175.0
+              ],
+              [
+                562.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "kids"
+          },
+          {
+            "id": "room-7f3f2fb1",
+            "page_index": 2,
+            "bbox": [
+              645.0,
+              55.0,
+              712.5,
+              175.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                712.5,
+                55.0
+              ],
+              [
+                645.0,
+                55.0
+              ],
+              [
+                645.0,
+                175.0
+              ],
+              [
+                712.5,
+                175.0
+              ],
+              [
+                712.5,
+                55.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "kids"
+          },
+          {
+            "id": "room-460eade7",
+            "page_index": 2,
+            "bbox": [
+              45.0,
+              335.0,
+              112.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                45.0,
+                335.0
+              ],
+              [
+                45.0,
+                455.0
+              ],
+              [
+                112.5,
+                455.0
+              ],
+              [
+                112.5,
+                335.0
+              ],
+              [
+                95.0,
+                335.0
+              ],
+              [
+                45.0,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-2758b6cc",
+            "page_index": 2,
+            "bbox": [
+              195.0,
+              335.0,
+              262.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                262.5,
+                335.0
+              ],
+              [
+                195.0,
+                335.0
+              ],
+              [
+                195.0,
+                455.0
+              ],
+              [
+                262.5,
+                455.0
+              ],
+              [
+                262.5,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-b4f637f8",
+            "page_index": 2,
+            "bbox": [
+              345.0,
+              335.0,
+              412.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                412.5,
+                335.0
+              ],
+              [
+                345.0,
+                335.0
+              ],
+              [
+                345.0,
+                455.0
+              ],
+              [
+                412.5,
+                455.0
+              ],
+              [
+                412.5,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-33592a8c",
+            "page_index": 2,
+            "bbox": [
+              495.0,
+              335.0,
+              562.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                562.5,
+                335.0
+              ],
+              [
+                495.0,
+                335.0
+              ],
+              [
+                495.0,
+                455.0
+              ],
+              [
+                562.5,
+                455.0
+              ],
+              [
+                562.5,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          },
+          {
+            "id": "room-adf01334",
+            "page_index": 2,
+            "bbox": [
+              645.0,
+              335.0,
+              712.5,
+              455.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                712.5,
+                335.0
+              ],
+              [
+                662.5,
+                335.0
+              ],
+              [
+                645.0,
+                335.0
+              ],
+              [
+                645.0,
+                455.0
+              ],
+              [
+                712.5,
+                455.0
+              ],
+              [
+                712.5,
+                335.0
+              ]
+            ],
+            "area_m2": 3.24,
+            "label": "bedroom"
+          }
+        ],
+        "doors": [
+          {
+            "id": "door-aafb9f65",
+            "page_index": 2,
+            "bbox": [
+              95.0,
+              275.0,
+              132.5,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 3.068,
+            "connects": [
+              "room-d61f94db",
+              "corridor-d04a5a5b"
+            ]
+          },
+          {
+            "id": "door-b472bc0d",
+            "page_index": 2,
+            "bbox": [
+              275.0,
+              275.0,
+              312.5,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 3.068,
+            "connects": [
+              "room-5bd14241",
+              "corridor-d04a5a5b"
+            ]
+          },
+          {
+            "id": "door-713934bd",
+            "page_index": 2,
+            "bbox": [
+              450.0,
+              275.0,
+              487.5,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 3.068,
+            "connects": [
+              "room-6412e87d",
+              "corridor-153472cd"
+            ]
+          },
+          {
+            "id": "door-3dca9dc7",
+            "page_index": 2,
+            "bbox": [
+              625.0,
+              275.0,
+              662.5,
+              275.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 3.068,
+            "connects": [
+              "room-889fbc95",
+              "corridor-153472cd"
+            ]
+          },
+          {
+            "id": "door-f9b21d1e",
+            "page_index": 2,
+            "bbox": [
+              95.0,
+              335.0,
+              132.5,
+              335.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 2.868,
+            "connects": [
+              "corridor-d04a5a5b",
+              "room-b752736e"
+            ]
+          },
+          {
+            "id": "door-0cd41bca",
+            "page_index": 2,
+            "bbox": [
+              275.0,
+              335.0,
+              312.5,
+              335.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 2.868,
+            "connects": [
+              "corridor-d04a5a5b",
+              "room-39283625"
+            ]
+          },
+          {
+            "id": "door-dd5c37bb",
+            "page_index": 2,
+            "bbox": [
+              450.0,
+              335.0,
+              487.5,
+              335.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 2.868,
+            "connects": [
+              "corridor-153472cd",
+              "room-21322487"
+            ]
+          },
+          {
+            "id": "door-a75cff09",
+            "page_index": 2,
+            "bbox": [
+              625.0,
+              335.0,
+              662.5,
+              335.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Door",
+            "width_m": 2.868,
+            "connects": [
+              "corridor-153472cd",
+              "room-bb13282a"
+            ]
+          }
+        ],
+        "corridors": [
+          {
+            "id": "corridor-153472cd",
+            "page_index": 2,
+            "bbox": [
+              420.0,
+              275.0,
+              795.0,
+              335.0
+            ],
+            "confidence": 0.8,
+            "uncertain": false,
+            "properties": {},
+            "type": "Corridor",
+            "polygon": [
+              [
+                795.0,
+                335.0
+              ],
+              [
+                795.0,
+                275.0
+              ],
+              [
+                662.5,
+                275.0
+              ],
+              [
+                645.0,
+                275.0
+              ],
+              [
+                625.0,
+                275.0
+              ],
+              [
+                495.0,
+                275.0
+              ],
+              [
+                487.5,
+                275.0
+              ],
+              [
+                450.0,
+                275.0
+              ],
+              [
+                420.0,
+                275.0
+              ],
+              [
+                420.0,
+                335.0
+              ],
+              [
+                450.0,
+                335.0
+              ],
+              [
+                487.5,
+                335.0
+              ],
+              [
+                495.0,
+                335.0
+              ],
+              [
+                562.5,
+                335.0
+              ],
+              [
+                625.0,
+                335.0
+              ],
+              [
+                645.0,
+                335.0
+              ],
+              [
+                662.5,
+                335.0
+              ],
+              [
+                712.5,
+                335.0
+              ],
+              [
+                795.0,
+                335.0
+              ]
+            ],
+            "min_width_m": 1.2
+          },
+          {
+            "id": "corridor-d04a5a5b",
+            "page_index": 2,
+            "bbox": [
+              45.0,
+              275.0,
+              420.0,
+              335.0
+            ],
+            "confidence": 0.8,
+            "uncertain": false,
+            "properties": {},
+            "type": "Corridor",
+            "polygon": [
+              [
+                45.0,
+                275.0
+              ],
+              [
+                45.0,
+                335.0
+              ],
+              [
+                95.0,
+                335.0
+              ],
+              [
+                112.5,
+                335.0
+              ],
+              [
+                132.5,
+                335.0
+              ],
+              [
+                195.0,
+                335.0
+              ],
+              [
+                262.5,
+                335.0
+              ],
+              [
+                275.0,
+                335.0
+              ],
+              [
+                312.5,
+                335.0
+              ],
+              [
+                345.0,
+                335.0
+              ],
+              [
+                412.5,
+                335.0
+              ],
+              [
+                420.0,
+                335.0
+              ],
+              [
+                420.0,
+                275.0
+              ],
+              [
+                345.0,
+                275.0
+              ],
+              [
+                312.5,
+                275.0
+              ],
+              [
+                275.0,
+                275.0
+              ],
+              [
+                195.0,
+                275.0
+              ],
+              [
+                132.5,
+                275.0
+              ],
+              [
+                95.0,
+                275.0
+              ],
+              [
+                45.0,
+                275.0
+              ]
+            ],
+            "min_width_m": 1.2
+          }
+        ],
+        "dimensions": [
+          {
+            "id": "dim-0218b3d0",
+            "page_index": 2,
+            "bbox": [
+              45.0,
+              23.25,
+              183.3699951171875,
+              36.9900016784668
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "A-102 SECOND FLOOR PLAN",
+            "value_m": 0.102,
+            "unit": "m"
+          },
+          {
+            "id": "dim-125926f4",
+            "page_index": 2,
+            "bbox": [
+              327.5,
+              309.9750061035156,
+              391.87200927734375,
+              319.5929870605469
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "CORRIDOR W=1.20",
+            "value_m": 1.2,
+            "unit": "m"
+          },
+          {
+            "id": "dim-d35b4770",
+            "page_index": 2,
+            "bbox": [
+              97.5,
+              262.54998779296875,
+              110.843994140625,
+              270.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3068",
+            "value_m": 3.068,
+            "unit": "m"
+          },
+          {
+            "id": "dim-fc9e1a5b",
+            "page_index": 2,
+            "bbox": [
+              97.5,
+              322.54998779296875,
+              110.843994140625,
+              330.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2868",
+            "value_m": 2.868,
+            "unit": "m"
+          },
+          {
+            "id": "dim-4d77abd5",
+            "page_index": 2,
+            "bbox": [
+              277.5,
+              262.54998779296875,
+              290.843994140625,
+              270.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3068",
+            "value_m": 3.068,
+            "unit": "m"
+          },
+          {
+            "id": "dim-5b27795c",
+            "page_index": 2,
+            "bbox": [
+              277.5,
+              322.54998779296875,
+              290.843994140625,
+              330.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2868",
+            "value_m": 2.868,
+            "unit": "m"
+          },
+          {
+            "id": "dim-fb1e3d16",
+            "page_index": 2,
+            "bbox": [
+              452.5,
+              262.54998779296875,
+              465.843994140625,
+              270.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3068",
+            "value_m": 3.068,
+            "unit": "m"
+          },
+          {
+            "id": "dim-29c4b105",
+            "page_index": 2,
+            "bbox": [
+              452.5,
+              322.54998779296875,
+              465.843994140625,
+              330.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2868",
+            "value_m": 2.868,
+            "unit": "m"
+          },
+          {
+            "id": "dim-1140cd7a",
+            "page_index": 2,
+            "bbox": [
+              627.5,
+              262.54998779296875,
+              640.843994140625,
+              270.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3068",
+            "value_m": 3.068,
+            "unit": "m"
+          },
+          {
+            "id": "dim-4b2e7d03",
+            "page_index": 2,
+            "bbox": [
+              627.5,
+              322.54998779296875,
+              640.843994140625,
+              330.79400634765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2868",
+            "value_m": 2.868,
+            "unit": "m"
+          },
+          {
+            "id": "dim-be01cc45",
+            "page_index": 2,
+            "bbox": [
+              55.0,
+              591.4749755859375,
+              76.72100067138672,
+              601.093017578125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "150'-0\"",
+            "value_m": 0.15,
+            "unit": "m"
+          },
+          {
+            "id": "dim-5b1c0086",
+            "page_index": 2,
+            "bbox": [
+              812.5,
+              67.4749984741211,
+              830.3290405273438,
+              77.09300231933594
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "52'-6\"",
+            "value_m": 52.0,
+            "unit": "m"
+          }
+        ],
+        "stairs": []
+      }
+    }
+  ],
+  "skipped_pages": [
+    {
+      "page_index": 1,
+      "sheet_type": "schedule",
+      "confidence": 0.92,
+      "reason": "not a confident graph-eligible plan page"
+    },
+    {
+      "page_index": 3,
+      "sheet_type": "elevation",
+      "confidence": 0.79,
+      "reason": "not a confident graph-eligible plan page"
+    }
+  ]
+}

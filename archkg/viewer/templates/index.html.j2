@@ -186,6 +186,33 @@
   }
   .risk-item b { font-size: 22px; display: block; }
   .risk-item .t { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .evidence-list {
+    display: grid;
+    gap: 8px;
+  }
+  .evidence-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.9fr) minmax(90px, 0.5fr) minmax(130px, 0.8fr) minmax(130px, 1fr);
+    gap: 10px;
+    align-items: center;
+    border: 1px solid rgba(76, 104, 150, 0.32);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.025);
+  }
+  .evidence-row .text {
+    font-weight: 700;
+    color: #eaf0f8;
+    word-break: break-word;
+  }
+  .evidence-row .sub {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .evidence-row.low {
+    border-color: rgba(255, 184, 75, 0.45);
+    background: rgba(255, 184, 75, 0.08);
+  }
 
   .metric-grid {
     margin-top: 12px;
@@ -321,6 +348,70 @@
     width: 100%;
     border-radius: 8px;
   }
+  .layer-stage {
+    position: relative;
+    width: 100%;
+  }
+  .layer-stage img {
+    display: block;
+  }
+  .issue-focus-box {
+    position: absolute;
+    display: none;
+    border: 3px solid #ffdc63;
+    background: rgba(255, 220, 99, 0.16);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.22), 0 0 18px rgba(255, 220, 99, 0.55);
+    pointer-events: none;
+  }
+  .issue-focus-box.is-active {
+    display: block;
+  }
+  .issue-focus-label {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    max-width: min(460px, 90vw);
+    border: 1px solid rgba(255, 220, 99, 0.55);
+    background: rgba(17, 24, 39, 0.94);
+    color: #ffeaa0;
+    padding: 3px 7px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .issue-focus-status {
+    display: none;
+    margin-top: 8px;
+    border: 1px solid rgba(255, 220, 99, 0.35);
+    border-radius: 8px;
+    background: rgba(255, 220, 99, 0.08);
+    color: #ffeaa0;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .issue-focus-status.is-active {
+    display: block;
+  }
+  .focus-button {
+    border: 1px solid rgba(255, 220, 99, 0.48);
+    border-radius: 999px;
+    background: rgba(255, 220, 99, 0.12);
+    color: #ffeaa0;
+    padding: 3px 8px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .focus-button:focus-visible {
+    outline: 2px solid rgba(255, 220, 99, 0.65);
+    outline-offset: 2px;
+  }
+  .issue-item.is-focused {
+    border-color: rgba(255, 220, 99, 0.75);
+    background: rgba(255, 220, 99, 0.08);
+  }
   .layer-switch {
     display: flex;
     gap: 8px;
@@ -427,6 +518,31 @@
   .tier-pill.tier-reminder-by-design { color: #f6db80; border-color: rgba(255, 223, 118, .5); background: rgba(255, 223, 118, .12); }
   .tier-pill.tier-stair-pending { color: #ffac6a; border-color: rgba(255, 143, 74, .5); background: rgba(255, 143, 74, .12); }
   .tier-pill.tier-unknown { color: #b4bfd3; border-color: rgba(154, 168, 188, .56); background: rgba(154, 168, 188, .12); }
+  .status-pill {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    padding: 2px 8px;
+    color: #eaf0f8;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .status-ready { color: #7fffc1; border-color: rgba(75, 211, 123, .55); background: rgba(75, 211, 123, .12); }
+  .status-missing-input { color: #ffcd75; border-color: rgba(255, 184, 75, .55); background: rgba(255, 184, 75, .12); }
+  .status-low-confidence { color: #ffdf76; border-color: rgba(255, 223, 118, .55); background: rgba(255, 223, 118, .12); }
+  .status-manual-only { color: #9ec2ff; border-color: rgba(58, 131, 255, .45); background: rgba(58, 131, 255, .12); }
+  .status-not-applicable { color: #b4bfd3; border-color: rgba(154, 168, 188, .55); background: rgba(154, 168, 188, .12); }
+  .status-unsupported-entity { color: #ff9d99; border-color: rgba(255, 92, 85, .45); background: rgba(255, 92, 85, .12); }
+  .review-candidate { color: #dbe7fc; border-color: rgba(157, 174, 204, .5); background: rgba(157, 174, 204, .12); }
+  .review-confirmed { color: #ff9d99; border-color: rgba(255, 92, 85, .55); background: rgba(255, 92, 85, .14); }
+  .review-rejected { color: #7fffc1; border-color: rgba(75, 211, 123, .55); background: rgba(75, 211, 123, .12); }
+  .review-needs-info { color: #ffcd75; border-color: rgba(255, 184, 75, .55); background: rgba(255, 184, 75, .12); }
+  .review-resolved { color: #8acbff; border-color: rgba(92, 200, 255, .55); background: rgba(92, 200, 255, .12); }
+  .review-superseded { color: #b4bfd3; border-color: rgba(154, 168, 188, .55); background: rgba(154, 168, 188, .12); }
+  .diff-unchanged { color: #7fffc1; border-color: rgba(75, 211, 123, .55); background: rgba(75, 211, 123, .12); }
+  .diff-changed { color: #ffcd75; border-color: rgba(255, 184, 75, .55); background: rgba(255, 184, 75, .12); }
+  .diff-new { color: #8acbff; border-color: rgba(92, 200, 255, .55); background: rgba(92, 200, 255, .12); }
+  .diff-resolved { color: #b4bfd3; border-color: rgba(154, 168, 188, .55); background: rgba(154, 168, 188, .12); }
   .issue-message {
     margin: 8px 0 0;
     color: #dbe7fc;
@@ -453,7 +569,7 @@
   }
   .quick-rail {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 10px;
     margin-top: 10px;
   }
@@ -595,6 +711,22 @@
 {% set knowledge_overview = knowledge_overview | default({}, true) %}
 {% set layer_available = layer_available | default({'source': true, 'overlay': true, 'annotated': true}, true) %}
 {% set issue_tiers = issue_tiers | default(issue_metrics.rule_tiers | default({}, true), true) %}
+{% set rule_readiness = rule_readiness | default({'available': false, 'summary_rows': [], 'source_rows': [], 'non_ready_rules': [], 'warning_text': '规则输入就绪度暂无数据；缺失 readiness 不代表通过。', 'unavailable_reason': 'missing'}, true) %}
+{% set review_workbench = review_workbench | default({'available': false, 'summary': {}, 'artifact_statuses': [], 'action_links': [], 'review_state_operations': {'available': false, 'commands': [], 'allowed_statuses': [], 'omitted_count': 0, 'note': ''}, 'warnings': ['review_workbench.json 暂无数据；请查看下方单项 evidence 面板。'], 'next_actions': []}, true) %}
+{% set reviewer_onboarding = reviewer_onboarding | default({'available': false, 'first_hour_steps': [], 'commands': [], 'do_not_claim': ['reviewer_onboarding.json 暂无数据；请先查看 review_workbench.json。'], 'handoff_checklist': [], 'note': ''}, true) %}
+{% set reviewer_task_checklist = reviewer_task_checklist | default({'available': false, 'status': 'missing', 'summary': {}, 'items': [], 'omitted_item_count': 0, 'boundary_warning': 'reviewer_task_checklist.json 暂无数据；请先查看 reviewer_task_sequence.md。'}, true) %}
+{% set reviewer_task_sequence = reviewer_task_sequence | default({'available': false, 'status': 'missing', 'summary': {}, 'tasks': [], 'omitted_task_count': 0, 'boundary_warning': 'reviewer_task_sequence.json 暂无数据；请先查看 reviewer_quickstart.md。'}, true) %}
+{% set review_diff = review_diff | default({'available': false, 'summary_rows': [], 'issue_statuses': {}, 'items': [], 'resolved_items': [], 'omitted_count': 0, 'warning_text': 'review_diff.json 暂无数据；尚未执行 archkg review-diff。', 'note': ''}, true) %}
+{% set review_state = review_state | default({'available': false, 'summary_rows': [], 'issue_states': {}, 'default_state': {'status': 'candidate', 'status_label': '候选', 'status_class': 'review-candidate', 'reviewer': '', 'note': ''}, 'warning_text': 'review_state.json 暂无数据；缺失复核状态不代表已确认。'}, true) %}
+{% set issue_focus = issue_focus | default({'available': false, 'items': {}, 'omitted_count': 0, 'warning_text': '图面定位暂无数据'}, true) %}
+{% set preview_pages = preview_pages | default({'available': false, 'page_count': 1, 'layers': {'source': [], 'overlay': [], 'annotated': []}, 'warning_text': 'preview_pages.json 暂无数据'}, true) %}
+{% set sheet_classification = sheet_classification | default({'available': false, 'summary_rows': [], 'pages': [], 'warning_text': 'sheet_classification.json 暂无数据; 缺失分类不代表可直接进入 graph.', 'unavailable_reason': 'missing'}, true) %}
+{% set sheet_graphs = sheet_graphs | default({'available': false, 'graphs': [], 'skipped_pages': [], 'warning_text': 'sheet_graphs.json 暂无数据; 缺失多页 graph 不代表没有其他 plan sheet.', 'unavailable_reason': 'missing'}, true) %}
+{% set sheet_issues = sheet_issues | default({'available': false, 'sheets': [], 'warning_text': 'sheet_issues.json 暂无数据; 缺失 per-sheet issue preview 不代表多页无候选问题.', 'unavailable_reason': 'missing'}, true) %}
+{% set sheet_routing = sheet_routing | default({'available': false, 'warning_text': 'sheet_routing.json 暂无数据; 缺失路由不代表已按 sheet 类型过滤.', 'unavailable_reason': 'missing'}, true) %}
+{% set sheet_region_candidates = sheet_region_candidates | default({'available': false, 'candidates': [], 'excluded_texts': [], 'warning_text': '候选区域暂无数据; 缺失 candidate artifact 不代表已裁剪或已确认.', 'unavailable_reason': 'missing'}, true) %}
+{% set layout_3d = layout_3d | default({'available': false, 'model_status': 'missing', 'summary': {}, 'assumptions': [], 'blocked_reasons': [], 'object_samples': [], 'glb_available': false, 'summary_available': false, 'warning_text': 'layout_3d.json 暂无数据; 缺失 3D layout 不代表图纸无法审查，也不代表 2D evidence 已完整。', 'unavailable_reason': 'missing'}, true) %}
+{% set layout_ifc = layout_ifc | default({'available': false, 'status': 'not_exported', 'object_count': 0, 'exported_counts': {}, 'skipped_counts': {}, 'exported_total': 0, 'skipped_total': 0, 'assumptions_count': 0, 'warnings': [], 'ifc_available': false, 'markdown_available': false, 'warning_text': 'layout.ifc has not been exported. This is an optional preview lane, not a review blocker.', 'unavailable_reason': 'missing'}, true) %}
 
 <header>
   <div>
@@ -643,12 +775,40 @@
       <span class="qk">01 识图图层</span>
       <div class="qv">实体图层 / 标注图一键对照</div>
     </a>
+    <a class="quick-chip" href="#panel-workbench">
+      <span class="qk">02 工作台</span>
+      <div class="qv">从 evidence 状态进入下一步动作</div>
+    </a>
+    <a class="quick-chip" href="#panel-onboarding">
+      <span class="qk">03 新手上手</span>
+      <div class="qv">第一小时流程和交接检查</div>
+    </a>
+    <a class="quick-chip" href="#panel-task-sequence">
+      <span class="qk">04 任务序列</span>
+      <div class="qv">按优先级逐项复核</div>
+    </a>
+    <a class="quick-chip" href="#panel-task-checklist">
+      <span class="qk">05 任务清单</span>
+      <div class="qv">逐项勾选、记录证据和风险</div>
+    </a>
     <a class="quick-chip" href="#panel-issues">
-      <span class="qk">02 问题面板</span>
+      <span class="qk">06 问题面板</span>
       <div class="qv">高风险与热点规则先看图</div>
     </a>
+    <a class="quick-chip" href="#panel-readiness">
+      <span class="qk">07 就绪度</span>
+      <div class="qv">缺输入、不适用、人工核对分清楚</div>
+    </a>
+    <a class="quick-chip" href="#panel-sheet-classification">
+      <span class="qk">08 Sheet 分类</span>
+      <div class="qv">平面、排表、标题页先分流</div>
+    </a>
+    <a class="quick-chip" href="#panel-sheet-regions">
+      <span class="qk">09 候选区域</span>
+      <div class="qv">设计区、标题栏、排表先确认</div>
+    </a>
     <a class="quick-chip" href="#panel-report">
-      <span class="qk">03 报告与条文</span>
+      <span class="qk">10 报告与条文</span>
       <div class="qv">快速打开报告与条文触达</div>
     </a>
   </div>
@@ -765,8 +925,1232 @@
   </div>
 </section>
 
+<section class="panel full" id="panel-workbench">
+  <h2>审图工作台总览</h2>
+  {% if not review_workbench.available %}
+    <div class="alert warn">
+      <strong>review_workbench.json 暂无数据</strong>：请查看下方单项 evidence 面板。
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>工作台入口</strong>：{{ review_workbench.note }}
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi">
+        <div class="k">图纸类型</div>
+        <div class="v" style="font-size: 20px;">{{ review_workbench.summary.drawing_type }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">部件</div>
+        <div class="v">{{ review_workbench.summary.rooms }} / {{ review_workbench.summary.doors }} / {{ review_workbench.summary.dimensions }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">规则</div>
+        <div class="v">{{ review_workbench.summary.ready_rules }} / {{ review_workbench.summary.blocked_rules }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Sheet</div>
+        <div class="v">{{ review_workbench.summary.plan_sheet_count }} / {{ review_workbench.summary.sheet_graph_count }}</div>
+      </div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <h3>Action Surface</h3>
+        {% if review_workbench.action_links %}
+          <div class="quick-rail" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            {% for action in review_workbench.action_links %}
+              <a class="quick-chip" href="{{ action.target }}">
+                <span class="qk">{{ "%02d"|format(action.priority) }} {{ action.label }}</span>
+                <div class="qv">{{ action.status }} · {{ action.artifact }}</div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="metric-note">暂无结构化 action links。</div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>Review-State Ops</h3>
+        {% set review_ops = review_workbench.review_state_operations %}
+        {% if review_ops.available %}
+          <div class="metric-note">{{ review_ops.note }}</div>
+          <table>
+            <thead><tr><th>issue</th><th>rule</th><th>command template</th></tr></thead>
+            <tbody>
+              {% for command in review_ops.commands %}
+                <tr>
+                  <td><code>{{ command.issue_id }}</code></td>
+                  <td><code>{{ command.rule_card_id }}</code></td>
+                  <td><code>{{ command.command_template }}</code></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if review_ops.omitted_count %}
+            <div class="metric-note">另有 {{ review_ops.omitted_count }} 条 issue 未展开；完整列表见 <code>issues.json</code>。</div>
+          {% endif %}
+        {% else %}
+          <div class="metric-note">暂无可更新的主 issue review-state。</div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>Re-run Diff</h3>
+        {% if review_diff.available %}
+          <div class="metric-note">{{ review_diff.note }}</div>
+          <div class="bar-list" style="margin: 10px 0;">
+            {% for row in review_diff.summary_rows %}
+              <div class="bar-row">
+                <span class="bar-label">{{ row.status_label }} · {{ row.status }}</span>
+                <span class="bar-value">{{ row.count }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          {% if review_diff["items"] %}
+            <table>
+              <thead><tr><th>status</th><th>before</th><th>after</th><th>rule</th><th>changed fields</th></tr></thead>
+              <tbody>
+                {% for row in review_diff["items"] %}
+                  <tr>
+                    <td><span class="status-pill {{ row.status_class }}">{{ row.status_label }}</span></td>
+                    <td><code>{{ row.before_issue_id or '—' }}</code></td>
+                    <td><code>{{ row.after_issue_id or '—' }}</code></td>
+                    <td><code>{{ row.rule_card_id }}</code></td>
+                    <td>{{ row.changed_fields | join(', ') if row.changed_fields else '—' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% if review_diff.omitted_count %}
+              <div class="metric-note">另有 {{ review_diff.omitted_count }} 条 diff item 未展开；完整列表见 <code>review_diff.json</code>。</div>
+            {% endif %}
+          {% endif %}
+          <div class="metric-note">{{ review_diff.warning_text }}</div>
+        {% else %}
+          <div class="metric-note">{{ review_diff.warning_text }}</div>
+          <div class="metric-note">命令：<code>archkg review-diff &lt;before_run&gt; &lt;after_run&gt; -o &lt;after_run&gt;/review_diff.json</code></div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>Evidence 状态</h3>
+        <table>
+          <thead><tr><th>Evidence</th><th>Artifact</th><th>Status</th><th>Detail</th></tr></thead>
+          <tbody>
+            {% for row in review_workbench.artifact_statuses %}
+              <tr>
+                <td>{{ row.label }}</td>
+                <td><code>{{ row.artifact }}</code></td>
+                <td>{{ row.status }}</td>
+                <td>{{ row.detail }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="metric-card">
+        <h3>下一步</h3>
+        {% if review_workbench.next_actions %}
+          <ul>
+            {% for action in review_workbench.next_actions %}
+              <li>{{ action }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if review_workbench.warnings %}
+          <div class="metric-note">提示</div>
+          <ul>
+            {% for warning in review_workbench.warnings %}
+              <li>{{ warning }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+    <p class="actions"><a href="review_workbench.json" target="_blank">review_workbench.json</a></p>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-onboarding">
+  <h2>新手上手</h2>
+  {% if not reviewer_onboarding.available %}
+    <div class="alert warn">
+      <strong>reviewer_onboarding.json 暂无数据</strong>：请先查看 <code>review_workbench.json</code>。
+    </div>
+  {% else %}
+    <div class="alert soft">
+      <strong>第一小时流程</strong>：{{ reviewer_onboarding.note }}
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <h3>第一小时流程</h3>
+        <table>
+          <thead><tr><th>#</th><th>步骤</th><th>入口</th><th>完成标准</th></tr></thead>
+          <tbody>
+            {% for step in reviewer_onboarding.first_hour_steps %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ step.title }}</td>
+                <td><code>{{ step.artifact }}</code><br>{{ step.target }}</td>
+                <td>{{ step.done_when }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="metric-card">
+        <h3>边界提醒</h3>
+        <ul>
+          {% for item in reviewer_onboarding.do_not_claim %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+        <h3>常用命令</h3>
+        <table>
+          <thead><tr><th>用途</th><th>命令</th></tr></thead>
+          <tbody>
+            {% for command in reviewer_onboarding.commands %}
+              <tr>
+                <td>{{ command.label }}</td>
+                <td><code>{{ command.command }}</code></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="actions">
+      <a href="reviewer_quickstart.md" target="_blank">reviewer_quickstart.md</a>
+      <a href="reviewer_onboarding.json" target="_blank">reviewer_onboarding.json</a>
+    </p>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-task-sequence">
+  <h2>复核任务序列</h2>
+  {% if not reviewer_task_sequence.available %}
+    <div class="alert warn">
+      <strong>reviewer_task_sequence.json 暂无数据</strong>：{{ reviewer_task_sequence.boundary_warning }}
+      {{ reviewer_task_sequence.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert soft">
+      <strong>{{ reviewer_task_sequence.status }}</strong>：{{ reviewer_task_sequence.boundary_warning }}
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi"><div class="k">Tasks</div><div class="v">{{ reviewer_task_sequence.summary.task_count }}</div></div>
+      <div class="kpi warn"><div class="k">Readiness</div><div class="v">{{ reviewer_task_sequence.summary.blocked_input_task_count }}</div></div>
+      <div class="kpi {% if reviewer_task_sequence.summary.primary_issue_task_count %}bad{% endif %}"><div class="k">Issues</div><div class="v">{{ reviewer_task_sequence.summary.primary_issue_task_count }}</div></div>
+      <div class="kpi"><div class="k">Preview</div><div class="v">{{ reviewer_task_sequence.summary.preview_sheet_task_count }}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>stage</th><th>priority</th><th>task</th><th>artifact</th><th>target</th></tr></thead>
+      <tbody>
+        {% for task in reviewer_task_sequence.tasks %}
+          <tr>
+            <td>{{ task.ordinal }}</td>
+            <td><code>{{ task.stage }}</code></td>
+            <td>{{ task.priority }}</td>
+            <td>{{ task.title }}<br><span class="muted">{{ task.reason }}</span></td>
+            <td><code>{{ task.artifact }}</code></td>
+            <td>{{ task.target }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if reviewer_task_sequence.omitted_task_count %}
+      <div class="metric-note">另有 {{ reviewer_task_sequence.omitted_task_count }} 条 task 未展开；完整列表见 <code>reviewer_task_sequence.json</code>。</div>
+    {% endif %}
+    <p class="actions">
+      <a href="reviewer_task_sequence.md" target="_blank">reviewer_task_sequence.md</a>
+      <a href="reviewer_task_sequence.json" target="_blank">reviewer_task_sequence.json</a>
+    </p>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-task-checklist">
+  <h2>复核任务清单</h2>
+  {% if not reviewer_task_checklist.available %}
+    <div class="alert warn">
+      <strong>reviewer_task_checklist.json 暂无数据</strong>：{{ reviewer_task_checklist.boundary_warning }}
+      {{ reviewer_task_checklist.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert soft">
+      <strong>{{ reviewer_task_checklist.status }}</strong>：{{ reviewer_task_checklist.boundary_warning }}
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi"><div class="k">Items</div><div class="v">{{ reviewer_task_checklist.summary.item_count }}</div></div>
+      <div class="kpi warn"><div class="k">Readiness</div><div class="v">{{ reviewer_task_checklist.summary.readiness_item_count }}</div></div>
+      <div class="kpi {% if reviewer_task_checklist.summary.primary_issue_item_count %}bad{% endif %}"><div class="k">Issues</div><div class="v">{{ reviewer_task_checklist.summary.primary_issue_item_count }}</div></div>
+      <div class="kpi"><div class="k">Preview</div><div class="v">{{ reviewer_task_checklist.summary.preview_item_count }}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>stage</th><th>task</th><th>reviewer_status</th><th>required evidence</th><th>prompt</th></tr></thead>
+      <tbody>
+        {% for item in reviewer_task_checklist['items'] %}
+          <tr>
+            <td>{{ item.ordinal }}</td>
+            <td><code>{{ item.stage }}</code></td>
+            <td>{{ item.title }}<br><span class="muted">{{ item.handoff_risk_if_open }}</span></td>
+            <td><code>{{ item.reviewer_status }}</code></td>
+            <td>
+              {% for evidence in item.required_evidence %}
+                <div>{{ evidence }}</div>
+              {% endfor %}
+            </td>
+            <td>{{ item.completion_prompt }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if reviewer_task_checklist.omitted_item_count %}
+      <div class="metric-note">另有 {{ reviewer_task_checklist.omitted_item_count }} 条 checklist item 未展开；完整列表见 <code>reviewer_task_checklist.json</code>。</div>
+    {% endif %}
+    <p class="actions">
+      <a href="reviewer_task_checklist.md" target="_blank">reviewer_task_checklist.md</a>
+      <a href="reviewer_task_checklist.json" target="_blank">reviewer_task_checklist.json</a>
+    </p>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-readiness">
+  <h2>规则输入就绪度</h2>
+  {% if not rule_readiness.available %}
+    <div class="alert warn">
+      <strong>规则输入就绪度暂无数据</strong>：缺失 readiness 不代表通过。旧 run 或仅识图模式可能没有
+      <code>rule_input_readiness.json</code>。{{ rule_readiness.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>缺输入不等于通过</strong>：{{ rule_readiness.warning_text }}
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      {% for row in rule_readiness.summary_rows %}
+        <div class="kpi {{ row.tone }}">
+          <div class="k">{{ row.label }} · {{ row.status }}</div>
+          <div class="v">{{ row.count }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <h3>缺失/低置信输入来源</h3>
+        {% if rule_readiness.source_rows %}
+          <div class="bar">
+            {% for row in rule_readiness.source_rows %}
+              <div class="bar-row">
+                <div class="bar-label">{{ row.source_label }}</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: {{ "%.1f"|format(100.0 * row.count / (rule_readiness.blocked_count or 1)) }}%; background: var(--orange);"></div>
+                </div>
+                <div class="bar-value">{{ row.count }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="metric-note">当前没有 missing_input / low_confidence / unsupported_entity 来源。</div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>非 ready 规则摘要</h3>
+        <div class="table-wrap" style="max-height: 320px;">
+          <table>
+            <thead>
+              <tr>
+                <th>rule</th>
+                <th>状态</th>
+                <th>来源</th>
+                <th>缺失输入</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rule_readiness.non_ready_rules %}
+                <tr>
+                  <td><code>{{ row.rule_id }}</code></td>
+                  <td><span class="status-pill {{ row.status_class }}">{{ row.status_label }}</span></td>
+                  <td>{{ row.source_label }}</td>
+                  <td><code>{{ row.missing_inputs }}</code></td>
+                  <td>{{ row.reason }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5">全部规则 ready。</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if rule_readiness.omitted_non_ready_count %}
+          <div class="metric-note">另有 {{ rule_readiness.omitted_non_ready_count }} 张非 ready 规则未展开，完整数据见 <code>rule_input_readiness.json</code>。</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="links">
+      <a href="rule_input_readiness.json" target="_blank">rule_input_readiness.json</a>
+    </div>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-sheet-classification">
+  <h2>Sheet 分类</h2>
+  {% if not sheet_classification.available %}
+    <div class="alert warn">
+      <strong>sheet_classification.json 暂无数据</strong>：{{ sheet_classification.warning_text }}
+      {{ sheet_classification.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>分类只作路由证据</strong>：{{ sheet_classification.warning_text }}
+    </div>
+    {% if sheet_classification.summary_rows %}
+      <div class="kpis" style="margin-top: 12px;">
+        {% for row in sheet_classification.summary_rows %}
+          <div class="kpi">
+            <div class="k">{{ row.sheet_label }} · {{ row.sheet_type }}</div>
+            <div class="v">{{ row.count }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="table-wrap" style="max-height: 320px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>page</th>
+            <th>type</th>
+            <th>graph</th>
+            <th>confidence</th>
+            <th>signals</th>
+            <th>reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in sheet_classification.pages %}
+            <tr>
+              <td>{{ row.page_index }}</td>
+              <td>{{ row.sheet_label }} <code>{{ row.sheet_type }}</code></td>
+              <td>{{ row.eligible_label }}</td>
+              <td>{{ "%.0f"|format(row.confidence_pct) }}%</td>
+              <td>
+                {% if row.evidence_texts %}
+                  {{ row.evidence_texts | join(' / ') }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>{{ row.reason }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6">暂无页分类。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if sheet_classification.omitted_page_count %}
+      <div class="metric-note">另有 {{ sheet_classification.omitted_page_count }} 页未展开，完整数据见 <code>sheet_classification.json</code>。</div>
+    {% endif %}
+    <div class="links">
+      <a href="sheet_classification.json" target="_blank">sheet_classification.json</a>
+    </div>
+  {% endif %}
+  <h3>Sheet Graphs</h3>
+  {% if not sheet_graphs.available %}
+    <div class="alert warn">
+      <strong>sheet_graphs.json 暂无数据</strong>：{{ sheet_graphs.warning_text }}
+      {{ sheet_graphs.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>多页 graph 只作证据输出</strong>：{{ sheet_graphs.warning_text }}
+    </div>
+    <div class="table-wrap" style="max-height: 260px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>page</th>
+            <th>rooms</th>
+            <th>doors</th>
+            <th>corridors</th>
+            <th>stairs</th>
+            <th>dimensions</th>
+            <th>confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in sheet_graphs.graphs %}
+            <tr>
+              <td>{{ row.page_index }}</td>
+              <td>{{ row.rooms }}</td>
+              <td>{{ row.doors }}</td>
+              <td>{{ row.corridors }}</td>
+              <td>{{ row.stairs }}</td>
+              <td>{{ row.dimensions }}</td>
+              <td>{{ "%.0f"|format(row.confidence_pct) }}%</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7">暂无 plan sheet graph。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if sheet_graphs.skipped_pages %}
+      <div class="metric-note">已跳过 {{ sheet_graphs.skipped_pages | length }} 页非 plan 或低置信 sheet。</div>
+    {% endif %}
+    <div class="links">
+      <a href="sheet_graphs.json" target="_blank">sheet_graphs.json</a>
+    </div>
+  {% endif %}
+  <h3 id="panel-layout-3d">3D Layout Model</h3>
+  {% if not layout_3d.available %}
+    <div class="alert warn">
+      <strong>layout_3d.json 暂无数据</strong>：{{ layout_3d.warning_text }}
+      {{ layout_3d.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>3D evidence model</strong>：{{ layout_3d.warning_text }}
+      默认值只用于 3D 辅助可视化。
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi">
+        <div class="k">Status</div>
+        <div class="v">{{ layout_3d.model_status }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Objects</div>
+        <div class="v">{{ layout_3d.object_count }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Meshes</div>
+        <div class="v">{{ layout_3d.mesh_object_count }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Assumptions</div>
+        <div class="v">{{ layout_3d.assumption_count }}</div>
+      </div>
+    </div>
+    <div class="links">
+      <a href="layout_3d.json" target="_blank">layout_3d.json</a>
+      {% if layout_3d.glb_available %}
+        · <a href="layout_3d.glb" target="_blank">layout_3d.glb</a>
+      {% endif %}
+      {% if layout_3d.summary_available %}
+        · <a href="layout_3d_summary.md" target="_blank">layout_3d_summary.md</a>
+      {% endif %}
+    </div>
+    <div class="metric-note">
+      Opening Semantics:
+      <code>door_opening</code>={{ layout_3d.opening_semantics.door_opening_count | default(0) }},
+      <code>window_opening</code>={{ layout_3d.opening_semantics.window_opening_count | default(0) }}.
+      window_opening requires explicit graph evidence and remains preview-only.
+    </div>
+    <div class="metric-note">
+      Opening Measurements:
+      <code>width_m</code>={{ layout_3d.opening_measurements.explicit_width_count | default(0) }},
+      <code>height_m</code>={{ layout_3d.opening_measurements.explicit_height_count | default(0) }},
+      <code>sill_height_m</code>={{ layout_3d.opening_measurements.explicit_sill_height_count | default(0) }},
+      <code>head_height_m</code>={{ layout_3d.opening_measurements.explicit_head_height_count | default(0) }}.
+      Only explicit graph evidence fields are shown as measured opening provenance.
+    </div>
+    <div class="metric-note">
+      Opening Host Wall Provenance:
+      <code>host_wall_id</code>={{ layout_3d.opening_wall_hosts.explicit_host_wall_count | default(0) }},
+      <code>host_wall_segment</code>={{ layout_3d.opening_wall_hosts.explicit_host_segment_count | default(0) }}.
+      Only explicit graph host-wall or source-segment evidence is shown.
+    </div>
+    <div class="metric-note">
+      Opening Provenance Consistency:
+      <code>openings</code>={{ layout_3d.opening_provenance_consistency.opening_count | default(0) }},
+      <code>semantic</code>={{ layout_3d.opening_provenance_consistency.semantic_count | default(0) }},
+      <code>measurement</code>={{ layout_3d.opening_provenance_consistency.measurement_count | default(0) }},
+      <code>host_wall</code>={{ layout_3d.opening_provenance_consistency.host_count | default(0) }},
+      <code>all_three</code>={{ layout_3d.opening_provenance_consistency.all_three_count | default(0) }}.
+      Coverage only; missing signals are review prompts, not failures.
+    </div>
+    {% if layout_3d.opening_semantics.samples %}
+      <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object</th><th>type</th><th>source</th><th>explicit</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.opening_semantics.samples %}
+              <tr>
+                <td><code>{{ row.object_id }}</code></td>
+                <td><code>{{ row.object_type }}</code></td>
+                <td>{{ row.source_property }}={{ row.source_value }}</td>
+                <td>{{ row.explicit }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_3d.opening_measurements.samples %}
+      <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object</th><th>field</th><th>value</th><th>source</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.opening_measurements.samples %}
+              <tr>
+                <td><code>{{ row.object_id }}</code></td>
+                <td><code>{{ row.field }}</code></td>
+                <td>{{ row.value }} {{ row.unit }}</td>
+                <td>{{ row.source_property }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_3d.opening_wall_hosts.samples %}
+      <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object</th><th>wall</th><th>source</th><th>segment</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.opening_wall_hosts.samples %}
+              <tr>
+                <td><code>{{ row.object_id }}</code></td>
+                <td>{{ row.host_wall_id }}</td>
+                <td>{{ row.source_property }}</td>
+                <td>{{ row.source_segment }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_3d.opening_provenance_consistency.samples %}
+      <div class="table-wrap" style="max-height: 180px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object</th><th>semantic</th><th>measurement</th><th>host</th><th>missing</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.opening_provenance_consistency.samples %}
+              <tr>
+                <td><code>{{ row.object_id }}</code></td>
+                <td>{{ row.has_semantic }}</td>
+                <td>{{ row.has_measurement }}</td>
+                <td>{{ row.has_host }}</td>
+                <td>{{ row.missing_provenance | join(', ') }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_3d.assumptions %}
+      <div class="table-wrap" style="max-height: 220px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>field</th><th>value</th><th>reason</th><th>objects</th></tr></thead>
+          <tbody>
+            {% for row in layout_3d.assumptions %}
+              <tr>
+                <td><code>{{ row.field }}</code></td>
+                <td>{{ row.value }} {{ row.unit }}</td>
+                <td>{{ row.reason }}</td>
+                <td>{{ row.applies_to_object_ids | length }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_3d.blocked_reasons %}
+      <div class="metric-note">未建模项：{{ layout_3d.blocked_reasons | join(' / ') }}</div>
+    {% endif %}
+  {% endif %}
+  <h3 id="panel-layout-ifc">Layout IFC Preview</h3>
+  {% if not layout_ifc.available %}
+    <div class="alert warn">
+      <strong>layout.ifc 未导出</strong>：{{ layout_ifc.warning_text }}
+      {{ layout_ifc.unavailable_reason }}。IFC preview 不是审查级 BIM，也不是规范判断输入。
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>IFC preview 不是审查级 BIM</strong>：{{ layout_ifc.warning_text }}
+      该产物只从 layout_3d.json 派生，不改规则引擎结论。
+    </div>
+    <div class="kpis" style="margin-top: 12px;">
+      <div class="kpi">
+        <div class="k">Status</div>
+        <div class="v">{{ layout_ifc.status }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Source Objects</div>
+        <div class="v">{{ layout_ifc.object_count }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Exported</div>
+        <div class="v">{{ layout_ifc.exported_total }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Skipped</div>
+        <div class="v">{{ layout_ifc.skipped_total }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Opening semantic</div>
+        <div class="v">{{ layout_ifc.opening_provenance.semantic_count | default(0) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Opening measurement</div>
+        <div class="v">{{ layout_ifc.opening_provenance.measurement_count | default(0) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">Opening host</div>
+        <div class="v">{{ layout_ifc.opening_provenance.host_count | default(0) }}</div>
+      </div>
+      <div class="kpi">
+        <div class="k">All three</div>
+        <div class="v">{{ layout_ifc.opening_provenance.all_three_count | default(0) }}</div>
+      </div>
+    </div>
+    <div class="metric-note">
+      IFC 预览里的 opening provenance 数值仅用于审阅覆盖提示，不改变合规输入。
+    </div>
+    <div class="links">
+      <a href="layout_ifc_export.json" target="_blank">layout_ifc_export.json</a>
+      {% if layout_ifc.ifc_available %}
+        · <a href="layout.ifc" target="_blank">layout.ifc</a>
+      {% else %}
+        · layout.ifc 未生成
+      {% endif %}
+      {% if layout_ifc.markdown_available %}
+        · <a href="layout_ifc_export.md" target="_blank">layout_ifc_export.md</a>
+      {% endif %}
+    </div>
+    {% if layout_ifc.exported_counts or layout_ifc.skipped_counts %}
+      <div class="table-wrap" style="max-height: 220px; margin-top: 12px;">
+        <table>
+          <thead><tr><th>object type</th><th>exported</th><th>skipped</th></tr></thead>
+          <tbody>
+            {% for key, count in layout_ifc.exported_counts.items() %}
+              <tr>
+                <td><code>{{ key }}</code></td>
+                <td>{{ count }}</td>
+                <td>{{ layout_ifc.skipped_counts.get(key, 0) }}</td>
+              </tr>
+            {% endfor %}
+            {% for key, count in layout_ifc.skipped_counts.items() %}
+              {% if key not in layout_ifc.exported_counts %}
+                <tr>
+                  <td><code>{{ key }}</code></td>
+                  <td>0</td>
+                  <td>{{ count }}</td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    {% if layout_ifc.warnings %}
+      <div class="metric-note">IFC 导出提示：{{ layout_ifc.warnings | join(' / ') }}</div>
+    {% endif %}
+  {% endif %}
+  <h3>Sheet Issue Preview</h3>
+  {% if not sheet_issues.available %}
+    <div class="alert warn">
+      <strong>sheet_issues.json 暂无数据</strong>：{{ sheet_issues.warning_text }}
+      {{ sheet_issues.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>候选问题预览</strong>：{{ sheet_issues.warning_text }}
+    </div>
+    <div class="table-wrap" style="max-height: 240px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>page</th>
+            <th>candidate issues</th>
+            <th>skipped rules</th>
+            <th>rules</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in sheet_issues.sheets %}
+            <tr>
+              <td>{{ row.page_index }}</td>
+              <td>{{ row.issue_count }}</td>
+              <td>{{ row.skipped_rule_count }}</td>
+              <td>
+                {% if row.rule_ids %}
+                  {{ row.rule_ids | join(' / ') }}{% if row.omitted_rule_count %} +{{ row.omitted_rule_count }}{% endif %}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4">暂无 per-sheet candidate issues。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="links">
+      <a href="sheet_issues.json" target="_blank">sheet_issues.json</a>
+    </div>
+  {% endif %}
+  <h3>Sheet Issue Review Queue</h3>
+  {% if not sheet_issue_review_queue.available %}
+    <div class="alert warn">
+      <strong>sheet_issue_review_queue.json 暂无数据</strong>：{{ sheet_issue_review_queue.warning_text }}
+      {{ sheet_issue_review_queue.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>preview-only bounded bridge</strong>：{{ sheet_issue_review_queue.warning_text }}
+    </div>
+    <div class="metric-note" style="margin-top: 8px;">
+      mutation_policy={{ sheet_issue_review_queue.mutation_policy }};
+      queued={{ sheet_issue_review_queue.queued_issue_count }};
+      primary_review_state_linked={{ sheet_issue_review_queue.primary_review_state_linked }}
+    </div>
+    <div class="table-wrap" style="max-height: 260px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>page</th>
+            <th>queued</th>
+            <th>preview id</th>
+            <th>source issue</th>
+            <th>rule</th>
+            <th>action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for sheet in sheet_issue_review_queue.sheets %}
+          {% if sheet["items"] %}
+            {% for item in sheet["items"] %}
+                <tr>
+                  <td>{{ sheet.page_index }}</td>
+                  <td>{{ sheet.queued_issue_count }}</td>
+                  <td>{{ item.preview_id }}</td>
+                  <td>{{ item.source_issue_id }}</td>
+                  <td>{{ item.rule_card_id }}</td>
+                  <td>{{ item.recommended_action }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td>{{ sheet.page_index }}</td>
+                <td>{{ sheet.queued_issue_count }}</td>
+                <td colspan="4">暂无 queued preview item。</td>
+              </tr>
+            {% endif %}
+          {% else %}
+            <tr><td colspan="6">暂无 sheet preview review queue。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if sheet_issue_review_queue.forbidden_actions %}
+      <div class="metric-note" style="margin-top: 8px;">
+        {{ sheet_issue_review_queue.forbidden_actions[0] }}
+      </div>
+    {% endif %}
+    <div class="links">
+      <a href="sheet_issue_review_queue.json" target="_blank">sheet_issue_review_queue.json</a>
+    </div>
+  {% endif %}
+  <h3>Sheet 路由</h3>
+  {% if not sheet_routing.available %}
+    <div class="alert warn">
+      <strong>sheet_routing.json 暂无数据</strong>：{{ sheet_routing.warning_text }}
+      {{ sheet_routing.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>受保护 graph 路由</strong>：{{ sheet_routing.warning_text }}
+    </div>
+    <div class="table-wrap" style="max-height: 220px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>mode</th>
+            <th>selected pages</th>
+            <th>excluded pages</th>
+            <th>graph pages</th>
+            <th>fallback</th>
+            <th>reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ sheet_routing.mode_label }} <code>{{ sheet_routing.mode }}</code></td>
+            <td>{{ sheet_routing.selected_pages_text }}</td>
+            <td>{{ sheet_routing.excluded_pages_text }}</td>
+            <td>{{ sheet_routing.graph_page_count }} / {{ sheet_routing.original_page_count }}</td>
+            <td>{{ sheet_routing.fallback_label }}</td>
+            <td>{{ sheet_routing.reason }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="links">
+      <a href="sheet_routing.json" target="_blank">sheet_routing.json</a>
+    </div>
+  {% endif %}
+</section>
+
+<section class="panel full" id="panel-sheet-regions">
+  <h2>候选区域</h2>
+  {% if not sheet_region_candidates.available %}
+    <div class="alert warn">
+      <strong>候选区域暂无数据</strong>：{{ sheet_region_candidates.warning_text }}
+      {{ sheet_region_candidates.unavailable_reason }}
+    </div>
+  {% else %}
+    <div class="alert warn">
+      <strong>不自动裁剪</strong>：{{ sheet_region_candidates.warning_text }}
+      如需应用候选，请复制 design_region 的坐标重新运行 <code>--sheet-region x0,y0,x1,y1</code>。
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <h3>区域候选</h3>
+        {% if sheet_region_candidates.overlay_available %}
+          <div class="img-card" style="margin-bottom: 10px;">
+            <div class="img-head">候选区域框线层</div>
+            <div class="img-wrap"><img src="{{ sheet_region_candidates.overlay_name }}" alt="sheet region candidates overlay" /></div>
+          </div>
+        {% endif %}
+        <div class="table-wrap" style="max-height: 320px;">
+          <table>
+            <thead>
+              <tr>
+                <th>page</th>
+                <th>kind</th>
+                <th>region</th>
+                <th>confidence</th>
+                <th>reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in sheet_region_candidates.candidates %}
+                <tr>
+                  <td>{{ row.page_index }}</td>
+                  <td><span class="pill">{{ row.kind }}</span> {{ row.kind_label }}</td>
+                  <td><code>{{ row.copy_region }}</code></td>
+                  <td>{{ "%.0f"|format(row.confidence_pct) }}%</td>
+                  <td>{{ row.reason }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5">当前未生成区域候选。</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if sheet_region_candidates.omitted_candidate_count %}
+          <div class="metric-note">另有 {{ sheet_region_candidates.omitted_candidate_count }} 个候选未展开，完整数据见 <code>sheet_region_candidates.json</code>。</div>
+        {% endif %}
+      </div>
+      <div class="metric-card">
+        <h3>候选排除文本摘要</h3>
+        <div class="table-wrap" style="max-height: 320px;">
+          <table>
+            <thead>
+              <tr>
+                <th>page</th>
+                <th>text</th>
+                <th>bbox</th>
+                <th>reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in sheet_region_candidates.excluded_texts %}
+                <tr>
+                  <td>{{ row.page_index }}</td>
+                  <td>{{ row.text }}</td>
+                  <td><code>{{ row.region }}</code></td>
+                  <td>{{ row.reason }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="4">当前没有候选排除文本。</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if sheet_region_candidates.omitted_excluded_count %}
+          <div class="metric-note">另有 {{ sheet_region_candidates.omitted_excluded_count }} 条文本未展开，完整数据见 <code>sheet_region_candidates.json</code>。</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="links">
+      <a href="sheet_region_candidates.json" target="_blank">sheet_region_candidates.json</a>
+    </div>
+  {% endif %}
+</section>
+
+{% if drawing_understanding is defined %}
+<section class="panel full" id="panel-understanding">
+  <h2>⑥ 图纸理解摘要</h2>
+  <div class="kpis">
+    <div class="kpi ok">
+      <div class="k">图纸类型</div>
+      <div class="v" style="font-size: 20px;">{{ drawing_understanding.drawing_type }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">空间</div>
+      <div class="v">{{ drawing_understanding.component_counts.rooms }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">门/洞口</div>
+      <div class="v">{{ drawing_understanding.component_counts.doors }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">垂直交通</div>
+      <div class="v">{{ drawing_understanding.component_counts.stairs }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">尺寸证据</div>
+      <div class="v">{{ drawing_understanding.component_counts.dimensions + drawing_understanding.dimension_evidence.ocr_dimension_count }}</div>
+    </div>
+  </div>
+  <div class="metric-note" style="margin-top: 10px;">
+    {{ drawing_understanding.summary }} 这是图纸内容识别摘要，不是规范纠错结论。
+  </div>
+  {% if drawing_understanding.drawing_profile is defined %}
+    <div class="metric-note" style="margin-top: 10px;">识别档案</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+      <span class="pill">{{ drawing_understanding.drawing_profile.understanding_level }}</span>
+      {% for signal in drawing_understanding.drawing_profile.evidence_signals %}
+        <span class="pill">{{ signal }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <div class="metric-grid">
+    <div>
+      <div class="metric-note">部件清单</div>
+      <div class="evidence-list" style="margin-top: 8px;">
+        {% for space in drawing_understanding.components.spaces[:4] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">{{ space.label_zh }}</div>
+              <div class="sub">{{ space.id }} · {{ space.area_text }}</div>
+            </div>
+            <div>
+              <div class="sub">类型</div>
+              <div>空间</div>
+            </div>
+            <div>
+              <span class="pill">{{ "需核对" if space.uncertain else "已识别" }}</span>
+            </div>
+            <div class="sub">bbox {{ space.bbox_text }}</div>
+          </div>
+        {% endfor %}
+        {% for opening in drawing_understanding.components.openings[:4] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">门/洞口</div>
+              <div class="sub">{{ opening.id }} · {{ opening.width_text }}</div>
+            </div>
+            <div>
+              <div class="sub">类型</div>
+              <div>开口</div>
+            </div>
+            <div>
+              <span class="pill">{{ opening.connects_text }}</span>
+            </div>
+            <div class="sub">bbox {{ opening.bbox_text }}</div>
+          </div>
+        {% endfor %}
+        {% for vertical in drawing_understanding.components.vertical_circulation[:4] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">楼梯/垂直交通</div>
+              <div class="sub">{{ vertical.id }} · {{ vertical.metric_text }}</div>
+            </div>
+            <div>
+              <div class="sub">类型</div>
+              <div>垂直交通</div>
+            </div>
+            <div>
+              <span class="pill">{{ vertical.confidence_band }}</span>
+            </div>
+            <div class="sub">bbox {{ vertical.bbox_text }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <div class="metric-note">尺寸证据</div>
+      <div class="evidence-list" style="margin-top: 8px;">
+        {% for dim in drawing_understanding.dimension_evidence.graph_dimensions[:3] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">{{ dim.text }}</div>
+              <div class="sub">graph dimension</div>
+            </div>
+            <div>
+              <div class="sub">值</div>
+              <div>{{ dim.value_text }}</div>
+            </div>
+            <div><span class="pill">实体图谱</span></div>
+            <div class="sub">bbox {{ dim.bbox_text }}</div>
+          </div>
+        {% endfor %}
+        {% for dim in drawing_understanding.dimension_evidence.ocr_dimensions[:3] %}
+          <div class="evidence-row">
+            <div>
+              <div class="text">{{ dim.text }}</div>
+              <div class="sub">OCR dimension</div>
+            </div>
+            <div>
+              <div class="sub">值</div>
+              <div>{{ dim.value_text }}</div>
+            </div>
+            <div><span class="pill">{{ dim.binding_state }}</span></div>
+            <div class="sub">{{ dim.target_id or "未绑定" }}</div>
+          </div>
+        {% endfor %}
+      </div>
+      {% if drawing_understanding.uncertainty_flags %}
+        <div class="metric-note" style="margin-top: 10px;">不确定点</div>
+        {% for flag in drawing_understanding.uncertainty_flags[:4] %}
+          <div class="alert warn" style="margin-top: 8px;">{{ flag }}</div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if ocr_diagnostics is defined and ocr_diagnostics.text_count %}
+<section class="panel full" id="panel-ocr">
+  <h2>⑦ OCR 证据面</h2>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="k">OCR 文本</div>
+      <div class="v">{{ ocr_diagnostics.text_count }}</div>
+    </div>
+    <div class="kpi ok">
+      <div class="k">已绑定房间</div>
+      <div class="v">{{ ocr_diagnostics.bound_room_count }}</div>
+    </div>
+    <div class="kpi warn">
+      <div class="k">低置信度</div>
+      <div class="v">{{ ocr_diagnostics.low_confidence_count }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">已有 label 的 Room</div>
+      <div class="v">{{ ocr_diagnostics.labeled_room_count }}</div>
+    </div>
+    <div class="kpi warn">
+      <div class="k">QA 候选</div>
+      <div class="v">{{ ocr_diagnostics.qa_candidate_count }}</div>
+    </div>
+  </div>
+  <div class="metric-note" style="margin-top: 10px;">
+    OCR beta 只提供识别证据，不代表自动合规结论。低置信度阈值：
+    {{ "%.0f"|format(ocr_diagnostics.low_confidence_threshold * 100) }}%；
+    高置信度 label 阈值：{{ "%.0f"|format(ocr_diagnostics.high_confidence_label_threshold * 100) }}%。
+  </div>
+  {% if ocr_diagnostics.qa_candidate_count %}
+    <div class="metric-note" style="margin-top: 12px;">
+      <strong>OCR label QA 候选</strong>：以下仅为人工复核提示，不会自动修改 Room.label，也不会改变规则结论。
+    </div>
+    <div class="evidence-list" style="margin-top: 10px;">
+      {% for candidate in ocr_diagnostics.qa_candidates %}
+        <div class="evidence-row low">
+          <div>
+            <div class="text">{{ candidate.reason }}</div>
+            <div class="sub">{{ candidate.text }} → {{ candidate.normalized_label }}</div>
+          </div>
+          <div>
+            <div class="sub">置信度</div>
+            <div>{{ "%.0f"|format(candidate.confidence_pct) }}%</div>
+          </div>
+          <div>
+            <span class="pill">{{ candidate.room_label or "未绑定" }}</span>
+          </div>
+          <div class="sub">{{ candidate.detail }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    {% if ocr_diagnostics.qa_omitted_count %}
+      <div class="metric-note" style="margin-top: 10px;">
+        另有 {{ ocr_diagnostics.qa_omitted_count }} 条 OCR label QA 候选未在此面板展示；完整数据见 primitives.json 与 entity_graph.json。
+      </div>
+    {% endif %}
+  {% endif %}
+  {% if ocr_diagnostics.dimension_text_count %}
+    <div class="metric-note" style="margin-top: 12px;">
+      <strong>OCR 尺寸绑定证据</strong>：以下展示 OCR 数字文本与 Door/Corridor 的绑定关系；这是实体尺寸证据，不是单独的合规结论。
+    </div>
+    <div class="kpis" style="margin-top: 10px;">
+      <div class="kpi">
+        <div class="k">OCR 尺寸文本</div>
+        <div class="v">{{ ocr_diagnostics.dimension_text_count }}</div>
+      </div>
+      <div class="kpi ok">
+        <div class="k">已绑定实体</div>
+        <div class="v">{{ ocr_diagnostics.bound_dimension_count }}</div>
+      </div>
+      <div class="kpi warn">
+        <div class="k">未绑定尺寸</div>
+        <div class="v">{{ ocr_diagnostics.unbound_dimension_count }}</div>
+      </div>
+    </div>
+    <div class="evidence-list" style="margin-top: 10px;">
+      {% for row in ocr_diagnostics.dimension_rows %}
+        <div class="evidence-row {% if not row.target_id %}low{% endif %}">
+          <div>
+            <div class="text">{{ row.text }}</div>
+            <div class="sub">bbox {{ row.bbox_text }}</div>
+          </div>
+          <div>
+            <div class="sub">OCR 值</div>
+            <div>{{ row.value_text }}</div>
+          </div>
+          <div>
+            <span class="pill">{{ row.binding_state }}</span>
+          </div>
+          <div class="sub">
+            {% if row.target_id %}
+              {{ row.target_id }} · entity={{ row.target_value_text }}
+            {% else %}
+              未匹配到 1m 内的 Door/Corridor
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% if ocr_diagnostics.dimension_omitted_count %}
+      <div class="metric-note" style="margin-top: 10px;">
+        另有 {{ ocr_diagnostics.dimension_omitted_count }} 条 OCR 尺寸文本未在此面板展示；完整数据见 primitives.json 与 entity_graph.json。
+      </div>
+    {% endif %}
+  {% endif %}
+  <div class="evidence-list" style="margin-top: 12px;">
+    {% for row in ocr_diagnostics.rows %}
+      <div class="evidence-row {% if row.low_confidence %}low{% endif %}">
+        <div>
+          <div class="text">{{ row.text }}</div>
+          <div class="sub">bbox {{ row.bbox_text }}</div>
+        </div>
+        <div>
+          <div class="sub">置信度</div>
+          <div>{{ "%.0f"|format(row.confidence_pct) }}%</div>
+        </div>
+        <div>
+          <span class="pill">{{ row.binding_state }}</span>
+        </div>
+        <div class="sub">
+          {% if row.room_id %}
+            {{ row.room_id }} · {{ row.room_label or "未分类" }}
+          {% else %}
+            未绑定到任何 Room polygon
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% if ocr_diagnostics.omitted_count %}
+    <div class="metric-note" style="margin-top: 10px;">
+      另有 {{ ocr_diagnostics.omitted_count }} 条 OCR 文本未在此面板展示；完整数据见 primitives.json。
+    </div>
+  {% endif %}
+</section>
+{% endif %}
+
 <section class="panel">
-  <h2>⑥ 知识库快照</h2>
+  <h2>⑧ 知识库快照</h2>
   {% if knowledge_overview.error %}
     <div class="alert warn">知识库字段读取失败：{{ knowledge_overview.error }}</div>
   {% else %}
@@ -811,25 +2195,48 @@
 
 <section class="panel full" id="panel-layer">
   <h2>② 成果对照图</h2>
+  {% if issue_focus.available %}
+    <p style="color: var(--muted);">图面定位：{{ issue_focus.warning_text }}</p>
+  {% elif issue_focus.warning_text %}
+    <p style="color: var(--orange);">图面定位暂无可用数据：{{ issue_focus.warning_text }}</p>
+  {% endif %}
   <div class="layer-switch" role="tablist" aria-label="图层切换">
     <button class="chip {% if not layer_available.source %}is-disabled{% endif %}" data-layer="source" {% if not layer_available.source %}disabled{% endif %}>source</button>
     <button class="chip {% if not layer_available.overlay %}is-disabled{% endif %}" data-layer="overlay" {% if not layer_available.overlay %}disabled{% endif %}>entity overlay</button>
     <button class="chip {% if not layer_available.annotated %}is-disabled{% endif %}" data-layer="annotated" {% if not layer_available.annotated %}disabled{% endif %}>annotated</button>
   </div>
+  {% if preview_pages.page_count and preview_pages.page_count > 1 %}
+  <div class="layer-switch page-switch" role="tablist" aria-label="图纸页切换">
+    {% for page in preview_pages.layers.source %}
+      <button class="chip page-chip" type="button" data-preview-page-index="{{ page.page_index }}">第 {{ page.page_number }} 页</button>
+    {% endfor %}
+  </div>
+  {% endif %}
   <div class="gallery">
     <div class="img-card">
       <div class="img-head">图层对照 <span class="muted" id="layerState">source</span></div>
       <div class="img-wrap layer-view">
-        <img id="layerImage" src="source_preview.png" alt="review layer" />
+        <div class="layer-stage" id="layerStage">
+          <img id="layerImage" src="source_preview.png" alt="review layer" />
+          <div class="issue-focus-box" id="issueFocusBox" aria-hidden="true">
+            <div class="issue-focus-label" id="issueFocusLabel"></div>
+          </div>
+        </div>
+        <div class="issue-focus-status" id="issueFocusStatus" aria-live="polite"></div>
       </div>
     </div>
     <div class="img-card">
       <div class="img-head">标准图层参考</div>
       <div class="img-wrap">
         <div class="bar">
+          <div class="bar-row"><span class="bar-label">source PDF</span><span class="bar-value"><a href="source.pdf" target="_blank">source.pdf</a></span></div>
           <div class="bar-row"><span class="bar-label">source</span><span class="bar-value"><a href="source_preview.png" target="_blank">source_preview.png</a></span></div>
           <div class="bar-row"><span class="bar-label">entity overlay</span><span class="bar-value"><a href="entity_overlay.png" target="_blank">entity_overlay.png</a></span></div>
           <div class="bar-row"><span class="bar-label">annotated</span><span class="bar-value"><a href="annotated_preview.png" target="_blank">annotated_preview.png</a></span></div>
+          <div class="bar-row"><span class="bar-label">annotated PDF</span><span class="bar-value"><a href="annotated.pdf" target="_blank">annotated.pdf</a></span></div>
+          {% if preview_pages.available %}
+          <div class="bar-row"><span class="bar-label">preview pages</span><span class="bar-value"><a href="preview_pages.json" target="_blank">preview_pages.json</a></span></div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -838,6 +2245,24 @@
 
 <section class="panel full" id="panel-issues">
   <h2>③ Issues ({% if mode is defined and mode == "inspect_only" %}规则未跑{% else %}{{ issues|length }}{% endif %})</h2>
+  {% if not (mode is defined and mode == "inspect_only") %}
+    <p style="color: {% if review_state.available %}var(--muted){% else %}var(--orange){% endif %};">复核状态：{{ review_state.warning_text }}</p>
+    {% if review_diff.available %}
+      <p style="color: var(--muted);">Re-run diff：{{ review_diff.warning_text }}</p>
+      <div class="bar-list" style="margin-bottom: 14px;">
+        {% for row in review_diff.summary_rows %}
+          <div class="bar-row"><span class="bar-label">{{ row.status_label }} · {{ row.status }}</span><span class="bar-value">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if review_state.summary_rows %}
+      <div class="bar-list" style="margin-bottom: 14px;">
+        {% for row in review_state.summary_rows %}
+          <div class="bar-row"><span class="bar-label">{{ row.label }} · {{ row.status }}</span><span class="bar-value">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endif %}
   {% if mode is defined and mode == "inspect_only" %}
     <p style="color: var(--orange);">本次只跑识图，不输出规则问题。Issues 条目为空不等于合规。</p>
   {% elif issues %}
@@ -845,12 +2270,28 @@
       {% for i in issues %}
       {% set issue_tier = issue_tiers.get(i.rule_card_id, "UNKNOWN") %}
       {% set issue_tier_class = issue_tier | lower | replace('_', '-') %}
-        <article class="issue-item tier-{{ issue_tier_class }}">
+      {% set issue_review = review_state.issue_states.get(i.issue_id, review_state.default_state) %}
+      {% set issue_diff = review_diff.issue_statuses.get(i.issue_id) %}
+      {% set focus_item = issue_focus["items"].get(i.issue_id) %}
+        <article class="issue-item tier-{{ issue_tier_class }}" id="issue-{{ i.issue_id }}">
         <div class="line">
           {% set issue_sev = i.severity or "info" %}
           {% set severity_key = (issue_sev | lower | replace(" ", "")) %}
           <span class="level severity-{{ severity_key }}">{{ issue_sev | upper }}</span>
           <span><code>{{ i.issue_id }}</code></span>
+          {% if focus_item %}
+            <button
+              class="focus-button"
+              type="button"
+              data-focus-issue="{{ i.issue_id }}"
+              data-focus-page-index="{{ focus_item.page_index }}"
+              data-focus-preview-supported="{{ 'true' if focus_item.preview_layer_supported else 'false' }}"
+            >{% if focus_item.page_index == 0 %}定位图面{% else %}定位第 {{ focus_item.page_number }} 页{% endif %}</button>
+          {% endif %}
+          <span class="status-pill {{ issue_review.status_class }}">复核状态 {{ issue_review.status_label }} · {{ issue_review.status }}</span>
+          {% if issue_diff %}
+            <span class="status-pill {{ issue_diff.status_class }}">Diff {{ issue_diff.status_label }} · {{ issue_diff.status }}</span>
+          {% endif %}
           <span class="pill">{{ i.rule_card_id }}</span>
           <span class="pill tier-pill tier-{{ issue_tier_class }}">{{ issue_tier }}</span>
           <span class="pill">{{ i.standard_clause_id }}</span>
@@ -860,6 +2301,12 @@
           {% endif %}
         </div>
         <p class="issue-message">{{ i.message }}</p>
+        {% if issue_review.reviewer or issue_review.note %}
+          <p class="issue-message">reviewer {{ issue_review.reviewer or '—' }}{% if issue_review.note %} · {{ issue_review.note }}{% endif %}</p>
+        {% endif %}
+        {% if issue_diff and issue_diff.changed_fields %}
+          <p class="issue-message">diff changed_fields: {{ issue_diff.changed_fields | join(', ') }}</p>
+        {% endif %}
       </article>
       {% endfor %}
     </div>
@@ -870,6 +2317,8 @@
   <div class="links">
     <a href="entity_graph.json" target="_blank">entity_graph.json</a>
     {% if not (mode is defined and mode == "inspect_only") %}<a href="issues.json" target="_blank">issues.json</a>{% endif %}
+    {% if not (mode is defined and mode == "inspect_only") %}<a href="review_state.json" target="_blank">review_state.json</a>{% endif %}
+    {% if review_diff.available %}<a href="review_diff.json" target="_blank">review_diff.json</a>{% endif %}
     <a href="primitives.json" target="_blank">primitives.json</a>
     <a href="report.md" target="_blank">report.md</a>
     {% if not (mode is defined and mode == "inspect_only") %}<a href="feedback.yaml" target="_blank">feedback.yaml</a>{% endif %}
@@ -948,10 +2397,16 @@
 (function () {
   const layerImage = document.getElementById("layerImage");
   const layerState = document.getElementById("layerState");
+  const layerPanel = document.getElementById("panel-layer");
+  const focusBox = document.getElementById("issueFocusBox");
+  const focusLabel = document.getElementById("issueFocusLabel");
+  const focusStatus = document.getElementById("issueFocusStatus");
   const chips = Array.from(document.querySelectorAll('.layer-switch .chip'));
   if (!layerImage || !layerState || !chips.length) {
     return;
   }
+  const issueFocus = {{ issue_focus["items"] | tojson }};
+  const previewPages = {{ preview_pages | tojson }};
   const layerSources = {
     source: "source_preview.png",
     overlay: "entity_overlay.png",
@@ -962,31 +2417,134 @@
     overlay: "entity overlay",
     annotated: "annotated",
   };
+  let currentLayer = "source";
+  let currentPageIndex = 0;
+  let activeIssueId = "";
 
-  function applyLayer(next) {
-    const src = layerSources[next];
+  function pageRows(layer) {
+    const layers = previewPages && previewPages.layers;
+    const rows = layers && layers[layer];
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  function layerSourceForPage(layer, pageIndex) {
+    const rows = pageRows(layer);
+    const found = rows.find((row) => Number(row.page_index) === Number(pageIndex) && row.src);
+    if (found) {
+      return found.src;
+    }
+    if (Number(pageIndex) === 0) {
+      return layerSources[layer] || "";
+    }
+    return "";
+  }
+
+  function applyLayer(next, pageIndex = currentPageIndex) {
+    const src = layerSourceForPage(next, pageIndex);
     if (!src) {
+      if (focusStatus) {
+        focusStatus.textContent = `${layerLabels[next] || next} 暂无第 ${Number(pageIndex) + 1} 页预览；请打开 source.pdf 或 annotated.pdf 复核。`;
+        focusStatus.classList.add("is-active");
+      }
       return;
     }
+    currentLayer = next;
+    currentPageIndex = Number(pageIndex);
     layerImage.src = src;
-    layerImage.alt = `review layer ${layerLabels[next] || next}`;
-    layerState.textContent = layerLabels[next] || next;
+    layerImage.alt = `review layer ${layerLabels[next] || next} page ${currentPageIndex + 1}`;
+    layerState.textContent = `${layerLabels[next] || next} · 第 ${currentPageIndex + 1} 页`;
     chips.forEach((chip) => {
       chip.classList.toggle("active", chip.dataset.layer === next);
       chip.setAttribute("aria-pressed", chip.dataset.layer === next ? "true" : "false");
     });
+    document.querySelectorAll("[data-preview-page-index]").forEach((button) => {
+      const isActive = Number(button.getAttribute("data-preview-page-index")) === currentPageIndex;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+
+  function setIssueFocus(issueId) {
+    const focus = issueFocus[issueId];
+    if (!focus || !focusBox || !focusLabel) {
+      return;
+    }
+    document.querySelectorAll(".issue-item.is-focused").forEach((item) => {
+      item.classList.remove("is-focused");
+    });
+    const card = document.getElementById(`issue-${issueId}`);
+    if (card) {
+      card.classList.add("is-focused");
+    }
+    activeIssueId = issueId;
+    const pageNumber = focus.page_number || ((focus.page_index || 0) + 1);
+    const focusPageIndex = Number(focus.page_index || 0);
+    const previewLayers = Array.isArray(focus.preview_layers) ? focus.preview_layers : [];
+    const previewSupported = focus.preview_layer_supported !== false;
+    if (!previewSupported) {
+      focusBox.classList.remove("is-active");
+      focusBox.setAttribute("aria-hidden", "true");
+      focusLabel.textContent = "";
+      if (focusStatus) {
+        focusStatus.textContent = `${focus.issue_id} 位于第 ${pageNumber} 页；当前图层预览只渲染第一页，请打开 source.pdf 或 annotated.pdf 到对应页复核。`;
+        focusStatus.classList.add("is-active");
+      }
+      if (layerPanel) {
+        layerPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      return;
+    }
+    const preferredLayer = previewLayers.includes("annotated")
+      ? "annotated"
+      : (previewLayers.includes("source") ? "source" : "overlay");
+    applyLayer(preferredLayer, focusPageIndex);
+    focusBox.style.left = `${focus.x_pct}%`;
+    focusBox.style.top = `${focus.y_pct}%`;
+    focusBox.style.width = `${focus.w_pct}%`;
+    focusBox.style.height = `${focus.h_pct}%`;
+    focusLabel.textContent = `${focus.issue_id} · ${focus.rule_card_id || "rule"} · ${focus.severity}`;
+    focusBox.classList.add("is-active");
+    focusBox.setAttribute("aria-hidden", "false");
+    if (focusStatus) {
+      focusStatus.textContent = `${focus.issue_id} · 第 ${pageNumber} 页 · 已在当前预览层定位。`;
+      focusStatus.classList.add("is-active");
+    }
+    if (layerPanel) {
+      layerPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   chips.forEach((chip) => {
     chip.type = "button";
     chip.setAttribute("aria-pressed", chip.classList.contains("active") ? "true" : "false");
     chip.addEventListener("click", () => {
-      applyLayer(chip.dataset.layer);
+      applyLayer(chip.dataset.layer, currentPageIndex);
+    });
+  });
+
+  document.querySelectorAll("[data-preview-page-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeIssueId = "";
+      focusBox.classList.remove("is-active");
+      focusBox.setAttribute("aria-hidden", "true");
+      focusLabel.textContent = "";
+      const nextPage = Number(button.getAttribute("data-preview-page-index"));
+      applyLayer(currentLayer, nextPage);
+      if (focusStatus) {
+        focusStatus.textContent = `已切换到第 ${nextPage + 1} 页预览。`;
+        focusStatus.classList.add("is-active");
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-focus-issue]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setIssueFocus(button.getAttribute("data-focus-issue"));
     });
   });
 
   const active = chips.find((c) => c.classList.contains("active") && !c.disabled);
-  applyLayer((active && active.dataset.layer) || (chips.find((c) => !c.disabled) || chips[0]).dataset.layer);
+  applyLayer((active && active.dataset.layer) || (chips.find((c) => !c.disabled) || chips[0]).dataset.layer, 0);
 })();
 </script>
 </body>

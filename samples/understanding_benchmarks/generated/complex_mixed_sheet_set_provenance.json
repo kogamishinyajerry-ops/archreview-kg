@@ -1,0 +1,28 @@
+{
+  "schema_version": "generated_drawing_fixture_provenance.v1",
+  "case_id": "generated-complex-mixed-sheet-set",
+  "fixture_kind": "generated_complex_mixed_sheet_pdf",
+  "generator": "samples/make_complex_sheet_set.py",
+  "source_pdf": "samples/generated_complex_sheet_set.pdf",
+  "generation_note": "Deterministic four-page vector PDF generated in-repo for repeatable complex sheet-set benchmarking. It includes two plan sheets, one schedule/legend sheet, and one elevation/section sheet.",
+  "run_parameters": {
+    "points_per_meter": 50.0,
+    "min_room_area_m2": 1.0,
+    "project_meta": "samples/project_meta_demo.yaml"
+  },
+  "current_recognizer_observation": {
+    "lines": 141,
+    "texts": 194,
+    "rooms": 60,
+    "doors": 16,
+    "corridors": 4,
+    "stairs": 5,
+    "dimensions": 24,
+    "sheet_graph_count": 2,
+    "plan_page_indexes": [0, 2],
+    "skipped_page_indexes": [1, 3],
+    "sheet_issue_count": 37,
+    "interpretation": "The recognizer classifies the two plan pages as graph-eligible, skips schedule/elevation pages in sheet_graphs, and exposes per-plan preview issues. This is recognition benchmarking only, not final multi-sheet compliance aggregation."
+  },
+  "promotion_rule": "Active generated complex benchmark after expected inventory was reviewed against committed P55 run artifacts; per-sheet candidate issues remain preview-only."
+}

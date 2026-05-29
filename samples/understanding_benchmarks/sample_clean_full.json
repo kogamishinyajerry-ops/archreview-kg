@@ -1,0 +1,62 @@
+{
+  "benchmark_id": "sample-clean-full-understanding",
+  "min_score": 1.0,
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "住宅",
+  "component_counts": {
+    "rooms": {"exact": 4},
+    "doors": {"exact": 6},
+    "corridors": {"exact": 1},
+    "stairs": {"exact": 1},
+    "dimensions": {"min": 3}
+  },
+  "required_semantic_kinds": [
+    "residential_room",
+    "door_opening",
+    "horizontal_circulation",
+    "stair",
+    "dimension_annotation"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "residential_room_labels",
+    "openings",
+    "horizontal_circulation",
+    "vertical_circulation",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_horizontal_circulation": true,
+    "has_vertical_circulation": true,
+    "has_dimension_evidence": true
+  },
+  "expected_rule_counts": {
+    "_note": "sample_clean.pdf is a synthetic toy fixture authored to trigger exactly these rule cards. Each count is the by-construction expected number of violations the recogniser should surface. Counts here are ground truth, not echoes of current detection.",
+    "RC-CORRIDOR-WIDTH": 1,
+    "RC-DOOR-WIDTH": 4,
+    "RC-ELEVATOR-REQUIRED": 1,
+    "RC-ELEVATOR-BEDROOM-ADJACENCY": 1,
+    "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB": 1,
+    "RC-LIVING-BEDROOM-NETHEIGHT-2.4": 1,
+    "RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1": 1,
+    "RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0": 1,
+    "RC-NO-LIVING-IN-BASEMENT": 1,
+    "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20": 1,
+    "RC-BALCONY-VERTICAL-SPACING-RESI": 1,
+    "RC-BALCONY-RAILING-HEIGHT-RESI": 1,
+    "RC-WINDOW-SILL-PROTECTION-RESI": 1,
+    "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI": 1,
+    "RC-EXIT-SEPARATION-MIN-5M-RESI": 1,
+    "RC-RAILING-HEIGHT-6.7.3": 1,
+    "RC-CHILD-RAILING-VERTICAL-SPACING-0.11": 1,
+    "RC-STAIR-FLIGHT-WIDTH-1.10": 1,
+    "RC-STAIR-TREAD-WIDTH-0.26": 1,
+    "RC-STAIR-RISER-HEIGHT-0.175": 1,
+    "RC-STAIR-HANDRAIL-0.90": 1,
+    "RC-STAIR-WELL-WIDTH-0.11": 1,
+    "RC-STAIR-LANDING-WIDTH-1.2": 1,
+    "RC-ACCESSIBLE-DOOR-WIDTH-0.80": 6
+  }
+}

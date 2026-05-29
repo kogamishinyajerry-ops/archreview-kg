@@ -1,0 +1,139 @@
+{
+  "schema_version": "sheet_issues.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/hopkins-mn-foundation.pdf",
+  "sheet_count": 1,
+  "issue_count": 2,
+  "preview_only": true,
+  "review_state_linked": false,
+  "sheets": [
+    {
+      "page_index": 0,
+      "issue_count": 2,
+      "skipped_rule_count": 18,
+      "issues": [
+        {
+          "issue_id": "ISS-f9779cc2",
+          "rule_card_id": "RC-CORRIDOR-WIDTH",
+          "standard_clause_id": "GB50096-5.7.2",
+          "entity_ids": [
+            "corridor-76c55a5e"
+          ],
+          "bbox": [
+            165.5,
+            25.0,
+            483.0,
+            81.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "走廊净宽 1.13 m，小于规范要求的 1.20 m。",
+          "evidence": {
+            "snippet": "走廊净宽 1.13 m，小于规范要求的 1.20 m。",
+            "page_index": 0,
+            "measured_value": 1.13,
+            "threshold_value": 1.2,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-94b0fa21",
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+          "standard_clause_id": "GB50763-3.5.1",
+          "entity_ids": [
+            "corridor-76c55a5e"
+          ],
+          "bbox": [
+            165.5,
+            25.0,
+            483.0,
+            81.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "无障碍室内走道净宽 1.13 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+          "evidence": {
+            "snippet": "无障碍室内走道净宽 1.13 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+            "page_index": 0,
+            "measured_value": 1.13,
+            "threshold_value": 1.2,
+            "unit": "m"
+          }
+        }
+      ],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-ELEVATOR-REQUIRED",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EVAC-STAIR-TYPE-33M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CLOSED-STAIRWELL-21M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+          "reason": "needs --project-meta to evaluate"
+        }
+      ]
+    }
+  ]
+}

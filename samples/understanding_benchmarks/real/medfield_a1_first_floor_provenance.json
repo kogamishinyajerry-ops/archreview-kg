@@ -1,0 +1,50 @@
+{
+  "schema_version": "real_drawing_fixture_provenance.v1",
+  "case_id": "medfield-a1-first-floor",
+  "fixture_kind": "real_public_pdf",
+  "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+  "retrieved_at": "2026-04-27",
+  "source_access_note": "HTTP GET succeeded and produced a 9-page PDF; HTTP HEAD returned 404 for the same CivicPlus document endpoint.",
+  "source_pdf": {
+    "committed": false,
+    "local_path_used_for_annotation": "tmp/p28-real/medfield-floorplans-elevations.pdf",
+    "page_count": 9,
+    "file_size_bytes_at_retrieval": 1297119
+  },
+  "selected_sheet": {
+    "pdf_page_number_1_based": 4,
+    "sheet_number": "A-1",
+    "drawing_name": "First Floor Plan",
+    "project_title": "New Construction: 16 Unit Apartment Building, Hillside Village",
+    "render_used_for_annotation": "tmp/p28-real/page-04.png"
+  },
+  "committed_artifacts": {
+    "current_recognition_payload": "samples/understanding_benchmarks/real/medfield_a1_first_floor_run/drawing_understanding.json",
+    "manual_expected_inventory": "samples/understanding_benchmarks/real/medfield_a1_first_floor_expected.json"
+  },
+  "current_recognizer_observation": {
+    "run_parameters": {
+      "points_per_meter": 50.0,
+      "min_room_area_m2": 3.0
+    },
+    "rooms": 42,
+    "doors": 89,
+    "corridors": 1,
+    "stairs": 5,
+    "dimensions": 181,
+    "text_inventory": {
+      "room_label_total": 79,
+      "door_or_opening_size_label_total": 70,
+      "major_dimension_texts": [
+        "48'-0\"",
+        "24'-0\"",
+        "94'-0\"",
+        "4'-0\"",
+        "150'-0\"",
+        "52'-0\""
+      ],
+      "note": "The text inventory is literal vector-text extraction. Plain 6068 appears once; SLD6068 appears three times and is tracked separately."
+    },
+    "interpretation": "The recognizer now passes the manually annotated component-inventory benchmark for this real vector PDF sheet by combining a 3.0 m² polygon noise floor with UP/DN text-hint vertical-circulation evidence. This remains a recognition benchmark, not a GB compliance-accuracy claim."
+  }
+}

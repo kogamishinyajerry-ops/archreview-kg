@@ -1,0 +1,61 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "cambridge_2garden_existing_secondfloor-manual-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "平面图",
+  "component_counts": {
+    "rooms": {
+      "min": 7,
+      "max": 24
+    },
+    "doors": {
+      "min": 2,
+      "max": 12
+    },
+    "corridors": {
+      "min": 0,
+      "max": 3
+    },
+    "dimensions": {
+      "min": 15
+    }
+  },
+  "required_semantic_kinds": [
+    "door_opening",
+    "dimension_annotation"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_dimension_evidence": true
+  },
+  "expected_rule_counts": {
+    "RC-DOOR-WIDTH": 1,
+    "RC-CORRIDOR-WIDTH": 18,
+    "RC-ACCESSIBLE-DOOR-WIDTH-0.80": 3,
+    "RC-WINDOW-SILL-PROTECTION-RESI": 4,
+    "RC-RAILING-HEIGHT-6.7.3": 4,
+    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W4.B + W5.A to provide honest reviewer ground truth that exceeds detection. Per-case counts are reviewer-judgment estimates for residential plans (e.g. ~15 corridor-width violations per floor on old buildings, ~5 bedroom-area near-misses per case). These are reviewer-level estimates, NOT per-instance labels.",
+    "RC-STAIR-FLIGHT-WIDTH-1.10": 3,
+    "RC-STAIR-LANDING-WIDTH-1.2": 3,
+    "RC-STAIR-TREAD-WIDTH-0.26": 3,
+    "RC-STAIR-RISER-HEIGHT-0.175": 3,
+    "RC-STAIR-WELL-WIDTH-0.11": 3,
+    "RC-STAIR-HANDRAIL-0.90": 3,
+    "RC-CHILD-RAILING-VERTICAL-SPACING-0.11": 3,
+    "RC-LIVING-BEDROOM-NETHEIGHT-2.4": 4,
+    "RC-BEDROOM-AREA": 8,
+    "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20": 12
+  },
+  "notes_for_reviewer": [
+    "M5.Z-W3: 2 Garden St Rear Addition — Existing Second Floor Plan.",
+    "Source: Cambridge MA public BZA filing PDF. Active case.",
+    "Adversarial expected_rule_counts bundled per QUALITY-REVIEW-post-w2.md recommendation."
+  ]
+}

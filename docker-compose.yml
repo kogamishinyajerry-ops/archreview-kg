@@ -1,0 +1,42 @@
+# ArchReview-KG pilot stack (M6.W4)
+#
+# Single-service compose for the pilot deployment kit. Boots the Flask web UI
+# over the bundled SQLite KG with the M5 benchmark sample bundle pre-ingested.
+#
+# Usage:
+#   docker compose up -d         # build + run in background
+#   docker compose logs -f web   # tail server logs
+#   docker compose down          # stop + remove
+#
+# Notes:
+# - This is a pilot kit, not a production deployment. SQLite is fine for
+#   single-evaluator pilots; PostgreSQL is M7+ scope.
+# - Pinned to platform=linux/arm64 for Apple Silicon hosts. x86_64 hosts
+#   should override via DOCKER_DEFAULT_PLATFORM=linux/amd64.
+# - The bind mount on .archkg/ lets the host see the KG database live.
+
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.pilot
+    image: archreview-kg-pilot:latest
+    container_name: archreview-kg-pilot-web
+    ports:
+      - "8765:8765"
+    environment:
+      ARCHKG_HOST: "0.0.0.0"
+      ARCHKG_PORT: "8765"
+      ARCHKG_DB_PATH: "/data/kg.db"
+    volumes:
+      - ./.archkg:/data
+      - ./samples:/app/samples:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8765/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s

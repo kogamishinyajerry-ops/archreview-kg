@@ -1,0 +1,87 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "generated-multi-plan-sheets",
+  "min_score": 1.0,
+  "review_required": false,
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "住宅",
+  "component_counts": {
+    "rooms": {
+      "exact": 8
+    },
+    "doors": {
+      "exact": 12
+    },
+    "corridors": {
+      "exact": 2
+    },
+    "dimensions": {
+      "exact": 6
+    }
+  },
+  "required_semantic_kinds": [
+    "residential_room",
+    "door_opening",
+    "horizontal_circulation",
+    "dimension_annotation"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "residential_room_labels",
+    "openings",
+    "horizontal_circulation",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_horizontal_circulation": true,
+    "has_dimension_evidence": true
+  },
+  "sheet_graphs": {
+    "graph_count": {
+      "exact": 2
+    },
+    "required_page_indexes": [
+      0,
+      1
+    ],
+    "component_counts": {
+      "rooms": {
+        "exact": 4
+      },
+      "doors": {
+        "exact": 6
+      },
+      "corridors": {
+        "exact": 1
+      },
+      "dimensions": {
+        "exact": 3
+      }
+    }
+  },
+  "sheet_issues": {
+    "sheet_count": {
+      "exact": 2
+    },
+    "issue_count": {
+      "exact": 24
+    },
+    "required_page_indexes": [
+      0,
+      1
+    ],
+    "required_rule_ids_by_page": {
+      "0": [
+        "RC-CORRIDOR-WIDTH",
+        "RC-DOOR-WIDTH"
+      ],
+      "1": [
+        "RC-CORRIDOR-WIDTH",
+        "RC-DOOR-WIDTH"
+      ]
+    }
+  },
+  "authoring_note": "Deterministic generated multi-plan case made by duplicating samples/sample_clean.pdf into a two-page PDF and running archkg review. This benchmark checks multi-sheet graph and per-sheet issue preview artifacts, not final multi-sheet compliance aggregation."
+}

@@ -1,0 +1,58 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "generated-complex-titleblock-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "generated_fixture.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "住宅",
+  "component_counts": {
+    "lines": {"exact": 43},
+    "texts": {"exact": 54},
+    "rooms": {"exact": 30},
+    "doors": {"exact": 8},
+    "corridors": {"exact": 2},
+    "stairs": {"exact": 3},
+    "dimensions": {"exact": 16}
+  },
+  "required_semantic_kinds": [
+    "residential_room",
+    "door_opening",
+    "horizontal_circulation",
+    "dimension_annotation",
+    "stair"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "residential_room_labels",
+    "openings",
+    "horizontal_circulation",
+    "vertical_circulation",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_horizontal_circulation": true,
+    "has_vertical_circulation": true,
+    "has_dimension_evidence": true
+  },
+  "text_inventory": {
+    "room_label_counts": {
+      "bedroom": 10,
+      "bath": 10,
+      "living": 5,
+      "kitchen": 5,
+      "dining": 5,
+      "balcony": 5
+    },
+    "door_or_opening_size_label_counts": {
+      "3068": 8
+    },
+    "major_dimension_texts": [
+      "160'-0\"",
+      "60'-0\""
+    ]
+  },
+  "authoring_note": "Deterministic generated complex vector-PDF fixture with an explicit sheet-region crop. This is a CI-stable complex recognition benchmark, not a public real drawing and not a compliance-accuracy claim."
+}

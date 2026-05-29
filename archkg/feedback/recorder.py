@@ -5,7 +5,8 @@ A "run directory" is whatever folder `archkg review` wrote into — it must
 contain `issues.json`, `entity_graph.json`, and `report.md`.
 
 Output: `<run_dir>/feedback.yaml` containing one entry per issue with the
-reviewer's `status` (open/confirmed/rejected) and `note`.
+reviewer's lifecycle `status` and `note`; `<run_dir>/review_state.json`
+is updated as the durable review-state layer.
 
 `apply_to_rules=True` additionally appends one RuleCardTestCase per
 *confirmed* (and not-already-known) issue into the project's rule_cards.yaml.
@@ -16,13 +17,21 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from archkg.knowledge.loader import load_rules, load_standards
+from archkg.review_state import (
+    REVIEW_STATE_FILENAME,
+    build_review_state,
+    load_review_state_optional,
+    review_state_by_issue_id,
+    utc_now_iso,
+    with_updated_summary,
+    write_review_state,
+)
 
 
 class FeedbackError(RuntimeError):
@@ -43,7 +52,15 @@ EXPECTED_COLUMNS = [
     "status",
     "note",
 ]
-VALID_STATUSES = {"open", "confirmed", "rejected"}
+VALID_STATUSES = {
+    "candidate",
+    "confirmed",
+    "rejected",
+    "needs_info",
+    "resolved",
+    "superseded",
+    "open",
+}
 
 
 def _strip(cell: str) -> str:
@@ -77,6 +94,13 @@ def _load_issues(run_dir: Path) -> dict[str, dict[str, Any]]:
         raise FeedbackError(f"missing {issues_json}")
     raw = json.loads(issues_json.read_text(encoding="utf-8"))
     return {item["issue_id"]: item for item in raw}
+
+
+def _normalize_status(raw: str | None) -> str:
+    status = (raw or "candidate").strip().lower() or "candidate"
+    if status == "open":
+        return "candidate"
+    return status
 
 
 def _load_graph(run_dir: Path) -> dict[str, dict[str, Any]]:
@@ -130,17 +154,36 @@ def record(
     graph = _load_graph(run_dir)
     meta = _load_project_meta(run_dir)
 
+    recorded_at = utc_now_iso()
+    review_state_path = run_dir / REVIEW_STATE_FILENAME
+    review_state = build_review_state(
+        list(issues.values()),
+        run_id=run_dir.name,
+        existing=load_review_state_optional(review_state_path),
+        now=recorded_at,
+    )
+    review_items_by_id = review_state_by_issue_id(review_state)
+
     items: list[dict[str, Any]] = []
     confirmed_for_rules: dict[str, list[dict[str, Any]]] = {}
 
     for row in rows:
         issue_id = row.get("issue_id", "")
-        status = row.get("status", "open").lower() or "open"
+        status = _normalize_status(row.get("status"))
         if status not in VALID_STATUSES:
             raise FeedbackError(f"row {issue_id}: invalid status '{status}'")
         issue = issues.get(issue_id)
         if issue is None:
             raise FeedbackError(f"row references unknown issue_id '{issue_id}'")
+        review_item = review_items_by_id[issue_id]
+        review_items_by_id[issue_id] = review_item.model_copy(
+            update={
+                "status": status,
+                "reviewer": row.get("reviewer", "") or None,
+                "note": row.get("note", "") or None,
+                "updated_at": recorded_at,
+            }
+        )
         items.append(
             {
                 "issue_id": issue_id,
@@ -161,7 +204,7 @@ def record(
 
     payload = {
         "run_id": run_dir.name,
-        "recorded_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "recorded_at": recorded_at,
         "items": items,
     }
     out_path = run_dir / "feedback.yaml"
@@ -172,6 +215,9 @@ def record(
 
     if apply_to_rules and confirmed_for_rules:
         _append_test_cases(rules_path, confirmed_for_rules)
+
+    review_state = review_state.model_copy(update={"items": list(review_items_by_id.values())})
+    write_review_state(with_updated_summary(review_state), review_state_path)
 
     return out_path
 

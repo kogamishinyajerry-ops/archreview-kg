@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 
+from archkg.schemas import TextPrimitive
 from archkg.viewer.studio import create_app, run_pipeline
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +26,9 @@ SAMPLE_PDF = REPO_ROOT / "samples" / "sample_clean.pdf"
 SAMPLE_META = REPO_ROOT / "samples" / "project_meta_demo.yaml"
 SAMPLE_ROOM = REPO_ROOT / "samples" / "room_schedule_demo.yaml"
 SAMPLE_STAIR = REPO_ROOT / "samples" / "stair_schedule_demo.yaml"
+RASTER_FIXTURE_200DPI = (
+    REPO_ROOT / "tests" / "fixtures" / "raster_suite" / "sample_raster_200dpi.png"
+)
 
 
 @pytest.fixture
@@ -70,7 +74,7 @@ def test_demo_route_produces_viewer_index(studio_client) -> None:
 
 
 def test_post_review_with_pdf_only_succeeds(studio_client) -> None:
-    client, _ = studio_client
+    client, state_dir = studio_client
     pdf_bytes = SAMPLE_PDF.read_bytes()
     resp = client.post(
         "/review",
@@ -83,6 +87,15 @@ def test_post_review_with_pdf_only_succeeds(studio_client) -> None:
 
     follow = client.get(target)
     assert follow.status_code == 200
+    body = follow.data.decode("utf-8")
+    assert "规则输入就绪度" in body
+    assert "缺输入不等于通过" in body
+    assert "RC-ELEVATOR-REQUIRED" in body
+    run_id = target.removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+    readiness = json.loads((run_dir / "rule_input_readiness.json").read_text("utf-8"))
+    assert readiness["schema_version"] == "rule_input_readiness.v1"
+    assert len(readiness["rules"]) == 32
 
 
 def test_post_review_with_full_meta_and_schedules_succeeds(studio_client) -> None:
@@ -109,6 +122,15 @@ def test_post_review_with_full_meta_and_schedules_succeeds(studio_client) -> Non
     assert "RC-STAIR-FLIGHT-WIDTH-1.10" in issues, (
         "stair schedule must materialize a Stair entity that the rules can fire on"
     )
+    understanding = json.loads((run_dir / "drawing_understanding.json").read_text("utf-8"))
+    assert understanding["component_counts"]["stairs"] == 1
+    assert understanding["components"]["vertical_circulation"][0]["id"] == "stair-1"
+    assert any(
+        row["semantic_kind"] == "stair" for row in understanding["component_inventory"]
+    )
+    index_text = (run_dir / "index.html").read_text("utf-8")
+    assert "垂直交通" in index_text
+    assert "识别档案" in index_text
 
 
 def test_post_review_without_pdf_redirects_with_flash(studio_client) -> None:
@@ -201,6 +223,74 @@ def test_run_meta_persists_tunable_knobs(studio_client) -> None:
     assert meta["mode"] == "full"
     assert meta["points_per_meter"] == 50.0
     assert meta["min_room_area_m2"] == 2.5
+
+
+def test_post_review_sheet_region_crops_primitives_and_persists_meta(
+    studio_client,
+) -> None:
+    client, state_dir = studio_client
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(SAMPLE_PDF.read_bytes()), "plan.pdf"),
+            "sheet_region": "0,0,200,400",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    meta = json.loads((run_dir / "run_meta.json").read_text("utf-8"))
+    assert meta["sheet_region"] == [0.0, 0.0, 200.0, 400.0]
+
+    primitives = json.loads((run_dir / "primitives.json").read_text("utf-8"))
+    texts = {text["text"] for text in primitives["pages"][0]["texts"]}
+    assert "BEDROOM" in texts
+    assert "LIVING" not in texts
+    assert "KITCHEN" not in texts
+
+
+def test_run_pipeline_renders_sheet_region_candidate_panel(tmp_path: Path) -> None:
+    out_dir = tmp_path / "out"
+    run_pipeline(REPO_ROOT / "samples" / "generated_complex_titleblock.pdf", out_dir)
+
+    candidates = json.loads((out_dir / "sheet_region_candidates.json").read_text("utf-8"))
+    assert candidates["schema_version"] == "sheet_region_candidates.v1"
+    assert any(
+        candidate["kind"] == "title_block"
+        for candidate in candidates["pages"][0]["candidates"]
+    )
+    assert (out_dir / "sheet_region_candidates_overlay.png").exists()
+
+    html = (out_dir / "index.html").read_text("utf-8")
+    assert "候选区域" in html
+    assert "title_block" in html
+    assert "sheet_region_candidates_overlay.png" in html
+    assert "不自动裁剪" in html
+
+
+def test_run_pipeline_writes_multi_page_entity_overlay_manifest(
+    tmp_path: Path,
+) -> None:
+    out_dir = tmp_path / "out"
+    run_pipeline(
+        REPO_ROOT / "samples" / "generated_complex_sheet_set.pdf",
+        out_dir,
+        project_meta_path=SAMPLE_META,
+        min_room_area_m2=1.0,
+    )
+
+    preview_pages = json.loads((out_dir / "preview_pages.json").read_text("utf-8"))
+    overlay_pages = preview_pages["layers"]["overlay"]
+
+    assert preview_pages["page_count"] == 4
+    assert [page["page_index"] for page in overlay_pages] == [0, 2]
+    assert overlay_pages[0]["src"] == "entity_overlay.png"
+    assert overlay_pages[1]["src"] == "entity_overlay_page_3.png"
+    assert (out_dir / "entity_overlay.png").exists()
+    assert (out_dir / "entity_overlay_page_3.png").exists()
+    assert "entity_overlay_page_3.png" in (out_dir / "index.html").read_text("utf-8")
 
 
 def test_post_review_min_room_area_filter_passes_through(studio_client) -> None:
@@ -371,6 +461,280 @@ def test_standalone_viewer_rerender_honours_inspect_only(tmp_path: Path) -> None
     assert "Issues (规则未跑)" in body
 
 
+def test_standalone_viewer_rerender_without_readiness_artifact_degrades(
+    tmp_path: Path,
+) -> None:
+    from archkg.viewer.server import _render_index
+    from archkg.viewer.studio import run_pipeline
+
+    out_dir = tmp_path / "out"
+    run_pipeline(SAMPLE_PDF, out_dir)
+    (out_dir / "rule_input_readiness.json").unlink()
+
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "规则输入就绪度暂无数据" in body
+    assert "缺失 readiness 不代表通过" in body
+    assert "Issues" in body
+
+
+def test_standalone_viewer_renders_review_state_and_missing_state_warning(
+    tmp_path: Path,
+) -> None:
+    from archkg.viewer.server import _render_index
+    from archkg.viewer.studio import run_pipeline
+
+    out_dir = tmp_path / "out"
+    run_pipeline(SAMPLE_PDF, out_dir)
+    state_path = out_dir / "review_state.json"
+    state = json.loads(state_path.read_text("utf-8"))
+    state["items"][0]["status"] = "resolved"
+    state["items"][0]["reviewer"] = "Zhu"
+    state["items"][0]["note"] = "fixed in rev B"
+    state["summary"] = {"candidate": len(state["items"]) - 1, "resolved": 1}
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "复核状态" in body
+    assert "resolved" in body
+    assert "fixed in rev B" in body
+
+    state_path.unlink()
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "review_state.json 暂无数据" in body
+    assert "缺失复核状态不代表已确认" in body
+
+
+def test_standalone_viewer_renders_review_diff_status(tmp_path: Path) -> None:
+    from archkg.review_diff import build_review_diff, write_review_diff
+    from archkg.viewer.server import _render_index
+    from archkg.viewer.studio import run_pipeline
+
+    before_dir = tmp_path / "before"
+    after_dir = tmp_path / "after"
+    run_pipeline(SAMPLE_PDF, before_dir)
+    run_pipeline(SAMPLE_PDF, after_dir)
+    write_review_diff(
+        build_review_diff(before_dir, after_dir),
+        after_dir / "review_diff.json",
+    )
+
+    index_path = _render_index(after_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "Re-run Diff" in body
+    assert "review_diff.json" in body
+    assert "未变化" in body
+    assert "Diff 未变化 · unchanged" in body
+    assert "只读 revision tracking" in body
+
+
+def test_standalone_viewer_renders_sheet_classification_and_missing_warning(
+    tmp_path: Path,
+) -> None:
+    from archkg.viewer.server import _render_index
+    from archkg.viewer.studio import run_pipeline
+
+    out_dir = tmp_path / "out"
+    run_pipeline(SAMPLE_PDF, out_dir)
+
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "Sheet 分类" in body
+    assert "审图工作台总览" in body
+    assert "Action Surface" in body
+    assert "Review-State Ops" in body
+    assert "新手上手" in body
+    assert "第一小时流程" in body
+    assert "reviewer_quickstart.md" in body
+    assert "复核任务序列" in body
+    assert "reviewer_task_sequence.json" in body
+    assert "reviewer_task_sequence.md" in body
+    assert "复核任务清单" in body
+    assert "reviewer_task_checklist.json" in body
+    assert "reviewer_task_checklist.md" in body
+    assert "缺输入不等于通过" in body
+    assert "archkg review-state &lt;run_dir&gt;" in body
+    assert "定位图面" in body
+    assert "data-focus-issue=" in body
+    assert "data-focus-page-index=" in body
+    assert "当前图层预览只渲染第一页" in body
+    assert "issueFocusBox" in body
+    assert "issueFocusStatus" in body
+    assert "处理 readiness blockers" in body
+    assert "href=\"#panel-readiness\"" in body
+    assert "Sheet 路由" in body
+    assert "Sheet Graphs" in body
+    assert "Sheet Issue Preview" in body
+    assert "Sheet Issue Review Queue" in body
+    assert "3D Layout Model" in body
+    assert "layout_3d.json" in body
+    assert "layout_3d.glb" in body
+    assert "默认值只用于 3D 辅助可视化" in body
+    assert "Opening Semantics" in body
+    assert "window_opening" in body
+    assert "explicit graph evidence" in body
+    assert "Opening Measurements" in body
+    assert "measured opening provenance" in body
+    assert "Opening Host Wall Provenance" in body
+    assert "host-wall or source-segment evidence" in body
+    assert "Opening Provenance Consistency" in body
+    assert "Coverage only; missing signals are review prompts" in body
+    assert "Layout IFC Preview" in body
+    assert "layout.ifc 未导出" in body
+    assert "IFC preview 不是审查级 BIM" in body
+    assert "preview-only bounded bridge" in body
+    assert "sheet_issue_review_queue.json" in body
+    assert "平面图" in body
+    assert "review_workbench.json" in body
+    assert "sheet_classification.json" in body
+    assert "sheet_routing.json" in body
+    assert "sheet_graphs.json" in body
+    assert "sheet_issues.json" in body
+
+    (out_dir / "sheet_classification.json").unlink()
+    (out_dir / "sheet_routing.json").unlink()
+    (out_dir / "sheet_graphs.json").unlink()
+    (out_dir / "sheet_issues.json").unlink()
+    (out_dir / "review_workbench.json").unlink()
+    (out_dir / "layout_3d.json").unlink()
+    index_path = _render_index(out_dir, SAMPLE_PDF)
+    body = index_path.read_text("utf-8")
+
+    assert "review_workbench.json 暂无数据" in body
+    assert "sheet_classification.json 暂无数据" in body
+    assert "缺失分类不代表可直接进入 graph" in body
+    assert "sheet_routing.json 暂无数据" in body
+    assert "缺失路由不代表已按 sheet 类型过滤" in body
+    assert "sheet_graphs.json 暂无数据" in body
+    assert "缺失多页 graph 不代表没有其他 plan sheet" in body
+    assert "sheet_issues.json 暂无数据" in body
+    assert "缺失 per-sheet issue preview 不代表多页无候选问题" in body
+    assert "layout_3d.json 暂无数据" in body
+    assert "layout.ifc 未导出" in body
+
+
+def test_standalone_viewer_renders_second_page_issue_focus(
+    tmp_path: Path,
+) -> None:
+    from archkg.viewer.preview_pages import write_preview_pages_manifest
+    from archkg.viewer.server import _render_index
+
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    (out_dir / "primitives.json").write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {"page_index": 0, "width_pt": 1000.0, "height_pt": 500.0},
+                    {"page_index": 1, "width_pt": 2000.0, "height_pt": 1000.0},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (out_dir / "entity_graph.json").write_text("{}", encoding="utf-8")
+    (out_dir / "report.md").write_text("# report", encoding="utf-8")
+    (out_dir / "issues.json").write_text(
+        json.dumps(
+            [
+                {
+                    "issue_id": "ISS-P2",
+                    "rule_card_id": "RC-DOOR-WIDTH",
+                    "standard_clause_id": "GB50096-5.8.5",
+                    "entity_ids": ["D-2"],
+                    "bbox": [200.0, 100.0, 600.0, 300.0],
+                    "page_index": 1,
+                    "severity": "warning",
+                    "message": "second page issue",
+                    "evidence": {
+                        "snippet": "door width",
+                        "page_index": 1,
+                        "measured_value": 0.8,
+                        "threshold_value": 0.9,
+                        "unit": "m",
+                    },
+                }
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    write_preview_pages_manifest(
+        out_dir,
+        source_pages=[
+            {
+                "page_index": 0,
+                "page_number": 1,
+                "src": "source_preview.png",
+                "width_px": 100,
+                "height_px": 50,
+                "layer": "source",
+            },
+            {
+                "page_index": 1,
+                "page_number": 2,
+                "src": "source_preview_page_2.png",
+                "width_px": 200,
+                "height_px": 100,
+                "layer": "source",
+            },
+        ],
+        annotated_pages=[
+            {
+                "page_index": 0,
+                "page_number": 1,
+                "src": "annotated_preview.png",
+                "width_px": 100,
+                "height_px": 50,
+                "layer": "annotated",
+            },
+            {
+                "page_index": 1,
+                "page_number": 2,
+                "src": "annotated_preview_page_2.png",
+                "width_px": 200,
+                "height_px": 100,
+                "layer": "annotated",
+            },
+        ],
+        overlay_pages=[
+            {
+                "page_index": 0,
+                "page_number": 1,
+                "src": "entity_overlay.png",
+                "width_px": 100,
+                "height_px": 50,
+                "layer": "overlay",
+            },
+            {
+                "page_index": 1,
+                "page_number": 2,
+                "src": "entity_overlay_page_2.png",
+                "width_px": 200,
+                "height_px": 100,
+                "layer": "overlay",
+            },
+        ],
+    )
+
+    body = _render_index(out_dir, SAMPLE_PDF).read_text("utf-8")
+
+    assert "定位第 2 页" in body
+    assert 'data-focus-page-index="1"' in body
+    assert 'data-focus-preview-supported="true"' in body
+    assert "source_preview_page_2.png" in body
+    assert "annotated_preview_page_2.png" in body
+    assert "entity_overlay_page_2.png" in body
+    assert "preview_pages.json" in body
+
+
 def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
     """Phase 20-A: a 200-DPI raster render of the demo PDF should
     produce roughly the same entity counts (4 rooms / 1 corridor /
@@ -423,8 +787,16 @@ def test_run_pipeline_extracts_walls_from_png(tmp_path: Path) -> None:
         "issues.json",
         "primitives.json",
         "report.md",
+        "reviewer_task_sequence.json",
+        "reviewer_task_sequence.md",
+        "reviewer_task_checklist.json",
+        "reviewer_task_checklist.md",
+        "rule_input_readiness.json",
+        "sheet_region_candidates.json",
+        "sheet_region_candidates_overlay.png",
         "source.pdf",
         "source_preview.png",
+        "preview_pages.json",
     ):
         assert (out / fname).exists(), f"missing artifact for raster run: {fname}"
 
@@ -538,6 +910,368 @@ def test_post_review_image_dpi_compounds_with_ppm(studio_client) -> None:
         "banner must not approximate rule count when the precise number "
         "is 5 (Codex P20-A R3 P1)"
     )
+
+
+def test_post_review_raster_use_ocr_persists_texts_and_clears_no_ocr_warning(
+    studio_client,
+    monkeypatch,
+) -> None:
+    """Phase 20-B: studio passes the OCR toggle into raster ingest.
+
+    The test monkeypatches PaddleOCR's boundary so it is deterministic
+    and does not require the heavyweight optional dependency in CI.
+    """
+    import fitz
+
+    from archkg.ingest import raster_extractor
+
+    client, state_dir = studio_client
+
+    def fake_ocr_page_image(
+        image_path: Path,
+        *,
+        keep_only_dimensions: bool = True,
+        lang: str = "ch",
+    ) -> list[TextPrimitive]:
+        del image_path, lang
+        assert keep_only_dimensions is False
+        return [
+            TextPrimitive(
+                text="卧室",
+                bbox=(140.0, 140.0, 180.0, 170.0),
+                source="ocr",
+                confidence=0.93,
+            )
+        ]
+
+    monkeypatch.setattr(raster_extractor.ocr, "ocr_page_image", fake_ocr_page_image)
+
+    doc = fitz.open(SAMPLE_PDF)
+    try:
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(200 / 72, 200 / 72), alpha=False)
+        png_bytes = pix.tobytes(output="png")
+    finally:
+        doc.close()
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(png_bytes), "plan.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "200",
+            "min_room_area_m2": "0",
+            "use_ocr": "1",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    primitives = json.loads((run_dir / "primitives.json").read_text("utf-8"))
+    assert primitives["pages"][0]["texts"][0]["text"] == "卧室"
+    assert primitives["pages"][0]["texts"][0]["source"] == "ocr"
+
+    meta = json.loads((run_dir / "run_meta.json").read_text("utf-8"))
+    assert meta["use_ocr"] is True
+    assert meta["ocr_text_count"] == 1
+    assert any("栅格图 OCR beta" in flag for flag in meta["quality_flags"])
+    assert not any("栅格图无 OCR" in flag for flag in meta["quality_flags"])
+
+    follow = client.get(f"/runs/{run_id}/")
+    body = follow.data.decode("utf-8")
+    assert "栅格图 OCR beta" in body
+    assert "栅格图无 OCR" not in body
+
+
+def test_post_review_raster_ocr_evidence_panel_and_standalone_rerender(
+    studio_client,
+    monkeypatch,
+) -> None:
+    """Phase 20-C: OCR beta must be auditable on the result page.
+
+    It is not enough to say "OCR ran"; the viewer needs to expose the
+    OCR text, confidence, and room binding hints. The same diagnostics
+    must survive standalone ``archkg viewer`` re-rendering from run
+    artifacts.
+    """
+    import fitz
+
+    from archkg.ingest import raster_extractor
+    from archkg.viewer.server import _render_index
+
+    client, state_dir = studio_client
+
+    def fake_ocr_page_image(
+        image_path: Path,
+        *,
+        keep_only_dimensions: bool = True,
+        lang: str = "ch",
+    ) -> list[TextPrimitive]:
+        del image_path, lang
+        assert keep_only_dimensions is False
+        return [
+            TextPrimitive(
+                text="卧室",
+                bbox=(140.0, 140.0, 180.0, 170.0),
+                source="ocr",
+                confidence=0.93,
+            ),
+            TextPrimitive(
+                text="厨房",
+                bbox=(190.0, 140.0, 230.0, 170.0),
+                source="ocr",
+                confidence=0.91,
+            ),
+            TextPrimitive(
+                text="客厅",
+                bbox=(5000.0, 5000.0, 5030.0, 5020.0),
+                source="ocr",
+                confidence=0.95,
+            ),
+            TextPrimitive(
+                text="卫生间",
+                bbox=(5200.0, 5200.0, 5230.0, 5220.0),
+                source="ocr",
+                confidence=0.42,
+            ),
+        ]
+
+    monkeypatch.setattr(raster_extractor.ocr, "ocr_page_image", fake_ocr_page_image)
+
+    doc = fitz.open(SAMPLE_PDF)
+    try:
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(200 / 72, 200 / 72), alpha=False)
+        png_bytes = pix.tobytes(output="png")
+    finally:
+        doc.close()
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(png_bytes), "plan.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "200",
+            "min_room_area_m2": "0",
+            "use_ocr": "1",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    follow = client.get(f"/runs/{run_id}/")
+    body = follow.data.decode("utf-8")
+    assert "OCR 证据面" in body
+    assert "OCR 文本" in body
+    assert "低置信度" in body
+    assert "卧室" in body
+    assert "厨房" in body
+    assert "客厅" in body
+    assert "卫生间" in body
+    assert "已绑定房间" in body
+    assert "未绑定" in body
+    assert "OCR label QA 候选" in body
+    assert "label 冲突" in body
+    assert "未绑定高置信度 label" in body
+    assert "低置信度 label" in body
+
+    index_path = _render_index(run_dir, run_dir / "source.pdf")
+    rerendered = index_path.read_text("utf-8")
+    assert "OCR 证据面" in rerendered
+    assert "卧室" in rerendered
+    assert "厨房" in rerendered
+    assert "客厅" in rerendered
+    assert "低置信度" in rerendered
+    assert "OCR label QA 候选" in rerendered
+
+
+def _p21_fixture_ocr_texts() -> list[TextPrimitive]:
+    """Deterministic OCR payload for fixture-based raster regression tests."""
+    return [
+        TextPrimitive(
+            text="卧室",
+            bbox=(820.0, 130.0, 900.0, 170.0),
+            source="ocr",
+            confidence=0.95,
+        ),
+        TextPrimitive(
+            text="厨房",
+            bbox=(200.0, 120.0, 270.0, 170.0),
+            source="ocr",
+            confidence=0.95,
+        ),
+        TextPrimitive(
+            text="客厅",
+            bbox=(800.0, 840.0, 900.0, 890.0),
+            source="ocr",
+            confidence=0.95,
+        ),
+        TextPrimitive(
+            text="卫生间",
+            bbox=(200.0, 840.0, 280.0, 890.0),
+            source="ocr",
+            confidence=0.95,
+        ),
+        TextPrimitive(
+            text="卧室",
+            bbox=(810.0, 140.0, 900.0, 180.0),
+            source="ocr",
+            confidence=0.45,
+        ),
+        TextPrimitive(
+            text="厨房",
+            bbox=(1500.0, 1500.0, 1580.0, 1580.0),
+            source="ocr",
+            confidence=0.96,
+        ),
+        TextPrimitive(
+            text="DOOR 0.77",
+            bbox=(1118.0, 675.0, 1160.0, 695.0),
+            source="ocr",
+            confidence=0.94,
+        ),
+    ]
+
+
+def test_post_review_raster_fixture_ocr_candidate_panel_and_json_signal(
+    studio_client,
+    monkeypatch,
+) -> None:
+    """P21: lock OCR evidence panel + candidate accounting on a real raster fixture.
+
+    The fixture is a real 200-DPI rendered input (not synthetic geometry),
+    while OCR remains deterministic via monkeypatch so CI stays dependency-free.
+    """
+    import json
+
+    from archkg.ingest import raster_extractor
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.server import _render_index
+
+    client, state_dir = studio_client
+    ocr_texts = _p21_fixture_ocr_texts()
+
+    def fake_ocr_page_image(
+        image_path: Path,
+        *,
+        keep_only_dimensions: bool = True,
+        lang: str = "ch",
+    ) -> list[TextPrimitive]:
+        del image_path, lang
+        assert keep_only_dimensions is False
+        return ocr_texts
+
+    monkeypatch.setattr(raster_extractor.ocr, "ocr_page_image", fake_ocr_page_image)
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(RASTER_FIXTURE_200DPI.read_bytes()), "sample_raster_200dpi.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "200",
+            "min_room_area_m2": "0",
+            "use_ocr": "1",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    follow = client.get(f"/runs/{run_id}/")
+    body = follow.data.decode("utf-8")
+    assert "OCR 证据面" in body
+    assert "OCR label QA 候选" in body
+    assert "OCR 尺寸绑定证据" in body
+    assert "DOOR 0.77" in body
+    assert "绑定 Door" in body
+    assert "低置信度 label" in body
+    assert "未绑定高置信度 label" in body
+    assert "不会自动修改 Room.label，也不会改变规则结论" in body
+
+    primitives = json.loads((run_dir / "primitives.json").read_text("utf-8"))
+    graph = json.loads((run_dir / "entity_graph.json").read_text("utf-8"))
+    diagnostics = build_ocr_diagnostics(primitives, graph)
+    assert diagnostics["text_count"] == len(ocr_texts)
+    assert diagnostics["qa_candidate_count"] == 2
+    assert diagnostics["low_confidence_label_count"] == 1
+    assert diagnostics["unbound_high_confidence_label_count"] == 1
+    assert diagnostics["dimension_text_count"] == 1
+    assert diagnostics["bound_dimension_count"] == 1
+    assert diagnostics["dimension_rows"][0]["text"] == "DOOR 0.77"
+    assert diagnostics["dimension_rows"][0]["target_kind"] == "Door"
+    # QA candidates should stay in evidence view, not become rule outcomes.
+    issues = (run_dir / "issues.json").read_text("utf-8")
+    assert "label 冲突" not in issues
+    assert "低置信度" not in issues
+
+    index_text = _render_index(run_dir, run_dir / "source.pdf").read_text("utf-8")
+    assert "OCR 证据面" in index_text
+    assert "OCR label QA 候选" in index_text
+    assert "OCR 尺寸绑定证据" in index_text
+
+
+def test_post_review_raster_fixture_writes_drawing_understanding(
+    studio_client,
+    monkeypatch,
+) -> None:
+    """P23: first explain the drawing, then worry about compliance."""
+    from archkg.ingest import raster_extractor
+    from archkg.viewer.server import _render_index
+
+    client, state_dir = studio_client
+    ocr_texts = _p21_fixture_ocr_texts()
+
+    def fake_ocr_page_image(
+        image_path: Path,
+        *,
+        keep_only_dimensions: bool = True,
+        lang: str = "ch",
+    ) -> list[TextPrimitive]:
+        del image_path, lang
+        assert keep_only_dimensions is False
+        return ocr_texts
+
+    monkeypatch.setattr(raster_extractor.ocr, "ocr_page_image", fake_ocr_page_image)
+
+    resp = client.post(
+        "/review",
+        data={
+            "pdf": (BytesIO(RASTER_FIXTURE_200DPI.read_bytes()), "sample_raster_200dpi.png"),
+            "points_per_meter": "50.0",
+            "image_dpi": "200",
+            "min_room_area_m2": "0",
+            "use_ocr": "1",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 302, resp.data[:300]
+    run_id = resp.headers["Location"].removeprefix("/runs/").rstrip("/")
+    run_dir = state_dir / "runs" / run_id
+
+    understanding = json.loads(
+        (run_dir / "drawing_understanding.json").read_text("utf-8")
+    )
+    assert understanding["drawing_type"] == "建筑平面图"
+    assert "平面图" in understanding["likely_design"]
+    assert understanding["component_counts"]["rooms"] >= 1
+    assert understanding["component_counts"]["doors"] >= 1
+    assert understanding["components"]["spaces"]
+    assert understanding["components"]["openings"]
+    assert understanding["dimension_evidence"]["ocr_bound_count"] >= 1
+    assert "规范" not in understanding["summary"]
+
+    body = client.get(f"/runs/{run_id}/").data.decode("utf-8")
+    assert "图纸理解摘要" in body
+    assert "建筑平面图" in body
+    assert "部件清单" in body
+    assert "尺寸证据" in body
+
+    index_text = _render_index(run_dir, run_dir / "source.pdf").read_text("utf-8")
+    assert "图纸理解摘要" in index_text
+    assert "部件清单" in index_text
 
 
 def test_get_index_drop_hint_no_false_room_schedule_remediation(studio_client) -> None:
@@ -678,6 +1412,7 @@ def test_run_pipeline_smoke(tmp_path: Path) -> None:
         "index.html",
         "issues.json",
         "primitives.json",
+        "preview_pages.json",
         "report.md",
         "source.pdf",
         "source_preview.png",

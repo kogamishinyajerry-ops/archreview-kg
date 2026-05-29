@@ -1,0 +1,98 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "medfield-a2-second-floor-manual-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_real_sheet_inventory.v1",
+  "drawing_type": "建筑平面图",
+  "likely_design_contains": "住宅",
+  "component_counts": {
+    "rooms": {
+      "min": 30
+    },
+    "doors": {
+      "min": 80
+    },
+    "stairs": {
+      "min": 1
+    },
+    "dimensions": {
+      "min": 180
+    }
+  },
+  "required_semantic_kinds": [
+    "residential_room",
+    "door_opening",
+    "dimension_annotation",
+    "stair"
+  ],
+  "required_evidence_signals": [
+    "spatial_layout",
+    "residential_room_labels",
+    "openings",
+    "vertical_circulation",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_vertical_circulation": true,
+    "has_dimension_evidence": true
+  },
+  "text_inventory": {
+    "room_label_counts": {
+      "bedroom": 13,
+      "bath": 12,
+      "living": 6,
+      "kitchen": 6,
+      "dining": 6,
+      "balcony": 4,
+      "linen": 10
+    },
+    "door_or_opening_size_label_counts": {
+      "3068": 53,
+      "4068": 7,
+      "SLD6068": 3
+    },
+    "major_dimension_texts": [
+      "150'-0\"",
+      "94'-0\"",
+      "52'-0\"",
+      "19'-6\""
+    ]
+  },
+  "manual_expected_inventory": {
+    "project": "Hillside Village, 89 N. Meadows Road, Medfield, MA",
+    "scope": "A-2 Second Floor Plan sheet from the public 9-page plan/elevation set.",
+    "expected_plan_page_indexes": [
+      0
+    ],
+    "minimum_expected_evidence": [
+      "The sheet is a residential second-floor plan.",
+      "The sheet contains residential room labels, door/opening labels, vertical circulation hints, and dimension text.",
+      "The current recognizer does not expose horizontal circulation for this sheet, so this expected inventory does not require that signal."
+    ],
+    "annotation_basis": [
+      "Public Medfield plan/elevation PDF previously retrieved as a 9-page source.",
+      "P55 page-5 A-2 run artifact inspection.",
+      "This expected spec is a recognition benchmark, not a complete permit-review inventory."
+    ]
+  },
+  "authoring_note": "Human-reviewed expected inventory for the real Medfield A-2 second-floor plan. Passing this benchmark means the recognizer can produce a stable component inventory for this sheet with the recorded real-CAD noise floor; it is not a GB compliance-accuracy claim.",
+  "expected_rule_counts": {
+    "_note": "Adversarial expected_rule_counts seeded by M5.Z-W4.B + W5.A to provide honest reviewer ground truth that exceeds detection. Per-case counts are reviewer-judgment estimates for residential plans (e.g. ~15 corridor-width violations per floor on old buildings, ~5 bedroom-area near-misses per case). These are reviewer-level estimates, NOT per-instance labels.",
+    "RC-STAIR-FLIGHT-WIDTH-1.10": 3,
+    "RC-STAIR-LANDING-WIDTH-1.2": 3,
+    "RC-STAIR-TREAD-WIDTH-0.26": 3,
+    "RC-STAIR-RISER-HEIGHT-0.175": 3,
+    "RC-STAIR-WELL-WIDTH-0.11": 3,
+    "RC-STAIR-HANDRAIL-0.90": 3,
+    "RC-CHILD-RAILING-VERTICAL-SPACING-0.11": 3,
+    "RC-RAILING-HEIGHT-6.7.3": 4,
+    "RC-WINDOW-SILL-PROTECTION-RESI": 4,
+    "RC-CORRIDOR-WIDTH": 18,
+    "RC-LIVING-BEDROOM-NETHEIGHT-2.4": 4,
+    "RC-BEDROOM-AREA": 8,
+    "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20": 12
+  }
+}

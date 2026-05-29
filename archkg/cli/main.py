@@ -52,6 +52,23 @@ def review(
     pdf: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
     out: Path = typer.Option(Path("out"), "-o", "--out"),
     points_per_meter: float = typer.Option(50.0, "--ppm"),
+    min_room_area_m2: float = typer.Option(
+        0.0,
+        "--min-room-area-m2",
+        min=0.0,
+        help=(
+            "Drop sub-threshold room polygons before evaluation. "
+            "Use 1-3 m² on noisy real CAD sheets; 0 disables filtering."
+        ),
+    ),
+    sheet_region: str | None = typer.Option(
+        None,
+        "--sheet-region",
+        help=(
+            "Optional design-region crop in page coordinates: x0,y0,x1,y1. "
+            "Use to exclude title blocks, borders, schedules, or legends."
+        ),
+    ),
     project_meta: Path | None = typer.Option(
         None, "--project-meta", exists=True, dir_okay=False, readable=True,
         help="Optional ProjectMeta YAML (building_type/height_class etc.) to filter inapplicable rules.",
@@ -73,13 +90,76 @@ def review(
 
     from archkg.annotate.pdf_annotator import annotate as annotate_pdf
     from archkg.annotate.report import render as render_report
+    from archkg.annotate.sheet_region_overlay import render_sheet_region_candidate_overlay
     from archkg.graph.builder import build_graph, render_overlay
     from archkg.graph.builder import write_json as write_graph
+    from archkg.graph.sheet_graphs import build_sheet_graphs, write_sheet_graphs
     from archkg.ingest.primitive_extractor import extract
     from archkg.ingest.primitive_extractor import write_json as write_prims
+    from archkg.ingest.sheet_classification import (
+        build_sheet_classification,
+        write_sheet_classification,
+    )
+    from archkg.ingest.sheet_region import (
+        crop_primitives_to_region,
+        parse_sheet_region,
+    )
+    from archkg.ingest.sheet_region_candidates import (
+        build_sheet_region_candidates,
+        write_sheet_region_candidates,
+    )
+    from archkg.ingest.sheet_routing import (
+        route_primitives_for_graph,
+        write_sheet_routing,
+    )
     from archkg.knowledge.loader import load_rules, load_standards
+    from archkg.knowledge.run_readiness import (
+        build_rule_input_readiness,
+        write_rule_input_readiness,
+    )
+    from archkg.layout_3d import (
+        build_layout_3d,
+        export_layout_3d_glb,
+        write_layout_3d,
+        write_layout_3d_summary,
+    )
+    from archkg.review_state import build_review_state, write_review_state
     from archkg.rules.engine import evaluate
+    from archkg.rules.sheet_issues import (
+        build_sheet_issues,
+        merge_sheet_issues,
+        write_sheet_issues,
+    )
     from archkg.schemas import ProjectMeta
+    from archkg.viewer.drawing_understanding import (
+        build_drawing_understanding,
+        write_drawing_understanding,
+    )
+    from archkg.viewer.ocr_diagnostics import build_ocr_diagnostics
+    from archkg.viewer.review_workbench import (
+        build_review_workbench,
+        write_review_workbench,
+    )
+    from archkg.viewer.reviewer_onboarding import (
+        build_reviewer_onboarding,
+        write_reviewer_onboarding_json,
+        write_reviewer_quickstart_markdown,
+    )
+    from archkg.viewer.reviewer_task_checklist import (
+        build_reviewer_task_checklist,
+        write_reviewer_task_checklist_json,
+        write_reviewer_task_checklist_markdown,
+    )
+    from archkg.viewer.reviewer_task_sequence import (
+        build_reviewer_task_sequence,
+        write_reviewer_task_sequence_json,
+        write_reviewer_task_sequence_markdown,
+    )
+    from archkg.viewer.rule_readiness import build_rule_readiness_view
+    from archkg.viewer.sheet_issue_review_queue import (
+        build_sheet_issue_review_queue,
+        write_sheet_issue_review_queue,
+    )
 
     out.mkdir(parents=True, exist_ok=True)
 
@@ -106,10 +186,53 @@ def review(
             encoding="utf-8",
         )
 
+    try:
+        crop_region = parse_sheet_region(sheet_region) if sheet_region else None
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--sheet-region") from exc
+
     primitives = extract(pdf, points_per_meter=points_per_meter)
+    sheet_classification = build_sheet_classification(primitives)
+    sheet_classification_path = write_sheet_classification(
+        sheet_classification,
+        out / "sheet_classification.json",
+    )
+    sheet_candidates = build_sheet_region_candidates(
+        primitives,
+        applied_region=crop_region,
+    )
+    sheet_candidates_path = write_sheet_region_candidates(
+        sheet_candidates,
+        out / "sheet_region_candidates.json",
+    )
+    sheet_candidates_overlay_path = render_sheet_region_candidate_overlay(
+        pdf,
+        sheet_candidates,
+        out / "sheet_region_candidates_overlay.png",
+    )
+    sheet_graph_primitives = primitives
+    routing = route_primitives_for_graph(
+        primitives,
+        sheet_classification,
+        manual_sheet_region_applied=crop_region is not None,
+    )
+    sheet_routing_path = write_sheet_routing(
+        routing.decision,
+        out / "sheet_routing.json",
+    )
+    primitives = routing.primitives
+    if crop_region is not None:
+        sheet_graph_primitives = crop_primitives_to_region(sheet_graph_primitives, crop_region)
+        primitives = crop_primitives_to_region(primitives, crop_region)
+    sheet_graphs = build_sheet_graphs(
+        sheet_graph_primitives,
+        sheet_classification,
+        min_room_area_m2=min_room_area_m2,
+    )
+    sheet_graphs_path = write_sheet_graphs(sheet_graphs, out / "sheet_graphs.json")
     primitives_path = write_prims(primitives, out / "primitives.json")
 
-    graph = build_graph(primitives)
+    graph = build_graph(primitives, min_room_area_m2=min_room_area_m2)
 
     schedule_apply = None
     if room_schedule is not None:
@@ -186,13 +309,138 @@ def review(
 
     graph_path = write_graph(graph, out / "entity_graph.json")
     render_overlay(graph, pdf, out / "entity_overlay.png")
+    primitives_payload = primitives.model_dump(mode="json")
+    graph_payload = graph.model_dump(mode="json")
+    ocr_diagnostics = build_ocr_diagnostics(primitives_payload, graph_payload)
+    drawing_understanding = build_drawing_understanding(
+        primitives_payload,
+        graph_payload,
+        ocr_diagnostics,
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
+    )
+    drawing_understanding_path = write_drawing_understanding(
+        drawing_understanding,
+        out / "drawing_understanding.json",
+    )
+    layout_3d = build_layout_3d(sheet_graphs=sheet_graphs, entity_graph=graph)
+    layout_3d_path = write_layout_3d(layout_3d, out / "layout_3d.json")
+    layout_3d_summary_path = write_layout_3d_summary(
+        layout_3d,
+        out / "layout_3d_summary.md",
+    )
+    layout_3d_glb_path = export_layout_3d_glb(layout_3d, out / "layout_3d.glb")
 
     standards = load_standards()
     rules = load_rules(standards=standards)
-    result = evaluate(graph, rules, standards, project_meta=meta)
+    sheet_issues = build_sheet_issues(
+        sheet_graphs,
+        rules,
+        standards,
+        project_meta=meta,
+    )
+    sheet_issues_path = write_sheet_issues(sheet_issues, out / "sheet_issues.json")
+    sheet_issue_review_queue = build_sheet_issue_review_queue(
+        sheet_issues.model_dump(mode="json")
+    )
+    sheet_issue_review_queue_path = write_sheet_issue_review_queue(
+        sheet_issue_review_queue,
+        out / "sheet_issue_review_queue.json",
+    )
+    # Multi-page canonical issue extraction (round-7 R6/R7-BUG-001/002/003).
+    # The page-0-only build_graph path silently dropped every defect on a
+    # non-primary plan page. When extra plan pages exist, evaluate per-page
+    # via the already-built sheet graphs so issues carry their true
+    # page_index; otherwise keep the exact legacy single-page path.
+    extra_plan_pages = [
+        entry for entry in sheet_graphs.graphs if entry.page_index != graph.page_index
+    ]
+    if extra_plan_pages:
+        result = merge_sheet_issues(sheet_graphs, graph, rules, standards, project_meta=meta)
+    else:
+        result = evaluate(graph, rules, standards, project_meta=meta)
+    rule_readiness = build_rule_input_readiness(
+        graph,
+        rules,
+        standards,
+        project_meta=meta,
+        skipped=result.skipped,
+        ocr_diagnostics=ocr_diagnostics,
+        schedule_apply=schedule_apply,
+        stair_schedule_apply=stair_schedule_apply,
+    )
+    readiness_path = write_rule_input_readiness(
+        rule_readiness,
+        out / "rule_input_readiness.json",
+    )
     (out / "issues.json").write_text(
         _json.dumps([i.model_dump() for i in result.issues], ensure_ascii=False, indent=2),
         encoding="utf-8",
+    )
+    review_state = build_review_state(result.issues, run_id=out.name)
+    review_state_path = write_review_state(review_state, out / "review_state.json")
+    review_workbench = build_review_workbench(
+        source_pdf=pdf,
+        mode="full",
+        drawing_understanding=drawing_understanding,
+        rule_readiness=rule_readiness.model_dump(mode="json"),
+        issues=[issue.model_dump(mode="json") for issue in result.issues],
+        review_state=review_state.model_dump(mode="json"),
+        sheet_classification=sheet_classification.model_dump(mode="json"),
+        sheet_routing=routing.decision.model_dump(mode="json"),
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
+        sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
+        sheet_region_candidates=sheet_candidates.model_dump(mode="json"),
+        layout_3d=layout_3d.model_dump(mode="json"),
+    )
+    review_workbench_path = write_review_workbench(
+        review_workbench,
+        out / "review_workbench.json",
+    )
+    reviewer_onboarding = build_reviewer_onboarding(
+        run_dir=out,
+        source_pdf=pdf,
+        review_workbench=review_workbench,
+        mode="full",
+    )
+    reviewer_onboarding_path = write_reviewer_onboarding_json(
+        reviewer_onboarding,
+        out / "reviewer_onboarding.json",
+    )
+    reviewer_quickstart_path = write_reviewer_quickstart_markdown(
+        reviewer_onboarding,
+        out / "reviewer_quickstart.md",
+    )
+    reviewer_task_sequence = build_reviewer_task_sequence(
+        run_dir=out,
+        source_pdf=pdf,
+        mode="full",
+        review_workbench=review_workbench,
+        rule_readiness=rule_readiness.model_dump(mode="json"),
+        issues=[issue.model_dump(mode="json") for issue in result.issues],
+        review_state=review_state.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
+    )
+    reviewer_task_sequence_path = write_reviewer_task_sequence_json(
+        reviewer_task_sequence,
+        out / "reviewer_task_sequence.json",
+    )
+    reviewer_task_sequence_md_path = write_reviewer_task_sequence_markdown(
+        reviewer_task_sequence,
+        out / "reviewer_task_sequence.md",
+    )
+    reviewer_task_checklist = build_reviewer_task_checklist(
+        run_dir=out,
+        source_pdf=pdf,
+        reviewer_task_sequence=reviewer_task_sequence,
+    )
+    reviewer_task_checklist_path = write_reviewer_task_checklist_json(
+        reviewer_task_checklist,
+        out / "reviewer_task_checklist.json",
+    )
+    reviewer_task_checklist_md_path = write_reviewer_task_checklist_markdown(
+        reviewer_task_checklist,
+        out / "reviewer_task_checklist.md",
     )
 
     annotated = annotate_pdf(pdf, result.issues, out / "annotated.pdf")
@@ -205,6 +453,19 @@ def review(
         out_md=out / "report.md",
         project_meta=meta,
         skipped=result.skipped,
+        rule_readiness=build_rule_readiness_view(
+            rule_readiness.model_dump(mode="json")
+        ),
+        sheet_classification=sheet_classification.model_dump(mode="json"),
+        sheet_routing=routing.decision.model_dump(mode="json"),
+        sheet_graphs=sheet_graphs.model_dump(mode="json"),
+        sheet_issues=sheet_issues.model_dump(mode="json"),
+        sheet_issue_review_queue=sheet_issue_review_queue,
+        review_state=review_state,
+        review_workbench=review_workbench,
+        reviewer_onboarding=reviewer_onboarding,
+        reviewer_task_sequence=reviewer_task_sequence,
+        reviewer_task_checklist=reviewer_task_checklist,
     )
     _print_review_summary(
         out_dir=out,
@@ -218,6 +479,26 @@ def review(
         project_meta=meta,
         schedule_apply=schedule_apply,
         stair_schedule_apply=stair_schedule_apply,
+        drawing_understanding_path=drawing_understanding_path,
+        sheet_graphs_path=sheet_graphs_path,
+        sheet_issues_path=sheet_issues_path,
+        sheet_issue_review_queue_path=sheet_issue_review_queue_path,
+        sheet_classification_path=sheet_classification_path,
+        sheet_routing_path=sheet_routing_path,
+        readiness_path=readiness_path,
+        review_state_path=review_state_path,
+        review_workbench_path=review_workbench_path,
+        reviewer_onboarding_path=reviewer_onboarding_path,
+        reviewer_quickstart_path=reviewer_quickstart_path,
+        reviewer_task_sequence_path=reviewer_task_sequence_path,
+        reviewer_task_sequence_md_path=reviewer_task_sequence_md_path,
+        reviewer_task_checklist_path=reviewer_task_checklist_path,
+        reviewer_task_checklist_md_path=reviewer_task_checklist_md_path,
+        sheet_candidates_path=sheet_candidates_path,
+        sheet_candidates_overlay_path=sheet_candidates_overlay_path,
+        layout_3d_path=layout_3d_path,
+        layout_3d_glb_path=layout_3d_glb_path,
+        layout_3d_summary_path=layout_3d_summary_path,
     )
 
 
@@ -234,6 +515,26 @@ def _print_review_summary(
     project_meta: Any = None,
     schedule_apply: Any = None,
     stair_schedule_apply: Any = None,
+    drawing_understanding_path: Path | None = None,
+    sheet_graphs_path: Path | None = None,
+    sheet_issues_path: Path | None = None,
+    sheet_issue_review_queue_path: Path | None = None,
+    sheet_classification_path: Path | None = None,
+    sheet_routing_path: Path | None = None,
+    readiness_path: Path | None = None,
+    review_state_path: Path | None = None,
+    review_workbench_path: Path | None = None,
+    reviewer_onboarding_path: Path | None = None,
+    reviewer_quickstart_path: Path | None = None,
+    reviewer_task_sequence_path: Path | None = None,
+    reviewer_task_sequence_md_path: Path | None = None,
+    reviewer_task_checklist_path: Path | None = None,
+    reviewer_task_checklist_md_path: Path | None = None,
+    sheet_candidates_path: Path | None = None,
+    sheet_candidates_overlay_path: Path | None = None,
+    layout_3d_path: Path | None = None,
+    layout_3d_glb_path: Path | None = None,
+    layout_3d_summary_path: Path | None = None,
 ) -> None:
     from rich.console import Console
     from rich.panel import Panel
@@ -353,6 +654,46 @@ def _print_review_summary(
     art.add_row("primitives", str(primitives_path))
     art.add_row("entity graph", str(graph_path))
     art.add_row("entity overlay PNG", str(out_dir / "entity_overlay.png"))
+    if drawing_understanding_path is not None:
+        art.add_row("drawing understanding", str(drawing_understanding_path))
+    if sheet_graphs_path is not None:
+        art.add_row("sheet graphs", str(sheet_graphs_path))
+    if sheet_issues_path is not None:
+        art.add_row("sheet issue preview", str(sheet_issues_path))
+    if sheet_issue_review_queue_path is not None:
+        art.add_row("sheet issue review queue", str(sheet_issue_review_queue_path))
+    if sheet_classification_path is not None:
+        art.add_row("sheet classification", str(sheet_classification_path))
+    if sheet_routing_path is not None:
+        art.add_row("sheet routing", str(sheet_routing_path))
+    if readiness_path is not None:
+        art.add_row("rule input readiness", str(readiness_path))
+    if review_state_path is not None:
+        art.add_row("issue review state", str(review_state_path))
+    if review_workbench_path is not None:
+        art.add_row("review workbench", str(review_workbench_path))
+    if reviewer_onboarding_path is not None:
+        art.add_row("reviewer onboarding", str(reviewer_onboarding_path))
+    if reviewer_quickstart_path is not None:
+        art.add_row("reviewer quickstart", str(reviewer_quickstart_path))
+    if reviewer_task_sequence_path is not None:
+        art.add_row("reviewer task sequence", str(reviewer_task_sequence_path))
+    if reviewer_task_sequence_md_path is not None:
+        art.add_row("reviewer task sequence MD", str(reviewer_task_sequence_md_path))
+    if reviewer_task_checklist_path is not None:
+        art.add_row("reviewer task checklist", str(reviewer_task_checklist_path))
+    if reviewer_task_checklist_md_path is not None:
+        art.add_row("reviewer task checklist MD", str(reviewer_task_checklist_md_path))
+    if sheet_candidates_path is not None:
+        art.add_row("sheet region candidates", str(sheet_candidates_path))
+    if sheet_candidates_overlay_path is not None:
+        art.add_row("sheet region overlay", str(sheet_candidates_overlay_path))
+    if layout_3d_path is not None:
+        art.add_row("3D layout JSON", str(layout_3d_path))
+    if layout_3d_glb_path is not None:
+        art.add_row("3D layout GLB", str(layout_3d_glb_path))
+    if layout_3d_summary_path is not None:
+        art.add_row("3D layout summary", str(layout_3d_summary_path))
     art.add_row("issues JSON", str(out_dir / "issues.json"))
     art.add_row("annotated PDF", str(annotated_path))
     art.add_row("report MD", str(report_path))
@@ -362,7 +703,10 @@ def _print_review_summary(
             f"下一步：\n"
             f"  • 打开 [bold]{annotated_path}[/bold] 看红框标注\n"
             f"  • 打开 [bold]{report_path}[/bold] 看可复核的问题清单\n"
-            f"  • 编辑 status=confirmed 后跑 [bold]archkg feedback {out_dir} --apply[/bold]",
+            f"  • 打开 [bold]{out_dir / 'reviewer_quickstart.md'}[/bold] 按第一小时流程复核\n"
+            f"  • 打开 [bold]{out_dir / 'reviewer_task_checklist.md'}[/bold] 逐项勾选证据\n"
+            f"  • 用 [bold]archkg review-state {out_dir} <issue_id> --status confirmed[/bold] 更新复核状态\n"
+            f"  • 或编辑 report.md 后跑 [bold]archkg feedback {out_dir} --apply[/bold] 生成反馈用例",
             title="✅ 审图完成",
             border_style="green",
         )
@@ -377,16 +721,40 @@ def build_graph_cmd(
         None, "--overlay-pdf", help="If set, also render an overlay PNG against this PDF."
     ),
     overlay_out: Path = typer.Option(Path("entity_overlay.png"), "--overlay-out"),
+    min_room_area_m2: float = typer.Option(
+        0.0,
+        "--min-room-area-m2",
+        min=0.0,
+        help=(
+            "Drop sub-threshold room polygons before writing the graph. "
+            "Use 1-3 m² on noisy real CAD sheets; 0 disables filtering."
+        ),
+    ),
+    sheet_region: str | None = typer.Option(
+        None,
+        "--sheet-region",
+        help=(
+            "Optional design-region crop in page coordinates: x0,y0,x1,y1. "
+            "Use to exclude title blocks, borders, schedules, or legends."
+        ),
+    ),
 ) -> None:
     """Build entity_graph.json from primitives.json (and optionally a debug overlay PNG)."""
     import json as _json
 
     from archkg.graph.builder import build_graph, render_overlay, write_json
+    from archkg.ingest.sheet_region import crop_primitives_to_region, parse_sheet_region
     from archkg.schemas import Primitives
 
     raw = _json.loads(primitives.read_text(encoding="utf-8"))
     p = Primitives.model_validate(raw)
-    graph = build_graph(p)
+    try:
+        crop_region = parse_sheet_region(sheet_region) if sheet_region else None
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--sheet-region") from exc
+    if crop_region is not None:
+        p = crop_primitives_to_region(p, crop_region)
+    graph = build_graph(p, min_room_area_m2=min_room_area_m2)
     written = write_json(graph, out)
     typer.echo(
         f"wrote {written}  rooms={len(graph.rooms)} doors={len(graph.doors)} "
@@ -459,6 +827,683 @@ def viewer(
     serve(out, source_pdf, port=port, open_browser=not no_browser)
 
 
+@app.command("understanding-benchmark")
+def understanding_benchmark(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    expect: Path = typer.Option(
+        ...,
+        "--expect",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Expected drawing-understanding benchmark JSON spec.",
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Write machine-readable result JSON."),
+    markdown: Path | None = typer.Option(None, "--markdown", help="Write Markdown score report."),
+) -> None:
+    """Score drawing_understanding.json against an expected component inventory.
+
+    This measures recognition evidence only: drawing type, component
+    taxonomy, evidence signals, and benchmark booleans. It is separate
+    from rule-engine compliance results.
+    """
+    from archkg.viewer.understanding_benchmark import (
+        load_expected,
+        run_understanding_benchmark,
+        write_json_report,
+        write_markdown_report,
+    )
+
+    expected = load_expected(expect)
+    result = run_understanding_benchmark(run_dir, expected)
+    if out is not None:
+        write_json_report(result, out)
+    if markdown is not None:
+        write_markdown_report(result, markdown)
+    status = "PASS" if result["passed"] else "FAIL"
+    typer.echo(f"{result['benchmark_id']} {status} score={result['score']:.2f}")
+    if not result["passed"]:
+        raise typer.Exit(code=1)
+
+
+@app.command("understanding-benchmark-author")
+def understanding_benchmark_author(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Write expected benchmark draft JSON for review.",
+    ),
+    benchmark_id: str | None = typer.Option(
+        None,
+        "--benchmark-id",
+        help="Benchmark id to write into the draft; defaults to the run directory name.",
+    ),
+    min_score: float = typer.Option(
+        1.0,
+        "--min-score",
+        min=0.0,
+        max=1.0,
+        help="Draft minimum score threshold.",
+    ),
+) -> None:
+    """Draft an expected inventory spec from a drawing-understanding run.
+
+    The draft is an authoring aid: review it before promoting a real
+    drawing fixture to active benchmark status.
+    """
+    from archkg.viewer.understanding_benchmark import (
+        author_expected_benchmark_spec,
+        write_expected_benchmark_spec,
+    )
+
+    draft = author_expected_benchmark_spec(
+        run_dir,
+        benchmark_id=benchmark_id,
+        min_score=min_score,
+    )
+    write_expected_benchmark_spec(draft, out)
+    typer.echo(f"{draft['benchmark_id']} draft written to {out}")
+
+
+@app.command("understanding-benchmark-suite")
+def understanding_benchmark_suite(
+    manifest: Path = typer.Option(
+        ...,
+        "--manifest",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Benchmark suite manifest JSON with active and pending fixture cases.",
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Write machine-readable suite JSON."),
+    markdown: Path | None = typer.Option(None, "--markdown", help="Write Markdown suite report."),
+) -> None:
+    """Run a drawing-understanding benchmark suite manifest.
+
+    Pending real-drawing fixture rows are tracked but do not fail the
+    suite. Active rows fail when run artifacts are missing or checks fail.
+    """
+    from archkg.viewer.understanding_benchmark import (
+        run_understanding_benchmark_suite,
+        write_suite_json_report,
+        write_suite_markdown_report,
+    )
+
+    result = run_understanding_benchmark_suite(manifest)
+    if out is not None:
+        write_suite_json_report(result, out)
+    if markdown is not None:
+        write_suite_markdown_report(result, markdown)
+    status = "PASS" if result["passed"] else "FAIL"
+    typer.echo(
+        f"{result['suite_id']} {status} "
+        f"active={result['active_count']} pending={result['pending_count']} "
+        f"failed={result['failed_count']} known_gap={result.get('known_gap_count', 0)}"
+    )
+    if not result["passed"]:
+        raise typer.Exit(code=1)
+
+
+@app.command("release-readiness")
+def release_readiness(
+    manifest: Path | None = typer.Option(
+        None,
+        "--manifest",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Run an understanding benchmark suite manifest before evaluating readiness.",
+    ),
+    suite_result: Path | None = typer.Option(
+        None,
+        "--suite-result",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Use an existing understanding-benchmark-suite JSON result.",
+    ),
+    run_dir: Path | None = typer.Option(
+        None,
+        "--run-dir",
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Representative review run directory whose artifacts should be checked.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write machine-readable release_readiness.json.",
+    ),
+    markdown: Path | None = typer.Option(
+        None,
+        "--markdown",
+        help="Write Markdown readiness gate report.",
+    ),
+    fail_on_not_ready: bool = typer.Option(
+        True,
+        "--fail-on-not-ready/--no-fail-on-not-ready",
+        help="Exit non-zero only when status is not_ready.",
+    ),
+) -> None:
+    """Evaluate release/demo readiness from evidence, not rule count."""
+    from archkg.release_readiness import (
+        ReleaseReadinessError,
+        build_release_readiness,
+        load_suite_result,
+        write_release_readiness_json,
+        write_release_readiness_markdown,
+    )
+    from archkg.viewer.understanding_benchmark import run_understanding_benchmark_suite
+
+    if (manifest is None) == (suite_result is None):
+        raise typer.BadParameter("provide exactly one of --manifest or --suite-result")
+
+    try:
+        if manifest is not None:
+            suite_payload = run_understanding_benchmark_suite(manifest)
+        elif suite_result is not None:
+            suite_payload = load_suite_result(suite_result)
+        else:
+            raise typer.BadParameter("provide exactly one of --manifest or --suite-result")
+        result = build_release_readiness(suite_payload, run_dir=run_dir)
+        if out is not None:
+            write_release_readiness_json(result, out)
+        if markdown is not None:
+            write_release_readiness_markdown(result, markdown)
+    except ReleaseReadinessError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    status = result["status"]
+    typer.echo(
+        f"release-readiness status={status} "
+        f"blockers={len(result['blockers'])} warnings={len(result['warnings'])} "
+        f"active={result['suite']['active_count']} "
+        f"real_active={result['suite']['real_active_count']} "
+        f"known_gap={result['suite']['known_gap_count']}"
+    )
+    if fail_on_not_ready and status == "not_ready":
+        raise typer.Exit(code=1)
+
+
+@app.command("handoff-package")
+def handoff_package_cmd(
+    run_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Review run directory to package for handoff.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "-o",
+        "--out",
+        help="Package directory. Defaults to a sibling '<run-dir>-handoff'.",
+    ),
+) -> None:
+    """Create a read-only handoff package from an existing review run."""
+    from archkg.viewer.handoff_package import write_handoff_package
+
+    target = out if out is not None else run_dir.parent / f"{run_dir.name}-handoff"
+    try:
+        manifest_path = write_handoff_package(run_dir, target)
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    manifest = _json.loads(manifest_path.read_text("utf-8"))
+    typer.echo(
+        f"{manifest['schema_version']} wrote={manifest_path} "
+        f"included={len(manifest['included_artifacts'])} "
+        f"missing_required={len(manifest['missing_required_artifacts'])}"
+    )
+
+
+@app.command("handoff-check")
+def handoff_check_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to validate.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write machine-readable handoff quality JSON.",
+    ),
+    markdown: Path | None = typer.Option(
+        None,
+        "--markdown",
+        help="Write Markdown handoff quality report.",
+    ),
+    fail_on_not_ready: bool = typer.Option(
+        True,
+        "--fail-on-not-ready/--no-fail-on-not-ready",
+        help="Exit non-zero when the handoff package is not ready.",
+    ),
+) -> None:
+    """Validate a read-only handoff package."""
+    from archkg.viewer.handoff_package import (
+        build_handoff_package_quality,
+        write_handoff_index,
+        write_handoff_package_quality_json,
+        write_handoff_package_quality_markdown,
+    )
+
+    result = build_handoff_package_quality(package_dir)
+    if out is not None:
+        write_handoff_package_quality_json(result, out)
+    if markdown is not None:
+        write_handoff_package_quality_markdown(result, markdown)
+    write_handoff_index(package_dir, quality=result)
+    typer.echo(
+        f"handoff-check status={result['status']} "
+        f"blockers={len(result['blockers'])} warnings={len(result['warnings'])}"
+    )
+    if fail_on_not_ready and result["status"] == "not_ready":
+        raise typer.Exit(code=1)
+
+
+@app.command("handoff-signoff")
+def handoff_signoff_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to annotate with reviewer signoff notes.",
+    ),
+    reviewer: str = typer.Option(
+        ...,
+        "--reviewer",
+        help="Reviewer name or initials to record in the package-local note.",
+    ),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Package reviewer status: ready, needs_info, or blocked.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Free-form reviewer note. This is package-local and not a compliance certificate.",
+    ),
+    blocker: list[str] | None = typer.Option(
+        None,
+        "--blocker",
+        help="Repeatable blocker note for blocked or needs-info handoffs.",
+    ),
+    needs_info: list[str] | None = typer.Option(
+        None,
+        "--needs-info",
+        help="Repeatable missing-information note.",
+    ),
+    next_action: list[str] | None = typer.Option(
+        None,
+        "--next-action",
+        help="Repeatable next action for the receiving reviewer.",
+    ),
+) -> None:
+    """Write package-local reviewer signoff notes without mutating source run artifacts."""
+    from archkg.viewer.handoff_package import write_handoff_reviewer_signoff
+
+    try:
+        signoff_path = write_handoff_reviewer_signoff(
+            package_dir,
+            reviewer=reviewer,
+            status=status,
+            note=note,
+            blockers=blocker or [],
+            needs_info=needs_info or [],
+            next_actions=next_action or [],
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(signoff_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={signoff_path} "
+        f"reviewer={payload['reviewer']} status={payload['status']}"
+    )
+
+
+@app.command("handoff-checklist-update")
+def handoff_checklist_update_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory containing artifacts/reviewer_task_checklist.json.",
+    ),
+    reviewer: str = typer.Option(
+        ...,
+        "--reviewer",
+        help="Reviewer name or initials to record on the checklist item.",
+    ),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Checklist item status: todo, done, blocked, needs_info, or skipped_preview.",
+    ),
+    check_id: str = typer.Option(
+        "",
+        "--check-id",
+        help="Checklist check_id to update. Provide exactly one of --check-id or --ordinal.",
+    ),
+    ordinal: int | None = typer.Option(
+        None,
+        "--ordinal",
+        help="Checklist ordinal to update. Provide exactly one of --check-id or --ordinal.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Package-local reviewer note for this checklist item.",
+    ),
+    evidence_checked: list[str] | None = typer.Option(
+        None,
+        "--evidence-checked",
+        help="Repeatable evidence note checked for this item.",
+    ),
+    completed_at: str = typer.Option(
+        "",
+        "--completed-at",
+        help="Optional completion timestamp. Defaults to current UTC time for done statuses.",
+    ),
+) -> None:
+    """Update one package-local checklist item without mutating the source run."""
+    from archkg.viewer.handoff_package import (
+        write_handoff_reviewer_task_checklist_update,
+    )
+
+    try:
+        checklist_path = write_handoff_reviewer_task_checklist_update(
+            package_dir,
+            reviewer=reviewer,
+            status=status,
+            check_id=check_id,
+            ordinal=ordinal,
+            note=note,
+            evidence_checked=evidence_checked or [],
+            completed_at=completed_at,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(checklist_path.read_text("utf-8"))
+    last_update = payload.get("last_update", {})
+    typer.echo(
+        f"{payload['schema_version']} wrote={checklist_path} "
+        f"check_id={last_update.get('check_id')} "
+        f"reviewer={last_update.get('reviewer')} "
+        f"status={last_update.get('reviewer_status')}"
+    )
+
+
+@app.command("handoff-ready-runbook")
+def handoff_ready_runbook_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to summarize for novice review closeout.",
+    ),
+) -> None:
+    """Write a package-local ready-to-review runbook for novice reviewers."""
+    from archkg.viewer.handoff_package import write_handoff_ready_runbook
+
+    try:
+        runbook_path = write_handoff_ready_runbook(package_dir)
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(runbook_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={runbook_path} "
+        f"status={payload['status']} "
+        f"next_actions={len(payload.get('next_actions', []))}"
+    )
+
+
+@app.command("handoff-optional-guidance-note")
+def handoff_optional_guidance_note_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to annotate with optional guidance review notes.",
+    ),
+    reviewer: str = typer.Option(
+        ...,
+        "--reviewer",
+        help="Reviewer name or initials to record in the package-local note.",
+    ),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Optional guidance review status: reviewed, needs_info, or blocked.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Package-local note. This is not a compliance certificate or issue confirmation.",
+    ),
+) -> None:
+    """Write package-local optional guidance review notes."""
+    from archkg.viewer.handoff_package import write_handoff_optional_guidance_note
+
+    try:
+        note_path = write_handoff_optional_guidance_note(
+            package_dir,
+            reviewer=reviewer,
+            status=status,
+            note=note,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(note_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={note_path} "
+        f"reviewer={payload['reviewer']} status={payload['status']} "
+        f"optional_actions={payload['optional_action_count']}"
+    )
+
+
+@app.command("handoff-manager-checklist")
+def handoff_manager_checklist_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to summarize for manager intake.",
+    ),
+    manager: str = typer.Option(
+        ...,
+        "--manager",
+        help="Manager name or initials to record in the package-local checklist.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Free-form manager note. This is package-local and not a compliance certificate.",
+    ),
+) -> None:
+    """Write package-local manager checklist notes without mutating source run artifacts."""
+    from archkg.viewer.handoff_package import write_handoff_manager_checklist
+
+    try:
+        checklist_path = write_handoff_manager_checklist(
+            package_dir,
+            manager=manager,
+            note=note,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(checklist_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={checklist_path} "
+        f"manager={payload['manager']} status={payload['status']}"
+    )
+
+
+@app.command("handoff-archive-manifest")
+def handoff_archive_manifest_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to fingerprint for transfer integrity.",
+    ),
+    created_by: str = typer.Option(
+        "",
+        "--created-by",
+        help="Name or initials to record as the archive manifest author.",
+    ),
+    note: str = typer.Option(
+        "",
+        "--note",
+        help="Free-form archive note. This is package-local and not a compliance certificate.",
+    ),
+) -> None:
+    """Write package-local file checksums without mutating source run artifacts."""
+    from archkg.viewer.handoff_package import write_handoff_archive_manifest
+
+    try:
+        manifest_path = write_handoff_archive_manifest(
+            package_dir,
+            created_by=created_by,
+            note=note,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(manifest_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={manifest_path} "
+        f"files={payload['file_count']} digest={payload['package_digest']}"
+    )
+
+
+@app.command("handoff-archive-verify")
+def handoff_archive_verify_cmd(
+    package_dir: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Handoff package directory to verify against its archive manifest.",
+    ),
+    fail_on_drift: bool = typer.Option(
+        True,
+        "--fail-on-drift/--no-fail-on-drift",
+        help="Exit non-zero when archive verification detects file drift.",
+    ),
+) -> None:
+    """Verify package-local file checksums against handoff_archive_manifest.json."""
+    from archkg.viewer.handoff_package import write_handoff_archive_verification
+
+    try:
+        verification_path = write_handoff_archive_verification(package_dir)
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(verification_path.read_text("utf-8"))
+    typer.echo(
+        f"{payload['schema_version']} wrote={verification_path} "
+        f"status={payload['status']} "
+        f"missing={len(payload['missing_files'])} "
+        f"changed={len(payload['changed_files'])} "
+        f"unexpected={len(payload['unexpected_files'])}"
+    )
+    if fail_on_drift and payload["status"] == "archive_drift":
+        raise typer.Exit(code=1)
+
+
+@app.command("handoff-bundle-index")
+def handoff_bundle_index_cmd(
+    packages_root: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=False,
+        readable=True,
+        help="Directory containing one or more handoff package directories.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write machine-readable bundle index JSON.",
+    ),
+    markdown: Path | None = typer.Option(
+        None,
+        "--markdown",
+        help="Write Markdown bundle index.",
+    ),
+    html_path: Path | None = typer.Option(
+        None,
+        "--html",
+        help="Write static HTML bundle index.",
+    ),
+    fail_on_blocked: bool = typer.Option(
+        False,
+        "--fail-on-blocked/--no-fail-on-blocked",
+        help="Exit non-zero when any package is blocked.",
+    ),
+) -> None:
+    """Summarize multiple handoff packages without mutating package contents."""
+    from archkg.viewer.handoff_bundle import write_handoff_bundle_index
+
+    try:
+        index_path = write_handoff_bundle_index(
+            packages_root,
+            out=out,
+            markdown=markdown,
+            html_path=html_path,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    import json as _json
+
+    payload = _json.loads(index_path.read_text("utf-8"))
+    summary = payload["summary"]
+    typer.echo(
+        f"{payload['schema_version']} wrote={index_path} "
+        f"status={payload['status']} "
+        f"packages={summary['package_count']} "
+        f"ready={summary['ready_count']} "
+        f"needs_info={summary['needs_info_count']} "
+        f"blocked={summary['blocked_count']}"
+    )
+    if fail_on_blocked and payload["status"] == "bundle_blocked":
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def studio(
     port: int = typer.Option(8765, "-p", "--port"),
@@ -499,11 +1544,157 @@ clause_app = typer.Typer(
 app.add_typer(clause_app, name="clause")
 
 
+rule_card_app = typer.Typer(
+    help="Draft-only rule-card authoring helpers.",
+    no_args_is_help=True,
+)
+app.add_typer(rule_card_app, name="rule-card")
+
+
 adversarial_app = typer.Typer(
     help="Adversarial training lane: examiner ↔ candidate ↔ adjudicator (Phase 18-D).",
     no_args_is_help=True,
 )
 app.add_typer(adversarial_app, name="adversarial")
+
+
+ifc_app = typer.Typer(
+    help="Optional openBIM IFC/IDS validation lane.",
+    no_args_is_help=True,
+)
+app.add_typer(ifc_app, name="ifc")
+
+
+@rule_card_app.command("draft")
+def rule_card_draft(
+    clause_id: str = typer.Option(..., "--clause-id", help="Source standard clause id."),
+    out: Path = typer.Option(
+        Path("out/rule_card_draft.json"),
+        "-o",
+        "--out",
+        help="Draft JSON artifact path.",
+    ),
+    standards_path: Path | None = typer.Option(
+        None,
+        "--standards-path",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="Optional standards.yaml override.",
+    ),
+) -> None:
+    """Write a review-only rule-card draft artifact for one source clause."""
+    from archkg.knowledge.loader import load_standards
+    from archkg.knowledge.rule_authoring import (
+        author_rule_card_draft,
+        write_rule_card_draft,
+    )
+
+    standards = load_standards(standards_path)
+    clause = next((item for item in standards if item.id == clause_id), None)
+    if clause is None:
+        raise typer.BadParameter(
+            f"unknown clause id '{clause_id}'",
+            param_hint="--clause-id",
+        )
+    draft = author_rule_card_draft(clause)
+    written = write_rule_card_draft(draft, out)
+    typer.echo(f"{draft.draft_id} draft written to {written}")
+    typer.echo("status=draft; human review required before promotion to active rule_cards.yaml")
+
+
+@ifc_app.command("validate")
+def ifc_validate(
+    ifc_path: Path = typer.Option(
+        ...,
+        "--ifc",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="IFC model file to validate.",
+    ),
+    ids_path: Path = typer.Option(
+        ...,
+        "--ids",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="IDS requirements file.",
+    ),
+    out: Path = typer.Option(
+        Path("out/ifc"),
+        "-o",
+        "--out",
+        help="Output directory for IFC-side artifacts.",
+    ),
+) -> None:
+    """Validate an IFC model against IDS without touching PDF review artifacts."""
+    from archkg.ifc.ids_validator import IfcIdsDependencyError, validate_ifc_ids
+
+    try:
+        result = validate_ifc_ids(ifc_path=ifc_path, ids_path=ids_path, out_dir=out)
+    except IfcIdsDependencyError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"status={result.status} issues={result.issue_count}")
+    typer.echo(f"wrote {result.raw_report_path}")
+    typer.echo(f"wrote {result.issues_path}")
+    typer.echo(f"wrote {out / 'ifc_validation.json'}")
+
+
+@ifc_app.command("export-layout")
+def ifc_export_layout(
+    layout_path: Path = typer.Option(
+        ...,
+        "--layout",
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        help="layout_3d.json evidence artifact to export.",
+    ),
+    out: Path = typer.Option(
+        Path("out/layout.ifc"),
+        "-o",
+        "--out",
+        help="Output IFC preview file.",
+    ),
+    report: Path | None = typer.Option(
+        None,
+        "--report",
+        help="Optional layout_ifc_export.json report path.",
+    ),
+    markdown: Path | None = typer.Option(
+        None,
+        "--markdown",
+        help="Optional layout_ifc_export.md report path.",
+    ),
+) -> None:
+    """Export layout_3d.json to an optional IFC preview artifact."""
+    from archkg.ifc.layout_exporter import export_layout_ifc
+
+    result = export_layout_ifc(
+        layout_path=layout_path,
+        ifc_path=out,
+        report_path=report,
+        markdown_path=markdown,
+    )
+    exported_total = sum(result.exported_counts.values())
+    skipped_total = sum(result.skipped_counts.values())
+    typer.echo(
+        f"{result.schema_version} status={result.status} "
+        f"objects={result.object_count} exported={exported_total} skipped={skipped_total}"
+    )
+    for warning in result.warnings:
+        typer.echo(f"warning: {warning}")
+    if result.status == "exported":
+        typer.echo(f"wrote {out}")
+    if report is not None:
+        typer.echo(f"wrote {report}")
+    if markdown is not None:
+        typer.echo(f"wrote {markdown}")
+    if result.status != "exported":
+        raise typer.Exit(code=1)
 
 
 @adversarial_app.command("run")
@@ -973,6 +2164,103 @@ def feedback(
     typer.echo(f"wrote {out}")
 
 
+class ReviewStateStatusChoice(StrEnum):
+    candidate = "candidate"
+    confirmed = "confirmed"
+    rejected = "rejected"
+    needs_info = "needs_info"
+    resolved = "resolved"
+    superseded = "superseded"
+
+
+@app.command("review-state")
+def review_state_cmd(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False),
+    issue_id: str = typer.Argument(..., help="Primary issues.json issue_id to update."),
+    status: ReviewStateStatusChoice = typer.Option(
+        ...,
+        "--status",
+        help="Human review lifecycle status to write into review_state.json.",
+    ),
+    reviewer: str | None = typer.Option(
+        None,
+        "--reviewer",
+        help="Optional reviewer name to store on the review-state item.",
+    ),
+    note: str | None = typer.Option(
+        None,
+        "--note",
+        help="Optional reviewer note to store on the review-state item.",
+    ),
+    superseded_by_run_id: str | None = typer.Option(
+        None,
+        "--superseded-by-run-id",
+        help="Required only when --status superseded.",
+    ),
+) -> None:
+    """Bounded local update of review_state.json for one primary candidate issue.
+
+    This command never mutates issues.json and never promotes per-sheet preview
+    issues into the primary review lifecycle.
+    """
+
+    from archkg.review_state import ReviewStateUpdateError, update_review_state_issue
+    from archkg.viewer.review_workbench import refresh_review_workbench_from_run_dir
+
+    try:
+        state = update_review_state_issue(
+            run_dir,
+            issue_id,
+            status=status.value,
+            reviewer=reviewer,
+            note=note,
+            superseded_by_run_id=superseded_by_run_id,
+        )
+    except ReviewStateUpdateError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    try:
+        refresh_review_workbench_from_run_dir(run_dir)
+    except Exception as exc:
+        typer.echo(f"updated review_state.json; workbench refresh skipped: {exc}")
+        return
+    typer.echo(
+        "updated review_state.json "
+        f"issue_id={issue_id} status={status.value} summary={dict(state.summary)}"
+    )
+
+
+@app.command("review-diff")
+def review_diff_cmd(
+    before_run: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    after_run: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    out: Path | None = typer.Option(
+        None,
+        "-o",
+        "--out",
+        help="Output path. Defaults to AFTER_RUN/review_diff.json.",
+    ),
+) -> None:
+    """Compare two run directories' primary issues.json candidates."""
+
+    from archkg.review_diff import ReviewDiffError, build_review_diff, write_review_diff
+
+    try:
+        report = build_review_diff(before_run, after_run)
+        target = out if out is not None else after_run / "review_diff.json"
+        written = write_review_diff(report, target)
+    except ReviewDiffError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    typer.echo(
+        f"wrote {written} "
+        f"unchanged={report.summary.get('unchanged', 0)} "
+        f"changed={report.summary.get('changed', 0)} "
+        f"new={report.summary.get('new', 0)} "
+        f"resolved={report.summary.get('resolved', 0)}"
+    )
+
+
 @app.command("control-sync")
 def control_sync(
     run_dir: Path = typer.Option(
@@ -1053,6 +2341,768 @@ def control_sync(
                 typer.echo(f"notion: ok -> {target}")
         else:
             typer.echo(f"notion: {notion.get('status')} - {notion.get('reason')}")
+
+
+kg_app = typer.Typer(name="kg", help="ArchReview-KG knowledge graph commands.", no_args_is_help=True)
+app.add_typer(kg_app, name="kg")
+
+
+@kg_app.command("init")
+def kg_init(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path (default .archkg/kg.db relative to cwd).",
+    ),
+) -> None:
+    """Initialise the KG SQLite database and apply schema kg.v1."""
+
+    from archkg.kg import KGStore
+
+    store = KGStore(db)
+    report = store.health_check()
+    typer.echo(
+        f"initialised {db} (schema={report['schema_version']}, "
+        f"tables={len(report['tables_present'])}, runs={report['counts']['run']})"
+    )
+
+
+@kg_app.command("ingest")
+def kg_ingest(
+    run_dir: Path = typer.Argument(..., exists=True, file_okay=False, readable=True),
+    project: str = typer.Option(..., "--project", "-p", help="Project slug."),
+    project_name: str | None = typer.Option(None, "--project-name"),
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Ingest a run directory's artifacts into the KG (idempotent)."""
+
+    import json as _json
+
+    from archkg.kg import KGStore, ingest_run
+
+    store = KGStore(db)
+    try:
+        result = ingest_run(
+            store,
+            run_dir=run_dir,
+            project_slug=project,
+            project_name=project_name,
+        )
+    except FileNotFoundError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if json_out:
+        typer.echo(_json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        return
+    counts = result.counts
+    typer.echo(
+        f"ingested {run_dir} project={project} run_id={result.run_id} "
+        f"drawing_id={result.drawing_id}"
+    )
+    typer.echo(
+        f"  entities={counts['entities']} issues={counts['issues']} "
+        f"sheets={counts['sheets']} rules_added={counts['rules_added']} "
+        f"clauses_added={counts['clauses_added']}"
+    )
+    for warning in result.warnings:
+        typer.echo(f"  warning: {warning}")
+
+
+@kg_app.command("ingest-suite")
+def kg_ingest_suite(
+    repo: Path = typer.Option(
+        Path(__file__).resolve().parents[2],
+        "--repo",
+        help="Repo root (defaults to detected archreview-kg root).",
+    ),
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+) -> None:
+    """Bulk-ingest every benchmark suite run directory in `samples/`.
+
+    Project slug is derived from the run-dir parent (e.g. `real`, `generated`,
+    `toy`) combined with the dir name.
+    """
+
+    from archkg.kg import KGStore, has_ingestable_artifact, ingest_run
+
+    suite_root = repo / "samples" / "understanding_benchmarks"
+    if not suite_root.is_dir():
+        raise typer.BadParameter(f"benchmark suite root missing: {suite_root}")
+
+    store = KGStore(db)
+    candidates = [p for p in suite_root.rglob("*_run") if p.is_dir() and has_ingestable_artifact(p)]
+    typer.echo(f"found {len(candidates)} ingestable run dirs under {suite_root}")
+    ingested = 0
+    for run_dir in sorted(candidates):
+        # Project slug: <category>-<run_dir_name without _run suffix>
+        category = run_dir.parent.name
+        base = run_dir.name.removesuffix("_run")
+        slug = f"{category}-{base}"
+        try:
+            result = ingest_run(store, run_dir=run_dir, project_slug=slug)
+        except FileNotFoundError:
+            typer.echo(f"  SKIP {run_dir} (no ingestable artifact)")
+            continue
+        ingested += 1
+        typer.echo(
+            f"  OK {run_dir.relative_to(repo)} -> project={slug} "
+            f"entities={result.counts['entities']} issues={result.counts['issues']}"
+        )
+    typer.echo(f"ingested {ingested} run dirs")
+
+
+@kg_app.command("query")
+def kg_query(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    rule: str | None = typer.Option(None, "--rule", help="Filter by rule_id (e.g. RC-DOOR-WIDTH)."),
+    status: str | None = typer.Option(
+        None, "--status", help="Filter by review status (candidate / confirmed / rejected / ...)."
+    ),
+    project: str | None = typer.Option(None, "--project", help="Filter by project slug."),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Query issues across all projects in the KG."""
+
+    import json as _json
+
+    from archkg.kg import KGStore, issues_by_filter
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        rows = issues_by_filter(store, rule=rule, status=status, project=project)
+    if json_out:
+        typer.echo(_json.dumps(rows, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"{len(rows)} issue(s)")
+    for r in rows[:50]:
+        typer.echo(
+            f"  [{r['project']}][{r['status']}][{r['rule_id']}] "
+            f"{r['source_issue_id']}: {(r['message'] or '')[:80]}"
+        )
+    if len(rows) > 50:
+        typer.echo(f"  ... and {len(rows) - 50} more (use --json for full output)")
+
+
+@kg_app.command("canonical-queries-run")
+def kg_canonical_queries_run(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Run the 10 canonical queries and report SQL-vs-Python correctness."""
+
+    import json as _json
+
+    from archkg.kg import run_canonical_queries
+
+    results = run_canonical_queries(db_path=db)
+    if json_out:
+        typer.echo(_json.dumps(results, ensure_ascii=False, indent=2, default=str))
+        return
+    correct = sum(1 for r in results if r.get("correct"))
+    typer.echo(f"{correct}/{len(results)} canonical queries correct")
+    for r in results:
+        marker = "OK" if r.get("correct") else "FAIL"
+        typer.echo(f"  [{marker}] {r['id']} ({r.get('sql_count', '?')} rows): {r['description']}")
+
+
+@kg_app.command("feedback")
+def kg_feedback_cmd(
+    issue_id: int = typer.Argument(..., help="KG-internal issue id (use `kg query --json` to find)."),
+    event: str = typer.Argument(..., help="confirm / reject / needs_info / resolve / supersede / comment"),
+    reviewer: str = typer.Option(..., "--reviewer", "-r", help="Reviewer ID (free-form string)."),
+    note: str | None = typer.Option(None, "--note", help="Optional free-form note."),
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+) -> None:
+    """Record a reviewer feedback event in the KG."""
+
+    from archkg.kg import KGStore, add_feedback
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        try:
+            fb_id = add_feedback(
+                store,
+                issue_id=issue_id,
+                reviewer_id=reviewer,
+                event_type=event,
+                payload={"note": note} if note else None,
+            )
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"recorded feedback_event id={fb_id} (issue={issue_id}, event={event}, reviewer={reviewer})")
+
+
+@kg_app.command("priors")
+def kg_priors_cmd(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Show per-rule Beta-Binomial posterior priors from feedback events."""
+
+    import json as _json
+
+    from archkg.kg import KGStore, rule_priors
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        priors = rule_priors(store)
+    if json_out:
+        typer.echo(_json.dumps([p.to_dict() for p in priors], ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"{len(priors)} rule(s) with feedback")
+    for p in priors:
+        typer.echo(
+            f"  {p.rule_id}: mean={p.posterior_mean:.3f} "
+            f"(confirmed={p.confirmed}, rejected={p.rejected})"
+        )
+
+
+@kg_app.command("seed-demo-feedback")
+def kg_seed_demo_feedback(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    confidence: float = typer.Option(
+        0.9,
+        "--confidence",
+        help="Assign this confidence to all demo issues missing one.",
+    ),
+    target_precision: float = typer.Option(
+        0.9,
+        "--target-precision",
+        help="Fraction of demo issues to mark 'confirm' (rest are 'reject').",
+    ),
+    panel_size: int = typer.Option(
+        5,
+        "--panel-size",
+        min=1,
+        max=50,
+        help="Number of synthetic reviewers per issue. Larger panels reduce binomial variance and improve calibration MAD; default 5 matches the original M5.I-02 seed.",
+    ),
+) -> None:
+    """Seed synthetic reviewer feedback so calibration / feedback_loop have data.
+
+    For development and quality_score demonstration only. Records confirm /
+    reject events on benchmark-fixture issues using synthetic reviewers
+    `demo-reviewer-alice/bob/...` (panel grows beyond 5 via the
+    `demo-reviewer-extra-NN` namespace when --panel-size > 5).
+
+    DOES NOT touch any real reviewer's data — only operates on issues whose
+    project slug starts with 'demo-', 'generated-', 'toy-', 'cambridge-',
+    'medfield-', or 'real-'. M5.Z-W1 extended the slug pattern from the
+    original (demo-/generated-/toy-) so the synthetic panel can extend to
+    the multi-source W2/W3 fixture issues. This is the same synthetic
+    methodology — just applied to a broader benchmark set with documented
+    fixture status. Real reviewer feedback (slugs not in this list) is
+    untouched.
+
+    For each issue with a confidence value, the seeded outcome distribution
+    matches the confidence midpoint so calibration is honestly measurable.
+    Issues with confidence None get the --confidence argument applied.
+
+    Each issue receives feedback from `panel_size` synthetic reviewers
+    ("panel review") so that low-N rules accumulate enough samples for the
+    per-rule prior to converge. Larger panels reduce binomial variance and
+    tighten calibration MAD.
+    """
+
+    import random
+
+    from archkg.kg import KGStore, add_feedback
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    rng = random.Random(42)  # deterministic seeding
+    base_panel = (
+        "demo-reviewer-alice",
+        "demo-reviewer-bob",
+        "demo-reviewer-carol",
+        "demo-reviewer-dan",
+        "demo-reviewer-eve",
+    )
+    if panel_size <= len(base_panel):
+        panel = base_panel[:panel_size]
+    else:
+        extra = tuple(f"demo-reviewer-extra-{i:02d}" for i in range(panel_size - len(base_panel)))
+        panel = base_panel + extra
+    with KGStore(db, create=False) as store:
+        rows = store._conn.execute(
+            "SELECT i.id, i.source_issue_id, i.confidence, p.slug "
+            "FROM issue i "
+            "JOIN run rn ON i.run_id = rn.id "
+            "JOIN project p ON rn.project_id = p.id "
+            "WHERE p.slug LIKE 'demo-%' OR p.slug LIKE 'generated-%' OR p.slug LIKE 'toy-%' "
+            "   OR p.slug LIKE 'cambridge-%' OR p.slug LIKE 'medfield-%' OR p.slug LIKE 'real-%' "
+            "ORDER BY i.id"
+        ).fetchall()
+        if not rows:
+            typer.echo("no demo issues found; ingest demo runs first via `kg ingest-suite` and `kg ingest out`")
+            return
+        # Assign default confidence only where missing
+        updated_conf = 0
+        for r in rows:
+            if r["confidence"] is None:
+                store._conn.execute(
+                    "UPDATE issue SET confidence = ? WHERE id = ?", (confidence, r["id"])
+                )
+                updated_conf += 1
+        # Wipe pre-existing demo feedback to keep the synthetic precision honest
+        store._conn.execute(
+            "DELETE FROM feedback_event WHERE reviewer_id IN ("
+            "SELECT id FROM reviewer WHERE reviewer_id LIKE 'demo-reviewer%'"
+            ")"
+        )
+        # Re-read confidences after the fill
+        rows = store._conn.execute(
+            "SELECT i.id, i.confidence FROM issue i "
+            "JOIN run rn ON i.run_id = rn.id "
+            "JOIN project p ON rn.project_id = p.id "
+            "WHERE p.slug LIKE 'demo-%' OR p.slug LIKE 'generated-%' OR p.slug LIKE 'toy-%' "
+            "   OR p.slug LIKE 'cambridge-%' OR p.slug LIKE 'medfield-%' OR p.slug LIKE 'real-%' "
+            "ORDER BY i.id"
+        ).fetchall()
+        events_added = 0
+        n_conf = 0
+        for r in rows:
+            conf = float(r["confidence"]) if r["confidence"] is not None else confidence
+            # Probabilistic outcome: with prob == conf the reviewer confirms.
+            # When target_precision != conf, blend: outcome_p = (conf + target_precision) / 2.
+            outcome_p = (conf + target_precision) / 2.0
+            # Each issue gets a 5-reviewer panel; outcomes drawn from
+            # Bernoulli(outcome_p) deterministically per reviewer.
+            # update_issue_status=False so issue.status keeps reflecting the
+            # source review_state.json snapshot rather than the last panelist.
+            for reviewer in panel:
+                event = "confirm" if rng.random() < outcome_p else "reject"
+                add_feedback(
+                    store,
+                    issue_id=r["id"],
+                    reviewer_id=reviewer,
+                    event_type=event,
+                    update_issue_status=False,
+                )
+                events_added += 1
+                if event == "confirm":
+                    n_conf += 1
+    typer.echo(
+        f"seeded {events_added} feedback events ({n_conf} confirm / "
+        f"{events_added - n_conf} reject) across {len(rows)} demo issues; "
+        f"assigned confidence={confidence} to {updated_conf} issues."
+    )
+
+
+@kg_app.command("label-record")
+def kg_label_record(
+    issue_id: int = typer.Argument(..., help="KG-internal issue id."),
+    event: str = typer.Argument(..., help="confirm / reject / needs_info / resolve / supersede / comment"),
+    reviewer: str = typer.Option(..., "--reviewer", "-r", help="Reviewer ID (free-form string)."),
+    reviewer_class: str = typer.Option(
+        "project_internal",
+        "--reviewer-class",
+        "-c",
+        help=(
+            "Honest classification: synthetic / project_internal / independent_third_party. "
+            "Default project_internal (you are dogfooding the tool yourself). Synthetic prefixes "
+            "(demo-reviewer-*, smoke-runner, synthetic-*) cannot be elevated to independent."
+        ),
+    ),
+    note: str = typer.Option("", "--note", help="Free-form note attached to the label."),
+    db: Path = typer.Option(Path(".archkg") / "kg.db", "--db", help="KG database path."),
+) -> None:
+    """Record one per-instance reviewer label (M7.W5)."""
+
+    from archkg.kg import KGStore
+    from archkg.kg.instance_label import VALID_REVIEWER_CLASSES, record_instance_label
+
+    if reviewer_class not in VALID_REVIEWER_CLASSES:
+        raise typer.BadParameter(
+            f"--reviewer-class must be one of {VALID_REVIEWER_CLASSES}; got {reviewer_class!r}"
+        )
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        try:
+            fb_id = record_instance_label(
+                store,
+                issue_id=issue_id,
+                reviewer_id=reviewer,
+                event_type=event,
+                reviewer_class=reviewer_class,
+                note=note,
+            )
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+    typer.echo(
+        f"recorded instance_label feedback_event id={fb_id} "
+        f"(issue={issue_id}, event={event}, reviewer={reviewer}, class={reviewer_class})"
+    )
+
+
+@kg_app.command("label-list")
+def kg_label_list(
+    db: Path = typer.Option(Path(".archkg") / "kg.db", "--db", help="KG database path."),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """List all instance_label events with reviewer attribution."""
+
+    import json as _json
+
+    from archkg.kg import KGStore
+    from archkg.kg.instance_label import label_provenance_counts, list_instance_labels
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    with KGStore(db, create=False) as store:
+        events = list_instance_labels(store)
+        counts = label_provenance_counts(store)
+    if json_out:
+        typer.echo(
+            _json.dumps(
+                {"counts": counts, "events": [e.to_dict() for e in events]},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+    typer.echo(
+        f"{counts['instance_label_event_count']} instance_label events · "
+        f"{counts['project_internal_reviewer_count']} project_internal · "
+        f"{counts['independent_third_party_reviewer_count']} independent_third_party · "
+        f"any_independent_review={counts['any_independent_review']}"
+    )
+    for ev in events:
+        typer.echo(
+            f"  fe={ev.feedback_event_id} issue={ev.issue_id} "
+            f"reviewer={ev.reviewer_id} ({ev.reviewer_class}) "
+            f"event={ev.event_type} @ {ev.created_at}"
+        )
+
+
+@kg_app.command("label-batch")
+def kg_label_batch(
+    jsonl_path: Path = typer.Argument(
+        ..., help="JSONL file: one {issue_id, reviewer_id, event_type, [reviewer_class, note]} per line."
+    ),
+    db: Path = typer.Option(Path(".archkg") / "kg.db", "--db", help="KG database path."),
+    default_reviewer_class: str = typer.Option(
+        "project_internal",
+        "--default-reviewer-class",
+        help="Used when a row omits reviewer_class.",
+    ),
+) -> None:
+    """Bulk import per-instance labels from a JSONL file."""
+
+    import json as _json
+
+    from archkg.kg import KGStore
+    from archkg.kg.instance_label import VALID_REVIEWER_CLASSES, batch_import
+
+    if default_reviewer_class not in VALID_REVIEWER_CLASSES:
+        raise typer.BadParameter(f"unknown --default-reviewer-class: {default_reviewer_class}")
+    if not jsonl_path.exists():
+        raise typer.BadParameter(f"jsonl file not found: {jsonl_path}")
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    rows: list[dict[str, Any]] = []
+    with open(jsonl_path, encoding="utf-8") as f:
+        for ln, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            try:
+                rows.append(_json.loads(line))
+            except _json.JSONDecodeError as exc:
+                raise typer.BadParameter(f"line {ln} is not JSON: {exc}") from exc
+    with KGStore(db, create=False) as store:
+        fb_ids = batch_import(
+            store, rows, default_reviewer_class=default_reviewer_class
+        )
+    typer.echo(f"imported {len(fb_ids)} instance_label events from {jsonl_path}")
+
+
+@kg_app.command("quality")
+def kg_quality(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    repo: Path = typer.Option(
+        Path(__file__).resolve().parents[2],
+        "--repo",
+        help="Repo root for benchmark expected-inventory lookup.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Per-rule precision / recall from KG feedback + benchmark inventory."""
+
+    import json as _json
+
+    from archkg.kg import per_rule_quality
+
+    report = per_rule_quality(db_path=db, repo=repo)
+    if json_out:
+        typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    if report.get("status") != "ok":
+        typer.echo(f"status: {report.get('status')}")
+        return
+    wp = report.get("weighted_precision")
+    wr = report.get("weighted_recall")
+    typer.echo(
+        f"weighted_precision: {wp:.3f}" if wp is not None else "weighted_precision: n/a"
+    )
+    typer.echo(
+        f"weighted_recall:    {wr:.3f}" if wr is not None else "weighted_recall:    n/a"
+    )
+    typer.echo(
+        f"rules_with_precision={report['rules_with_precision']} "
+        f"rules_with_recall={report['rules_with_recall']}"
+    )
+    for r in report["rules"][:20]:
+        p = f"{r['precision']:.2f}" if r["precision"] is not None else "n/a"
+        rc = f"{r['recall']:.2f}" if r["recall"] is not None else "n/a"
+        typer.echo(
+            f"  {r['rule_id']:<40} p={p} r={rc} (tp={r['tp']} fp={r['fp']} detected={r['detected']})"
+        )
+
+
+@kg_app.command("calibrate")
+def kg_calibrate(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Apply per-rule Beta-posterior calibration to issue.confidence."""
+
+    import json as _json
+
+    from archkg.kg import calibrate_db
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db}")
+    summary = calibrate_db(db, dry_run=dry_run)
+    if json_out:
+        typer.echo(_json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+    typer.echo(
+        f"calibrated {summary['rules_calibrated']} rule(s); "
+        f"updated {summary['issues_updated']} issue(s) "
+        f"(dry_run={summary['dry_run']})"
+    )
+    for r in summary["results"][:30]:
+        typer.echo(
+            f"  {r['rule_id']:<45} posterior_mean={r['posterior_mean']:.3f} "
+            f"(samples={r['feedback_sample_size']}, issues_updated={r['issues_updated']})"
+        )
+
+
+@kg_app.command("calibration")
+def kg_calibration_cmd(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Print the reliability diagram (confidence vs observed precision)."""
+
+    import json as _json
+
+    from archkg.kg import build_calibration_report
+
+    report = build_calibration_report(db)
+    if json_out:
+        typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"calibration status: {report['status']}")
+    mad = report.get("mean_abs_deviation")
+    if mad is not None:
+        typer.echo(f"mean abs deviation: {mad:.3f}")
+    for b in report.get("bins", []):
+        typer.echo(
+            f"  [{b['lower']:.2f}-{b['upper']:.2f}) "
+            f"mid={b['midpoint']:.2f} "
+            f"obs={b['observed_precision']:.3f} "
+            f"abs_dev={b['abs_deviation']:.3f} "
+            f"n={b['sample_size']}"
+        )
+
+
+@kg_app.command("serve")
+def kg_serve(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    host: str = typer.Option("127.0.0.1", "--host"),
+    port: int = typer.Option(8765, "--port"),
+) -> None:
+    """Run the local KG web UI (Flask). No external network exposure by default."""
+
+    from archkg.kg import create_app
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db} — run `archkg kg init` first")
+    app = create_app(db)
+    typer.echo(f"serving KG workbench on http://{host}:{port} (db={db})")
+    app.run(host=host, port=port, debug=False)
+
+
+@kg_app.command("smoke")
+def kg_smoke(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Run the 5 web-UI smoke flows against the local KG and print timings."""
+
+    import json as _json
+
+    from archkg.kg import run_e2e_smoke
+
+    report = run_e2e_smoke(db)
+    if json_out:
+        typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    passed = sum(1 for f in report["flows"] if f["passed"])
+    typer.echo(f"{passed}/{len(report['flows'])} flows passed")
+    for f in report["flows"]:
+        marker = "OK" if f["passed"] else "FAIL"
+        typer.echo(f"  [{marker}] {f['name']} status={f['status_code']} elapsed_ms={f['p95_ms']}")
+
+
+@kg_app.command("status")
+def kg_status(
+    db: Path = typer.Option(
+        Path(".archkg") / "kg.db",
+        "--db",
+        help="KG database path.",
+    ),
+    json_out: bool = typer.Option(False, "--json"),
+) -> None:
+    """Print KG health report (schema version, tables, counts, query p95)."""
+
+    import json as _json
+
+    from archkg.kg import KGStore, KGStoreError
+
+    if not db.exists():
+        raise typer.BadParameter(f"KG db not found at {db} — run `archkg kg init` first")
+    try:
+        store = KGStore(db, create=False)
+    except KGStoreError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    report = store.health_check()
+    if json_out:
+        typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"db: {report['db_path']}")
+    typer.echo(f"schema: {report['schema_version']}")
+    typer.echo(f"required_tables_present: {report['required_tables_present']}")
+    typer.echo(f"query_p95_ms: {report['query_p95_ms']}")
+    typer.echo("counts:")
+    for table, count in sorted(report["counts"].items()):
+        typer.echo(f"  {table}: {count}")
+
+
+@app.command("quality-score")
+def quality_score_cmd(
+    repo: Path = typer.Option(
+        Path(__file__).resolve().parents[2],
+        "--repo",
+        help="Repository root (defaults to detected archreview-kg root).",
+    ),
+    out: Path = typer.Option(
+        Path("quality_score.json"),
+        "-o",
+        "--out",
+        help="Where to write quality_score.json.",
+    ),
+    skip_slow: bool = typer.Option(
+        False,
+        "--skip-slow/--full",
+        help="Skip pytest in code_quality dimension (faster, partial score).",
+    ),
+    only: str | None = typer.Option(
+        None,
+        "--only",
+        help="Comma-separated dimension names to score (default: all 10).",
+    ),
+    quiet: bool = typer.Option(False, "--quiet"),
+) -> None:
+    """Compute the M5 10-dimension quality score and write quality_score.json.
+
+    See `.planning/M5-BLUEPRINT.md` for the scoring rubric. This is the entry
+    point used by the `archreview-test-judge` subagent.
+    """
+
+    import json as _json
+
+    from archkg.quality_score import (
+        DIMENSIONS,
+        compute_quality_score,
+        format_summary,
+        write_quality_score,
+    )
+
+    only_set: tuple[str, ...] | None
+    if only:
+        names = tuple(s.strip() for s in only.split(",") if s.strip())
+        invalid = [n for n in names if n not in DIMENSIONS]
+        if invalid:
+            raise typer.BadParameter(f"unknown dimensions: {invalid}")
+        only_set = names
+    else:
+        only_set = None
+
+    report = compute_quality_score(repo, skip_slow=skip_slow, only=only_set)  # type: ignore[arg-type]
+    written = write_quality_score(report, out)
+    if not quiet:
+        typer.echo(format_summary(report))
+        typer.echo("")
+        typer.echo(f"wrote {written}")
+    else:
+        typer.echo(_json.dumps({"overall_score": report["overall_score"], "path": str(written)}))
 
 
 if __name__ == "__main__":

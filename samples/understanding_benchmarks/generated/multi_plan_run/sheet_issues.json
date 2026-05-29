@@ -1,0 +1,748 @@
+{
+  "schema_version": "sheet_issues.v1",
+  "source_pdf": "tmp/p40/generated_multi_plan.pdf",
+  "sheet_count": 2,
+  "issue_count": 24,
+  "preview_only": true,
+  "review_state_linked": false,
+  "sheets": [
+    {
+      "page_index": 0,
+      "issue_count": 12,
+      "skipped_rule_count": 18,
+      "issues": [
+        {
+          "issue_id": "ISS-e405f052",
+          "rule_card_id": "RC-CORRIDOR-WIDTH",
+          "standard_clause_id": "GB50096-5.7.2",
+          "entity_ids": [
+            "corridor-cc0571ca"
+          ],
+          "bbox": [
+            0.0,
+            200.0,
+            500.0,
+            252.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "走廊净宽 1.05 m，小于规范要求的 1.20 m。",
+          "evidence": {
+            "snippet": "走廊净宽 1.05 m，小于规范要求的 1.20 m。",
+            "page_index": 0,
+            "measured_value": 1.05,
+            "threshold_value": 1.2,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-d5e280a1",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-3bf7e36f"
+          ],
+          "bbox": [
+            100.0,
+            200.0,
+            142.5,
+            200.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+            "page_index": 0,
+            "measured_value": 0.85,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-a6b5fb04",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-5b94bd77"
+          ],
+          "bbox": [
+            350.0,
+            200.0,
+            392.5,
+            200.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+            "page_index": 0,
+            "measured_value": 0.85,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-cc4e3c7e",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-1f891cab"
+          ],
+          "bbox": [
+            100.0,
+            252.5,
+            142.5,
+            252.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+            "page_index": 0,
+            "measured_value": 0.85,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-66631124",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-278f59b7"
+          ],
+          "bbox": [
+            350.0,
+            252.5,
+            392.5,
+            252.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+            "page_index": 0,
+            "measured_value": 0.85,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-3d4cb86c",
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+          "standard_clause_id": "GB50763-3.5.1",
+          "entity_ids": [
+            "corridor-cc0571ca"
+          ],
+          "bbox": [
+            0.0,
+            200.0,
+            500.0,
+            252.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "无障碍室内走道净宽 1.05 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+          "evidence": {
+            "snippet": "无障碍室内走道净宽 1.05 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+            "page_index": 0,
+            "measured_value": 1.05,
+            "threshold_value": 1.2,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-1e70e777",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-3bf7e36f"
+          ],
+          "bbox": [
+            100.0,
+            200.0,
+            142.5,
+            200.0
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.85,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-5d4d6304",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-5b94bd77"
+          ],
+          "bbox": [
+            350.0,
+            200.0,
+            392.5,
+            200.0
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.85,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-84422d73",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-1f891cab"
+          ],
+          "bbox": [
+            100.0,
+            252.5,
+            142.5,
+            252.5
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.85,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-381b1f44",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-278f59b7"
+          ],
+          "bbox": [
+            350.0,
+            252.5,
+            392.5,
+            252.5
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.85,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-da8863dc",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-758e2643"
+          ],
+          "bbox": [
+            250.0,
+            75.0,
+            250.0,
+            120.0
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.9 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.9 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.9,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-7b5de977",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-481da505"
+          ],
+          "bbox": [
+            250.0,
+            325.0,
+            250.0,
+            370.0
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.9 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.9 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.9,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        }
+      ],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-ELEVATOR-REQUIRED",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EVAC-STAIR-TYPE-33M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CLOSED-STAIRWELL-21M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+          "reason": "needs --project-meta to evaluate"
+        }
+      ]
+    },
+    {
+      "page_index": 1,
+      "issue_count": 12,
+      "skipped_rule_count": 18,
+      "issues": [
+        {
+          "issue_id": "ISS-2e118b93",
+          "rule_card_id": "RC-CORRIDOR-WIDTH",
+          "standard_clause_id": "GB50096-5.7.2",
+          "entity_ids": [
+            "corridor-acb9782f"
+          ],
+          "bbox": [
+            0.0,
+            200.0,
+            500.0,
+            252.5
+          ],
+          "page_index": 1,
+          "severity": "error",
+          "message": "走廊净宽 1.05 m，小于规范要求的 1.20 m。",
+          "evidence": {
+            "snippet": "走廊净宽 1.05 m，小于规范要求的 1.20 m。",
+            "page_index": 1,
+            "measured_value": 1.05,
+            "threshold_value": 1.2,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-58a7b113",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-072f7141"
+          ],
+          "bbox": [
+            100.0,
+            200.0,
+            142.5,
+            200.0
+          ],
+          "page_index": 1,
+          "severity": "error",
+          "message": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+            "page_index": 1,
+            "measured_value": 0.85,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-31ee5e68",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-4ce27fb7"
+          ],
+          "bbox": [
+            350.0,
+            200.0,
+            392.5,
+            200.0
+          ],
+          "page_index": 1,
+          "severity": "error",
+          "message": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+            "page_index": 1,
+            "measured_value": 0.85,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-f6121371",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-04f5964e"
+          ],
+          "bbox": [
+            100.0,
+            252.5,
+            142.5,
+            252.5
+          ],
+          "page_index": 1,
+          "severity": "error",
+          "message": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+            "page_index": 1,
+            "measured_value": 0.85,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-df6ca5e8",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-b2c5900d"
+          ],
+          "bbox": [
+            350.0,
+            252.5,
+            392.5,
+            252.5
+          ],
+          "page_index": 1,
+          "severity": "error",
+          "message": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.85 m，小于规范要求的 0.90 m。",
+            "page_index": 1,
+            "measured_value": 0.85,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-fb20370a",
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+          "standard_clause_id": "GB50763-3.5.1",
+          "entity_ids": [
+            "corridor-acb9782f"
+          ],
+          "bbox": [
+            0.0,
+            200.0,
+            500.0,
+            252.5
+          ],
+          "page_index": 1,
+          "severity": "error",
+          "message": "无障碍室内走道净宽 1.05 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+          "evidence": {
+            "snippet": "无障碍室内走道净宽 1.05 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+            "page_index": 1,
+            "measured_value": 1.05,
+            "threshold_value": 1.2,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-5f9e8fce",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-072f7141"
+          ],
+          "bbox": [
+            100.0,
+            200.0,
+            142.5,
+            200.0
+          ],
+          "page_index": 1,
+          "severity": "info",
+          "message": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 1,
+            "measured_value": 0.85,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-21e4d1a4",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-4ce27fb7"
+          ],
+          "bbox": [
+            350.0,
+            200.0,
+            392.5,
+            200.0
+          ],
+          "page_index": 1,
+          "severity": "info",
+          "message": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 1,
+            "measured_value": 0.85,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-b607def6",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-04f5964e"
+          ],
+          "bbox": [
+            100.0,
+            252.5,
+            142.5,
+            252.5
+          ],
+          "page_index": 1,
+          "severity": "info",
+          "message": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 1,
+            "measured_value": 0.85,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-049c647d",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-b2c5900d"
+          ],
+          "bbox": [
+            350.0,
+            252.5,
+            392.5,
+            252.5
+          ],
+          "page_index": 1,
+          "severity": "info",
+          "message": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.85 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 1,
+            "measured_value": 0.85,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-c7bdddfb",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-2596d591"
+          ],
+          "bbox": [
+            250.0,
+            75.0,
+            250.0,
+            120.0
+          ],
+          "page_index": 1,
+          "severity": "info",
+          "message": "门净宽 0.9 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.9 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 1,
+            "measured_value": 0.9,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-68498520",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-1067382a"
+          ],
+          "bbox": [
+            250.0,
+            325.0,
+            250.0,
+            370.0
+          ],
+          "page_index": 1,
+          "severity": "info",
+          "message": "门净宽 0.9 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.9 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 1,
+            "measured_value": 0.9,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        }
+      ],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-ELEVATOR-REQUIRED",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EVAC-STAIR-TYPE-33M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CLOSED-STAIRWELL-21M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+          "reason": "needs --project-meta to evaluate"
+        }
+      ]
+    }
+  ]
+}

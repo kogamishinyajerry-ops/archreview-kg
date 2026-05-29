@@ -1,0 +1,259 @@
+{
+  "schema_version": "sheet_issues.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-2garden-page27-existing-secondfloor.pdf",
+  "sheet_count": 1,
+  "issue_count": 7,
+  "preview_only": true,
+  "review_state_linked": false,
+  "sheets": [
+    {
+      "page_index": 0,
+      "issue_count": 7,
+      "skipped_rule_count": 18,
+      "issues": [
+        {
+          "issue_id": "ISS-fb314c90",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-5dd2333f"
+          ],
+          "bbox": [
+            484.5,
+            707.5,
+            527.5,
+            707.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "户门净宽 0.86 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.86 m，小于规范要求的 0.90 m。",
+            "page_index": 0,
+            "measured_value": 0.86,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-14d148b9",
+          "rule_card_id": "RC-DOOR-WIDTH",
+          "standard_clause_id": "GB50016-5.5.30",
+          "entity_ids": [
+            "door-5bc51347"
+          ],
+          "bbox": [
+            294.0,
+            794.5,
+            294.0,
+            834.0
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "户门净宽 0.79 m，小于规范要求的 0.90 m。",
+          "evidence": {
+            "snippet": "户门净宽 0.79 m，小于规范要求的 0.90 m。",
+            "page_index": 0,
+            "measured_value": 0.79,
+            "threshold_value": 0.9,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-ac906cb4",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-704327f9"
+          ],
+          "bbox": [
+            360.0,
+            252.5,
+            494.5,
+            336.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 4.36 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 4.36 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 4.3567,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-d6a5510e",
+          "rule_card_id": "RC-BEDROOM-AREA",
+          "standard_clause_id": "GB50096-5.3.1",
+          "entity_ids": [
+            "room-2c8af791"
+          ],
+          "bbox": [
+            360.0,
+            336.5,
+            491.0,
+            427.5
+          ],
+          "page_index": 0,
+          "severity": "error",
+          "message": "卧室面积 3.78 m²，小于规范要求的 5.0 m²。",
+          "evidence": {
+            "snippet": "卧室面积 3.78 m²，小于规范要求的 5.0 m²。",
+            "page_index": 0,
+            "measured_value": 3.779425,
+            "threshold_value": 5.0,
+            "unit": "m^2"
+          }
+        },
+        {
+          "issue_id": "ISS-d34fd739",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-5dd2333f"
+          ],
+          "bbox": [
+            484.5,
+            707.5,
+            527.5,
+            707.5
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.86 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.86 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.86,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-3f372328",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-f2f45790"
+          ],
+          "bbox": [
+            361.0,
+            744.5,
+            410.5,
+            744.5
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.99 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.99 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.99,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        },
+        {
+          "issue_id": "ISS-6d40cbd2",
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+          "standard_clause_id": "GB50763-3.5.3",
+          "entity_ids": [
+            "door-5bc51347"
+          ],
+          "bbox": [
+            294.0,
+            794.5,
+            294.0,
+            834.0
+          ],
+          "page_index": 0,
+          "severity": "info",
+          "message": "门净宽 0.79 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+          "evidence": {
+            "snippet": "门净宽 0.79 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+            "page_index": 0,
+            "measured_value": 0.79,
+            "threshold_value": 1.0,
+            "unit": "m"
+          }
+        }
+      ],
+      "skipped_rules": [
+        {
+          "rule_id": "RC-ELEVATOR-REQUIRED",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EVAC-STAIR-TYPE-33M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CLOSED-STAIRWELL-21M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ENTRANCE-PLATFORM-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-REFUGE-LAYER-100M",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WHEELCHAIR-PASSAGE-WIDTH-7F",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+          "reason": "needs --project-meta to evaluate"
+        },
+        {
+          "rule_id": "RC-ACCESSIBLE-RESIDENTIAL-RATIO",
+          "reason": "needs --project-meta to evaluate"
+        }
+      ]
+    }
+  ]
+}

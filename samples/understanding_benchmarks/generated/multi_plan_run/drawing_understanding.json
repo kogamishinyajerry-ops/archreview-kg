@@ -1,0 +1,461 @@
+{
+  "schema_version": "drawing_understanding.v2",
+  "drawing_type": "建筑平面图",
+  "likely_design": "住宅平面图",
+  "summary": "住宅平面图。识别到 4 个空间、6 个门/洞口、1 条走廊、0 个楼梯/垂直交通对象、3 条尺寸证据。 多页 sheet graph 证据汇总: 8 个空间、12 个门/洞口、2 条走廊、6 条尺寸证据。 多页 sheet graph 证据汇总: 8 个空间、12 个门/洞口、2 条走廊、6 条尺寸证据。",
+  "component_counts": {
+    "lines": 28,
+    "texts": 14,
+    "rooms": 8,
+    "doors": 12,
+    "corridors": 2,
+    "stairs": 0,
+    "dimensions": 6,
+    "ocr_texts": 0
+  },
+  "text_inventory": {
+    "room_label_counts": {
+      "bedroom": 2,
+      "living": 2,
+      "kitchen": 2
+    },
+    "door_or_opening_size_label_counts": {},
+    "major_dimension_texts": []
+  },
+  "drawing_profile": {
+    "understanding_level": "multi_sheet_layout_with_openings",
+    "evidence_signals": [
+      "spatial_layout",
+      "residential_room_labels",
+      "openings",
+      "horizontal_circulation",
+      "dimension_evidence",
+      "per_sheet_graphs"
+    ],
+    "review_note": "识别档案用于衡量图纸内容理解, 不是规范判定。"
+  },
+  "benchmark_signals": {
+    "has_spatial_layout": true,
+    "has_openings": true,
+    "has_horizontal_circulation": true,
+    "has_vertical_circulation": false,
+    "has_dimension_evidence": true,
+    "has_ocr_text": false
+  },
+  "component_inventory": [
+    {
+      "id": "room-40e950ee",
+      "category": "space",
+      "semantic_kind": "residential_room",
+      "label": "bedroom",
+      "label_zh": "卧室",
+      "metric_text": "20.0 m²",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "0.0, 0.0, 250.0, 200.0",
+      "uncertain": false
+    },
+    {
+      "id": "room-6fd9f811",
+      "category": "space",
+      "semantic_kind": "residential_room",
+      "label": "living",
+      "label_zh": "客厅",
+      "metric_text": "20.0 m²",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "250.0, 0.0, 500.0, 200.0",
+      "uncertain": false
+    },
+    {
+      "id": "room-63bdaf2a",
+      "category": "space",
+      "semantic_kind": "residential_room",
+      "label": "kitchen",
+      "label_zh": "厨房",
+      "metric_text": "14.8 m²",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "250.0, 252.5, 500.0, 400.0",
+      "uncertain": false
+    },
+    {
+      "id": "room-5a8d4a3d",
+      "category": "space",
+      "semantic_kind": "residential_room",
+      "label": "bathroom",
+      "label_zh": "卫生间",
+      "metric_text": "14.8 m²",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "0.0, 252.5, 250.0, 400.0",
+      "uncertain": false
+    },
+    {
+      "id": "door-f4c5e468",
+      "category": "opening",
+      "semantic_kind": "door_opening",
+      "label": "门/洞口",
+      "label_zh": "门/洞口",
+      "metric_text": "0.85 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "100.0, 200.0, 142.5, 200.0",
+      "uncertain": false
+    },
+    {
+      "id": "door-1aee58b1",
+      "category": "opening",
+      "semantic_kind": "door_opening",
+      "label": "门/洞口",
+      "label_zh": "门/洞口",
+      "metric_text": "0.85 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "350.0, 200.0, 392.5, 200.0",
+      "uncertain": false
+    },
+    {
+      "id": "door-c339732c",
+      "category": "opening",
+      "semantic_kind": "door_opening",
+      "label": "门/洞口",
+      "label_zh": "门/洞口",
+      "metric_text": "0.85 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "100.0, 252.5, 142.5, 252.5",
+      "uncertain": false
+    },
+    {
+      "id": "door-92be45fc",
+      "category": "opening",
+      "semantic_kind": "door_opening",
+      "label": "门/洞口",
+      "label_zh": "门/洞口",
+      "metric_text": "0.85 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "350.0, 252.5, 392.5, 252.5",
+      "uncertain": false
+    },
+    {
+      "id": "door-e2587f63",
+      "category": "opening",
+      "semantic_kind": "door_opening",
+      "label": "门/洞口",
+      "label_zh": "门/洞口",
+      "metric_text": "0.90 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "250.0, 75.0, 250.0, 120.0",
+      "uncertain": false
+    },
+    {
+      "id": "door-69d071eb",
+      "category": "opening",
+      "semantic_kind": "door_opening",
+      "label": "门/洞口",
+      "label_zh": "门/洞口",
+      "metric_text": "0.90 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "250.0, 325.0, 250.0, 370.0",
+      "uncertain": false
+    },
+    {
+      "id": "corridor-f54db591",
+      "category": "horizontal_circulation",
+      "semantic_kind": "horizontal_circulation",
+      "label": "走廊/交通空间",
+      "label_zh": "走廊/交通空间",
+      "metric_text": "1.05 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "0.0, 200.0, 500.0, 252.5",
+      "uncertain": false
+    },
+    {
+      "id": "dim-60fe3676",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "CORRIDOR W=1.05",
+      "label_zh": "",
+      "metric_text": "1.05 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "210.0, 218.9, 283.6, 229.9",
+      "uncertain": false
+    },
+    {
+      "id": "dim-d5f9a48f",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "DOOR 0.85",
+      "label_zh": "",
+      "metric_text": "0.85 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "102.5, 186.4, 144.3, 197.4",
+      "uncertain": false
+    },
+    {
+      "id": "dim-6c3e7921",
+      "category": "dimension",
+      "semantic_kind": "dimension_annotation",
+      "label": "DOOR 0.85",
+      "label_zh": "",
+      "metric_text": "0.85 m",
+      "confidence_band": "high",
+      "evidence_source": "graph",
+      "bbox_text": "352.5, 186.4, 394.3, 197.4",
+      "uncertain": false
+    }
+  ],
+  "components": {
+    "spaces": [
+      {
+        "id": "room-40e950ee",
+        "component": "空间",
+        "category": "space",
+        "semantic_kind": "residential_room",
+        "label": "bedroom",
+        "label_zh": "卧室",
+        "area_m2": 20.0,
+        "area_text": "20.0 m²",
+        "metric_text": "20.0 m²",
+        "bbox_text": "0.0, 0.0, 250.0, 200.0",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "room-6fd9f811",
+        "component": "空间",
+        "category": "space",
+        "semantic_kind": "residential_room",
+        "label": "living",
+        "label_zh": "客厅",
+        "area_m2": 20.0,
+        "area_text": "20.0 m²",
+        "metric_text": "20.0 m²",
+        "bbox_text": "250.0, 0.0, 500.0, 200.0",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "room-63bdaf2a",
+        "component": "空间",
+        "category": "space",
+        "semantic_kind": "residential_room",
+        "label": "kitchen",
+        "label_zh": "厨房",
+        "area_m2": 14.75,
+        "area_text": "14.8 m²",
+        "metric_text": "14.8 m²",
+        "bbox_text": "250.0, 252.5, 500.0, 400.0",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "room-5a8d4a3d",
+        "component": "空间",
+        "category": "space",
+        "semantic_kind": "residential_room",
+        "label": "bathroom",
+        "label_zh": "卫生间",
+        "area_m2": 14.75,
+        "area_text": "14.8 m²",
+        "metric_text": "14.8 m²",
+        "bbox_text": "0.0, 252.5, 250.0, 400.0",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      }
+    ],
+    "openings": [
+      {
+        "id": "door-f4c5e468",
+        "component": "门/洞口",
+        "category": "opening",
+        "semantic_kind": "door_opening",
+        "width_m": 0.85,
+        "width_text": "0.85 m",
+        "metric_text": "0.85 m",
+        "connects_text": "room-40e950ee / corridor-f54db591",
+        "bbox_text": "100.0, 200.0, 142.5, 200.0",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "door-1aee58b1",
+        "component": "门/洞口",
+        "category": "opening",
+        "semantic_kind": "door_opening",
+        "width_m": 0.85,
+        "width_text": "0.85 m",
+        "metric_text": "0.85 m",
+        "connects_text": "room-6fd9f811 / corridor-f54db591",
+        "bbox_text": "350.0, 200.0, 392.5, 200.0",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "door-c339732c",
+        "component": "门/洞口",
+        "category": "opening",
+        "semantic_kind": "door_opening",
+        "width_m": 0.85,
+        "width_text": "0.85 m",
+        "metric_text": "0.85 m",
+        "connects_text": "corridor-f54db591 / room-5a8d4a3d",
+        "bbox_text": "100.0, 252.5, 142.5, 252.5",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "door-92be45fc",
+        "component": "门/洞口",
+        "category": "opening",
+        "semantic_kind": "door_opening",
+        "width_m": 0.85,
+        "width_text": "0.85 m",
+        "metric_text": "0.85 m",
+        "connects_text": "corridor-f54db591 / room-63bdaf2a",
+        "bbox_text": "350.0, 252.5, 392.5, 252.5",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "door-e2587f63",
+        "component": "门/洞口",
+        "category": "opening",
+        "semantic_kind": "door_opening",
+        "width_m": 0.9,
+        "width_text": "0.90 m",
+        "metric_text": "0.90 m",
+        "connects_text": "room-6fd9f811 / room-40e950ee",
+        "bbox_text": "250.0, 75.0, 250.0, 120.0",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "door-69d071eb",
+        "component": "门/洞口",
+        "category": "opening",
+        "semantic_kind": "door_opening",
+        "width_m": 0.9,
+        "width_text": "0.90 m",
+        "metric_text": "0.90 m",
+        "connects_text": "room-63bdaf2a / room-5a8d4a3d",
+        "bbox_text": "250.0, 325.0, 250.0, 370.0",
+        "confidence": 0.85,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      }
+    ],
+    "circulation": [
+      {
+        "id": "corridor-f54db591",
+        "component": "走廊/交通空间",
+        "category": "horizontal_circulation",
+        "semantic_kind": "horizontal_circulation",
+        "min_width_m": 1.05,
+        "min_width_text": "1.05 m",
+        "metric_text": "1.05 m",
+        "bbox_text": "0.0, 200.0, 500.0, 252.5",
+        "confidence": 0.8,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      }
+    ],
+    "vertical_circulation": []
+  },
+  "dimension_evidence": {
+    "graph_dimensions": [
+      {
+        "id": "dim-60fe3676",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "CORRIDOR W=1.05",
+        "value_m": 1.05,
+        "value_text": "1.05 m",
+        "metric_text": "1.05 m",
+        "bbox_text": "210.0, 218.9, 283.6, 229.9",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-d5f9a48f",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "DOOR 0.85",
+        "value_m": 0.85,
+        "value_text": "0.85 m",
+        "metric_text": "0.85 m",
+        "bbox_text": "102.5, 186.4, 144.3, 197.4",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      },
+      {
+        "id": "dim-6c3e7921",
+        "category": "dimension",
+        "semantic_kind": "dimension_annotation",
+        "text": "DOOR 0.85",
+        "value_m": 0.85,
+        "value_text": "0.85 m",
+        "metric_text": "0.85 m",
+        "bbox_text": "352.5, 186.4, 394.3, 197.4",
+        "confidence": 1.0,
+        "confidence_band": "high",
+        "uncertain": false,
+        "evidence_source": "graph"
+      }
+    ],
+    "ocr_dimensions": [],
+    "ocr_dimension_count": 0,
+    "ocr_bound_count": 0
+  },
+  "uncertainty_flags": [
+    "主 graph 可能未覆盖全部 plan sheet; 已从 sheet_graphs.json 汇总门/洞口证据, 但逐个门洞位置仍需在 per-sheet graph 中复核。",
+    "主 graph 可能未覆盖全部 plan sheet; 已从 sheet_graphs.json 汇总门/洞口证据, 但逐个门洞位置仍需在 per-sheet graph 中复核。"
+  ],
+  "sheet_graph_summary": {
+    "source": "sheet_graphs.json",
+    "graph_count": 2,
+    "plan_page_indexes": [
+      0,
+      1
+    ],
+    "component_counts": {
+      "rooms": 8,
+      "doors": 12,
+      "corridors": 2,
+      "stairs": 0,
+      "dimensions": 6
+    },
+    "review_note": "Counts are aggregated from per-plan-sheet graph evidence. They are recognition evidence and are not merged into primary issues.json."
+  }
+}

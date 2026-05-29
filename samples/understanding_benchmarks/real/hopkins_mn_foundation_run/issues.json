@@ -1,0 +1,50 @@
+[
+  {
+    "issue_id": "ISS-9fa43f3a",
+    "rule_card_id": "RC-CORRIDOR-WIDTH",
+    "standard_clause_id": "GB50096-5.7.2",
+    "entity_ids": [
+      "corridor-b5ea79d5"
+    ],
+    "bbox": [
+      165.5,
+      25.0,
+      483.0,
+      81.5
+    ],
+    "page_index": 0,
+    "severity": "error",
+    "message": "走廊净宽 1.13 m，小于规范要求的 1.20 m。",
+    "evidence": {
+      "snippet": "走廊净宽 1.13 m，小于规范要求的 1.20 m。",
+      "page_index": 0,
+      "measured_value": 1.13,
+      "threshold_value": 1.2,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-52ac321f",
+    "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+    "standard_clause_id": "GB50763-3.5.1",
+    "entity_ids": [
+      "corridor-b5ea79d5"
+    ],
+    "bbox": [
+      165.5,
+      25.0,
+      483.0,
+      81.5
+    ],
+    "page_index": 0,
+    "severity": "error",
+    "message": "无障碍室内走道净宽 1.13 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+    "evidence": {
+      "snippet": "无障碍室内走道净宽 1.13 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+      "page_index": 0,
+      "measured_value": 1.13,
+      "threshold_value": 1.2,
+      "unit": "m"
+    }
+  }
+]

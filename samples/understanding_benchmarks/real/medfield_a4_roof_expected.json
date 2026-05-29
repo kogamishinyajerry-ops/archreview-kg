@@ -1,0 +1,31 @@
+{
+  "schema_version": "understanding_benchmark_expected.v1",
+  "benchmark_id": "medfield-a4-roof-known-gap-v1",
+  "min_score": 1.0,
+  "review_required": false,
+  "source_schema_version": "manual_annotation.v1",
+  "drawing_type": "建筑屋顶平面图",
+  "likely_design_contains": "屋顶平面图",
+  "component_counts": {
+    "rooms": {"exact": 0},
+    "doors": {"exact": 0},
+    "corridors": {"max": 0},
+    "dimensions": {"min": 5}
+  },
+  "required_semantic_kinds": [
+    "roof_plan",
+    "dimension_annotation"
+  ],
+  "required_evidence_signals": [
+    "roof_layout",
+    "dimension_evidence"
+  ],
+  "required_benchmark_signals": {
+    "has_dimension_evidence": true
+  },
+  "notes_for_reviewer": [
+    "A roof plan does NOT contain residential rooms, doors, or corridors.",
+    "The plan-tuned recognizer is expected to FAIL this benchmark by falsely identifying 25 rooms and 8 corridors from roof outline geometry.",
+    "This fixture is a documented known_gap: the recognizer needs roof-aware semantics before it can honestly score against this expected inventory."
+  ]
+}

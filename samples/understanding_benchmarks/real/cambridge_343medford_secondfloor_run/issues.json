@@ -1,0 +1,242 @@
+[
+  {
+    "issue_id": "ISS-b3ccaf8e",
+    "rule_card_id": "RC-CORRIDOR-WIDTH",
+    "standard_clause_id": "GB50096-5.7.2",
+    "entity_ids": [
+      "corridor-d77a917e"
+    ],
+    "bbox": [
+      928.5,
+      2200.0,
+      1432.5,
+      2234.0
+    ],
+    "page_index": 0,
+    "severity": "error",
+    "message": "走廊净宽 0.68 m，小于规范要求的 1.20 m。",
+    "evidence": {
+      "snippet": "走廊净宽 0.68 m，小于规范要求的 1.20 m。",
+      "page_index": 0,
+      "measured_value": 0.68,
+      "threshold_value": 1.2,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-82518729",
+    "rule_card_id": "RC-CORRIDOR-WIDTH",
+    "standard_clause_id": "GB50096-5.7.2",
+    "entity_ids": [
+      "corridor-04214b40"
+    ],
+    "bbox": [
+      1622.0,
+      120.5,
+      1673.5,
+      280.0
+    ],
+    "page_index": 0,
+    "severity": "error",
+    "message": "走廊净宽 0.11 m，小于规范要求的 1.20 m。",
+    "evidence": {
+      "snippet": "走廊净宽 0.11 m，小于规范要求的 1.20 m。",
+      "page_index": 0,
+      "measured_value": 0.112,
+      "threshold_value": 1.2,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-d756c59a",
+    "rule_card_id": "RC-DOOR-WIDTH",
+    "standard_clause_id": "GB50016-5.5.30",
+    "entity_ids": [
+      "door-e47f93ee"
+    ],
+    "bbox": [
+      1438.5,
+      54.5,
+      1481.5,
+      54.5
+    ],
+    "page_index": 0,
+    "severity": "error",
+    "message": "户门净宽 0.86 m，小于规范要求的 0.90 m。",
+    "evidence": {
+      "snippet": "户门净宽 0.86 m，小于规范要求的 0.90 m。",
+      "page_index": 0,
+      "measured_value": 0.86,
+      "threshold_value": 0.9,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-4f72deeb",
+    "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+    "standard_clause_id": "GB50763-3.5.1",
+    "entity_ids": [
+      "corridor-d77a917e"
+    ],
+    "bbox": [
+      928.5,
+      2200.0,
+      1432.5,
+      2234.0
+    ],
+    "page_index": 0,
+    "severity": "error",
+    "message": "无障碍室内走道净宽 0.68 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+    "evidence": {
+      "snippet": "无障碍室内走道净宽 0.68 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+      "page_index": 0,
+      "measured_value": 0.68,
+      "threshold_value": 1.2,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-c60c71b7",
+    "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+    "standard_clause_id": "GB50763-3.5.1",
+    "entity_ids": [
+      "corridor-04214b40"
+    ],
+    "bbox": [
+      1622.0,
+      120.5,
+      1673.5,
+      280.0
+    ],
+    "page_index": 0,
+    "severity": "error",
+    "message": "无障碍室内走道净宽 0.112 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+    "evidence": {
+      "snippet": "无障碍室内走道净宽 0.112 m，小于 GB 50763-3.5.1 规定的 1.20 m。",
+      "page_index": 0,
+      "measured_value": 0.112,
+      "threshold_value": 1.2,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-d218c50e",
+    "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+    "standard_clause_id": "GB50763-3.5.3",
+    "entity_ids": [
+      "door-c790ff04"
+    ],
+    "bbox": [
+      1011.0,
+      1419.0,
+      1057.0,
+      1419.0
+    ],
+    "page_index": 0,
+    "severity": "info",
+    "message": "门净宽 0.92 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+    "evidence": {
+      "snippet": "门净宽 0.92 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+      "page_index": 0,
+      "measured_value": 0.92,
+      "threshold_value": 1.0,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-d4490d62",
+    "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+    "standard_clause_id": "GB50763-3.5.3",
+    "entity_ids": [
+      "door-64e7d2b6"
+    ],
+    "bbox": [
+      1376.5,
+      1197.5,
+      1425.0,
+      1197.5
+    ],
+    "page_index": 0,
+    "severity": "info",
+    "message": "门净宽 0.97 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+    "evidence": {
+      "snippet": "门净宽 0.97 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+      "page_index": 0,
+      "measured_value": 0.97,
+      "threshold_value": 1.0,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-7e4ed95e",
+    "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+    "standard_clause_id": "GB50763-3.5.3",
+    "entity_ids": [
+      "door-bcee5d99"
+    ],
+    "bbox": [
+      1376.5,
+      1367.5,
+      1424.0,
+      1367.5
+    ],
+    "page_index": 0,
+    "severity": "info",
+    "message": "门净宽 0.95 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+    "evidence": {
+      "snippet": "门净宽 0.95 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+      "page_index": 0,
+      "measured_value": 0.95,
+      "threshold_value": 1.0,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-146ba504",
+    "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+    "standard_clause_id": "GB50763-3.5.3",
+    "entity_ids": [
+      "door-d6eb5b43"
+    ],
+    "bbox": [
+      1441.5,
+      55.0,
+      1487.0,
+      55.0
+    ],
+    "page_index": 0,
+    "severity": "info",
+    "message": "门净宽 0.91 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+    "evidence": {
+      "snippet": "门净宽 0.91 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+      "page_index": 0,
+      "measured_value": 0.91,
+      "threshold_value": 1.0,
+      "unit": "m"
+    }
+  },
+  {
+    "issue_id": "ISS-fc3fe805",
+    "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+    "standard_clause_id": "GB50763-3.5.3",
+    "entity_ids": [
+      "door-e47f93ee"
+    ],
+    "bbox": [
+      1438.5,
+      54.5,
+      1481.5,
+      54.5
+    ],
+    "page_index": 0,
+    "severity": "info",
+    "message": "门净宽 0.86 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+    "evidence": {
+      "snippet": "门净宽 0.86 m — 按 GB 50763-3.5.3：平开/推拉/折叠门 ≥ 800 mm（建议 ≥ 900 mm），自动门 ≥ 1.00 m。请按门类型核对实际是否达标。",
+      "page_index": 0,
+      "measured_value": 0.86,
+      "threshold_value": 1.0,
+      "unit": "m"
+    }
+  }
+]

@@ -1,0 +1,822 @@
+{
+  "schema_version": "quality_score.v1",
+  "overall_score": 100.0,
+  "average_dimension_score": 10.0,
+  "weakest_dimension": "code_quality",
+  "ninety_nine_plus": true,
+  "dimensions": [
+    {
+      "dimension": "code_quality",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "ruff": {
+          "exit_code": 0,
+          "stdout_tail": [
+            "All checks passed!"
+          ],
+          "stderr_tail": []
+        },
+        "mypy": {
+          "exit_code": 0,
+          "stdout_tail": [
+            "Success: no issues found in 103 source files"
+          ],
+          "stderr_tail": []
+        },
+        "pytest": {
+          "exit_code": 0,
+          "passed": 527,
+          "failed": 0,
+          "errors": 0,
+          "warnings": 0,
+          "tail": [
+            "........................................................................ [ 13%]",
+            "........................................................................ [ 27%]",
+            "....s................................................................... [ 40%]",
+            "........................................................................ [ 54%]",
+            "........................................................................ [ 68%]",
+            "........................................................................ [ 81%]",
+            "........................................................................ [ 95%]",
+            "........................                                                 [100%]",
+            "527 passed, 1 skipped in 43.40s"
+          ]
+        }
+      },
+      "notes": []
+    },
+    {
+      "dimension": "kg_persistence",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "status": "ok",
+        "health": {
+          "schema_version": "kg.v1",
+          "tables_present": [
+            "clause",
+            "drawing",
+            "edge",
+            "entity",
+            "feedback_event",
+            "issue",
+            "project",
+            "reviewer",
+            "rule",
+            "run",
+            "schema_version",
+            "sheet"
+          ],
+          "required_tables_present": true,
+          "counts": {
+            "schema_version": 1,
+            "project": 32,
+            "drawing": 32,
+            "sheet": 1,
+            "run": 32,
+            "rule": 25,
+            "clause": 23,
+            "entity": 15,
+            "issue": 146,
+            "reviewer": 22,
+            "feedback_event": 2974,
+            "edge": 0
+          },
+          "query_p95_ms": 0.013,
+          "db_path": "/Users/Zhuanz/archreview-kg/.archkg/kg.db"
+        }
+      },
+      "notes": []
+    },
+    {
+      "dimension": "kg_coverage",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "expected_runs": 31,
+        "ingested_runs": 32,
+        "coverage": 1.032258064516129
+      },
+      "notes": []
+    },
+    {
+      "dimension": "cross_project_query",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "total": 10,
+        "correct": 10,
+        "results": [
+          {
+            "id": "Q1",
+            "description": "Issue count per rule (rule_id, count).",
+            "correct": true,
+            "sql_count": 25,
+            "expected_count": 25,
+            "sql_first": [
+              [
+                "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+                67
+              ],
+              [
+                "RC-DOOR-WIDTH",
+                38
+              ],
+              [
+                "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+                9
+              ]
+            ],
+            "expected_first": [
+              [
+                "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+                67
+              ],
+              [
+                "RC-DOOR-WIDTH",
+                38
+              ],
+              [
+                "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+                9
+              ]
+            ]
+          },
+          {
+            "id": "Q2",
+            "description": "Issue count per project (slug, count).",
+            "correct": true,
+            "sql_count": 10,
+            "expected_count": 10,
+            "sql_first": [
+              [
+                "cambridge-343medford-overview",
+                52
+              ],
+              [
+                "demo-out",
+                32
+              ],
+              [
+                "cambridge-343medford-thirdfloor",
+                21
+              ]
+            ],
+            "expected_first": [
+              [
+                "cambridge-343medford-overview",
+                52
+              ],
+              [
+                "demo-out",
+                32
+              ],
+              [
+                "cambridge-343medford-thirdfloor",
+                21
+              ]
+            ]
+          },
+          {
+            "id": "Q3",
+            "description": "Issue count by status.",
+            "correct": true,
+            "sql_count": 4,
+            "expected_count": 4,
+            "sql_first": [
+              [
+                "candidate",
+                113
+              ],
+              [
+                "confirmed",
+                26
+              ],
+              [
+                "rejected",
+                5
+              ]
+            ],
+            "expected_first": [
+              [
+                "candidate",
+                113
+              ],
+              [
+                "confirmed",
+                26
+              ],
+              [
+                "rejected",
+                5
+              ]
+            ]
+          },
+          {
+            "id": "Q4",
+            "description": "Top 5 (rule_id, clause_id) pairs by issue count.",
+            "correct": true,
+            "sql_count": 0,
+            "expected_count": 0,
+            "sql_first": [],
+            "expected_first": []
+          },
+          {
+            "id": "Q5",
+            "description": "Confirmed issues across all projects ((project_slug, source_issue_id)).",
+            "correct": true,
+            "sql_count": 26,
+            "expected_count": 26,
+            "sql_first": [
+              [
+                "demo-out",
+                "ISS-052d527d"
+              ],
+              [
+                "demo-out",
+                "ISS-0e91487c"
+              ],
+              [
+                "demo-out",
+                "ISS-106fb940"
+              ]
+            ],
+            "expected_first": [
+              [
+                "demo-out",
+                "ISS-052d527d"
+              ],
+              [
+                "demo-out",
+                "ISS-0e91487c"
+              ],
+              [
+                "demo-out",
+                "ISS-106fb940"
+              ]
+            ]
+          },
+          {
+            "id": "Q6",
+            "description": "Project with most issues ((slug, count)).",
+            "correct": true,
+            "sql_count": 1,
+            "expected_count": 1,
+            "sql_first": [
+              [
+                "cambridge-343medford-overview",
+                52
+              ]
+            ],
+            "expected_first": [
+              [
+                "cambridge-343medford-overview",
+                52
+              ]
+            ]
+          },
+          {
+            "id": "Q7",
+            "description": "Rule with most rejections ((rule_id, count)).",
+            "correct": true,
+            "sql_count": 1,
+            "expected_count": 1,
+            "sql_first": [
+              [
+                "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+                1
+              ]
+            ],
+            "expected_first": [
+              [
+                "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+                1
+              ]
+            ]
+          },
+          {
+            "id": "Q8",
+            "description": "Orphaned issues (no linked entity_id).",
+            "correct": true,
+            "sql_count": 125,
+            "expected_count": 125,
+            "sql_first": [
+              [
+                "ISS-02ec70fd",
+                24
+              ],
+              [
+                "ISS-03adbcd4",
+                2
+              ],
+              [
+                "ISS-052d527d",
+                23
+              ]
+            ],
+            "expected_first": [
+              [
+                "ISS-02ec70fd",
+                24
+              ],
+              [
+                "ISS-03adbcd4",
+                2
+              ],
+              [
+                "ISS-052d527d",
+                23
+              ]
+            ]
+          },
+          {
+            "id": "Q9",
+            "description": "Distinct clauses per rule by standard prefix.",
+            "correct": true,
+            "sql_count": 0,
+            "expected_count": 0,
+            "sql_first": [],
+            "expected_first": []
+          },
+          {
+            "id": "Q10",
+            "description": "Issue density per drawing (source_path, issues/page).",
+            "correct": true,
+            "sql_count": 32,
+            "expected_count": 32,
+            "sql_first": [
+              [
+                "/Users/Zhuanz/archreview-kg/samples/sample_clean.pdf",
+                32.0
+              ],
+              [
+                "<unknown-source-for:cambridge_207lex_basement_run>",
+                0.0
+              ],
+              [
+                "<unknown-source-for:cambridge_207lex_ground_run>",
+                1.0
+              ]
+            ],
+            "expected_first": [
+              [
+                "/Users/Zhuanz/archreview-kg/samples/sample_clean.pdf",
+                32.0
+              ],
+              [
+                "<unknown-source-for:cambridge_207lex_basement_run>",
+                0.0
+              ],
+              [
+                "<unknown-source-for:cambridge_207lex_ground_run>",
+                1.0
+              ]
+            ]
+          }
+        ]
+      },
+      "notes": []
+    },
+    {
+      "dimension": "web_ui_e2e",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "flows": [
+          {
+            "name": "index_html",
+            "p95_ms": 1.038,
+            "passed": true,
+            "status_code": 200
+          },
+          {
+            "name": "project_list",
+            "p95_ms": 1.609,
+            "passed": true,
+            "status_code": 200
+          },
+          {
+            "name": "project_drawings",
+            "p95_ms": 1.325,
+            "passed": true,
+            "status_code": 200
+          },
+          {
+            "name": "heatmap",
+            "p95_ms": 1.762,
+            "passed": true,
+            "status_code": 200
+          },
+          {
+            "name": "issue_detail",
+            "p95_ms": 1.564,
+            "passed": true,
+            "status_code": 200
+          },
+          {
+            "name": "annotate_feedback",
+            "p95_ms": 2.271,
+            "passed": true,
+            "status_code": 200
+          }
+        ]
+      },
+      "notes": []
+    },
+    {
+      "dimension": "recognition_quality",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "status": "ok",
+        "rules": [
+          {
+            "rule_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+            "tp": 1194,
+            "fp": 146,
+            "detected": 1340,
+            "expected": 42,
+            "precision": 0.891,
+            "recall": 1.0,
+            "sample_size": 1340
+          },
+          {
+            "rule_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+            "tp": 151,
+            "fp": 29,
+            "detected": 180,
+            "expected": 1,
+            "precision": 0.8389,
+            "recall": 1.0,
+            "sample_size": 180
+          },
+          {
+            "rule_id": "RC-BALCONY-RAILING-HEIGHT-RESI",
+            "tp": 15,
+            "fp": 5,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.75,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-BALCONY-VERTICAL-SPACING-RESI",
+            "tp": 16,
+            "fp": 4,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.8,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-BASEMENT-MEZZANINE-NETHEIGHT-2.0",
+            "tp": 14,
+            "fp": 6,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.7,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-BEDROOM-AREA",
+            "tp": 54,
+            "fp": 6,
+            "detected": 60,
+            "expected": null,
+            "precision": 0.9,
+            "recall": null,
+            "sample_size": 60
+          },
+          {
+            "rule_id": "RC-CHILD-RAILING-VERTICAL-SPACING-0.11",
+            "tp": 15,
+            "fp": 5,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.75,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-CORRIDOR-WIDTH",
+            "tp": 157,
+            "fp": 23,
+            "detected": 235,
+            "expected": 5,
+            "precision": 0.8722,
+            "recall": 1.0,
+            "sample_size": 180
+          },
+          {
+            "rule_id": "RC-DOOR-TO-EXIT-40M-LOW-MULTI-AB",
+            "tp": 17,
+            "fp": 3,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.85,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-DOOR-WIDTH",
+            "tp": 640,
+            "fp": 120,
+            "detected": 760,
+            "expected": 20,
+            "precision": 0.8421,
+            "recall": 1.0,
+            "sample_size": 760
+          },
+          {
+            "rule_id": "RC-ELEVATOR-BEDROOM-ADJACENCY",
+            "tp": 11,
+            "fp": 9,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.55,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-ELEVATOR-REQUIRED",
+            "tp": 16,
+            "fp": 4,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.8,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-EXIT-SEPARATION-MIN-5M-RESI",
+            "tp": 14,
+            "fp": 6,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.7,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-LIVING-BEDROOM-NETHEIGHT-2.4",
+            "tp": 18,
+            "fp": 2,
+            "detected": 20,
+            "expected": 5,
+            "precision": 0.9,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-NO-LIVING-IN-BASEMENT",
+            "tp": 17,
+            "fp": 3,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.85,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-PITCHED-ROOF-MAJORITY-NETHEIGHT-2.1",
+            "tp": 17,
+            "fp": 3,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.85,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-PUBLIC-ENTRANCE-STEP-PROTECTION-RESI",
+            "tp": 9,
+            "fp": 11,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.45,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-RAILING-HEIGHT-6.7.3",
+            "tp": 18,
+            "fp": 2,
+            "detected": 20,
+            "expected": 5,
+            "precision": 0.9,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-STAIR-FLIGHT-WIDTH-1.10",
+            "tp": 15,
+            "fp": 5,
+            "detected": 20,
+            "expected": 9,
+            "precision": 0.75,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-STAIR-HANDRAIL-0.90",
+            "tp": 18,
+            "fp": 2,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.9,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-STAIR-LANDING-WIDTH-1.2",
+            "tp": 17,
+            "fp": 3,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.85,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-STAIR-RISER-HEIGHT-0.175",
+            "tp": 13,
+            "fp": 7,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.65,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-STAIR-TREAD-WIDTH-0.26",
+            "tp": 15,
+            "fp": 5,
+            "detected": 20,
+            "expected": 5,
+            "precision": 0.75,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-STAIR-WELL-WIDTH-0.11",
+            "tp": 16,
+            "fp": 4,
+            "detected": 20,
+            "expected": 1,
+            "precision": 0.8,
+            "recall": 1.0,
+            "sample_size": 20
+          },
+          {
+            "rule_id": "RC-WINDOW-SILL-PROTECTION-RESI",
+            "tp": 13,
+            "fp": 7,
+            "detected": 20,
+            "expected": 9,
+            "precision": 0.65,
+            "recall": 1.0,
+            "sample_size": 20
+          }
+        ],
+        "weighted_precision": 0.8562,
+        "weighted_recall": 1.0,
+        "rules_with_precision": 25,
+        "rules_with_recall": 24
+      },
+      "notes": []
+    },
+    {
+      "dimension": "real_pdf_breadth",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "real_active_count": 17,
+        "case_ids": [
+          "medfield-a1-first-floor",
+          "medfield-a2-second-floor",
+          "medfield-full-plan-set-multi-plan-intake",
+          "medfield-a0-basement",
+          "medfield-a3-third-floor",
+          "cambridge-207lex-ground",
+          "cambridge-2garden-existing-firstfloor",
+          "cambridge-2garden-existing-secondfloor",
+          "cambridge-2garden-firstfloor",
+          "cambridge-343medford-firstfloor",
+          "cambridge-343medford-overview",
+          "cambridge-343medford-secondfloor",
+          "cambridge-343medford-thirdfloor",
+          "cambridge-sp336-ground",
+          "cambridge-sp336-level2-3",
+          "cambridge-sp336-level4",
+          "cambridge-sp336-level5"
+        ]
+      },
+      "notes": []
+    },
+    {
+      "dimension": "calibration",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "status": "ok",
+        "db_path": "/Users/Zhuanz/archreview-kg/.archkg/kg.db",
+        "bins": [
+          {
+            "lower": 0.0,
+            "upper": 0.2,
+            "midpoint": 0.1,
+            "sample_size": 0,
+            "confirmed": 0,
+            "rejected": 0,
+            "observed_precision": 0.0,
+            "abs_deviation": 0.1
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.4,
+            "midpoint": 0.3,
+            "sample_size": 0,
+            "confirmed": 0,
+            "rejected": 0,
+            "observed_precision": 0.0,
+            "abs_deviation": 0.3
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.6,
+            "midpoint": 0.5,
+            "sample_size": 40,
+            "confirmed": 20,
+            "rejected": 20,
+            "observed_precision": 0.5,
+            "abs_deviation": 0.0
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.8,
+            "midpoint": 0.7,
+            "sample_size": 220,
+            "confirmed": 162,
+            "rejected": 58,
+            "observed_precision": 0.7364,
+            "abs_deviation": 0.0364
+          },
+          {
+            "lower": 0.8,
+            "upper": 1.001,
+            "midpoint": 0.9,
+            "sample_size": 2660,
+            "confirmed": 2318,
+            "rejected": 342,
+            "observed_precision": 0.8714,
+            "abs_deviation": 0.0286
+          }
+        ],
+        "min_samples_per_bin": 5,
+        "mean_abs_deviation": 0.0216,
+        "bins_used_for_mad": 3
+      },
+      "notes": []
+    },
+    {
+      "dimension": "feedback_loop",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "monotonic": true,
+        "delta": -0.166667,
+        "expected_delta": -0.166667,
+        "final_posterior_mean": 0.333333,
+        "final_confirmed": 1,
+        "final_rejected": 3,
+        "means_after_each_reject": [
+          0.333333,
+          0.25,
+          0.2
+        ]
+      },
+      "notes": []
+    },
+    {
+      "dimension": "documentation_honesty",
+      "score": 10.0,
+      "measurable": true,
+      "detail": {
+        "total_rule_cards": 32,
+        "real_active_count": 17,
+        "overclaims": []
+      },
+      "notes": [
+        "no overclaims detected"
+      ]
+    }
+  ],
+  "scoring_meta": {
+    "rule": "overall = min(sum, weakest_dimension * 10); 99+ requires all >= 9 AND >= 7 dims == 10",
+    "dimensions_scored": 10,
+    "skip_slow_code_quality": false
+  }
+}

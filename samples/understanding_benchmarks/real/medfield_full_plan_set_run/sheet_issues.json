@@ -1,0 +1,521 @@
+{
+  "schema_version": "sheet_issues.v1",
+  "source_pdf": "tmp/p28-real/medfield-floorplans-elevations.pdf",
+  "sheet_count": 6,
+  "issue_count": 157,
+  "sheets": [
+    {
+      "page_index": 0,
+      "sheet_type": null,
+      "issue_count": 12,
+      "issues": [
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        }
+      ]
+    },
+    {
+      "page_index": 2,
+      "sheet_type": null,
+      "issue_count": 20,
+      "issues": [
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        }
+      ]
+    },
+    {
+      "page_index": 3,
+      "sheet_type": null,
+      "issue_count": 56,
+      "issues": [
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        }
+      ]
+    },
+    {
+      "page_index": 4,
+      "sheet_type": null,
+      "issue_count": 37,
+      "issues": [
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        }
+      ]
+    },
+    {
+      "page_index": 5,
+      "sheet_type": null,
+      "issue_count": 20,
+      "issues": [
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        }
+      ]
+    },
+    {
+      "page_index": 8,
+      "sheet_type": null,
+      "issue_count": 12,
+      "issues": [
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-CORRIDOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-DOOR-WIDTH"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        },
+        {
+          "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80"
+        }
+      ]
+    }
+  ]
+}

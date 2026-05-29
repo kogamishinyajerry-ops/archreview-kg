@@ -1,0 +1,29 @@
+{
+  "schema_version": "real_drawing_fixture_provenance.v1",
+  "case_id": "hopkins-mn-foundation",
+  "fixture_kind": "real_public_pdf",
+  "source_url": "https://www.hopkinsmn.com/DocumentCenter/View/420/Building-Plans---A-Guide-to-Requirements-and-Sample-Plans-PDF",
+  "retrieved_at": "2026-05-16",
+  "source_access_note": "M5.Z-W5 cross-state sourcing. Anonymous HTTP GET from hopkinsmn.com on 2026-05-16. The 8-page City of Hopkins building plans guide ('A Guide to Requirements and Sample Plans') publishes typical residential drawings on pages 3-7. Page 5 (Typical Foundation Plan for Dwelling Addition) extracted as a standalone single-page PDF.",
+  "selected_sheet": {
+    "pdf_page_number_1_based": 5,
+    "sheet_label": "Typical Foundation Plan for Dwelling Addition",
+    "project_title": "Hopkins MN City Building Plans Guide — Sample",
+    "jurisdiction": "Hopkins, MN, USA"
+  },
+  "committed_artifacts": {
+    "current_recognition_payload": "samples/understanding_benchmarks/real/hopkins_mn_foundation_run/drawing_understanding.json",
+    "manual_expected_inventory": "samples/understanding_benchmarks/real/hopkins_mn_foundation_expected.json"
+  },
+  "current_recognizer_observation": {
+    "run_parameters": {"points_per_meter": 50.0, "min_room_area_m2": 3.0},
+    "rooms": 3,
+    "doors": 0,
+    "corridors": 1,
+    "stairs": 0,
+    "dimensions": 11,
+    "interpretation": "Active recognition. Foundation plan for a 13'×16'6'' dwelling addition; recognizer parses 3 spaces + 1 corridor + 11 dimensions. Vector PDF content, scaled at 1/4\"=1'. First non-MA active case in the suite."
+  },
+  "jurisdiction_diversity_signal": "Second non-MA fixture (after Port Angeles WA known_gap) and FIRST non-MA ACTIVE fixture. Hopkins is in Hennepin County, Minnesota — different US state, different building permit jurisdiction. Acknowledges the active-set MA-only bias has now been partially broken.",
+  "fixture_status_at_landing": "active"
+}

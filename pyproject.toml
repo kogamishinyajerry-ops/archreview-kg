@@ -15,6 +15,7 @@ dependencies = [
     "numpy>=1.26",
     "Flask>=3.0",
     "opencv-python-headless>=4.10",
+    "trimesh>=4.0",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +51,7 @@ ignore = ["E501"]
 "archkg/knowledge/search.py" = ["RUF002", "RUF003"]       # docstring deliberately includes full-width punctuation as examples
 "archkg/knowledge/fidelity.py" = ["RUF001", "RUF002", "RUF003"]   # citation regex + docstrings deliberately use full-width / en-dash variants
 "archkg/rules/applicability.py" = ["RUF001"]              # user-facing zh-CN messages use full-width parens by convention
+"archkg/kg/web.py" = ["RUF001"]                            # M6.W4 error-page CJK message uses full-width comma intentionally
 "tests/*.py" = ["B008", "RUF001", "RUF002", "RUF003"]     # CJK punctuation + full-width unicode test fixtures
 
 [tool.mypy]
@@ -61,3 +63,10 @@ plugins = ["pydantic.mypy"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+filterwarnings = [
+    # SWIG transitive native deps emit these on every importlib._bootstrap pass on
+    # Python 3.11+. Not project code; not actionable. See M5.Z-W4 honesty note.
+    "ignore:builtin type SwigPyPacked has no __module__ attribute:DeprecationWarning",
+    "ignore:builtin type SwigPyObject has no __module__ attribute:DeprecationWarning",
+    "ignore:builtin type swigvarlink has no __module__ attribute:DeprecationWarning",
+]

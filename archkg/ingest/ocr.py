@@ -5,8 +5,9 @@ default — install with `pip install -e '.[ocr]'`. When unavailable, this modul
 returns an empty list rather than crashing the ingest pipeline.
 
 ASSUMPTION: for the synthetic sample PDF all text is vector, so the MVP
-end-to-end can run without PaddleOCR. OCR is wired up so real scanned drawings
-can be added later without touching the rest of the pipeline.
+end-to-end can run without PaddleOCR. Raster ingest can opt into this module
+with ``keep_only_dimensions=False`` when room labels are needed; callers that
+only want dimension hints can keep the default filter.
 """
 
 from __future__ import annotations

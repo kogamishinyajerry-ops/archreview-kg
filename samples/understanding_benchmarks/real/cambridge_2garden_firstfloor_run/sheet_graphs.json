@@ -1,0 +1,1138 @@
+{
+  "schema_version": "sheet_graphs.v1",
+  "source_pdf": "tmp/p86-multisrc/pages/cambridge-2garden-page17-firstfloor.pdf",
+  "graph_count": 1,
+  "confidence_floor": 0.5,
+  "graphs": [
+    {
+      "page_index": 0,
+      "sheet_type": "plan",
+      "classification_confidence": 0.91,
+      "component_counts": {
+        "rooms": 5,
+        "doors": 1,
+        "corridors": 1,
+        "stairs": 0,
+        "dimensions": 31
+      },
+      "graph": {
+        "source_pdf": "tmp/p86-multisrc/pages/cambridge-2garden-page17-firstfloor.pdf",
+        "points_per_meter": 50.0,
+        "page_index": 0,
+        "page_width_pt": 1224.0,
+        "page_height_pt": 792.0,
+        "rooms": [
+          {
+            "id": "room-a755fd5e",
+            "page_index": 0,
+            "bbox": [
+              170.5,
+              480.0,
+              401.0,
+              573.0
+            ],
+            "confidence": 0.85,
+            "uncertain": false,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                330.5,
+                569.5
+              ],
+              [
+                361.5,
+                569.5
+              ],
+              [
+                365.0,
+                569.5
+              ],
+              [
+                401.0,
+                569.5
+              ],
+              [
+                401.0,
+                480.0
+              ],
+              [
+                365.0,
+                480.0
+              ],
+              [
+                365.0,
+                518.0
+              ],
+              [
+                361.5,
+                518.0
+              ],
+              [
+                347.0,
+                518.0
+              ],
+              [
+                347.0,
+                514.5
+              ],
+              [
+                347.0,
+                480.0
+              ],
+              [
+                320.5,
+                480.0
+              ],
+              [
+                320.5,
+                495.0
+              ],
+              [
+                320.5,
+                502.0
+              ],
+              [
+                320.5,
+                514.5
+              ],
+              [
+                320.5,
+                518.0
+              ],
+              [
+                309.5,
+                518.0
+              ],
+              [
+                309.5,
+                514.5
+              ],
+              [
+                309.5,
+                502.0
+              ],
+              [
+                309.5,
+                495.0
+              ],
+              [
+                309.5,
+                480.0
+              ],
+              [
+                284.5,
+                480.0
+              ],
+              [
+                284.5,
+                514.5
+              ],
+              [
+                288.0,
+                514.5
+              ],
+              [
+                288.0,
+                518.0
+              ],
+              [
+                270.0,
+                518.0
+              ],
+              [
+                266.5,
+                518.0
+              ],
+              [
+                266.5,
+                480.0
+              ],
+              [
+                170.5,
+                480.0
+              ],
+              [
+                170.5,
+                569.5
+              ],
+              [
+                247.0,
+                569.5
+              ],
+              [
+                250.5,
+                569.5
+              ],
+              [
+                275.0,
+                569.5
+              ],
+              [
+                278.5,
+                569.5
+              ],
+              [
+                290.5,
+                569.5
+              ],
+              [
+                290.5,
+                573.0
+              ],
+              [
+                312.0,
+                573.0
+              ],
+              [
+                312.0,
+                569.5
+              ],
+              [
+                314.5,
+                569.5
+              ],
+              [
+                318.0,
+                569.5
+              ],
+              [
+                325.5,
+                569.5
+              ],
+              [
+                330.5,
+                569.5
+              ]
+            ],
+            "area_m2": 7.5025,
+            "label": "dining"
+          },
+          {
+            "id": "room-c52d2642",
+            "page_index": 0,
+            "bbox": [
+              162.0,
+              677.8869731800767,
+              423.0,
+              785.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                423.0,
+                785.0
+              ],
+              [
+                423.0,
+                739.5
+              ],
+              [
+                414.0,
+                739.5
+              ],
+              [
+                412.5,
+                741.0
+              ],
+              [
+                412.0,
+                741.5
+              ],
+              [
+                410.5,
+                743.0
+              ],
+              [
+                410.0,
+                743.5
+              ],
+              [
+                408.5,
+                745.0
+              ],
+              [
+                408.0,
+                745.5
+              ],
+              [
+                406.5,
+                747.0
+              ],
+              [
+                406.0,
+                747.5
+              ],
+              [
+                404.5,
+                749.0
+              ],
+              [
+                404.0,
+                749.5
+              ],
+              [
+                403.0,
+                750.5
+              ],
+              [
+                402.5,
+                751.0
+              ],
+              [
+                402.0,
+                751.5
+              ],
+              [
+                400.5,
+                753.0
+              ],
+              [
+                400.5,
+                743.5
+              ],
+              [
+                400.5,
+                707.5
+              ],
+              [
+                400.5,
+                699.0
+              ],
+              [
+                400.5,
+                697.5
+              ],
+              [
+                401.0,
+                698.0090909090909
+              ],
+              [
+                401.0,
+                677.8869731800767
+              ],
+              [
+                162.0,
+                769.0
+              ],
+              [
+                423.0,
+                785.0
+              ]
+            ],
+            "area_m2": 5.405203591083244,
+            "label": null
+          },
+          {
+            "id": "room-47890898",
+            "page_index": 0,
+            "bbox": [
+              162.0,
+              669.5,
+              401.0,
+              769.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                162.0,
+                769.0
+              ],
+              [
+                401.0,
+                677.8869731800767
+              ],
+              [
+                401.0,
+                669.5
+              ],
+              [
+                400.5,
+                669.5
+              ],
+              [
+                378.5,
+                669.5
+              ],
+              [
+                365.0,
+                669.5
+              ],
+              [
+                361.5,
+                669.5
+              ],
+              [
+                333.0,
+                669.5
+              ],
+              [
+                250.5,
+                669.5
+              ],
+              [
+                247.0,
+                669.5
+              ],
+              [
+                220.0,
+                669.5
+              ],
+              [
+                209.0,
+                669.5
+              ],
+              [
+                187.5,
+                669.5
+              ],
+              [
+                170.5,
+                669.5
+              ],
+              [
+                162.0,
+                669.5
+              ],
+              [
+                162.0,
+                769.0
+              ]
+            ],
+            "area_m2": 5.156997318007664,
+            "label": null
+          },
+          {
+            "id": "room-c89ea7fa",
+            "page_index": 0,
+            "bbox": [
+              567.0,
+              639.0,
+              673.0,
+              800.5
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                673.0,
+                800.5
+              ],
+              [
+                673.0,
+                639.0
+              ],
+              [
+                567.0,
+                794.0
+              ],
+              [
+                572.9254658385094,
+                794.3633540372671
+              ],
+              [
+                583.3076923076923,
+                795.0
+              ],
+              [
+                626.1368421052632,
+                797.6263157894737
+              ],
+              [
+                636.1789473684211,
+                798.2421052631579
+              ],
+              [
+                663.1242236024844,
+                799.8944099378882
+              ],
+              [
+                673.0,
+                800.5
+              ]
+            ],
+            "area_m2": 3.423799999999999,
+            "label": null
+          },
+          {
+            "id": "room-7772e9dd",
+            "page_index": 0,
+            "bbox": [
+              567.0,
+              639.0,
+              673.0,
+              794.0
+            ],
+            "confidence": 0.6,
+            "uncertain": true,
+            "properties": {},
+            "type": "Room",
+            "polygon": [
+              [
+                567.0,
+                794.0
+              ],
+              [
+                673.0,
+                639.0
+              ],
+              [
+                567.0,
+                639.0
+              ],
+              [
+                567.0,
+                651.0
+              ],
+              [
+                567.0,
+                794.0
+              ]
+            ],
+            "area_m2": 3.286,
+            "label": null
+          }
+        ],
+        "doors": [
+          {
+            "id": "door-ab7682d3",
+            "page_index": 0,
+            "bbox": [
+              400.5,
+              699.0,
+              400.5,
+              743.5
+            ],
+            "confidence": 0.5,
+            "uncertain": true,
+            "properties": {},
+            "type": "Door",
+            "width_m": 9.0,
+            "connects": [
+              null,
+              "room-c52d2642"
+            ]
+          }
+        ],
+        "corridors": [
+          {
+            "id": "corridor-81c28c88",
+            "page_index": 0,
+            "bbox": [
+              673.0,
+              424.5,
+              711.0,
+              803.0
+            ],
+            "confidence": 0.8,
+            "uncertain": false,
+            "properties": {},
+            "type": "Corridor",
+            "polygon": [
+              [
+                711.0,
+                425.5
+              ],
+              [
+                711.0,
+                424.5
+              ],
+              [
+                705.1801801801802,
+                424.5
+              ],
+              [
+                700.472972972973,
+                479.5
+              ],
+              [
+                705.0,
+                479.5
+              ],
+              [
+                700.0408218194868,
+                484.5493450565225
+              ],
+              [
+                673.0,
+                800.5
+              ],
+              [
+                711.0,
+                803.0
+              ],
+              [
+                711.0,
+                771.0
+              ],
+              [
+                711.0,
+                766.5
+              ],
+              [
+                711.0,
+                762.0
+              ],
+              [
+                711.0,
+                757.5
+              ],
+              [
+                711.0,
+                753.0
+              ],
+              [
+                711.0,
+                748.5
+              ],
+              [
+                711.0,
+                425.5
+              ]
+            ],
+            "min_width_m": 0.76
+          }
+        ],
+        "dimensions": [
+          {
+            "id": "dim-63550640",
+            "page_index": 0,
+            "bbox": [
+              55.84341049194336,
+              888.9200439453125,
+              64.22549438476562,
+              931.1925048828125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "0'          5'",
+            "value_m": 0.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-1778804a",
+            "page_index": 0,
+            "bbox": [
+              55.84341049194336,
+              937.280029296875,
+              64.22549438476562,
+              969.1737060546875
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "10'",
+            "value_m": 10.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-0dc03342",
+            "page_index": 0,
+            "bbox": [
+              55.84341049194336,
+              1009.280029296875,
+              64.22549438476562,
+              1038.843505859375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "20'",
+            "value_m": 20.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-2159e56b",
+            "page_index": 0,
+            "bbox": [
+              629.6799926757812,
+              413.8813171386719,
+              649.3788452148438,
+              423.3111572265625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "20'-1\"",
+            "value_m": 20.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-62296e3d",
+            "page_index": 0,
+            "bbox": [
+              436.10809326171875,
+              418.6400146484375,
+              446.16656494140625,
+              451.17926025390625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "ROOM 1",
+            "value_m": 1.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-fc9708f6",
+            "page_index": 0,
+            "bbox": [
+              44.057682037353516,
+              458.9200439453125,
+              62.917362213134766,
+              469.4060363769531
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "1",
+            "value_m": 1.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-62fb7d44",
+            "page_index": 0,
+            "bbox": [
+              45.04884338378906,
+              481.4000244140625,
+              54.47868347167969,
+              560.9216918945312
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "SCALE: 1\" = 10'-0\"",
+            "value_m": 1.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-3c479036",
+            "page_index": 0,
+            "bbox": [
+              526.7080688476562,
+              438.67999267578125,
+              536.7665405273438,
+              471.21923828125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "ROOM 1",
+            "value_m": 1.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-d21c3e06",
+            "page_index": 0,
+            "bbox": [
+              516.243408203125,
+              433.1600341796875,
+              524.62548828125,
+              475.4388732910156
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "15'-8\" x 11'-4\"",
+            "value_m": 15.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-b21fddbe",
+            "page_index": 0,
+            "bbox": [
+              526.7080688476562,
+              619.760009765625,
+              536.7665405273438,
+              652.2991943359375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "ROOM 2",
+            "value_m": 2.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-5bd85dec",
+            "page_index": 0,
+            "bbox": [
+              516.243408203125,
+              612.8800048828125,
+              524.62548828125,
+              658.9812622070312
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "13'-11\" x 13'-4\"",
+            "value_m": 13.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-1327c5ed",
+            "page_index": 0,
+            "bbox": [
+              374.5881042480469,
+              591.3599853515625,
+              384.6465759277344,
+              637.6491088867188
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "TO ROOM 2",
+            "value_m": 2.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-d352c28d",
+            "page_index": 0,
+            "bbox": [
+              402.5050964355469,
+              721.9200439453125,
+              415.0782165527344,
+              728.9107055664062
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "1",
+            "value_m": 1.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-90611d05",
+            "page_index": 0,
+            "bbox": [
+              386.7851257324219,
+              717.719970703125,
+              399.3582458496094,
+              733.0969848632812
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "A9",
+            "value_m": 9.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-f2d6ebbe",
+            "page_index": 0,
+            "bbox": [
+              499.8251037597656,
+              754.3200073242188,
+              512.3982543945312,
+              761.3106689453125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "3",
+            "value_m": 3.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-5f5f38e3",
+            "page_index": 0,
+            "bbox": [
+              484.1451110839844,
+              750.1199951171875,
+              496.7182312011719,
+              765.4969482421875
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "A9",
+            "value_m": 9.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-d2cbd23e",
+            "page_index": 0,
+            "bbox": [
+              443.5851135253906,
+              748.3200073242188,
+              456.1582336425781,
+              755.3106689453125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2",
+            "value_m": 2.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-d2578ad5",
+            "page_index": 0,
+            "bbox": [
+              427.8651123046875,
+              744.1199951171875,
+              440.438232421875,
+              759.4969482421875
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "A9",
+            "value_m": 9.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-06eb760b",
+            "page_index": 0,
+            "bbox": [
+              679.2650756835938,
+              476.4000244140625,
+              691.8381958007812,
+              483.39068603515625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "4",
+            "value_m": 4.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-be802288",
+            "page_index": 0,
+            "bbox": [
+              663.5451049804688,
+              472.239990234375,
+              676.1182250976562,
+              487.616943359375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "A9",
+            "value_m": 9.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-9b42ea36",
+            "page_index": 0,
+            "bbox": [
+              639.9141235351562,
+              1126.0,
+              644.9429931640625,
+              1170.370849609375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "259 ELM STREET, SUITE 301",
+            "value_m": 0.259,
+            "unit": "m"
+          },
+          {
+            "id": "dim-6ec2b710",
+            "page_index": 0,
+            "bbox": [
+              632.3141479492188,
+              1130.719970703125,
+              637.343017578125,
+              1169.273193359375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "SOMERVILLE, MA 02144",
+            "value_m": 2.144,
+            "unit": "m"
+          },
+          {
+            "id": "dim-56320b30",
+            "page_index": 0,
+            "bbox": [
+              624.2192993164062,
+              1143.0400390625,
+              628.2424926757812,
+              1160.5711669921875
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "PH 617-354-3989",
+            "value_m": 0.617,
+            "unit": "m"
+          },
+          {
+            "id": "dim-aee6262d",
+            "page_index": 0,
+            "bbox": [
+              388.82818603515625,
+              1121.239990234375,
+              398.88623046875,
+              1176.2373046875
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2 GARDEN ST",
+            "value_m": 2.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-68653142",
+            "page_index": 0,
+            "bbox": [
+              377.6827087402344,
+              1121.5999755859375,
+              383.5665588378906,
+              1155.1143798828125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "2 GARDEN ST,",
+            "value_m": 2.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-7a9cb6d2",
+            "page_index": 0,
+            "bbox": [
+              370.6026916503906,
+              1121.47998046875,
+              376.4865417480469,
+              1175.3759765625
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "CAMBRIDGE, MA 02138",
+            "value_m": 2.138,
+            "unit": "m"
+          },
+          {
+            "id": "dim-de5abc51",
+            "page_index": 0,
+            "bbox": [
+              311.6427001953125,
+              1121.3599853515625,
+              317.52655029296875,
+              1173.92626953125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "667 SOMERVILLE AVE.",
+            "value_m": 0.667,
+            "unit": "m"
+          },
+          {
+            "id": "dim-1f73187a",
+            "page_index": 0,
+            "bbox": [
+              304.522705078125,
+              1121.280029296875,
+              310.40655517578125,
+              1176.7939453125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "SOMERVILLE, MA 02143",
+            "value_m": 2.143,
+            "unit": "m"
+          },
+          {
+            "id": "dim-f68fe343",
+            "page_index": 0,
+            "bbox": [
+              110.24150848388672,
+              1163.43994140625,
+              115.77342224121094,
+              1189.915771484375
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "13 JUN 2023",
+            "value_m": 13.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-8c8396de",
+            "page_index": 0,
+            "bbox": [
+              29.708354949951172,
+              1133.3599853515625,
+              73.71235656738281,
+              1189.509033203125
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "A-1",
+            "value_m": 1.0,
+            "unit": "m"
+          },
+          {
+            "id": "dim-073b4b92",
+            "page_index": 0,
+            "bbox": [
+              21.600000381469727,
+              29.576751708984375,
+              211.3955078125,
+              34.60591125488281
+            ],
+            "confidence": 1.0,
+            "uncertain": false,
+            "properties": {},
+            "type": "Dimension",
+            "text": "Z:\\DCADDWGS\\Garden-2\\02 Schematic Design\\Garden 2 - Floor Plans.dwg, A1, 6/13/2023 3:13:42 PM",
+            "value_m": 2.0,
+            "unit": "m"
+          }
+        ],
+        "stairs": []
+      }
+    }
+  ],
+  "skipped_pages": []
+}

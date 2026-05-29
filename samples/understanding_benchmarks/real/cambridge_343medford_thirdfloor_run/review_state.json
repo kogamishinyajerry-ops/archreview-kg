@@ -1,0 +1,241 @@
+{
+  "schema_version": "issue_review_state.v1",
+  "run_id": "cambridge-343medford-page09-thirdfloor",
+  "generated_at": "2026-05-16T08:16:53Z",
+  "summary": {
+    "candidate": 21
+  },
+  "items": [
+    {
+      "issue_id": "ISS-3e069773",
+      "rule_card_id": "RC-CORRIDOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-2cb9de4c",
+      "rule_card_id": "RC-DOOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-5a04b5aa",
+      "rule_card_id": "RC-DOOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-8c2ccceb",
+      "rule_card_id": "RC-DOOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-6e4f5ca6",
+      "rule_card_id": "RC-DOOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-3b9a1a3e",
+      "rule_card_id": "RC-DOOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-cefca7c5",
+      "rule_card_id": "RC-DOOR-WIDTH",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-c03875d1",
+      "rule_card_id": "RC-ACCESSIBLE-INDOOR-CORRIDOR-WIDTH-1.20",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-e5247ef1",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-40d8ebd1",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-32690c1a",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-fcc41789",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-ff97d1ca",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-cae6f4aa",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-da303943",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-da020c64",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-bae3d9c9",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-084df9fa",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-31df22cf",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-ea57852b",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    },
+    {
+      "issue_id": "ISS-061b701a",
+      "rule_card_id": "RC-ACCESSIBLE-DOOR-WIDTH-0.80",
+      "status": "candidate",
+      "reviewer": null,
+      "note": null,
+      "source_run_id": "cambridge-343medford-page09-thirdfloor",
+      "superseded_by_run_id": null,
+      "created_at": "2026-05-16T08:16:53Z",
+      "updated_at": "2026-05-16T08:16:53Z"
+    }
+  ]
+}

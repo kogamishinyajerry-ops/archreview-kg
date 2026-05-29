@@ -1,0 +1,64 @@
+{
+  "schema_version": "real_multi_plan_intake_provenance.v1",
+  "case_id": "medfield-full-plan-set-multi-plan-intake",
+  "fixture_kind": "real_public_multi_plan_pdf",
+  "status": "active",
+  "source_url": "https://www.town.medfield.net/DocumentCenter/View/1428/floorplans-and-elevations-04-10-18-PDF",
+  "source_access_note": "Same public Medfield / Hillside Village PDF used for the active A-1 single-sheet case. P40-02 tracked the full 9-page plan/elevation set as a multi-plan intake gate; P40-03 promoted it to known_gap after committing a reduced full-run artifact snapshot; P44 promoted it to active recognition benchmark after drawing_understanding began merging sheet_graphs.json evidence.",
+  "source_pdf": {
+    "committed": false,
+    "previous_local_path_used_for_single_sheet_annotation": "tmp/p28-real/medfield-floorplans-elevations.pdf",
+    "known_page_count_from_prior_retrieval": 9,
+    "file_size_bytes_at_prior_retrieval": 1297119
+  },
+  "intended_scope": {
+    "goal": "Capture a real multi-sheet plan/elevation set for expected-inventory and multi-plan artifact benchmarking.",
+    "selected_sheet_strategy": "Review all pages first, then use selected plan sheets with human-reviewed expected inventory for drawing_understanding, sheet_graphs, and sheet_issues checks.",
+    "non_goal": "This active recognition row does not claim final multi-plan compliance aggregation."
+  },
+  "run_snapshot": {
+    "run_command": ".venv/bin/archkg review tmp/p28-real/medfield-floorplans-elevations.pdf -o tmp/p40/medfield_full_plan_set_run --min-room-area-m2 3.0",
+    "committed_artifacts": [
+      "samples/understanding_benchmarks/real/medfield_full_plan_set_run/drawing_understanding.json",
+      "samples/understanding_benchmarks/real/medfield_full_plan_set_run/sheet_classification.json",
+      "samples/understanding_benchmarks/real/medfield_full_plan_set_run/sheet_routing.json",
+      "samples/understanding_benchmarks/real/medfield_full_plan_set_run/sheet_graphs.json",
+      "samples/understanding_benchmarks/real/medfield_full_plan_set_run/sheet_issues.json"
+    ],
+    "excluded_large_artifacts": [
+      "primitives.json",
+      "annotated.pdf",
+      "entity_overlay.png",
+      "sheet_region_candidates_overlay.png"
+    ],
+    "current_observation": {
+      "primary_rooms_before_sheet_graph_merge": 10,
+      "primary_doors_before_sheet_graph_merge": 0,
+      "full_set_rooms_after_sheet_graph_merge": 151,
+      "full_set_doors_after_sheet_graph_merge": 224,
+      "full_set_corridors_after_sheet_graph_merge": 21,
+      "full_set_dimensions_after_sheet_graph_merge": 720,
+      "primary_stairs_from_text_hints": 10,
+      "sheet_graph_count": 6,
+      "sheet_issue_count": 157,
+      "status": "P44 merge exposes has_openings=true from sheet_graphs.json count evidence."
+    }
+  },
+  "required_artifacts_before_promotion": [
+    "source_pdf_or_private_pointer",
+    "full_review_run_dir",
+    "drawing_understanding.json",
+    "sheet_classification.json",
+    "sheet_routing.json",
+    "sheet_graphs.json",
+    "sheet_issues.json",
+    "human_expected_inventory.json"
+  ],
+  "promotion_rule": "Promoted active in P44 after the full-set benchmark passed with sheet_graphs.json count evidence merged into drawing_understanding. Per-sheet candidate issues remain preview-only.",
+  "expected_inventory_authoring_notes": [
+    "Annotate sheet type and page index for each selected plan sheet.",
+    "Record coarse room/opening/corridor/stair/dimension counts with evidence notes.",
+    "Record required sheet_graphs page indexes and per-sheet component count ranges.",
+    "Record sheet_issues preview expectations separately from primary issues.json because P39 keeps per-sheet issues as candidate preview only."
+  ]
+}

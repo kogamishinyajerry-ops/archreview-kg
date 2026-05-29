@@ -1,0 +1,463 @@
+# ArchReview-KG Roadmap After P32
+
+Updated: 2026-05-16 (M5 added)
+
+## Milestone M5: Knowledge Graph as Product (planned 2026-05-16)
+
+See `.planning/M5-BLUEPRINT.md` for the full blueprint, 10-dimension scoring
+rubric, and exit gate. M5 is the active milestone — M2/M3/M4 phases below
+remain historical reference for completed P33-P85 work.
+
+Goal: cross-project queryable architectural review knowledge platform with
+honest per-rule precision/recall and reviewer feedback calibration. Gated
+by an `archreview-test-judge` agent that scores 10 dimensions out of 100;
+exit at >= 99 with no dimension < 9.
+
+Phase clusters:
+
+- M5.F — Test agent + scoring infrastructure (built first).
+- M5.A — KG persistence (SQLite).
+- M5.B — KG schema, lineage, versioning.
+- M5.C — Query layer + CLI.
+- M5.D — Web UI for KG browsing.
+- M5.E — Recognition quality integration (AUTODETECTABLE 4/32 → >= 15/32, real PDFs 3 → >= 15).
+- M5.G — Active feedback loop and calibration.
+- M5.Z — Iterate until score >= 99.
+
+Process discipline: no new handoff bundle navigation fields during M5 unless
+coupled with a measured recognition or KG improvement. P78-P85 pattern is
+explicitly frozen.
+
+## Milestone M2: Evidence-First Plan Review Platform
+
+Goal: make the workbench trustworthy on complex drawings before widening compliance claims.
+
+### P33: Rule-Input Readiness Dashboard
+
+Purpose: turn static rule coverage into per-run rule readiness.
+
+Deliverables:
+
+- `rule_input_readiness.json` artifact for every review run.
+- Viewer/Studio readiness panel.
+- Report section that distinguishes ready, missing input, low confidence, manual-only, and not applicable.
+- Tests proving missing input cannot be represented as pass.
+
+Exit gate:
+
+- All 32 shipped rule cards appear in the readiness artifact.
+- Existing rule-engine issue output remains behaviorally unchanged.
+- CLI, Studio, and standalone viewer can read the same artifact.
+
+### P34: Sheet-Region Candidate Suggestions
+
+Purpose: stop asking users to hand-enter crop regions before the system can propose candidate design/title/schedule/legend areas.
+
+Deliverables:
+
+- `sheet_region_candidates.json` with design-region, title-block, schedule, legend, and excluded-text summaries.
+- Candidate display in Studio.
+- No automatic cropping by default.
+
+Exit gate:
+
+- Existing manual `--sheet-region` remains authoritative.
+- Candidate suggestions can be reviewed without mutating graph input.
+- Generated-complex-titleblock benchmark records candidate evidence.
+
+### P35: Issue Lifecycle and Review State
+
+Purpose: move from one-shot findings to reviewable issue history.
+
+Deliverables:
+
+- Backward-compatible issue lifecycle schema.
+- Review states: `candidate`, `confirmed`, `rejected`, `needs_info`, `resolved`, `superseded`.
+- Local review-state import/export.
+- Report and viewer surface for review state.
+
+Exit gate:
+
+- Old `issues.json` continues to validate.
+- Rule engine still produces candidates only.
+- Human review state is stored separately or explicitly layered.
+
+### P36: IFC/IDS Side Lane
+
+Purpose: reuse openBIM checking rather than hand-rolling all model-validation logic.
+
+Deliverables:
+
+- Independent `archkg ifc validate --ifc model.ifc --ids spec.ids` spike.
+- IfcOpenShell/IfcTester-backed validation where dependency is available.
+- IDS failure mapping to ArchReview-KG issue-like evidence rows.
+- Minimal IFC/IDS fixture and tests.
+
+Exit gate:
+
+- PDF review pipeline remains decoupled.
+- Missing optional IFC dependency degrades with a clear message.
+- No claim that IFC validation replaces drawing recognition.
+
+### P37: Rule-Card Authoring and Code-Citation Assistant
+
+Purpose: use AI/retrieval only for draft authoring and citation support.
+
+Deliverables:
+
+- Draft rule-card authoring artifact format.
+- `draft / reviewed / active` lifecycle for generated rule-card candidates.
+- Citation/evidence report that names source clause, parsed threshold, ambiguity, and required entity inputs.
+
+Exit gate:
+
+- Drafts never enter active `rule_cards.yaml` without explicit review.
+- Assistant output cannot create final compliance issues.
+
+## Milestone M3: Complex Drawing Understanding
+
+Goal: handle larger real sheet sets with better source classification and benchmark coverage.
+
+### P38: Multi-Sheet Classification
+
+- Classify architectural plan, detail, elevation, schedule, title, legend, and unknown sheets.
+- Route only eligible regions into graph building.
+
+### P39: Multi-Plan Graph Outputs
+
+- Build a separate graph for each high-confidence plan sheet.
+- Keep primary `entity_graph.json` and rule-engine output stable until aggregation semantics are explicit.
+- Surface per-sheet graph counts, skipped-page reasons, and per-sheet issue preview in Viewer/Studio/report.
+
+### P40: Real Drawing Benchmark Expansion
+
+- Expand active/known_gap suite to at least five reviewed complex cases.
+- Separate real public PDFs, deterministic generated PDFs, and user-private fixtures.
+- Include multi-sheet artifact checks for `sheet_graphs.json` and `sheet_issues.json`.
+- Track real multi-plan intake gates with provenance, required artifacts, and promotion rules before any case is counted as active.
+
+## Milestone M4: Review Workbench
+
+Goal: make the tool useful for repeated human review, not just CLI artifacts.
+
+### P41: Studio Readiness Workbench
+
+- Unify source preview, region candidates, component inventory, rule readiness, issues, and review state.
+- Start with `review_workbench.json` as a non-mutating run summary before adding reviewer actions.
+- Add action links that navigate from the workbench to evidence panels before implementing any state-changing review controls.
+- Add bounded local review-state operations that update only `review_state.json` for primary `issues.json` issue IDs and never mutate rule output or per-sheet preview issues.
+- Add first-page issue-to-preview cross-highlighting so reviewers can jump from primary issues to source/overlay/annotated visual evidence.
+- P56-01 complete: issue focus is now sheet-aware. First-page issues still highlight on the preview layer; non-first-page issues keep the correct page number and bbox and route reviewers to PDF page review rather than being projected onto the first-page PNG.
+- P57-01 complete: Viewer/Studio now write `preview_pages.json` and multi-page source/annotated PNG page sets. Reviewers can switch pages, and non-first-page primary issues can focus the corresponding page preview directly.
+- P59-01 complete: entity overlay previews now render per graph-backed sheet, so the page switcher can show overlay imagery beyond the legacy first page when `sheet_graphs.json` has a routed graph.
+
+### P42: Re-Run Diff and Resolution Tracking
+
+- Compare two runs and mark issues as unchanged, changed, resolved, or new.
+- P42-01 complete: `archkg review-diff` writes read-only `review_diff.json` over primary `issues.json` candidates without relying on generated issue/entity IDs.
+- P42-02 complete: Viewer/Studio/workbench render diff summaries and per-current-issue status pills without auto-mutating `review_state.json`.
+
+### P43: Release Readiness Gate
+
+- Publish a readiness rubric based on real benchmark evidence, not rule count.
+- P43-01 complete: `archkg release-readiness` evaluates suite status, active real benchmark coverage, representative run artifacts, known gaps, pending rows, and generated-heavy proof limits into `not_ready`, `demo_ready_with_known_gaps`, or `evidence_ready`.
+
+### P44: Real Drawing Benchmark Promotion
+
+- Reduce release-readiness warnings by promoting real drawing cases only when reviewed expected inventory passes.
+- P44-01 complete: multi-sheet `drawing_understanding.json` merges count-level `sheet_graphs.json` evidence, promoting Medfield full-set from known_gap to active while keeping per-sheet preview issues out of primary lifecycle.
+
+### P45: Release Readiness Tightening
+
+- Remove remaining packaged suite pending/manual rows without weakening evidence gates.
+- P45-01 complete: `sample_clean_full` is now a committed deterministic active toy fixture; packaged suite reports active=5, pending=0, known_gap=0, and release-readiness can produce `evidence_ready` for benchmarked drawing classes when representative run artifacts are complete.
+- P55-01 complete: suite now also includes Medfield A-2 Second Floor Plan as a human-reviewed real single-sheet benchmark plus a generated mixed-sheet-set benchmark. Packaged suite reports active=7, pending=0, known_gap=0, real_active=3, generated_active=3.
+- Guardrail: generated complex fixtures must not outnumber active real drawing evidence in release-readiness claims.
+
+### P46: Novice Reviewer Onboarding
+
+- Make a generated review run understandable to a first-time plan-review engineer.
+- P46-01 complete: full review runs and Studio runs write `reviewer_onboarding.json` and `reviewer_quickstart.md`; report and Viewer render the first-hour flow, boundary reminders, common commands, and handoff checklist.
+
+### P47: Sheet Preview Review Bridge
+
+- Make per-sheet candidate preview actionable without promoting it into the primary issue lifecycle.
+- P47-01 complete: full review runs and Studio runs write `sheet_issue_review_queue.json`; report, Viewer, workbench, control sync, and release readiness all surface the queue as a preview-only bounded bridge.
+- Guardrail: preview queue ids are not primary issue ids and must not be used with `archkg review-state`.
+
+### P48: Real-Project Handoff Export Package
+
+- Package an existing review run into a standalone read-only handoff directory for downstream review.
+- P48-01 complete: `archkg handoff-package` writes `handoff_manifest.json`, `handoff_summary.md`, and copied artifacts under `artifacts/` without mutating the source run.
+- P58-01 complete: handoff packages now include source PDF, `preview_pages.json`, source/annotated preview PNGs, and every page image referenced by the preview manifest so static viewer links remain complete.
+- Guardrail: handoff packages are evidence bundles, not compliance certificates.
+
+### P49: Handoff Package Quality Gate
+
+- Validate a generated handoff package before it is used for external review.
+- P49-01 complete: `archkg handoff-check` writes `handoff_package_quality.v1` JSON/Markdown reports and fails `not_ready` packages.
+- Guardrail: package quality checks completeness and boundary warnings only; it does not certify drawing compliance.
+
+### P50: Package Reviewer Signoff Notes
+
+- Let a receiving reviewer record package-level ready / needs_info / blocked status without touching source run artifacts.
+- P50-01 complete: `archkg handoff-signoff` writes `reviewer_signoff.json` and `reviewer_signoff.md` inside the handoff package.
+- Guardrail: reviewer signoff is a handoff note, not a compliance certificate, and it does not confirm candidate issues.
+
+### P51: Static Handoff Package Review View
+
+- Make a generated handoff package directly consumable in a browser without running Studio or a server.
+- P51-01 complete: `archkg handoff-package` writes package-root `index.html`; `archkg handoff-check` and `archkg handoff-signoff` refresh quality/signoff summaries in that page.
+- Guardrail: the static view is navigation only; it does not create evidence, mutate source runs, or certify compliance.
+
+### P52: Manager Checklist Export
+
+- Give a review manager a package-level intake checklist derived from manifest, handoff quality, and reviewer signoff.
+- P52-01 complete: `archkg handoff-manager-checklist` writes `handoff_manager_checklist.v1` JSON/Markdown and refreshes the static package index.
+- Guardrail: manager status is package-intake status only; it does not confirm candidate issues or certify drawing compliance.
+
+### P53: Archive Manifest Checksums
+
+- Give transferred handoff packages a stable file integrity manifest for downstream intake.
+- P53-01 complete: `archkg handoff-archive-manifest` writes `handoff_archive_manifest.v1` JSON/Markdown, SHA-256 file entries, and a deterministic package digest while excluding generated self/index files.
+- Guardrail: archive manifest status is transfer-integrity evidence only; it does not certify drawing compliance or replace source-run artifacts.
+
+### P54: Archive Verification Import Check
+
+- Let receiving reviewers verify a handoff package against its archive manifest before trusting the package contents.
+- P54-01 complete: `archkg handoff-archive-verify` writes `handoff_archive_verification.v1` JSON/Markdown, reports missing/changed/unexpected package files, refreshes the static package index, and exits non-zero on `archive_drift`.
+- Guardrail: archive verification is checksum alignment only; it does not confirm candidate issues or certify drawing compliance.
+
+### P56: Sheet-Aware Issue Focus
+
+- Remove the first-page-only issue-focus limitation from Viewer/Studio data.
+- Preserve page-aware bbox normalization for primary issues on any page with known dimensions.
+- Keep first-page preview highlighting for page 0, and route non-first-page issues to `source.pdf` / `annotated.pdf` review with explicit page labels.
+- Guardrail: page-aware focus is navigation evidence only; it does not create or confirm issues and does not imply multi-page PNG preview support.
+
+### P57: Multi-Page Preview Gallery
+
+- Render source and annotated PDFs into page-indexed PNG preview sets while preserving legacy `source_preview.png` and `annotated_preview.png`.
+- Write `preview_pages.json` so Viewer/Studio can switch pages and resolve the correct preview image for issue focus.
+- Use the preview manifest to mark non-first-page issue focus as directly preview-supported when source/annotated page images exist.
+- Guardrail: entity overlay remains page-0 only in P57; visual focus still does not create evidence or certify compliance.
+
+### P58: Handoff Preview Asset Completeness
+
+- Treat `preview_pages.json` as a visual asset dependency manifest during handoff packaging.
+- Copy all source/annotated/overlay preview assets referenced by `preview_pages.json` into the package `artifacts/` directory.
+- Fail handoff quality when a preview manifest references a missing page image.
+- Guardrail: copied preview assets support package review only; they do not confirm issues or certify compliance.
+
+### P59: Per-Page Entity Overlay Rendering
+
+- Render entity overlay PNGs for every graph-backed sheet while preserving the legacy `entity_overlay.png` filename for the primary graph.
+- Record overlay page entries in `preview_pages.json` so Viewer/Studio can switch overlay images by sheet page and focus non-first-page issue context without broken preview links.
+- Keep handoff packaging manifest-driven so overlay page images referenced by `preview_pages.json` are copied and validated automatically.
+- Guardrail: overlay pages are reviewer orientation aids only. They do not create new detections, certify OCR/component accuracy, or promote per-sheet preview issues into the primary issue lifecycle.
+
+### P60: Handoff Bundle Index
+
+- Scan a parent directory containing multiple handoff packages and write `handoff_bundle_index.json`, `handoff_bundle_index.md`, and `handoff_bundle_index.html`.
+- Summarize each package's manifest, quality, reviewer signoff, manager checklist, archive manifest, archive verification, missing required artifacts, and first open item.
+- Reject a single package directory as the bundle root so the command does not overwrite or mutate package-local review artifacts.
+- Guardrail: bundle index is manager triage only; it is not a compliance certificate, release-readiness gate, or source-run mutation path.
+
+### P61: Reviewer Task Sequencing
+
+- Generate `reviewer_task_sequence.json` and `reviewer_task_sequence.md` for full CLI and Studio runs.
+- Order reviewer work from run boundary and recognition quality, through sheet scope, readiness blockers, open primary issues, per-sheet preview review, and handoff package actions.
+- Render the ordered sequence in report and Viewer, and include it in handoff packages as entry evidence.
+- Guardrail: task sequencing is guidance only; it does not write review state, confirm issues, promote preview issues, or certify compliance.
+
+### P62: Reviewer Task Checklist Seed
+
+- Generate `reviewer_task_checklist.json` and `reviewer_task_checklist.md` from `reviewer_task_sequence.json` for full CLI and Studio runs.
+- Include reviewer_status, reviewer note, evidence_checked placeholders, required evidence, completion prompts, and per-stage mutation warnings for each ordered task.
+- Render the checklist seed in report and Viewer, and include it in handoff packages as entry evidence.
+- Guardrail: checklist rows are fillable human work aids only; they do not mutate source run artifacts, confirm candidate issues, or certify compliance.
+
+### P63: Bundle Checklist Risk Aggregation
+
+- Extend `archkg handoff-bundle-index` to read `artifacts/reviewer_task_checklist.json` from each handoff package.
+- Summarize checklist item counts, open item counts, blocked/needs-info counts, per-package checklist_review_status, and first open samples in bundle JSON/Markdown/HTML.
+- Keep `package_status` based on package quality/signoff/manager/archive gates; checklist risk is displayed for triage but does not mutate packages or redefine readiness.
+- Guardrail: bundle checklist risk is a read-only manager view only; it does not write package artifacts, confirm candidate issues, or certify compliance.
+
+### P64: Package-Local Checklist Update
+
+- Add `archkg handoff-checklist-update` to update one item in `artifacts/reviewer_task_checklist.json` by `check_id` or ordinal.
+- Record reviewer, reviewer_status, note, evidence_checked, completed_at, updated_at, and last_update in the package-local checklist.
+- Regenerate `artifacts/reviewer_task_checklist.md` and refresh package `index.html` so package and bundle views reflect reviewer progress.
+- Guardrail: checklist updates are handoff-package notes only; they do not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
+
+### P65: Manager Checklist Reviewer Gate
+
+- Extend `archkg handoff-manager-checklist` to read package-local `artifacts/reviewer_task_checklist.json`.
+- Add reviewer checklist status and open/blocked/needs-info counts to `handoff_manager_checklist.v1` summary and Markdown.
+- Require checklist completion before `manager_ready`; open or needs-info rows keep the package at `manager_needs_info`, while blocked or missing checklist state blocks manager intake.
+- Guardrail: this is package-intake gating only; it does not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
+
+### P66: Ready-to-Review Runbook
+
+- Generate package-local `handoff_ready_runbook.json` and `handoff_ready_runbook.md` as a novice reviewer closeout guide.
+- Add `archkg handoff-ready-runbook` to refresh runbook next actions from current quality, signoff, reviewer checklist, and manager checklist state.
+- Surface the runbook in package `index.html`; open checklist rows produce concrete `handoff-checklist-update` commands, complete prerequisites produce the manager checklist command, and manager-ready packages show no remaining actions.
+- Guardrail: runbook is navigation guidance only, excluded from archive checksums, and does not mutate source runs, primary `review_state.json`, candidate issues, or compliance status.
+
+### P67: Bundle Next-Actor Queue
+
+- Extend `archkg handoff-bundle-index` with per-package `next_actor`, `next_action_id`, `next_action_title`, `next_action_reason`, and `next_action_command`.
+- Add bundle summary counts for reviewer, manager, archive, and done actors.
+- Add a structured `next_action_queue` plus Markdown/HTML columns so managers can route work without opening every package.
+- Guardrail: the queue is read-only dispatch guidance; it does not mutate packages, source runs, primary `review_state.json`, candidate issues, package readiness, or compliance status.
+
+### P68: Evidence 3D Layout Model
+
+- Generate `layout_3d.json`, `layout_3d_summary.md`, and `layout_3d.glb` during full CLI and Studio review runs.
+- Build deterministic 2.5D primitives from `sheet_graphs.json` first and fall back to `entity_graph.json` when sheet graphs are unavailable.
+- Model floor slabs, room/corridor volumes, wall segments, door opening placeholders, stair placeholders, and dimension anchors as reviewer navigation evidence.
+- Render the 3D model status, object counts, assumptions, blocked reasons, and GLB links in Viewer/Studio and copy the artifacts into handoff packages.
+- Guardrail: `layout_3d` is an evidence/navigation layer only. Default heights/thicknesses are explicit assumptions for visualization and must not become rule-engine inputs, BIM truth, or compliance conclusions.
+
+### P69: Layout IFC Export Skeleton
+
+- Add explicit `archkg ifc export-layout --layout out/layout_3d.json --out out/layout.ifc --report out/layout_ifc_export.json --markdown out/layout_ifc_export.md`.
+- Read only `layout_3d.json`; do not read PDF inputs, mutate `issues.json`, or change rule-engine semantics.
+- Map v1 layout primitives into IFC preview classes: slabs, walls, spaces, door placeholders, and stair placeholders; skip dimension anchors into the report.
+- Write `layout_ifc_export.v1` with `exported`, `dependency_missing`, `blocked`, or `failed` status and boundary warnings.
+- Surface optional IFC artifacts in Viewer/Studio, handoff packages, and control sync without treating missing IFC as a review failure.
+- Guardrail: `layout.ifc` is an optional preview artifact, not review-grade BIM, not an automatic full `archkg review` output, and not a compliance input.
+
+### P70-01: Layout IFC Preview Validation
+
+- Expose graph-backed window/opening evidence in `layout_3d` as `window_opening` only when explicit evidence exists (`opening_kind == window`, `opening_kind == window_opening`, or `is_window == true`).
+- Map `window_opening` to IFC `IfcWindow` in the optional IFC preview exporter while keeping door/stair/space/wall handling unchanged.
+- Add regression coverage for `window_opening` construction in both `layout_3d` and `layout_ifc_export` pathways.
+- Add optional real IfcOpenShell smoke test guarded by `importorskip`, plus `README`/`ROADMAP`/`STATE` update notes on install and manual verification.
+- Keep all optional artifacts (`layout.ifc`, `layout_ifc_export.json`, `layout_ifc_export.md`) in Viewer/Studio/handoff/control-sync as non-blocking `preview / evidence` signals only.
+- Guardrail: do not assert true geometry semantics such as boolean opening subtraction, wall void carving, multi-floor stacking, or rule-engine promotion from optional previews.
+
+### P71-01: Opening Semantic Provenance
+
+- Record `properties.opening_semantic` on `door_opening` and `window_opening` layout objects.
+- Distinguish explicit window evidence (`opening_kind` / `is_window`) from generic Door entity defaults without reclassifying ambiguous openings.
+- Add an `Opening Semantics` section to `layout_3d_summary.md` and Viewer/Studio so reviewers can audit door/window source semantics.
+- Guardrail: provenance explains preview semantics only; it does not add wall void geometry, neural recognition, rule-engine inputs, or compliance findings.
+
+### P72-01: Opening Measurement Provenance
+
+- Record `properties.opening_measurement` on `door_opening` and `window_opening` only when graph evidence carries explicit source fields.
+- Treat `Door.width_m`, `Door.properties.height_m`, `Door.properties.sill_height_m`, and `Door.properties.head_height_m` as measured preview provenance with source metadata and units.
+- When explicit `height_m` exists, use it for that opening object's 3D preview height and do not apply the corresponding default opening-height assumption to that object.
+- Add `Opening Measurements` counts and samples to `layout_3d_summary.md` and Viewer/Studio so reviewers can audit which dimensions were evidence-backed.
+- Guardrail: opening measurements remain preview provenance only; they are not rule-engine facts, wall-void geometry, fire/smoke/window compliance evidence, or BIM truth.
+
+### P73-01: Opening Wall-Host Provenance
+
+- Record `properties.opening_host` on `door_opening` and `window_opening` only when graph evidence carries explicit host wall or source-segment fields.
+- Treat `Door.properties.opening_host_wall_id` / `host_wall_id` and `Door.properties.opening_host_wall_segment` / `host_wall_segment` as preview provenance only.
+- Add `Opening Host Wall Provenance` counts and samples to `layout_3d_summary.md` and Viewer/Studio.
+- Guardrail: do not infer host walls, do not snap openings to nearest walls, do not carve wall voids, and do not promote host metadata into rule-engine facts.
+
+### P74-01: Opening Provenance Consistency
+
+- Add a coverage view that merges opening semantic, measurement, and host-wall provenance signals.
+- Count openings with semantic provenance, at least one explicit measurement, explicit host wall provenance, and all three preview provenance surfaces.
+- Show per-opening missing provenance prompts in Viewer/Studio so reviewers can see which evidence surfaces are absent.
+- Guardrail: this is a coverage/navigation view only; missing signals are not failures, compliance issues, BIM completeness checks, or inference triggers.
+
+### P75-01: Opening Provenance IFC Summary
+
+- Carry opening provenance consistency counts into `layout_ifc_export.v1` JSON and Markdown reports.
+- Let IFC Viewer data parse `opening_provenance` so the optional IFC preview page can show semantic, measurement, host-wall, and all-three coverage KPIs.
+- Keep the data as preview-only export metadata, not as IFC validity, wall-void geometry, or rule-engine evidence.
+- Guardrail: do not infer opening provenance, do not make IfcOpenShell required, and do not call `layout.ifc` review-grade BIM.
+
+### P76-01: Handoff Opening Provenance Coverage
+
+- Read `layout_ifc_export.json` during `archkg handoff-package` and copy opening provenance coverage into `handoff_manifest.json`.
+- Render an `Opening Provenance Coverage` section in `handoff_summary.md` and the package-root static `index.html`.
+- Show semantic, measurement, host-wall, and all-three counts as reviewer prompts only.
+- Guardrail: missing provenance signals are not handoff quality blockers, candidate issue confirmations, BIM completeness failures, or compliance findings.
+
+### P77-01: Bundle Opening Provenance Triage
+
+- Extend `archkg handoff-bundle-index` to read per-package `opening_provenance` from each `handoff_manifest.json`.
+- Aggregate semantic, measurement, host-wall, and all-three counts across packages; add a weak-package counter where coverage misses any required provenance signal.
+- Add Markdown/HTML bundle fields and table columns for each package's opening provenance tuple and weak-coverage status.
+- Keep weak coverage as dispatch guidance only: it does not change package readiness rules, issue status, or compliance semantics.
+
+### P78-01: Bundle Opening Provenance Review Queue
+
+- Add a structured `opening_provenance_triage_queue` to `archkg handoff-bundle-index` for packages with weak opening provenance coverage.
+- Include package name, reviewer actor, action id, coverage tuple, source artifact, reason, and preview-only boundary warning.
+- Render the same triage queue in bundle Markdown and HTML as a separate queue from the existing package `next_action_queue`.
+- Guardrail: opening provenance triage is reviewer assignment guidance only; it must not change package status, `next_action_queue`, quality/signoff/manager/archive semantics, or compliance claims.
+
+### P79-01: Package Opening Provenance Checklist Guidance
+
+- Add package-local `opening_provenance_guidance` to `artifacts/reviewer_task_checklist.json` when `archkg handoff-package` sees weak opening provenance coverage.
+- Render the guidance in `artifacts/reviewer_task_checklist.md` as a preview-only section with coverage counts, missing signals, source artifact, and mutation boundary.
+- Keep checklist `items[]` and item counts unchanged so this guidance does not alter manager readiness or normal checklist completion gates.
+- Guardrail: package-local guidance must not mutate the source run, confirm issues, change `review_state.json`, or turn weak opening provenance into compliance failure.
+
+### P80-01: Ready Runbook Opening Provenance Guidance
+
+- Add optional `optional_review_actions` to `handoff_ready_runbook.json` when the package-local reviewer checklist already carries weak opening provenance guidance.
+- Render an `Optional Review Guidance` section in `handoff_ready_runbook.md` pointing novice reviewers to `artifacts/reviewer_task_checklist.md`.
+- Keep `next_actions`, required manager-intake steps, checklist counts, and package readiness unchanged.
+- Guardrail: ready-runbook opening provenance guidance is navigation only; it must not become a blocker, compliance finding, source-run mutation, or BIM completeness claim.
+
+### P81-01: Package Index Opening Provenance Guidance Link
+
+- Surface ready-runbook `optional_review_actions` in the package-root static `index.html` under the Ready-To-Review Runbook panel.
+- Link directly to `handoff_ready_runbook.md#optional-review-guidance` and the referenced package-local checklist artifact.
+- Keep static index content as navigation only; do not change ready-runbook `next_actions`, package readiness, manager gates, or source-run artifacts.
+- Guardrail: index-level opening provenance guidance must remain optional, preview-only, and non-blocking.
+
+### P82-01: Bundle Optional Guidance Visibility
+
+- Add bundle summary counts for packages whose static package index exposes ready-runbook optional guidance.
+- Emit a separate `package_index_optional_guidance_queue` with package name, index path, runbook optional section link, action count, reason, and boundary warning.
+- Render that queue in bundle Markdown/HTML as manager visibility only, separate from `next_action_queue`.
+- Guardrail: bundle optional guidance visibility must not change package status, next actor, normal next actions, manager gates, or compliance semantics.
+
+### P83-01: Package Optional Guidance Note
+
+- Add `archkg handoff-optional-guidance-note` to write package-local `handoff_optional_guidance_note.json/.md`.
+- Capture reviewer, reviewed / needs_info / blocked status, free-form note, and ready-runbook optional guidance actions reviewed.
+- Render the note in package-root `index.html` without changing ready-runbook `next_actions`, manager checklist status, package readiness, or source-run artifacts.
+- Guardrail: optional guidance notes are review documentation only; they must not confirm candidate issues, mutate source runs, or become compliance findings.
+
+### P84-01: Bundle Optional Guidance Note Closeout (complete)
+
+- Complete: `archkg handoff-bundle-index` now reads package-local
+  `handoff_optional_guidance_note.json` per handoff package, summarizes note
+  status counts (`reviewed`, `needs_info`, `blocked`, `not_recorded`,
+  `invalid`), and renders an independent
+  `optional_guidance_note_closeout_queue` in bundle JSON/Markdown/HTML.
+
+- Extend `archkg handoff-bundle-index` to read package-local `handoff_optional_guidance_note.json` from each handoff package.
+- Summarize note availability and status counts across the bundle: reviewed, needs_info, blocked, not_recorded, and invalid.
+- Emit a separate optional guidance note closeout queue for packages that expose package-index optional guidance but have no note yet, or whose note is needs_info / blocked.
+- Render the same closeout summary and queue in bundle Markdown/HTML for manager visibility.
+- Guardrail: optional guidance note closeout is reviewer/manager visibility only; it must not change `package_status`, `next_actor`, `next_action_queue`, manager checklist, archive checks, source runs, `issues.json`, `review_state.json`, or compliance semantics.
+
+### P85-01: Bundle Manager Triage Digest (complete)
+
+- Complete: `handoff_bundle_index.v1` now includes derived `manager_triage_digest` with queue counts and compact items across required next actions, opening provenance triage, package-index optional guidance, and optional guidance note closeout.
+- Add a derived `manager_triage_digest` to `handoff_bundle_index.v1` that summarizes existing bundle queues in one manager-facing digest.
+- Include counts and compact items for the primary `next_action_queue`, `opening_provenance_triage_queue`, `package_index_optional_guidance_queue`, and `optional_guidance_note_closeout_queue`.
+- Render `Manager Triage Digest` in bundle Markdown/HTML without removing existing queue sections.
+- Guardrail: the digest is read-only navigation only; it must not mutate packages, change `package_status`, `next_actor`, `next_action_queue`, manager checklist, archive checks, source runs, `issues.json`, `review_state.json`, or compliance semantics.
+
+## Explicit Not-Build List
+
+- No full Solibri/BIMcollab clone.
+- No direct AI final violations.
+- No arbitrary-jurisdiction permit approval claims.
+- No benchmark promotion without reviewed expected inventory.
+- No IFC stack rewrite while IfcOpenShell/IfcTester can provide the first lane.
+- No arbitrary drawing PDF/raster to review-grade BIM claim from the v1 `layout_3d` model.
+- No claim that `layout.ifc` exported from graph evidence is a design-grade or review-grade BIM model.

@@ -9,6 +9,89 @@ from archkg import control_sync
 from archkg.cli.main import app
 
 
+def test_run_snapshot_includes_sheet_classification_artifact(tmp_path: Path) -> None:
+    (tmp_path / "sheet_classification.json").write_text(
+        '{"schema_version":"sheet_classification.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "sheet_routing.json").write_text(
+        '{"schema_version":"sheet_routing.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "sheet_graphs.json").write_text(
+        '{"schema_version":"sheet_graphs.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "sheet_issues.json").write_text(
+        '{"schema_version":"sheet_issues.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "sheet_issue_review_queue.json").write_text(
+        '{"schema_version":"sheet_issue_review_queue.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "review_workbench.json").write_text(
+        '{"schema_version":"review_workbench.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "layout_3d.json").write_text(
+        '{"schema_version":"layout_3d.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "layout_3d.glb").write_bytes(b"glb")
+    (tmp_path / "layout_3d_summary.md").write_text(
+        "# 3D Layout Evidence",
+        encoding="utf-8",
+    )
+    (tmp_path / "layout.ifc").write_text("IFC preview", encoding="utf-8")
+    (tmp_path / "layout_ifc_export.json").write_text(
+        '{"schema_version":"layout_ifc_export.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "layout_ifc_export.md").write_text(
+        "# Layout IFC Export",
+        encoding="utf-8",
+    )
+    (tmp_path / "reviewer_onboarding.json").write_text(
+        '{"schema_version":"reviewer_onboarding.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "reviewer_quickstart.md").write_text(
+        "# quickstart",
+        encoding="utf-8",
+    )
+    (tmp_path / "review_diff.json").write_text(
+        '{"schema_version":"review_diff.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "release_readiness.json").write_text(
+        '{"schema_version":"release_readiness.v1"}',
+        encoding="utf-8",
+    )
+    (tmp_path / "scratch.txt").write_text("ignore me", encoding="utf-8")
+
+    snapshot = control_sync._collect_run_snapshot(tmp_path)
+
+    assert snapshot["exists"] is True
+    assert "sheet_classification.json" in snapshot["artifacts"]
+    assert "sheet_routing.json" in snapshot["artifacts"]
+    assert "sheet_graphs.json" in snapshot["artifacts"]
+    assert "sheet_issues.json" in snapshot["artifacts"]
+    assert "sheet_issue_review_queue.json" in snapshot["artifacts"]
+    assert "review_workbench.json" in snapshot["artifacts"]
+    assert "layout_3d.json" in snapshot["artifacts"]
+    assert "layout_3d.glb" in snapshot["artifacts"]
+    assert "layout_3d_summary.md" in snapshot["artifacts"]
+    assert "layout.ifc" in snapshot["artifacts"]
+    assert "layout_ifc_export.json" in snapshot["artifacts"]
+    assert "layout_ifc_export.md" in snapshot["artifacts"]
+    assert "reviewer_onboarding.json" in snapshot["artifacts"]
+    assert "reviewer_quickstart.md" in snapshot["artifacts"]
+    assert "review_diff.json" in snapshot["artifacts"]
+    assert "release_readiness.json" in snapshot["artifacts"]
+    assert "scratch.txt" not in snapshot["artifacts"]
+
+
 def test_github_snapshot_falls_back_to_rest_api_when_gh_cli_missing(monkeypatch) -> None:
     monkeypatch.setattr(control_sync.shutil, "which", lambda _name: None)
 
