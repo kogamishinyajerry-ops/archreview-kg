@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from archkg.cli.main import app
@@ -131,17 +132,17 @@ def test_door_bboxes_have_positive_area(sample_pdf: Path) -> None:
 def test_is_sheet_edge_band_discriminates_artifacts_from_corridors() -> None:
     """Round-7 R7-BUG-001/003 helper: a sheet-spanning band hugging an edge is
     an artifact; an interior band (even full-width) is a real corridor."""
-    W, H = 1190.0, 842.0
+    page_w, page_h = 1190.0, 842.0
     # m16 phantom: full-width strip flush to the bottom edge → artifact.
-    assert _is_sheet_edge_band((60.0, 762.0, 1130.0, 812.0), W, H) is True
+    assert _is_sheet_edge_band((60.0, 762.0, 1130.0, 812.0), page_w, page_h) is True
     # full-width strip flush to the top edge → artifact.
-    assert _is_sheet_edge_band((60.0, 30.0, 1130.0, 110.0), W, H) is True
+    assert _is_sheet_edge_band((60.0, 30.0, 1130.0, 110.0), page_w, page_h) is True
     # full-height strip flush to the right edge → artifact.
-    assert _is_sheet_edge_band((1100.0, 20.0, 1180.0, 820.0), W, H) is True
+    assert _is_sheet_edge_band((1100.0, 20.0, 1180.0, 820.0), page_w, page_h) is True
     # the synthetic sample's REAL corridor: full width but mid-page → kept.
     assert _is_sheet_edge_band((0.0, 200.0, 500.0, 252.5), 500.0, 400.0) is False
     # a normal interior corridor → kept.
-    assert _is_sheet_edge_band((300.0, 350.0, 700.0, 402.0), W, H) is False
+    assert _is_sheet_edge_band((300.0, 350.0, 700.0, 402.0), page_w, page_h) is False
 
 
 def test_titleblock_band_not_classified_as_corridor() -> None:
@@ -163,6 +164,43 @@ def test_titleblock_band_not_classified_as_corridor() -> None:
         abs(c.bbox[0] - 60.0) < 5 and abs(c.bbox[1] - 762.0) < 5 and abs(c.bbox[2] - 1130.0) < 5
         for c in g.corridors
     ), "the round-7 title-block phantom corridor must no longer be emitted"
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Corridor-extraction milestone (R7-BUG-003). m16's real corridors ARE "
+        "explicitly walled, but the bottom long-wall never closes into a thin "
+        "polygon: one intended opening is 66pt (1.32m 'service entry') which "
+        "exceeds the 50pt (1.0m) door-bridge ceiling, AND door-swing arc/leaf "
+        "primitives snap onto the wall's y-group and mask the remaining "
+        "bridgeable gaps. So shapely polygonize floods the strip into a ~92m2 "
+        "room (short side 6.44m) and corridors=0. Every naive closure re-"
+        "introduces the phantom-band FP class just fixed (verified at "
+        "DOOR_MAX_M=1.4m: sample_clean 1->2, m12 4->6, m13 13->17), and even "
+        "then m16 stays 0 because the door-swing debris also blocks it. The real "
+        "fix (door-swing debris stripper + corridor-aware closure tolerating one "
+        "wide opening, validated FP-neutral against the cambridge plans) is a "
+        "scoped multi-session milestone. See .planning/m16/"
+        "CORRIDOR_EXTRACTION_MILESTONE.md. This test flips to XPASS (strict -> "
+        "fails loudly, prompting removal of the mark) when extraction lands."
+    ),
+)
+def test_m16_real_corridor_extracted() -> None:
+    """Acceptance gate for real-corridor extraction (currently a known gap)."""
+    pdf = Path("samples/real_plans/test-m16-defective-plan.pdf")
+    if not pdf.exists():
+        pytest.skip("m16 sample not present")
+    g = build_graph(extract(pdf))
+    # Ground-floor corridor: full-width band at engine y~440-495, ~1.10m wide,
+    # which must FAIL RC-CORRIDOR-WIDTH's 1.20m floor.
+    band = [
+        c
+        for c in g.corridors
+        if 430 <= c.bbox[1] and c.bbox[3] <= 505 and (c.bbox[2] - c.bbox[0]) >= 0.6 * g.page_width_pt
+    ]
+    assert band, "the m16 ground-floor corridor must be extracted as a Corridor entity"
+    assert any(c.min_width_m is not None and c.min_width_m < 1.2 for c in band)
 
 
 def test_min_room_area_filter_drops_sub_threshold_polygons(sample_pdf: Path) -> None:
