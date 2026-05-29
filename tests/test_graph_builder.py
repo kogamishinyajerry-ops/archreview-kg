@@ -111,6 +111,23 @@ def test_build_graph_on_synthetic_sample_finds_expected_entities(sample_pdf: Pat
     assert "kitchen" in labels
 
 
+def test_door_bboxes_have_positive_area(sample_pdf: Path) -> None:
+    """Round-7 R7-BUG-006 regression: a door bridge is a single wall-gap
+    segment, so the raw segment bbox is degenerate on one axis (height 0
+    for a horizontal opening). Every emitted door must instead carry a
+    real rectangle so evidence overlays, alias-dedup and sheet-region IoU
+    work. The thin axis is expanded to the opening width, so both
+    dimensions must be >0 and at least the door's own width in points.
+    """
+    p = extract(sample_pdf, points_per_meter=50.0)
+    g = build_graph(p)
+    assert g.doors, "sample must produce doors to exercise this regression"
+    for d in g.doors:
+        x0, y0, x1, y1 = d.bbox
+        w, h = x1 - x0, y1 - y0
+        assert w > 0.0 and h > 0.0, f"door {d.id} has degenerate bbox {d.bbox}"
+
+
 def test_min_room_area_filter_drops_sub_threshold_polygons(sample_pdf: Path) -> None:
     """Phase 19-D: ``min_room_area_m2`` is a noise filter for real CAD
     PDFs. The synthetic sample has 4 rooms at 14.75-20 m² so a 10 m²

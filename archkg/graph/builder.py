@@ -471,7 +471,25 @@ def build_graph(
     for bridge in bridges:
         width_m = bridge.width_pt / ppm
         (x0, y0), (x1, y1) = bridge.segment
-        bbox = (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+        bx0, by0, bx1, by1 = min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
+        # A door bridge is a single wall-gap segment, so exactly one axis is
+        # degenerate: a horizontal opening gives by1 == by0, a vertical
+        # opening gives bx1 == bx0. A zero-area bbox breaks downstream
+        # evidence overlays, alias-dedup keys, and sheet-region IoU (round-7
+        # R7-BUG-006: every door issue emitted bbox height 0). Expand the
+        # thin axis symmetrically to the opening width (≈ the leaf-swing
+        # footprint, since a door leaf ≈ its opening). Symmetric expansion
+        # keeps the centroid fixed, so the centroid-based door-side
+        # classification and dimension binding below are unaffected, and the
+        # width measurement (width_m) is unchanged.
+        opening_pt = bridge.width_pt
+        if bx1 - bx0 < opening_pt:
+            cx = (bx0 + bx1) / 2.0
+            bx0, bx1 = cx - opening_pt / 2.0, cx + opening_pt / 2.0
+        if by1 - by0 < opening_pt:
+            cy = (by0 + by1) / 2.0
+            by0, by1 = cy - opening_pt / 2.0, cy + opening_pt / 2.0
+        bbox = (bx0, by0, bx1, by1)
         a_kind, a_id = _classify_bridge_side(
             bridge.segment, -1, rooms, corridors, filtered_polygons
         )
